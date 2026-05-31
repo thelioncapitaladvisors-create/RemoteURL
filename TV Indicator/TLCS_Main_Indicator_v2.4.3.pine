@@ -1,0 +1,36 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TheLionCapitalsolutions.com and market-store.online
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// TLCS Main Indicator — Changelog
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// v2.4.3  (2026-05-31)
+// ─────────────────────────────────────────────────────────────────────────────
+// FIX: Scalp Sell/Buy bounce logic correctly references all 15 S&R arrays.
+//
+// ROOT CAUSE:
+//   The previous implementation used a single variable (`resMid` / `grsMid`) 
+//   which could only remember the very last power candle's midpoint, causing 
+//   it to abruptly forget valid midpoints when consecutive power candles appeared.
+//
+// CHANGE:
+//   Removed the single `resMid` and `grsMid` variables.
+//   Replaced `bouncedOffResMid` and `bouncedOffGrsMid` with helper functions 
+//   that scan `sr01` through `sr15` to trigger on ANY valid line.
+//
+// ─── NEW TRIGGER LOGIC ───
+//
+// // Helper function: Check if candle perfectly rejected an S&R level
+// isValidBounceDown(float srLevel) =>
+//     (not na(srLevel)) and high >= srLevel and open <= srLevel and low < srLevel and close < srLevel and close < open
+//
+// isValidBounceUp(float srLevel) =>
+//     (not na(srLevel)) and low <= srLevel and open >= srLevel and high > srLevel and close > srLevel and close > open
+//
+// // Check if we bounced off ANY of the 15 valid lines
+// bouncedOffResMid = isValidBounceDown(sr01) or isValidBounceDown(sr02) or isValidBounceDown(sr03) or isValidBounceDown(sr04) or isValidBounceDown(sr05) or isValidBounceDown(sr06) or isValidBounceDown(sr07) or isValidBounceDown(sr08) or isValidBounceDown(sr09) or isValidBounceDown(sr10) or isValidBounceDown(sr11) or isValidBounceDown(sr12) or isValidBounceDown(sr13) or isValidBounceDown(sr14) or isValidBounceDown(sr15)
+//
+// bouncedOffGrsMid = isValidBounceUp(sr01) or isValidBounceUp(sr02) or isValidBounceUp(sr03) or isValidBounceUp(sr04) or isValidBounceUp(sr05) or isValidBounceUp(sr06) or isValidBounceUp(sr07) or isValidBounceUp(sr08) or isValidBounceUp(sr09) or isValidBounceUp(sr10) or isValidBounceUp(sr11) or isValidBounceUp(sr12) or isValidBounceUp(sr13) or isValidBounceUp(sr14) or isValidBounceUp(sr15)
+//
+// ─────────────────────────────────────────────────────────────────────────────
