@@ -8,3 +8,8 @@
 - A trade belongs in a `TP` bucket ONLY if it *actually closed* at that exact level (e.g., via a limit order, or a step-based trailing stop that precisely locked in that previous level).
 - For arbitrary, continuous trailing stops that close between defined levels, do NOT mathematically guess the closest level. The Pine Script should explicitly send `"status": "Trailing Stop"`.
 - Both the Web and Mobile UIs have a dedicated `TRAIL` (or `Trailing Stop`) bucket to correctly categorize these dynamic, arbitrary exits without polluting the fixed `TP` buckets.
+
+## Pure R-Multiple Math for Performance Metrics
+- When calculating Profit Factor and Expectancy on historical data where absolute percentage amounts (`profit_pct`) might be absent or 0, ALWAYS use raw R-Multiples instead of injecting fallback percentage math.
+- **Profit Factor**: Calculate as `(Sum of Winning R's) / (Sum of Losing R's)`
+- **Expectancy**: Calculate natively using R `((Win Rate * Avg Win R) - (Loss Rate * Avg Loss R))` and denote the metric with an `R` suffix instead of a `%` sign, representing the expected R per trade.
