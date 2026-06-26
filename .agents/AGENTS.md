@@ -13,3 +13,8 @@
 - When calculating Profit Factor and Expectancy on historical data where absolute percentage amounts (`profit_pct`) might be absent or 0, ALWAYS use raw R-Multiples instead of injecting fallback percentage math.
 - **Profit Factor**: Calculate as `(Sum of Winning R's) / (Sum of Losing R's)`
 - **Expectancy**: Calculate natively using R `((Win Rate * Avg Win R) - (Loss Rate * Avg Loss R))` and denote the metric with an `R` suffix instead of a `%` sign, representing the expected R per trade.
+
+## Symbol Normalization and Market Categorization
+- ALWAYS normalize symbol names before performing market category checks (e.g., strip exchange prefixes like `NSE:`, `TVC:`, and continuous suffix `1!`). Use the normalized/cleaned symbol for list-based matching.
+- Multi-market overlap: Some symbols (such as indices like `NIFTY`) belong to multiple categories (e.g., domestic equities and world indices). Ensure that signal lists and performance filters check both the primary resolved category and explicit symbol membership arrays to correctly populate all relevant tabs or display cards.
+
