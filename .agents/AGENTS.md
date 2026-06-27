@@ -18,3 +18,10 @@
 - ALWAYS normalize symbol names before performing market category checks (e.g., strip exchange prefixes like `NSE:`, `TVC:`, and continuous suffix `1!`). Use the normalized/cleaned symbol for list-based matching.
 - Multi-market overlap: Some symbols (such as indices like `NIFTY`) belong to multiple categories (e.g., domestic equities and world indices). Ensure that signal lists and performance filters check both the primary resolved category and explicit symbol membership arrays to correctly populate all relevant tabs or display cards.
 
+## Strict Bias and Day Type Parsing
+- NEVER try to mathematically guess, calculate, or inject fallback values for Bias or Day Type on the backend or frontend based on CPR or price levels. Always rely strictly and exclusively on the keys sent by the TradingView indicator (`opening_bias` and `day_type`).
+- Only apply cosmetic label replacements on the frontend UI:
+  - Map `"Double Distribution"` to `"DD"` (and `"Double Distribution Trend"` to `"DD Trend"`) to match the dashboard conventions.
+- Maintain column sizing for table containers (`min-width: 180px` for Bias and `min-width: 160px` for Day Type) on the scanner pages to prevent longer text labels from truncating or wrapping.
+
+
