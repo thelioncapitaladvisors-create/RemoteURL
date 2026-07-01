@@ -30,3 +30,30 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - **crypto**: ADAUSDT, APTUSDT, ARBUSDT, ATOMUSDT, AVAXUSDT, BCHUSDT, BNBUSDT, BTCUSDT, DOGEUSDT, DOTUSDT, ETHUSDT, FILUSDT, ICPUSDT, LINKUSDT, LTCUSDT, NEARUSDT, POLUSDT, SHIBUSDT, SOLUSDT, STXUSDT, TONUSDT, TRXUSDT, UNIUSDT, XLMUSDT, XRPUSDT
 - **forex**: AUDCAD, AUDINR, AUDJPY, AUDNZD, AUDUSD, CADJPY, EURAUD, EURCAD, EURCHF, EURGBP, EURINR, EURJPY, EURUSD, GBPAUD, GBPCAD, GBPCHF, GBPINR, GBPJPY, GBPUSD, JPYINR, NZDUSD, USDCAD, USDCHF, USDINR, USDJPY
 - **world**: AU200, DE40, EU50, FR40, HK50, JP225, NAS100, SPX500, UK100, US2000, US30
+
+## Supabase Metadata Stringification
+- Supabase sometimes returns the `metadata` JSONB column as a raw stringified JSON string instead of an object on the frontend.
+- When retrieving `metadata` anywhere on the frontend (e.g. `s.metadata.exact_pct`, `s.metadata.day_type`, `s.metadata.opening_bias`), you MUST defensively parse it first.
+- ALWAYS use this pattern before accessing keys inside metadata:
+  ```javascript
+  let meta = s.metadata || {};
+  if (typeof meta === 'string') {
+      try { meta = JSON.parse(meta); } catch(e) { meta = {}; }
+  }
+  ```
+- Failure to do this will cause silent UI failures (e.g. Day Type and Bias fields turning blank or into `--`) and calculation fallback errors.
+## Safe Date Parsing and Formatting
+- Always sanitize timestamps before parsing them or passing them into `Intl.DateTimeFormat`.
+- If a Date object is instantiated from an empty, null, or corrupted string, it becomes an `Invalid Date`.
+- Passing an `Invalid Date` to `Intl.DateTimeFormat.formatToParts()` causes a fatal `RangeError: Invalid time value` that halts all Javascript execution on the page and causes silent UI hangs (like getting stuck on "Analyzing..." loaders).
+- Always safeguard against this by verifying the validity of the Date object immediately:
+  ```javascript
+  let sigTime = new Date(s.created_at);
+  if (isNaN(sigTime.getTime())) return false; // Or provide a safe default
+  ```
+
+## Supabase v2 Javascript Client Syntax
+- When building queries using the Supabase Javascript client, you MUST place `.select()` BEFORE any filter methods (like `.eq()`, `.gte()`, `.ilike()`, etc).
+- Incorrect: `client.from('table').gte('column', value).select('*')` (Will throw `TypeError: client.from(...).gte is not a function`)
+- Correct: `client.from('table').select('*').gte('column', value)`
+- This is a strict requirement of the PostgREST query builder in Supabase JS v2.
