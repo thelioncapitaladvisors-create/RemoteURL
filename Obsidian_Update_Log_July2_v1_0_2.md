@@ -1,4 +1,4 @@
-# TLCS Platform Updates - July 2, 2026 (v1.2 — Metrics RCA Hotfix)
+# TLCS Platform Updates - July 2, 2026 (v1.0.2 — Metrics RCA Hotfix)
 
 ## Bug Description
 When reviewing the MARKET WIDE PERFORMANCE statistics screen around 8:15 AM, three successfully closed trades (two hitting TP3) showed Kelly%, Avg Winner, Avg Loser, Equity Curve, and Realized R:R all flipped into negative values — the exact opposite of what was expected for winning trades.

@@ -1,4 +1,4 @@
-# TLCS Platform Updates - July 2, 2026 (v1.3 — Cross-Platform Discrepancy Fix)
+# TLCS Platform Updates - July 2, 2026 (v1.0.3 — Cross-Platform Discrepancy Fix)
 
 ## Summary
 Second hotfix pass after the v1.2 RCA. Identified and permanently resolved all remaining
