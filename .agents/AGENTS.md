@@ -16,7 +16,7 @@
 - Multi-market overlap: Some symbols (such as indices like `NIFTY`) theoretically belong to multiple categories (e.g., domestic equities and world indices). However, to avoid double-counting, ALWAYS assign a trade to exactly ONE primary category (e.g. by using the `getMarket` function and strictly filtering by `getMarket(s) === m.id`). Do NOT populate a single trade into multiple tabs simultaneously.
 
 ## Strict Bias and Day Type Parsing
-- NEVER try to mathematically guess, calculate, or inject fallback values for Bias or Day Type on the backend or frontend based on CPR or price levels. Always rely strictly and exclusively on the keys sent by the TradingView indicator (`opening_bias` and `day_type`).
+- Prioritize keys sent by the TradingView indicator (`opening_bias` and `day_type`) on the backend and frontend. However, if these primary keys are missing or empty (`--`/`""`), it is permitted to silently trigger the mathematical fallback script (`fetch-tv-fallback`) on the frontend to calculate and inject these values based on daily/intraday price data.
 - Only apply cosmetic label replacements on the frontend UI:
   - Map `"Double Distribution"` to `"DD"` (and `"Double Distribution Trend"` to `"DD Trend"`) to match the dashboard conventions.
 - Maintain column sizing for table containers (`min-width: 180px` for Bias and `min-width: 160px` for Day Type) on the scanner pages to prevent longer text labels from truncating or wrapping.
@@ -57,3 +57,13 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - Incorrect: `client.from('table').gte('column', value).select('*')` (Will throw `TypeError: client.from(...).gte is not a function`)
 - Correct: `client.from('table').select('*').gte('column', value)`
 - This is a strict requirement of the PostgREST query builder in Supabase JS v2.
+
+## "Today's Trades" and Scanner Time Boundaries
+- ALWAYS use the `0 Hrs` strict local boundary (e.g. `startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()`) to determine "Today's trades" across all dashboards, metrics, and scanners.
+- Do NOT use `globalStartOfWeekISO` or arbitrary time-zone math when computing daily metrics or populating daily scanner lists.
+- For AI Scanner pages specifically: they should strictly filter signals to `sigTs >= startOfToday`. Do not show past signals from earlier in the week.
+- For active trades logic (dashboards/metrics): Yesterday's open trades must persist as open for today unless they are explicitly closed by their market close time. Always check `if (resolveOutcome(s) === 'OPEN') return true;` to ensure active trades from previous days are not prematurely hidden.
+
+## resolveOutcome Fallback Guidelines
+- Do NOT use `exact_pct` (positive or negative) as a fallback to guess WIN/LOSS for trades that lack a definitive string status/outcome (e.g. trades closed via EOD, EMA, or TRAIL). This will falsely categorize them. They should return `OPEN` (active) until definitively categorized.
+- If using `exact_pct` for legacy outcome resolution, you MUST handle `exact_pct === 0` by explicitly returning `BREAKEVEN` so they do not fall through to incorrect categories.
