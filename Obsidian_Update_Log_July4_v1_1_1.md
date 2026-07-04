@@ -15,6 +15,7 @@ Updates targeting mobile UI scopes, filter logic discrepancies, and defensive da
 - **Files Modified**: [page.tsx](file:///Users/vishant/Documents/Project/Tv-Alert-Mobile/src/app/page.tsx)
 - **Type Safety**: Extended `Signal` interface definition with `exchange?: string;` field to match Supabase's query response.
 - **Defensive Parsing**: Applied defensive JSON string parsing for the `metadata` column in `getMarket`, `marketsClosedSignals` filter, and signal detail views to resolve silent crashes and blank Day Type / Bias filters.
+- **Filter Matching**: Fixed composite filter matching bug in `matchFilter` by updating the evaluation logic. It now checks for partial matching, direct equivalence, and cleanses the `"DAY"` keyword during day type matching (e.g. mapping `"Sideways Day"` to `"SIDEWAYS"` accurately instead of failing index checks).
 
 ### 3. Website AI Scanner Loading and Date Formatter Safeguards
 - **Files Modified**: [commodity-scanner.js](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/commodity-scanner.js) and [scanner.js](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js)
