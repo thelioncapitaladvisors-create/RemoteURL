@@ -32,3 +32,7 @@ Updates targeting mobile UI scopes, filter logic discrepancies, and defensive da
 ### 5. Historical Trade Data Retroactive Population
 - **Action Taken**: Ran a migration script (`populate_missing_stats.py`) to query all historical signals created today that were missing Bias or Day Type values (including `ETHUSDT`, `DOGEUSDT`, and `BTCUSDT`).
 - **Pivots Computation**: Calculated CPR pivot data dynamically using Yahoo Finance historical daily chart parameters and successfully populated all today's historical signals in the database with their correct sanitized Opening Bias and Day Type metrics. This restores the missing stats across both the website and mobile platforms instantly.
+
+### 6. Closed Signals Scope & Empty Outcome Fixes
+- **Mobile MARKETS Tab Scope Restore**: Restored `marketsClosedSignals` in `page.tsx` to filter `closedSignals` (all historical closed signals) instead of `todayClosedSignals`. Scoping this tab to today's signals only was preventing users from reviewing/filtering historical trade logs, causing filter interactions to return empty states.
+- **Empty Outcome Placeholder Fix**: Fixed a visual bug in `scanner.js` and `commodity-scanner.js` where assets with no active signals or trade history (e.g. `GOLD` and `CL` when markets are closed) incorrectly displayed `OPEN` in the outcome column. The `outcomePill` function now returns a neutral `--` badge if the signal object is a blank placeholder (i.e. has no database signal ID).
