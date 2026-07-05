@@ -67,3 +67,14 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 ## resolveOutcome Fallback Guidelines
 - Do NOT use `exact_pct` (positive or negative) as a fallback to guess WIN/LOSS for trades that lack a definitive string status/outcome (e.g. trades closed via EOD, EMA, or TRAIL). This will falsely categorize them. They should return `OPEN` (active) until definitively categorized.
 - If using `exact_pct` for legacy outcome resolution, you MUST handle `exact_pct === 0` by explicitly returning `BREAKEVEN` so they do not fall through to incorrect categories.
+
+## Terminology & Page Name Mappings (V3 Optimization Journey)
+- **Website Navigation**:
+  - `metrics.html` is referred to as the **AI Research** page.
+  - `index.html` is referred to as the **AI Dashboard**.
+  - `scanner.html` was previously the AI Scanner / Alerts Scanner.
+- **Mobile App Tabs (`page.tsx`)**:
+  - Dashboard Tab (`id: DASHBOARD`) is labeled as **HUB**.
+  - Alerts Tab (`id: ALERTS`) is labeled as **LOGS**.
+  - Analysis Tab (`id: ANALYSIS`) is labeled as **MARKETS**.
+  - Insights Tab (`id: INSIGHTS`) remains **INSIGHTS**.
