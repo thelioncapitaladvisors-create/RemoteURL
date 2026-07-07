@@ -16,7 +16,7 @@
 - Multi-market overlap: Some symbols (such as indices like `NIFTY`) theoretically belong to multiple categories (e.g., domestic equities and world indices). However, to avoid double-counting, ALWAYS assign a trade to exactly ONE primary category (e.g. by using the `getMarket` function and strictly filtering by `getMarket(s) === m.id`). Do NOT populate a single trade into multiple tabs simultaneously.
 
 ## Strict Bias and Day Type Parsing
-- Prioritize keys sent by the TradingView indicator (`opening_bias` and `day_type`) on the backend and frontend. However, if these primary keys are missing or empty (`--`/`""`), it is permitted to silently trigger the mathematical fallback script (`fetch-tv-fallback`) on the frontend to calculate and inject these values based on daily/intraday price data.
+- Prioritize keys sent by the TradingView indicator (`opening_bias` and `day_type`) on the backend and frontend. NO artificial or fictitious guesswork is permitted as a fallback on the website or the mobile application. Rely exclusively on the alert JSONs. Do not implement scripts (like `fetch-tv-fallback`) or perform lookups on previous signals to inject missing values.
 - Only apply cosmetic label replacements on the frontend UI:
   - Map `"Double Distribution"` to `"DD"` (and `"Double Distribution Trend"` to `"DD Trend"`) to match the dashboard conventions.
 - Maintain column sizing for table containers (`min-width: 180px` for Bias and `min-width: 160px` for Day Type) on the scanner pages to prevent longer text labels from truncating or wrapping.
