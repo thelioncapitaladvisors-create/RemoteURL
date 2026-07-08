@@ -21,3 +21,7 @@
 ## 4. Mobile App Fix: State Decoupling (LOGS vs INSIGHTS)
 *   **Filter Decoupling**: Resolved a state bleed issue in the mobile application where filtering the `LOGS` tab (e.g. selecting `TP3` or `CRYPTO`) was unintentionally filtering the aggregated data on the `INSIGHTS` tab.
 *   **State Isolation**: Removed the `insightsFilter` and `outcomeLevelFilter` dependencies from the `useMemo` hooks calculating `marketCategoryStats` and `strategyInsights`. The INSIGHTS tab now always shows the global data landscape, independent of how the user chooses to sift through individual logs on the neighboring tab.
+
+## 5. Mobile App Feature: NYMEX Snooze Alert
+*   **Vibration Pattern Update**: Introduced dynamic market categorization during background webhook polling (`page.tsx`) to identify incoming `NYMEX` signals (e.g. `CL1!`, `GC1!`).
+*   **Distinct Alerting**: Instead of the standard double-pulse vibration, NYMEX signals now trigger a continuous 1-second "snooze" style vibration (`navigator.vibrate(1000)`) to ensure the user explicitly notices commodity/energy signals.
