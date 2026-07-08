@@ -25,3 +25,6 @@
 ## 5. Mobile App Feature: NYMEX Snooze Alert
 *   **Vibration Pattern Update**: Introduced dynamic market categorization during background webhook polling (`page.tsx`) to identify incoming `NYMEX` signals (e.g. `CL1!`, `GC1!`).
 *   **Distinct Alerting**: Instead of the standard double-pulse vibration, NYMEX signals now trigger a continuous 1-second "snooze" style vibration (`navigator.vibrate(1000)`) to ensure the user explicitly notices commodity/energy signals.
+
+## 6. Local Workspace Sync
+*   **Timestamp Refresh**: Manually synchronized the macOS Finder "Date Modified" timestamps for the local `TLCS_Website_Deploy` and `Tv-Alert-Mobile` root folders to accurately reflect today's deep code edits.
