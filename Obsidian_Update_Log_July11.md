@@ -13,3 +13,11 @@
 - Since divergence closures do not contain a fixed technical level (like TP or SL), the `exact_pct` payload handles strict mathematical resolution of the trade as `WIN` or `LOSS`.
 - Updated `getExitLevel` in `trade-metrics.js` and `page.tsx` to trap `st.includes('DIVERGENCE')` and return a new `DIV` category.
 - Created a standalone `DIV` outcome filter tab in `metrics.html` and `page.tsx` for tracking divergence-based trade exits specifically in the 'Today's Market Guidance' section.
+
+## Lightning & Divergence Strict 1-Bar Offset (Anti-Repaint)
+
+**Pine Script (Elite Indicator)**
+- Upgraded the `LightningBuy` and `LightningSell` entry logic to incorporate the Oscillator's Divergence signals combined with native `GrS` and `ReS` Power signals.
+- Configured the Divergence logic to strictly map to the `[1]` offset (e.g. `ext_bullishHiddenDiv[1]` and `extDivSource[1]`). 
+- This enforces that both the **Lightning Entry** and the **Divergence Exit** only fire on a completely closed and confirmed bar, preventing repainting and ensuring the oscillator labels ('H' or 'D') remain permanently fixed on the chart before executing logic or webhooks.
+- Added visual `⚡` and `★` character plots to seamlessly identify Lightning entries.
