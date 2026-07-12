@@ -13,3 +13,9 @@
 
 ## 3. Next Steps
 - Implement dynamic Risk-to-Reward (R:R) scaling (Take Profit and Stop Loss multipliers) based on the algorithmic classification of the day's market regime (Big Move / Sideways) utilizing the Opening Print and Day Types.
+
+## 4. Pine Script Core Performance & Efficiency Optimization
+- **Tick-Safe Memory Management (Fixing Chart Ghosting):** Discovered and fixed a critical memory leak in TradingView's engine where `line.new` and `label.new` objects were being recursively orphaned on every tick inside `if barstate.islast` blocks. Explicitly introduced strict `line.delete()` garbage collection BEFORE line reassignment to prevent visual stacking.
+- **Massive Reduction in Network Calls:** Streamlined `request.security` Multi-Timeframe (MTF) network calls. Eliminated over a dozen redundant calls for Weekly and Daily High/Low/Close data by routing the data through shared reference variables (`HW`, `LW`, `CW`), drastically reducing compiling weight and runtime load.
+- **Optimized Label Arrays:** Rebuilt the Camarilla and Pivot label rendering logic using bulletproof array clearing techniques. Replaced the error-prone nested `if` unshifting logic with `array.size() > 0` validation and `array.clear()`, completely eliminating "Undeclared Identifier" namespace scoping bugs and layout breaking loops.
+- **Unified Clean Codebase:** Successfully standardized the optimized indicator logic for both `TLCS AI Premium` (Manual Visuals) and `TLCS AI Elite` (Algorithmic Trading), allowing them to perform at maximum efficiency without risking TradingView's "Heavy Script" timeout errors.
