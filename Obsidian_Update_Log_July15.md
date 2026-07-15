@@ -17,3 +17,8 @@
 - **Defensive Metadata Parsing Guardrails**: Patched `dashboard.html`, `scanner.js`, and `commodity-scanner.js` with defensive `null` parsing guardrails (`if (!meta) meta = {};`) to completely eliminate silent UI crashes and `AVG PROFIT` calculation failures caused by stringified `"null"` values in the `metadata` column.
 - **Mathematical DB Backfill (`exact_pct`)**: Updated `fix_missing_exact_pct.py` to extract `trail_sl` for trailing stop closures and executed it directly on the Supabase database. Successfully backfilled the missing `exact_pct` for 81 historically corrupt closed trades. 
 - **Mobile TP/Target UI Badges**: Fixed regex rules inside `page.tsx` (`tpMatch`) to dynamically accommodate both `TP` and `TARGET` label strings, completely restoring UI label reflection across the mobile alert log.
+
+### Real Trade vs Limit Trade Hold Duration Fix (July 15 - Session 2)
+- Fixed an issue where the Hold Duration on the Web and Mobile UIs was calculating based on the limit hit time (`signal_ts`) rather than the true execution time of the webhook (`created_at`).
+- Prioritized `created_at` for entry timestamp and `exit_at` / `updated_at` / `created_at` for exit timestamp across `Tv-Alert-Mobile/src/app/page.tsx` and `TLCS_Website_Deploy/scanner.js` to ensure hold times accurately reflect the duration held in real-time execution.
+- Ensured missing `exit_at` values (e.g. from same-bar completed trades via TradeClose webhook) gracefully fall back to the execution timestamps so that valid durations and exit dates are rendered instead of `--`.

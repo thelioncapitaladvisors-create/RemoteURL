@@ -65,7 +65,7 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - For active trades logic (dashboards/metrics): Yesterday's open trades must persist as open for today unless they are explicitly closed by their market close time. Always check `if (resolveOutcome(s) === 'OPEN') return true;` to ensure active trades from previous days are not prematurely hidden.
 
 ## resolveOutcome Fallback Guidelines
-- Do NOT use `exact_pct` (positive or negative) as a fallback to guess WIN/LOSS for trades that lack a definitive string status/outcome (e.g. trades closed via EOD, EMA, or TRAIL). This will falsely categorize them. They should return `OPEN` (active) until definitively categorized.
+- You MUST use `exact_pct` (positive or negative) as a fallback to categorize WIN/LOSS for trades that lack a definitive string status/outcome (e.g. trades closed via EOD, EMA, or TRAIL). If `exact_pct` > 0, return `WIN`. If `exact_pct` < 0, return `LOSS`.
 - If using `exact_pct` for legacy outcome resolution, you MUST handle `exact_pct === 0` by explicitly returning `BREAKEVEN` so they do not fall through to incorrect categories.
 
 ## Terminology & Page Name Mappings (V3 Optimization Journey)
@@ -85,3 +85,12 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 
 ## Standard Strategy Filters
 - The 6 standard strategy filters (`LONG MISSILE`, `SHORT MISSILE`, `LONG SCALP`, `SHORT SCALP`, `LONG LIGHTNING`, `SHORT LIGHTNING`) are permanently hardcoded in the INSIGHTS tab of the mobile app to ensure they remain visible even on days with 0 active trades.
+
+## Strict Prohibition on Unilateral Logic & Fallback Changes
+- Do NOT introduce any "artificial fallback logic" (e.g., mathematically guessing exit prices, guessing missing parameters) unless explicitly requested by the user. If the data from the source (e.g., TradingView payload) is missing, fail gracefully or leave it blank, but do NOT write scripts to arbitrarily guess values.
+- Do NOT unilaterally alter established business logic, categorizations, or definitions (e.g., moving symbols like NIFTY out of the WORLD index if they were previously there) without explicit prior approval from the user.
+- If an optimization or feature request seems to require fundamentally changing how data is parsed, categorized, or handled, you MUST stop and ask the user for permission and explain the proposed architectural shift before writing the code.
+
+## Hold Duration & "Real Trade" Timestamps
+- When calculating Hold Duration or displaying timestamps on the UIs, NEVER base calculations on the limit trade entry time (`signal_ts`). Always prioritize `created_at` (the actual time the webhook fired and the real trade was executed).
+- For Exit times, prioritize `exit_at` or `updated_at`, but if a trade opens and closes in the exact same webhook (rendering `exit_at` missing/null), you MUST gracefully fallback to `created_at` so that a valid 0-minute or <1m hold duration is calculated and exit dates are rendered instead of displaying `--`.
