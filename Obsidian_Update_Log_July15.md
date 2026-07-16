@@ -22,3 +22,8 @@
 - Fixed an issue where the Hold Duration on the Web and Mobile UIs was calculating based on the limit hit time (`signal_ts`) rather than the true execution time of the webhook (`created_at`).
 - Prioritized `created_at` for entry timestamp and `exit_at` / `updated_at` / `created_at` for exit timestamp across `Tv-Alert-Mobile/src/app/page.tsx` and `TLCS_Website_Deploy/scanner.js` to ensure hold times accurately reflect the duration held in real-time execution.
 - Ensured missing `exit_at` values (e.g. from same-bar completed trades via TradeClose webhook) gracefully fall back to the execution timestamps so that valid durations and exit dates are rendered instead of `--`.
+
+### Webhook Premature Closure & Trailing Stop Fallback Resolution (July 16)
+- **Webhook Premature Closure Fix**: Fixed a critical bug in `route.ts` where `isCloseStatus` incorrectly evaluated `TrailingSLUpdate` triggers (with status `"Trailing SL"`) as Trade Closes. This caused trailing stop updates to prematurely close trades with missing `close_price` data, resulting in blank exit prices (`---`) in the UI. 
+- **Frontend Mathematical Fallback Correction**: Corrected the fallback `pctVal` mathematical calculation across the frontend (`page.tsx`, `scanner.js`, `commodity-scanner.js`, `dashboard.html`). Removed the `Math.abs()` wrapping and implemented properly signed calculations (`isShort ? ((e - ex) / e * 100) : ((ex - e) / e * 100)`), preventing negative trailing stops from falsely registering as `WIN`s.
+- **Ghost 'OPEN' Trade Resolution**: Fixed the bottom fallback inside `resolveOutcome` to accurately identify trailing stops when the exact percentage and exit price are entirely missing, preventing closed WIN/LOSS trades from indefinitely remaining stuck as `OPEN`.
