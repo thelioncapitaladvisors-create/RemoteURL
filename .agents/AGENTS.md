@@ -94,3 +94,17 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 ## Hold Duration & "Real Trade" Timestamps
 - When calculating Hold Duration or displaying timestamps on the UIs, NEVER base calculations on the limit trade entry time (`signal_ts`). Always prioritize `created_at` (the actual time the webhook fired and the real trade was executed).
 - For Exit times, prioritize `exit_at` or `updated_at`, but if a trade opens and closes in the exact same webhook (rendering `exit_at` missing/null), you MUST gracefully fallback to `created_at` so that a valid 0-minute or <1m hold duration is calculated and exit dates are rendered instead of displaying `--`.
+
+## Pine Script JSON & Exact Percentage Math (Version 1.1)
+- Always enforce that Pine Script webhooks send clean numeric parameters (using `format.mintick` on all prices) and explicitly provide a `"trigger":"TradeClose"` property in the payload.
+- The backend should strictly calculate percentages using pure entry/exit math. The backend must NEVER fall back to parsing legacy strings like `profit_pct` or `r_multiple` to mathematically determine an exit price. The Pine Script must bear the sole responsibility of transmitting explicit levels.
+
+## Late Fill & EOD Trailing Exit (TP1 Force)
+- Limit signals filled within the last 2 hours of the regular market session (`time_close("D", session.regular) - time <= 7200000`) must be explicitly tagged as a "Late Fill".
+- Late fills forcefully exit 100% of their remaining position at TP1.
+- Standard and EMA Trailing stop mechanisms must be unconditionally disabled for Late Fill trades to prevent unpredictable overnight gap exposure.
+
+## Intra-Candle Reversal Safeguard (Darth Maul Rule)
+- When TP1 is hit within the current candle (`justHitTP`), the engine immediately moves the SL to breakeven.
+- To avoid Pine Script's inherent intra-candle high/low ambiguity, the script must check the candle's `close` price against the new breakeven SL (instead of checking `low` or `high`).
+- If the candle wicks TP1 and violently reverses to close below breakeven on the exact same bar, the engine forcefully terminates the trade.
