@@ -108,3 +108,8 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - When TP1 is hit within the current candle (`justHitTP`), the engine immediately moves the SL to breakeven.
 - To avoid Pine Script's inherent intra-candle high/low ambiguity, the script must check the candle's `close` price against the new breakeven SL (instead of checking `low` or `high`).
 - If the candle wicks TP1 and violently reverses to close below breakeven on the exact same bar, the engine forcefully terminates the trade.
+
+## Granular Exit Labeling (No Generic 'Hit SL')
+- The Pine Script must definitively label the specific mechanism of exit in the `status` string instead of a generic "Hit SL".
+- The string should be mapped to precise conditions: e.g., `"Hit Initial SL"`, `"Hit B/E"`, `"Hit TP1 Trailing"`, `"Trailing Stop"`, `"Hit EMA"`, `"Divergence Exit"`, `"Invalidated"`, or `"EOD Exit (TP1)"`. 
+- This removes all ambiguity on the backend and ensures that the exact reason for the mathematically derived WIN/LOSS/BREAKEVEN categorization is explicitly recorded and displayed in the UI logs.
