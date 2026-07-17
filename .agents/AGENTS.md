@@ -122,3 +122,8 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 ## UI Dynamic State Presentation
 - **Active Trade Targets**: When a trade is `ACTIVE`/`OPEN` and has no exit price, the UI MUST NOT display a blank or `---` "EXITED AT" box. Instead, dynamically flip the box to display the upcoming Take Profit level (labeled "TARGET" in amber styling). It should only flip to a green "EXITED AT" box upon trade closure.
 - **Risk to Reward Formatting**: The Risk:Reward ratio must always be suffixed with `R` (e.g., `2.00R`) across all UI elements, web dashboards, and mobile views. Never append a percentage `%` to a multiplier ratio.
+
+## Strict Webhook Time-Binding and Zero-Guesswork DB Updates
+- **No Artificial Backend Searching**: The backend must NEVER attempt to artificially guess or locate an open trade using ambiguous fuzzy matching (e.g., `.eq('symbol', symbol).in('status', ['OPEN', 'Active'])` alone). 
+- **Time-Binders are Mandatory**: All webhook update queries (`TradeClose`, `TrailingSLUpdate`) MUST definitively uniquely target the active trade by binding it to the time explicitly provided in the JSON payload (e.g., `entryTime`, mapped to `.eq('signal_ts', payload.entryTime)` or via `activeSignal.id`). 
+- **Exact Payload Math**: No "backend support" or artificial lookup logic is permitted to mathematically determine metrics if the JSON payload strictly provides the necessary values (e.g., `entryPrice`, `closePrice`). The pure entry/exit math is performed definitively using these values, and the `update` query MUST directly target the time-bound ID to avoid inadvertently overwriting multiple open positions for the same symbol.
