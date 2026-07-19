@@ -148,3 +148,7 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - **Pro Plan**: TLCS Day Type and Opening Bias Indicator
 - **Premium Plan**: TLCS Live Alerts Indicator
 - **Elite Plan**: TLCS Custom Alerts Indicator
+
+## Exact Exit Level Badging
+- The UI must NOT render generic strings like "TP HIT" or "TP1" in outcome badges (such as the badge next to the strategy name) for `WIN` trades.
+- For all winning trades, the UI logic must dynamically deduce and display the exact numeric exit price (e.g. `64,416.14`) in the badge using the same mathematical extraction logic applied to the `EXITED AT` metric.
