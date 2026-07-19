@@ -161,3 +161,4 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - A Limit Order is distinctly defined as an `OPEN` trade that lacks an `updated_at` timestamp.
 - Limit Orders from previous days MUST be aggressively purged from all active metrics (including `activeSignals`, `activeAlertLogs`, `todaySignals`, and website market snapshots).
 - Failing to aggressively hide them causes an artificial inflation of "ACTIVE LIMITS" over time. The condition `!signal.updated_at && !isToday` MUST return false when filtering `OPEN` trades.
+- **Clarification on Conversion**: This expiration check is NOT the only condition to convert an `ACTIVE LIMIT` to `WIN`, `LOSS`, or `BREAKEVEN`. This conversion should also happen immediately upon the conversion of `ACTIVE LIMIT` into a real `OPEN` trade (when executed), or upon the definitive closure of the open trade.
