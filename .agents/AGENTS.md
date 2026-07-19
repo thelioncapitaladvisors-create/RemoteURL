@@ -132,3 +132,19 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - **Supabase Query Integrity**: The Web Dashboard (`dashboard.html`) and external scripts (`trade-metrics.js`) MUST always strictly include all mathematical boundaries (`target`, `tp2`, `tp3`, `tp4`, `trail_sl`) in their `.select()` queries. Failing to fetch these fields completely destroys the Profit Factor fallback engine for legacy trades or trailing exits.
 - **Universal Status Mapping**: Both the Mobile app (`page.tsx`) and the Web Dashboard (`dashboard.html`) must handle ambiguous statuses (e.g. `UNKNOWN`, `CANCEL`) perfectly identically. They must map to `CANCELLED` and be gracefully filtered out of closed trade metrics rather than breaking the state parser.
 - **UI Mathematical Fallback**: The UI must NEVER rigidly default to printing `---` just because the `exit_price` column in the database is strictly null (which occurs heavily on legacy webhooks). The UI layer MUST proactively use the underlying `getExactPct` mathematical engine logic to deduce the exit price (by pulling `trail_sl`, `stop`, or the appropriate `TP` target based on the status string) and dynamically inject that calculated value into the `EXITED AT` visual card.
+
+## UI Persistent Market Rendering
+- Dashboards and Web Scanners must persistently display all defined market categories (NIFTY, MCX, NYMEX, Cryptocurrency, Global Forex, World Indices) by default. 
+- If a market has 0 active or closed trades for the day, the engine must NOT hide or skip rendering the section. It must gracefully render the UI with `0` or `--` metrics.
+
+## Dynamic Payment Localization
+- **International vs Domestic Gateways**: The website must dynamically display region-specific payment methods based on the visitor's IP location via `localization.js`. 
+- **Indian Traffic**: Must see Razorpay Standard (Card/Intl) and Razorpay UPI buttons. PayPal buttons must remain strictly hidden.
+- **International Traffic**: Must see Razorpay Standard (Card/Intl) and PayPal buttons. The script must explicitly hide UPI buttons.
+- Pricing tables must automatically toggle between INR (`₹`) and USD (`$`) equivalents.
+
+## Indicator Branding (V3 Standards)
+- **Beginner Plan**: TLCS Standard Pivots Indicator
+- **Pro Plan**: TLCS Day Type and Opening Bias Indicator
+- **Premium Plan**: TLCS Live Alerts Indicator
+- **Elite Plan**: TLCS Custom Alerts Indicator
