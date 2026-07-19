@@ -166,3 +166,8 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 ## EOD, EMA, and Trail Mathematical Fallback
 - Legacy trades or setups that exit via EOD (End of Day), EMA, or TRAIL exits do not inherently provide an `exit_price` or `exact_pct`.
 - To prevent these trades from indefinitely hanging as `OPEN`, the `getExactPct` mathematical engine must explicitly check for `EOD`, `EMA`, and `TRAIL` within the status string and aggressively fall back to computing the exit percentage using `trail_sl` or `stop`.
+
+## Intra-Day Ghost Limit Order Deduplication
+- The Pine Script engine can occasionally fire multiple webhooks for the same limit order setup on the same day, creating duplicate rows in the database.
+- Since only the latest executed row receives the `TradeClose` or `TradeUpdate` webhook, the older unexecuted limit order rows become permanently stuck as `OPEN` with `!updated_at` (Ghost Limits).
+- Because they occurred "today", the midnight expiration rule does not catch them. The UI engine must aggressively deduplicate these intra-day ghost limits by explicitly hiding any unexecuted limit order if there is a *newer* signal (or a duplicate with a higher ID) for the exact same symbol.
