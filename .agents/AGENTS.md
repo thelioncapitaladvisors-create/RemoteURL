@@ -152,3 +152,12 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 ## Exact Exit Level Badging
 - The UI must NOT render generic strings like "TP HIT" or "TP1" in outcome badges (such as the badge next to the strategy name) for `WIN` trades.
 - For all winning trades, the UI logic must dynamically deduce and display the exact numeric exit price (e.g. `64,416.14`) in the badge using the same mathematical extraction logic applied to the `EXITED AT` metric.
+
+## Strict UI Misleading Label Override
+- When rendering legacy generic labels like `ACTIVE LIMIT`, `ACTIVE`, or `OPEN`, the UI MUST strictly override these if the trade definitively has a resolved outcome (WIN, LOSS, or BREAKEVEN).
+- The `isMisleading` function must forcefully identify these legacy open labels as misleading if the underlying trade is closed, to ensure closed trades properly display `SL` or `B/E` instead of indefinitely hanging as `ACTIVE LIMIT`.
+
+## Expired Limit Order Filtration
+- A Limit Order is distinctly defined as an `OPEN` trade that lacks an `updated_at` timestamp.
+- Limit Orders from previous days MUST be aggressively purged from all active metrics (including `activeSignals`, `activeAlertLogs`, `todaySignals`, and website market snapshots).
+- Failing to aggressively hide them causes an artificial inflation of "ACTIVE LIMITS" over time. The condition `!signal.updated_at && !isToday` MUST return false when filtering `OPEN` trades.
