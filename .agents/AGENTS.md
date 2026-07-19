@@ -79,9 +79,6 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
   - Analysis Tab (`id: ANALYSIS`) is labeled as **MARKETS**.
   - Insights Tab (`id: INSIGHTS`) remains **INSIGHTS**.
 
-## Vercel Deployment Protocol (Mobile App)
-- Changes pushed to the `thelioncapital-alerts` repository (for `market-store.online`) may not always automatically trigger a Vercel deployment.
-- If a recent commit is not reflecting on the live mobile app, manually verify the last deployment timestamp on the Vercel Dashboard and trigger a redeploy if necessary.
 
 ## Standard Strategy Filters
 - The 6 standard strategy filters (`LONG MISSILE`, `SHORT MISSILE`, `LONG SCALP`, `SHORT SCALP`, `LONG LIGHTNING`, `SHORT LIGHTNING`) are permanently hardcoded in the INSIGHTS tab of the mobile app to ensure they remain visible even on days with 0 active trades.
