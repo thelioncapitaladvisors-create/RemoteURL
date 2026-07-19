@@ -168,3 +168,13 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - The Pine Script engine can occasionally fire multiple webhooks for the same limit order setup on the same day, creating duplicate rows in the database.
 - Since only the latest executed row receives the `TradeClose` or `TradeUpdate` webhook, the older unexecuted limit order rows become permanently stuck as `OPEN` with `!updated_at` (Ghost Limits).
 - Because they occurred "today", the midnight expiration rule does not catch them. The UI engine must aggressively deduplicate these intra-day ghost limits by explicitly hiding any unexecuted limit order if there is a *newer* signal (or a duplicate with a higher ID) for the exact same symbol.
+
+## Strict Timezone and Local 0 Hrs Boundaries (Split-Timezone Bug)
+- When calculating `isThisWeek` or any daily/weekly boundaries, NEVER apply arbitrary isolated timezones (like `America/New_York` to US markets and `Asia/Kolkata` to Indian markets) within the same calculation loop.
+- Doing so creates a "Split-Timezone Reality" on Monday mornings, where Indian markets correctly wipe their trades for the new week, while US markets erroneously retain all 110+ trades from the previous week, causing extreme distortions in Weekly Metrics.
+- ALWAYS strictly enforce a universal local `0 Hrs` boundary (`startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate())`) for ALL markets to ensure the slate is wiped uniformly.
+
+## Metric Protection via resolveOutcome (Mathematical Inflation Bug)
+- When computing `Today's Profit Factor` or `Weekly Profit Factor`, NEVER iterate through trades and blindly group them into "Profits" or "Losses" purely based on the raw positive/negative sign of `getExactPct(s)`.
+- A bugged webhook (e.g. a SHORT trade hitting a stop loss) will mathematically return a positive percentage (since Exit < Entry). If relying on raw math, this loss is instantly placed into the Profits bucket, massively inflating the overall Profit Factor (e.g. up to 14.07).
+- ALL metric generators must strictly filter and group trades by calling `resolveOutcome(s) === 'WIN'` and `resolveOutcome(s) === 'LOSS'` FIRST, and only then applying `Math.abs(getExactPct(s))` to the appropriate numerator or denominator.
