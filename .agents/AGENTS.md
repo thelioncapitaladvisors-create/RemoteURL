@@ -146,9 +146,9 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - **Premium Plan**: TLCS Live Alerts Indicator
 - **Elite Plan**: TLCS Custom Alerts Indicator
 
-## Exact Exit Level Badging
-- The UI must NOT render generic strings like "TP HIT" or "TP1" in outcome badges (such as the badge next to the strategy name) for `WIN` trades.
-- For all winning trades, the UI logic must dynamically deduce and display the exact numeric exit price (e.g. `64,416.14`) in the badge using the same mathematical extraction logic applied to the `EXITED AT` metric.
+## Pure Exit Level Badging (No Numeric Prices)
+- The UI must strictly render the resolved **Level Label** (e.g. `TP1`, `TRAIL (TP2)`, `EOD`, `SL`) in the outcome badges next to the strategy name. 
+- The UI MUST NOT dynamically deduce or append the exact numeric exit price (e.g. `64,416.14`) to the badge text under any circumstances. Stick strictly with level labels only.
 
 ## Strict UI Misleading Label Override
 - When rendering legacy generic labels like `ACTIVE LIMIT`, `ACTIVE`, or `OPEN`, the UI MUST strictly override these if the trade definitively has a resolved outcome (WIN, LOSS, or BREAKEVEN).
@@ -164,10 +164,11 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - Legacy trades or setups that exit via EOD (End of Day), EMA, or TRAIL exits do not inherently provide an `exit_price` or `exact_pct`.
 - To prevent these trades from indefinitely hanging as `OPEN`, the `getExactPct` mathematical engine must explicitly check for `EOD`, `EMA`, and `TRAIL` within the status string and aggressively fall back to computing the exit percentage using `trail_sl` or `stop`.
 
-## Intra-Day Ghost Limit Order Deduplication
-- The Pine Script engine can occasionally fire multiple webhooks for the same limit order setup on the same day, creating duplicate rows in the database.
-- Since only the latest executed row receives the `TradeClose` or `TradeUpdate` webhook, the older unexecuted limit order rows become permanently stuck as `OPEN` with `!updated_at` (Ghost Limits).
-- Because they occurred "today", the midnight expiration rule does not catch them. The UI engine must aggressively deduplicate these intra-day ghost limits by explicitly hiding any unexecuted limit order if there is a *newer* signal (or a duplicate with a higher ID) for the exact same symbol.
+## Strict Prohibition on Deduplication Logic
+- Our application NEVER faces deduplication issues because every single trade is definitively time-bound.
+- There is zero risk of duplication or new trades leading to the corruption of old trades.
+- DO NOT artificially attempt to deduplicate limits, hide "ghost limits," or prune trades based on newer IDs or identical symbols. 
+- The real root cause of "inflated Active Limits" comes from Unexecuted Closure Safety (failing to handle CLOSED/EXPIRED strings in `resolveOutcome`) and Market Closure Hiding (failing to prune `!updated_at` limit orders after 15:30 IST / 23:30 IST).
 
 ## Strict Timezone and Local 0 Hrs Boundaries (Split-Timezone Bug)
 - When calculating `isThisWeek` or any daily/weekly boundaries, NEVER apply arbitrary isolated timezones (like `America/New_York` to US markets and `Asia/Kolkata` to Indian markets) within the same calculation loop.
@@ -178,3 +179,14 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - When computing `Today's Profit Factor` or `Weekly Profit Factor`, NEVER iterate through trades and blindly group them into "Profits" or "Losses" purely based on the raw positive/negative sign of `getExactPct(s)`.
 - A bugged webhook (e.g. a SHORT trade hitting a stop loss) will mathematically return a positive percentage (since Exit < Entry). If relying on raw math, this loss is instantly placed into the Profits bucket, massively inflating the overall Profit Factor (e.g. up to 14.07).
 - ALL metric generators must strictly filter and group trades by calling `resolveOutcome(s) === 'WIN'` and `resolveOutcome(s) === 'LOSS'` FIRST, and only then applying `Math.abs(getExactPct(s))` to the appropriate numerator or denominator.
+
+## UI Bifurcation (Filtering vs Badging)
+- **Bucket Filtering:** `getExitLevel(s)` MUST strictly prioritize dynamic exits (`TRAIL`, `EOD`, `EMA`, `DIV`, `B/E`) over fixed Take Profit buckets (`TP1`, `TP2`). If a trade hits a trailing stop at TP2, its bucket filter classification is rigorously **TRAIL**, ensuring it shows up when the user clicks the TRAIL filter.
+- **UI Badging:** A separate `getDisplayExitLevel(s)` function MUST be used for generating the visual badge text (e.g., the badge next to the strategy name). This function extracts the *precise mathematical or mapped level* where the dynamic exit occurred.
+- For trailing stops: If `status="Hit TP2 Trailing"`, the badge must render as **`TRAIL (TP2)`**. If simply `"Trailing Stop"`, the badge renders as **`TRAIL`**.
+- For EOD Exits: If `status="EOD Exit (SL)"`, the badge explicitly extracts and renders **`SL`**. For `"EOD Exit (TP1)"`, the badge renders **`TP1`**. The trade still fundamentally belongs to the EOD filter bucket.
+
+## Backend EOD Cron Rigidity (Active Limits Bug)
+- The EOD Cron job (`eod-close/route.ts`) must never rely on a narrow, strict array of status strings (`['Active', 'OPEN', 'Open', 'Limit Order Placed']`) to fetch unexecuted limit orders, because UI re-labeling or slight webhook variations (e.g. `status="ACTIVE LIMIT"`) will cause those trades to be completely ignored by the cron, permanently inflating active counts.
+- The cron query must broadly fetch all potentially active signals by checking if `outcome` is `'OPEN'` (or null) or `status` contains 'active', 'limit', or 'open' (`.or('outcome.eq.OPEN,outcome.is.null,status.ilike.%active%,status.ilike.%limit%,status.ilike.%open%')`).
+- Inside the cron loop, a rigorous local implementation of `resolveOutcome` must validate that the fetched trade is *genuinely* open before processing it. This prevents the cron from improperly forcing an `EOD Exit` onto a valid `TRAIL` trade that hasn't explicitly populated the outcome column yet.
