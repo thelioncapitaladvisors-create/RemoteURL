@@ -236,3 +236,69 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
   2. For each, query same-symbol signals for a closed counterpart with the same direction, entry price (within 1%), and `signal_ts` within 10 seconds.
   3. If a match is found, update the OPEN row: copy `status`, compute `exact_pct` from entry/exit math, set `outcome`, `exit_price`, `exit_at`, and `updated_at`.
 - This cleanup is a **backend database maintenance operation** — it does NOT violate the Strict Prohibition on Deduplication Logic, which applies only to frontend UI rendering.
+
+## Canonical resolveOutcome — Single Source of Truth (trade-metrics.js)
+- `trade-metrics.js` MUST define exactly **one** `window.resolveOutcome` at the top of the file. All inner function scopes (inside `loadInsightsData`, `renderTodayMarkets`, `loadPerformanceStats`, realtime listener) MUST delegate to it with `const resolveOutcome = window.resolveOutcome;`.
+- **NEVER** redefine `resolveOutcome` locally inside any inner function in `trade-metrics.js`. Every time a new inner definition is added, it becomes a separate copy that diverges from future patches.
+- The canonical definition MUST use `o.includes('CANCEL')` (not `o === 'CANCELLED'`) to catch all cancelled outcome string variants.
+
+## window.todayClosedSignals Must Contain Only Closed Signals
+- `window.todayClosedSignals` (used by `renderTodayMarkets` in `trade-metrics.js`) MUST be assigned from the `todayClosed` array — which is filtered by `resolveOutcome(s) !== 'OPEN'`.
+- NEVER assign `window.todayClosedSignals = todaySignals` (which includes OPEN trades). This mislabeling causes the markets grid to render active limit orders as if they are closed trades.
+
+## globalStartOfWeekISO Must Be Built from Local Midnight Milliseconds
+- The weekly boundary MUST be computed using `new Date(year, month, date + dist).getTime()` to obtain a strict local-midnight millisecond timestamp.
+- NEVER call `.toISOString()` directly on a `Date` object after `setHours(0,0,0,0)` — for IST (+5:30) this pushes the UTC ISO string back by 5.5 hours, leaking data from the previous week into weekly metrics.
+- Safe pattern:
+  ```javascript
+  window.globalStartOfWeekMS = (() => {
+      const d = new Date();
+      const dist = d.getDay() === 0 ? -6 : 1 - d.getDay();
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate() + dist).getTime();
+  })();
+  window.globalStartOfWeekISO = new Date(window.globalStartOfWeekMS).toISOString();
+  ```
+
+## Profit Factor MUST Use resolveOutcome, Not Raw exact_pct Sign
+- When computing Profit Factor (both global and per-market/strategy breakdowns), trades MUST be bucketed using `resolveOutcome(s) === 'WIN'` and `resolveOutcome(s) === 'LOSS'`. The magnitude is then `Math.abs(getExactPct(s))`.
+- **NEVER** use `if (getExactPct(s) > 0)` to determine profit vs loss. A SHORT trade hitting its stop loss produces a mathematically positive `exact_pct` (since exit < entry → `(e - ex)/e > 0`). Using raw sign grouping inflates Profit Factor to 14+ on days with SHORT SL exits.
+- Correct pattern (applies to `page.tsx` global PF, `marketsStats` useMemo, and `strategyInsights` useMemo):
+  ```javascript
+  const out = resolveOutcome(s);
+  const r = Math.abs(getExactPct(s) || 0);
+  if (out === 'WIN') grossProfitR += r;
+  else if (out === 'LOSS') grossLossR += r;
+  ```
+
+## isRealTrade Must Exclude EXPIRED / COMPLETED / CLOSED Status
+- `isRealTrade` in `page.tsx` MUST check for `expired`, `completed`, and `closed` in the status field in addition to `cancel`, `invalid`, and `unknown`.
+- Failing to exclude these causes limit orders that were expired or force-closed by TradingView to pass into all metric arrays, inflating Active Limits counts and corrupting win rates.
+
+## getSignalTime Must Fall Back to updated_at for Stale-Sweeper Closures
+- DB audit (July 21) confirmed that trades force-closed by the stale sweeper cron have `exit_at = NULL` and `signal_ts` from the previous day, but `updated_at` = today.
+- These trades are invisible to today's metrics because `getSignalTime` falls through to `created_at` (yesterday), placing them outside the `startOfToday` boundary.
+- `getSignalTime` MUST check `updated_at` as a fallback before `signal_ts` for CLOSED trades (i.e., trades where `resolveOutcome !== 'OPEN'`):
+  ```javascript
+  const getSignalTime = (s) => {
+      if (s.exit_at) return new Date(s.exit_at);
+      const out = resolveOutcome(s);
+      if (out !== 'OPEN' && s.updated_at) return new Date(s.updated_at); // stale-sweeper closures
+      if (s.signal_ts) { const ts = Number(s.signal_ts); return !isNaN(ts) && ts > 1e12 ? new Date(ts) : new Date(s.signal_ts); }
+      return new Date(s.created_at);
+  };
+  ```
+
+## Phantom "Hit SL" Duplicate Rows — DB Audit Findings (July 21)
+- Live DB query on July 21 confirmed: **21 out of 26 closed trades** had `exit_at=NULL`, `updated_at=NULL`, `exact_pct=NULL`, `outcome=null` — only `status="Hit SL"` was set.
+- These are phantom duplicate INSERT rows created when the backend `isOutcomeUpdate` check fails to recognize a close webhook, falling through to the new-signal INSERT path instead of UPDATE.
+- Root cause: `signal_ts` precision mismatch (TradingView whole-second vs Supabase sub-millisecond). The range query fix (±5s) in `process-webhook-background.js` and `route.ts` is the permanent solution.
+- Additionally: **65 OPEN signals ALL had `updated_at=NULL`** — confirming all 65 are unexecuted stale limit orders, not live trades.
+
+## TRAIL Status Alone Must Not Return WIN
+- In the last-resort fallback of `resolveOutcome` (after `exact_pct` extraction), TRAIL status MUST NOT be mapped to `'WIN'`.
+- If `exact_pct` is null for a TRAIL exit, the trade's outcome is genuinely ambiguous. Return `'OPEN'` so the trade is excluded from closed-trade metrics rather than being incorrectly counted as a win.
+- Correct pattern (applies to `scanner.js`, `commodity-scanner.js`, `page.tsx`):
+  ```javascript
+  if ((st.includes('STOP') || st.includes('SL')) && !st.includes('TRAIL')) return 'LOSS';
+  return 'OPEN'; // TRAIL with no exact_pct: defer, do not assume WIN
+  ```
