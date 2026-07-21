@@ -237,14 +237,18 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
   3. If a match is found, update the OPEN row: copy `status`, compute `exact_pct` from entry/exit math, set `outcome`, `exit_price`, `exit_at`, and `updated_at`.
 - This cleanup is a **backend database maintenance operation** — it does NOT violate the Strict Prohibition on Deduplication Logic, which applies only to frontend UI rendering.
 
-## Strict Time-Binding Rule (Entry & Exit Match)
-- All signals (both entry and exit) sent by TradingView MUST be strictly time-bound.
-- Entry webhooks parse `signal_ts` from `body.signal_ts || body.entry_signal_ts || body.entry_time || body.entryTime`. Supports both 13-digit ms (`ts > 1e12`) and 10-digit seconds (`ts > 1e9`).
-- Exit webhooks (`TradeClose`, `TrailingSLUpdate`) MUST match the target open signal using:
-  1. Entry Price (`body.entryPrice || body.entry`) within 0.1% tolerance
-  2. Entry Timestamp (`body.entryTime || body.entry_time`) with expanded ±60s window to handle network latency
-  3. FIFO fallback (`created_at ASC`) among open trades if no exact timestamp is provided
-- This guarantees that every exit alert unambiguously updates its exact matching entry trade without corrupting other concurrent signals.
+## Universal Web & Mobile Metric Synchronization Rule
+- Both the Web Dashboard (`trade-metrics.js`, `dashboard.html`) and Mobile App (`page.tsx`) read from the exact same Supabase `signals` table and MUST yield 100% identical metrics down to the second decimal place.
+- **Supabase Query Boundary**: Both applications MUST fetch signals with `.select('*').order('created_at', { ascending: false }).limit(500)` without applying restrictive `.gte('created_at', ...)` database query filters that omit trades updated/closed in the current window.
+- **Deduplication & Time Binders**: Both applications MUST apply `dedupeSignals` to collapse concurrent duplicate entry cards and use the exact same `getSignalTime(s)` logic (`exit_at` -> `updated_at` -> `signal_ts` -> `created_at`).
+- **Board Metrics Alignment**:
+  - `CLOSED TRADES`: Represents `todayClosedSignals.length` (186 closed trades for today).
+  - `WIN RATE`: `(todayWins / (todayWins + todayLosses)) * 100` (45.2%).
+  - `PROFIT FACTOR`: `todayGrossProfit / todayGrossLoss` (0.19).
+  - `WEEKLY TRADES`: `weeklyRealSignals.length` (226 real trades).
+  - `WEEKLY SUCCESS`: `(weeklyWins / (weeklyWins + weeklyLosses)) * 100` (41.6%).
+  - `WEEKLY PROFIT FACTOR`: `weeklyGrossProfit / weeklyGrossLoss` (0.19).
+  - `TLCS PROFIT FACTOR`: `overallGrossProfit / overallGrossLoss` (0.21).
 
 
 - When an exit webhook (e.g. `TradeClose` or `Hit SL`) fires, the backend MUST query for an active open signal.
