@@ -251,6 +251,12 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
   - `TLCS PROFIT FACTOR`: `overallGrossProfit / overallGrossLoss` (0.21).
 
 
+## Pine Script Alert Payload Guarantee (Mandatory Entry Time Binding)
+- **Hardcoded Timestamp Guarantee**: `entryTime` / `entry_signal_ts` is strictly hardcoded into every TradingView Pine Script alert payload for both entry and exit webhooks.
+- Timestamp will **ALWAYS** be provided by the TradingView indicator payload on exit webhooks.
+- Exit matching MUST unconditionally use `entryTime` (parsed as ms 13-digit or sec 10-digit Unix timestamp) combined with `entryPrice` as the primary, mandatory, deterministic time-binder.
+- Because `entryTime` is always provided, exit signal resolution is 100% deterministic and unambiguous across all trades.
+
 - When an exit webhook (e.g. `TradeClose` or `Hit SL`) fires, the backend MUST query for an active open signal.
 - If NO active signal is found in the database, the handler MUST log a warning and return 200 OK without inserting a new row.
 - **NEVER** insert a new signal row on exit webhooks when `activeSignal` is null. Inserting a new row on exit creates phantom duplicate trades with identical entry prices and entry times.
