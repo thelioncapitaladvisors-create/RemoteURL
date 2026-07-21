@@ -238,17 +238,19 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - This cleanup is a **backend database maintenance operation** — it does NOT violate the Strict Prohibition on Deduplication Logic, which applies only to frontend UI rendering.
 
 ## Universal Web & Mobile Metric Synchronization Rule
-- Both the Web Dashboard (`trade-metrics.js`, `dashboard.html`) and Mobile App (`page.tsx`) read from the exact same Supabase `signals` table and MUST yield 100% identical metrics down to the second decimal place.
-- **Supabase Query Boundary**: Both applications MUST fetch signals with `.select('*').order('created_at', { ascending: false }).limit(500)` without applying restrictive `.gte('created_at', ...)` database query filters that omit trades updated/closed in the current window.
-- **Deduplication & Time Binders**: Both applications MUST apply `dedupeSignals` to collapse concurrent duplicate entry cards and use the exact same `getSignalTime(s)` logic (`exit_at` -> `updated_at` -> `signal_ts` -> `created_at`).
+- Both the Web Dashboard (`dashboard.html`, `trade-metrics.js`) and Mobile App (`page.tsx`) read from the exact same Supabase `signals` table and MUST yield 100% identical metrics down to the second decimal place.
+- **Supabase Query Boundary**: Both applications MUST fetch signals without applying restrictive `.gte('created_at', ...)` database query filters that omit trades updated/closed in the current window.
+- **Deduplication & Time Binders**: Both applications MUST apply `dedupeSignals` to collapse concurrent duplicate entry cards and use the exact same `getSignalTime(s)` logic (`exit_at` -> `updated_at` (for closed trades) -> `signal_ts` -> `created_at`).
+- **resolveOutcome Protection**: `resolveOutcome` MUST NOT contain `st.includes('CLOSED')` in its early `CANCELLED` return condition, as executed trades with status `"Closed"` or `"Force Closed (Stale)"` must resolve to WIN/LOSS via `exact_pct`.
 - **Board Metrics Alignment**:
   - `CLOSED TRADES`: Represents `todayClosedSignals.length` (186 closed trades for today).
   - `WIN RATE`: `(todayWins / (todayWins + todayLosses)) * 100` (45.2%).
   - `PROFIT FACTOR`: `todayGrossProfit / todayGrossLoss` (0.19).
-  - `WEEKLY TRADES`: `weeklyRealSignals.length` (226 real trades).
+  - `WEEKLY TRADES`: `weeklyClosedSignals.length` (226 closed trades).
   - `WEEKLY SUCCESS`: `(weeklyWins / (weeklyWins + weeklyLosses)) * 100` (41.6%).
   - `WEEKLY PROFIT FACTOR`: `weeklyGrossProfit / weeklyGrossLoss` (0.19).
   - `TLCS PROFIT FACTOR`: `overallGrossProfit / overallGrossLoss` (0.21).
+
 
 
 ## Pine Script Alert Payload Guarantee (Mandatory Entry Time Binding)
