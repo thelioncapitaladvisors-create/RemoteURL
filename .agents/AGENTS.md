@@ -240,7 +240,7 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 ## Universal Web & Mobile Metric Synchronization Rule
 - Both the Web Dashboard (`dashboard.html`, `trade-metrics.js`) and Mobile App (`page.tsx`) read from the exact same Supabase `signals` table and MUST yield 100% identical metrics down to the second decimal place.
 - **Supabase Query Boundary**: Both applications MUST fetch signals without applying restrictive `.gte('created_at', ...)` database query filters that omit trades updated/closed in the current window.
-- **Deduplication & Time Binders**: Both applications MUST apply `dedupeSignals` to collapse concurrent duplicate entry cards and use the exact same `getSignalTime(s)` logic (`exit_at` -> `updated_at` (for closed trades) -> `signal_ts` -> `created_at`).
+- **Deduplication & Time Binders**: Both applications MUST pre-filter signals using `isRealTrade(s)` (`entry > 0` and valid trade direction) BEFORE calling `dedupeSignals` to prevent non-trade records (pivots/logs with `entry=0`) from overwriting real trades. Both MUST use `getSignalTime(s)` logic (`exit_at` -> `updated_at` (for closed trades) -> `signal_ts` -> `created_at`).
 - **resolveOutcome Protection**: `resolveOutcome` MUST NOT contain `st.includes('CLOSED')` in its early `CANCELLED` return condition, as executed trades with status `"Closed"` or `"Force Closed (Stale)"` must resolve to WIN/LOSS via `exact_pct`.
 - **Board Metrics Alignment**:
   - `CLOSED TRADES`: Represents `todayClosedSignals.length` (186 closed trades for today).
