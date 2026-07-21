@@ -186,7 +186,53 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - For trailing stops: If `status="Hit TP2 Trailing"`, the badge must render as **`TRAIL (TP2)`**. If simply `"Trailing Stop"`, the badge renders as **`TRAIL`**.
 - For EOD Exits: If `status="EOD Exit (SL)"`, the badge explicitly extracts and renders **`SL`**. For `"EOD Exit (TP1)"`, the badge renders **`TP1`**. The trade still fundamentally belongs to the EOD filter bucket.
 
-## Backend EOD Cron Rigidity (Active Limits Bug)
 - The EOD Cron job (`eod-close/route.ts`) must never rely on a narrow, strict array of status strings (`['Active', 'OPEN', 'Open', 'Limit Order Placed']`) to fetch unexecuted limit orders, because UI re-labeling or slight webhook variations (e.g. `status="ACTIVE LIMIT"`) will cause those trades to be completely ignored by the cron, permanently inflating active counts.
 - The cron query must broadly fetch all potentially active signals by checking if `outcome` is `'OPEN'` (or null) or `status` contains 'active', 'limit', or 'open' (`.or('outcome.eq.OPEN,outcome.is.null,status.ilike.%active%,status.ilike.%limit%,status.ilike.%open%')`).
 - Inside the cron loop, a rigorous local implementation of `resolveOutcome` must validate that the fetched trade is *genuinely* open before processing it. This prevents the cron from improperly forcing an `EOD Exit` onto a valid `TRAIL` trade that hasn't explicitly populated the outcome column yet.
+
+## Webhook Timestamp Precision Mismatch (signal_ts Range Query)
+- TradingView sends bar open timestamps as **whole-second Unix milliseconds** (e.g. `timenow = 1753023000000` → `"2026-07-20T18:30:00.000Z"`). However, the backend stores `signal_ts` with **sub-second precision** at the moment the webhook fires (e.g. `"2026-07-20T18:30:00.140+00:00"`).
+- Using an exact `.eq('signal_ts', parsedEntryTs)` match will **always fail** in this scenario because `18:30:00.000` ≠ `18:30:00.140`.
+- When the lookup fails, the Netlify background function inserts a **duplicate "Hit SL" row** instead of updating the open signal, leaving the original OPEN row permanently stuck as "ACTIVE LIMIT".
+- **Fix:** ALL `signal_ts` matching in both the Next.js webhook (`route.ts`) and the Netlify background function (`process-webhook-background.js`) MUST use a **±5-second range query**:
+  ```javascript
+  const entryMs = new Date(parsedEntryTs).getTime();
+  const tsStart = new Date(entryMs - 5000).toISOString();
+  const tsEnd   = new Date(entryMs + 5000).toISOString();
+  query = query.gte('signal_ts', tsStart).lte('signal_ts', tsEnd);
+  ```
+  This applies to both `TradeClose` and `TrailingSLUpdate` blocks in both webhook handlers.
+
+## isOutcomeUpdate Must Inspect Status Keywords (Not Just trigger Field)
+- The `isOutcomeUpdate` flag in `process-webhook-background.js` MUST NOT rely exclusively on `payload.trigger === 'TradeClose'` or `payload.action === 'EXIT'`.
+- TradingView Pine Script alerts sometimes omit the `trigger` field entirely and only send `"status": "Hit SL"` or similar. If `isOutcomeUpdate` is false, the handler falls through to the **new-signal insert path**, creating a duplicate ghost row instead of updating the open signal.
+- **Fix:** `isOutcomeUpdate` must also inspect `body.status` for close keywords:
+  ```javascript
+  const isCloseStatus = statusU.includes('SL') || statusU.includes('TP') || statusU.includes('STOP')
+    || statusU.includes('TARGET') || statusU.includes('CLOSED') || statusU.includes('WIN')
+    || statusU.includes('LOSS') || statusU.includes('B/E') || statusU.includes('BREAKEVEN')
+    || statusU.includes('CANCEL') || statusU.includes('UNKNOWN');
+  const isOutcomeUpdate = triggerU === 'TRADECLOSE' || actionU === 'EXIT' || triggerU === 'EXIT'
+    || triggerU.includes('TP') || triggerU.includes('TARGET') || triggerU.includes('CLOSE')
+    || (isCloseStatus && triggerU !== 'TRAILINGSLUPDATE');
+  ```
+
+## resolveOutcome Must Be Identical Across All Files
+- The `resolveOutcome` function MUST be **bit-for-bit identical** in these four files:
+  - `TLCS_Website_Deploy/scanner.js`
+  - `TLCS_Website_Deploy/commodity-scanner.js`
+  - `TLCS_Website_Deploy/dashboard.html`
+  - `Tv-Alert-Mobile/src/app/page.tsx`
+- Specifically, ALL four implementations MUST include the VAPT/unexecuted closure safety guard:
+  ```javascript
+  if (st.includes('CANCEL') || o.includes('CANCEL') || st.includes('UNKNOWN') || o.includes('UNKNOWN')
+      || st.includes('CLOSED') || st.includes('EXPIRED') || st.includes('COMPLETED')) return 'CANCELLED';
+  ```
+  Using `o === 'CANCELLED'` (exact match) instead of `o.includes('CANCEL')` is a bug — it misses the `outcome: 'CANCEL'` variant.
+
+## One-Time DB Cleanup for Timestamp-Mismatch Ghost Records
+- When the timestamp mismatch bug produces stuck OPEN records alongside duplicate "Hit SL" rows, a targeted Python cleanup script must be run to:
+  1. Fetch all OPEN signals with `updated_at: null` and `outcome: null`.
+  2. For each, query same-symbol signals for a closed counterpart with the same direction, entry price (within 1%), and `signal_ts` within 10 seconds.
+  3. If a match is found, update the OPEN row: copy `status`, compute `exact_pct` from entry/exit math, set `outcome`, `exit_price`, `exit_at`, and `updated_at`.
+- This cleanup is a **backend database maintenance operation** — it does NOT violate the Strict Prohibition on Deduplication Logic, which applies only to frontend UI rendering.
