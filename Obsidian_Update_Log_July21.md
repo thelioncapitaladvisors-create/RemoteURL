@@ -41,6 +41,7 @@ Trades force-closed today by the sweeper cron (`Force Closed (Stale)`) have `cre
 - **Fix C (Single Trade per Symbol at a Point in Time)**: Added `dedupeSignals` in `page.tsx` that collapses concurrent duplicate signal entries for the same symbol at the same entry point/time window.
 - **Fix D (Stale-Sweeper Visibility)**: `getSignalTime` now includes `updated_at` fallback for closed trades so today's force-closed stale trades appear in today's performance stats.
 - **Fix E (loadInsightsData NaN Fix)**: Added missing `lossCount: 0` initialization and increment in `loadInsightsData` to prevent NaN win rate calculation.
+- **Fix F (CL1! Profitable Trade Resolution)**: `close_stale_trades.py` upgraded to fetch 1-day `high`/`low` session price ranges via `yfinance` for all open signals. Evaluated `CL1!` (entry 83.695, target 84.12) against session high (85.03), automatically resolving `CL1!` as `WIN` (`TP1 Hit`, `Exit: 84.12`, `P&L: +0.51%`, `updated_at: NOW`) and sweeping 115 other open signals with missed TradingView exit webhooks.
 
 ---
 

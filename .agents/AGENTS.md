@@ -237,7 +237,18 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
   3. If a match is found, update the OPEN row: copy `status`, compute `exact_pct` from entry/exit math, set `outcome`, `exit_price`, `exit_at`, and `updated_at`.
 - This cleanup is a **backend database maintenance operation** — it does NOT violate the Strict Prohibition on Deduplication Logic, which applies only to frontend UI rendering.
 
-## No Ghost Trade Insertions on Exit Alerts
+## Automated Live Price Target / Stop Loss Resolution (close_stale_trades.py)
+- When TradingView fails to send a `TradeClose` or `TP Hit` exit alert, open trades can remain stuck in the database with `status: 'OPEN'` and `updated_at: null`, causing the UI to display them indefinitely as `ACTIVE LIMIT`.
+- `close_stale_trades.py` MUST evaluate **ALL** open signals (not just those > 24 hours old) against current market prices and 1-day high/low session ranges (`max_high` / `min_low` from `yfinance`).
+- If `is_long` and `max_high >= target` (or `close_price >= target`), the background resolver MUST immediately update the trade:
+  - `status` = `'TP1 Hit'`
+  - `outcome` = `'WIN'`
+  - `exit_price` = `target`
+  - `metadata.exact_pct` = `((target - entry) / entry) * 100`
+  - `updated_at` = current timestamp ISO string
+- If `is_long` and `min_low <= stop` (or `close_price <= stop`), update to `outcome = 'LOSS'`, `status = 'Hit SL'`, `exit_price = stop`.
+- This guarantees that missed TradingView exit webhooks are automatically resolved as WIN/LOSS without user intervention.
+
 - When an exit webhook (e.g. `TradeClose` or `Hit SL`) fires, the backend MUST query for an active open signal.
 - If NO active signal is found in the database, the handler MUST log a warning and return 200 OK without inserting a new row.
 - **NEVER** insert a new signal row on exit webhooks when `activeSignal` is null. Inserting a new row on exit creates phantom duplicate trades with identical entry prices and entry times.
