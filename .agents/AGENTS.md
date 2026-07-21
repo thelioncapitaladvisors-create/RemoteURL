@@ -237,7 +237,21 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
   3. If a match is found, update the OPEN row: copy `status`, compute `exact_pct` from entry/exit math, set `outcome`, `exit_price`, `exit_at`, and `updated_at`.
 - This cleanup is a **backend database maintenance operation** — it does NOT violate the Strict Prohibition on Deduplication Logic, which applies only to frontend UI rendering.
 
-## Canonical resolveOutcome — Single Source of Truth (trade-metrics.js)
+## No Ghost Trade Insertions on Exit Alerts
+- When an exit webhook (e.g. `TradeClose` or `Hit SL`) fires, the backend MUST query for an active open signal.
+- If NO active signal is found in the database, the handler MUST log a warning and return 200 OK without inserting a new row.
+- **NEVER** insert a new signal row on exit webhooks when `activeSignal` is null. Inserting a new row on exit creates phantom duplicate trades with identical entry prices and entry times.
+
+## Single Trade per Symbol at a Point in Time
+- Per trading rules: It is acceptable to have multiple trades for a symbol over time across different sessions/candles, but **we cannot have multiple concurrent trades or duplicate cards for a single symbol at the exact same point in time**.
+- On the frontend (`page.tsx` and `trade-metrics.js`), signal arrays MUST be deduplicated using `dedupeSignals` based on `(symbol, type, entryPrice, minuteKey)` so that duplicate signal entries or phantom rows for the same entry point are collapsed into a single card.
+- On the backend, exit webhooks must never insert duplicate rows, and entry webhooks must not create concurrent active positions for the same symbol at the same time.
+
+## resolveOutcome Must Not Hijack "CLOSED" or "FORCE CLOSED" Trades as CANCELLED
+- Trades with status `"CLOSED"`, `"Trade Closed"`, `"Force Closed (Stale)"`, or `"Closed at TP1"` are valid executed closed trades, NOT cancelled trades.
+- `resolveOutcome` MUST NOT check `st.includes('CLOSED')` at the top of the function to return `'CANCELLED'`.
+- Check `WIN`, `LOSS`, `BREAKEVEN`, and `exact_pct` math FIRST. Only return `'CANCELLED'` if the trade was explicitly cancelled/unknown, or if it is an unexecuted limit order (`EXPIRED` / `COMPLETED`) with NO win/loss outcome.
+
 - `trade-metrics.js` MUST define exactly **one** `window.resolveOutcome` at the top of the file. All inner function scopes (inside `loadInsightsData`, `renderTodayMarkets`, `loadPerformanceStats`, realtime listener) MUST delegate to it with `const resolveOutcome = window.resolveOutcome;`.
 - **NEVER** redefine `resolveOutcome` locally inside any inner function in `trade-metrics.js`. Every time a new inner definition is added, it becomes a separate copy that diverges from future patches.
 - The canonical definition MUST use `o.includes('CANCEL')` (not `o === 'CANCELLED'`) to catch all cancelled outcome string variants.

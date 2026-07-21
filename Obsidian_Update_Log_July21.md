@@ -35,9 +35,12 @@ Trades force-closed today by the sweeper cron (`Force Closed (Stale)`) have `cre
 [TATASTEEL] status="Force Closed (Stale)" | outcome="WIN" | created=2026-07-20 | updated=2026-07-21
 ```
 
-### Follow-Up Fixes Identified (Pending)
-- **Fix A**: `getSignalTime` must fall back to `updated_at` for CLOSED trades before `signal_ts` — surfaces stale-sweeper closures in today's metrics.
-- **Fix B**: Verify `signal_ts` ±5s range query is active in `process-webhook-background.js` to stop phantom duplicate "Hit SL" row creation.
+### Follow-Up Fixes Applied
+- **Fix A (Missing Data Root Cause)**: `st.includes('CLOSED')` was hijacking all executed closed trades (including `"Force Closed (Stale)"` and `"Trade Closed"`) and returning `'CANCELLED'` before checking `outcome` or `exact_pct`. Fixed across `trade-metrics.js`, `scanner.js`, `commodity-scanner.js`, and `page.tsx`. `loadPerformanceStats` status exclusion also unblocked.
+- **Fix B (No Ghost Inserts on Exit)**: `process-webhook-background.js` previously inserted a brand-new signal row if `activeSignal` was not found on exit alerts. Removed ghost insert on exit; now logs warning and returns 200 OK without creating duplicate rows.
+- **Fix C (Single Trade per Symbol at a Point in Time)**: Added `dedupeSignals` in `page.tsx` that collapses concurrent duplicate signal entries for the same symbol at the same entry point/time window.
+- **Fix D (Stale-Sweeper Visibility)**: `getSignalTime` now includes `updated_at` fallback for closed trades so today's force-closed stale trades appear in today's performance stats.
+- **Fix E (loadInsightsData NaN Fix)**: Added missing `lossCount: 0` initialization and increment in `loadInsightsData` to prevent NaN win rate calculation.
 
 ---
 
