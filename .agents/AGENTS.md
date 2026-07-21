@@ -338,3 +338,16 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
   if ((st.includes('STOP') || st.includes('SL')) && !st.includes('TRAIL')) return 'LOSS';
   return 'OPEN'; // TRAIL with no exact_pct: defer, do not assume WIN
   ```
+
+## Strict Original Entry Baseline & Trailing SL Principles
+- **Original Entry Baseline**: ALL trade percentage returns (`exact_pct`) across web dashboards, mobile applications, and backend webhooks MUST be calculated strictly using the **Original Entry Price** (`entry`).
+- **LONG Trades**: `exact_pct = ((Exit Price - Original Entry Price) / Original Entry Price) * 100`
+- **SHORT Trades**: `exact_pct = ((Original Entry Price - Exit Price) / Original Entry Price) * 100`
+- **Trailed Levels Are Trigger-Only**: Trailing stop levels (`trail_sl` or `stop`) are exclusively used as dynamic execution boundaries to determine when a position should close. Trailed levels MUST NEVER be used as the denominator or baseline price for P&L percentage math.
+- **Breakeven Exit Clarification**: Moving a Stop Loss to Breakeven sets the exit price equal to the Original Entry Price (yielding `0.00%`). A trade is categorized as `BREAKEVEN` only if price actually returns to and closes at that exact entry level after hitting TP1. On trading sessions where positions either reach targets (e.g. TP1) or hit initial SLs without returning to entry, 0 trades will exit at Breakeven, which is normal and mathematically sound.
+
+## Today's Market Guidance & Terminal UI Render Guarantee
+- **Async Function Declaration**: Function `window.renderTodayMarkets` in `trade-metrics.js` MUST be declared as `async function` (`window.renderTodayMarkets = async function(stats, container)`). Omitting `async` while using `await` inside the body causes a fatal JavaScript `SyntaxError` that completely halts script parsing, leaving "Analyzing strategies..." and "Analyzing today's market performance..." loaders stuck indefinitely.
+- **Safe DOM Ready Execution**: `startMetricsEngine()` MUST inspect `document.readyState` (`if (document.readyState === 'loading') ... else startMetricsEngine()`) to ensure initialization functions (`init()`, `localizeExperience()`) execute reliably even if `DOMContentLoaded` has already fired.
+- **Market-Wide Performance Statistics**: When loading active trades in `loadAllActiveTrades()`, performance statistics MUST NOT be narrowed to a single symbol (`sig.symbol`). The top metrics card is MARKET-WIDE by design, and should only narrow to a specific symbol when the user explicitly searches for that symbol.
+

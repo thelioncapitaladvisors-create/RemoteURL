@@ -93,3 +93,12 @@ Trades force-closed today by the sweeper cron (`Force Closed (Stale)`) have `cre
 ### 10. Deprecated `outcome_pct`/`profit_pct` Reads Removed (page.tsx — 2 locations)
 - **Root cause**: Two `useMemo` blocks (`marketCategoryStats`, `strategyInsights`) were reading deprecated `s.outcome_pct` and `s.profit_pct` fields, violating the V1.0 architectural rule.
 - **Fix**: Both now use `Math.abs(getExactPct(s) || 0)` exclusively.
+
+### 11. Terminal UI Loader Freeze Fix (trade-metrics.js)
+- **Root cause**: `window.renderTodayMarkets` was defined without `async`, but contained an `await client.from('pivots')` call inside. This caused a fatal JS `SyntaxError: await is only valid in async functions`, completely halting script execution and leaving "Analyzing strategies..." and "Analyzing today's market performance..." loaders hanging indefinitely.
+- **Fix**: Declared `window.renderTodayMarkets = async function(...)`. Wrapped `DOMContentLoaded` with a `document.readyState` check (`startMetricsEngine()`). Updated `loadInsightsData` catch block to safely clear loading states if Supabase calls fail. Removed single-symbol restriction in `loadAllActiveTrades` so performance cards remain MARKET-WIDE.
+
+### 12. Original Entry Baseline & Trailing SL Principles Audit
+- **Audit**: Verified database signals for today (297 trades: 55 TP1 hits, 100 SL hits, 10 active, 123 stale limit closes).
+- **Confirmation**: Verified that ALL P&L calculations (`exact_pct`) across backend webhooks (`process-webhook-background.js`) and frontend UIs (`trade-metrics.js`, `dashboard.html`, `page.tsx`) strictly compute returns using the **Original Entry Price** (`((Exit - Entry) / Entry) * 100` for Long, `((Entry - Exit) / Entry) * 100` for Short). Trailed levels (`trail_sl`) are strictly trigger boundaries and are NEVER used as baseline price denominators.
+
