@@ -64,9 +64,70 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - For AI Scanner pages specifically: they should strictly filter signals to `sigTs >= startOfToday`. Do not show past signals from earlier in the week.
 - For active trades logic (dashboards/metrics): Yesterday's open trades must persist as open for today unless they are explicitly closed by their market close time. Always check `if (resolveOutcome(s) === 'OPEN') return true;` to ensure active trades from previous days are not prematurely hidden.
 
-## resolveOutcome Fallback Guidelines
-- You MUST use `exact_pct` (positive or negative) as a fallback to categorize WIN/LOSS for trades that lack a definitive string status/outcome (e.g. trades closed via EOD, EMA, or TRAIL). If `exact_pct` > 0, return `WIN`. If `exact_pct` < 0, return `LOSS`.
-- If using `exact_pct` for legacy outcome resolution, you MUST handle `exact_pct === 0` by explicitly returning `BREAKEVEN` so they do not fall through to incorrect categories.
+## resolveOutcome — Canonical Implementation (Read This Fully Before Touching resolveOutcome)
+
+> **⚠️ CRITICAL REGRESSION HISTORY — This bug has been fixed and re-broken multiple times. Read before making any change.**
+>
+> The root cause of every regression: `exact_pct` math was checked **after** keyword string matching. The words "B/E" and "SL" in status strings hijacked the outcome before the math was ever evaluated:
+> - `"Hit B/E"` → keyword check returns `BREAKEVEN` — even though `exact_pct = +1.35%` (a WIN)
+> - `"Hit Initial SL"` on a SHORT → keyword check returns `LOSS` — even though `exact_pct = +1.33%` (a WIN, since SHORT exit < entry)
+>
+> **The fix is permanent and must never regress: `exact_pct` math is ALWAYS checked FIRST, before any keyword string.**
+
+### The One Canonical resolveOutcome (copy exactly to all 5 files)
+
+This exact implementation MUST be used in **all five files**:
+- `TLCS_Website_Deploy/trade-metrics.js` (as `window.resolveOutcome`)
+- `TLCS_Website_Deploy/scanner.js`
+- `TLCS_Website_Deploy/commodity-scanner.js`
+- `TLCS_Website_Deploy/dashboard.html`
+- `Tv-Alert-Mobile/src/app/page.tsx`
+
+```javascript
+function resolveOutcome(s) {
+    const st = (s.status  || '').toUpperCase();
+    const o  = (s.outcome || '').toUpperCase();
+
+    // Step 1: Hard-kill CANCELLED/UNKNOWN first — these are never WIN/LOSS
+    if (o.includes('CANCEL') || st.includes('CANCEL') || st.includes('UNKNOWN') || o.includes('UNKNOWN')) return 'CANCELLED';
+    // EXPIRED and COMPLETED with no exit → unexecuted limit orders → CANCELLED
+    if ((st.includes('EXPIRED') || st.includes('COMPLETED')) && !s.exit_price) return 'CANCELLED';
+
+    // Step 2: exact_pct is the SINGLE SOURCE OF TRUTH — check it BEFORE any keyword string.
+    // This is mandatory. "Hit B/E" with +1.35% exact_pct is a WIN, not BREAKEVEN.
+    // "Hit Initial SL" on a SHORT with +1.33% exact_pct is a WIN, not LOSS.
+    let meta = s.metadata || {};
+    if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) { meta = {}; } }
+    if (meta.exact_pct != null) {
+        const pct = parseFloat(meta.exact_pct);
+        if (!isNaN(pct)) {
+            if (pct > 0)  return 'WIN';
+            if (pct < 0)  return 'LOSS';
+            return 'BREAKEVEN'; // pct === 0 is a genuine breakeven
+        }
+    }
+
+    // Step 3: Keyword fallback — only reached when exact_pct is genuinely absent
+    if (st.includes('ACTIVE') || o === 'OPEN' || st === 'OPEN') return 'OPEN';
+    if (o === 'WIN'  || st.includes('WIN'))  return 'WIN';
+    if (o === 'LOSS' || st.includes('LOSS')) return 'LOSS';
+    // TRAIL with no exact_pct: genuinely ambiguous — do NOT assume WIN
+    if ((st.includes('STOP') || st.includes('SL')) && !st.includes('TRAIL')) return 'LOSS';
+    return 'OPEN'; // default: treat as still open
+}
+```
+
+### What MUST NOT happen (these are the recurring regression patterns):
+- ❌ `exact_pct` checked after `B/E` keyword → `"Hit B/E"` (+1.35%) becomes BREAKEVEN
+- ❌ `exact_pct` checked after `SL` keyword → `"Hit Initial SL"` SHORT (+1.33%) becomes LOSS
+- ❌ `TRAIL` keyword mapped to `WIN` → TRAIL with null exact_pct inflates win rate
+- ❌ Locally redefining `resolveOutcome` inside inner functions in `trade-metrics.js` — creates divergent copies
+- ❌ Using `o === 'CANCELLED'` instead of `o.includes('CANCEL')` — misses `outcome: 'CANCEL'` variant
+- ❌ Checking `st.includes('CLOSED')` in the CANCELLED guard — `"Force Closed (Stale)"` is a real executed trade
+
+### Self-Healing Architecture (never needs manual repair):
+- `cron-heal-outcomes.js` runs every 30 minutes on Netlify and auto-corrects any row where `outcome` ≠ `exact_pct` math
+- `AUTO_CORRECT_OUTCOME_TRIGGER.sql` contains a PostgreSQL trigger (apply once in Supabase SQL Editor) that enforces this at the database write level
 
 ## Terminology & Page Name Mappings (V3 Optimization Journey)
 - **Website Navigation**:
@@ -218,17 +279,12 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
   ```
 
 ## resolveOutcome Must Be Identical Across All Files
-- The `resolveOutcome` function MUST be **bit-for-bit identical** in these four files:
-  - `TLCS_Website_Deploy/scanner.js`
-  - `TLCS_Website_Deploy/commodity-scanner.js`
-  - `TLCS_Website_Deploy/dashboard.html`
-  - `Tv-Alert-Mobile/src/app/page.tsx`
-- Specifically, ALL four implementations MUST include the VAPT/unexecuted closure safety guard:
-  ```javascript
-  if (st.includes('CANCEL') || o.includes('CANCEL') || st.includes('UNKNOWN') || o.includes('UNKNOWN')
-      || st.includes('CLOSED') || st.includes('EXPIRED') || st.includes('COMPLETED')) return 'CANCELLED';
-  ```
-  Using `o === 'CANCELLED'` (exact match) instead of `o.includes('CANCEL')` is a bug — it misses the `outcome: 'CANCEL'` variant.
+- The `resolveOutcome` function MUST be **bit-for-bit identical** across all five files.
+- See **"resolveOutcome — Canonical Implementation"** section above for the exact code to copy.
+- Key requirements enforced by the canonical version:
+  - `o.includes('CANCEL')` not `o === 'CANCELLED'` (catches `outcome: 'CANCEL'` variant)
+  - `exact_pct` math checked at Step 2, BEFORE keyword strings at Step 3
+  - `st.includes('CLOSED')` is NOT in the CANCELLED guard ("Force Closed (Stale)" is a real trade)
 
 ## One-Time DB Cleanup for Timestamp-Mismatch Ghost Records
 - When the timestamp mismatch bug produces stuck OPEN records alongside duplicate "Hit SL" rows, a targeted Python cleanup script must be run to:
@@ -271,8 +327,7 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 
 ## resolveOutcome Must Not Hijack "CLOSED" or "FORCE CLOSED" Trades as CANCELLED
 - Trades with status `"CLOSED"`, `"Trade Closed"`, `"Force Closed (Stale)"`, or `"Closed at TP1"` are valid executed closed trades, NOT cancelled trades.
-- `resolveOutcome` MUST NOT check `st.includes('CLOSED')` at the top of the function to return `'CANCELLED'`.
-- Check `WIN`, `LOSS`, `BREAKEVEN`, and `exact_pct` math FIRST. Only return `'CANCELLED'` if the trade was explicitly cancelled/unknown, or if it is an unexecuted limit order (`EXPIRED` / `COMPLETED`) with NO win/loss outcome.
+- See the canonical `resolveOutcome` implementation above — the CANCELLED guard checks `EXPIRED` / `COMPLETED` only when `!s.exit_price`, protecting all genuinely-executed closed trades.
 
 - `trade-metrics.js` MUST define exactly **one** `window.resolveOutcome` at the top of the file. All inner function scopes (inside `loadInsightsData`, `renderTodayMarkets`, `loadPerformanceStats`, realtime listener) MUST delegate to it with `const resolveOutcome = window.resolveOutcome;`.
 - **NEVER** redefine `resolveOutcome` locally inside any inner function in `trade-metrics.js`. Every time a new inner definition is added, it becomes a separate copy that diverges from future patches.
@@ -331,13 +386,9 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - Additionally: **65 OPEN signals ALL had `updated_at=NULL`** — confirming all 65 are unexecuted stale limit orders, not live trades.
 
 ## TRAIL Status Alone Must Not Return WIN
-- In the last-resort fallback of `resolveOutcome` (after `exact_pct` extraction), TRAIL status MUST NOT be mapped to `'WIN'`.
-- If `exact_pct` is null for a TRAIL exit, the trade's outcome is genuinely ambiguous. Return `'OPEN'` so the trade is excluded from closed-trade metrics rather than being incorrectly counted as a win.
-- Correct pattern (applies to `scanner.js`, `commodity-scanner.js`, `page.tsx`):
-  ```javascript
-  if ((st.includes('STOP') || st.includes('SL')) && !st.includes('TRAIL')) return 'LOSS';
-  return 'OPEN'; // TRAIL with no exact_pct: defer, do not assume WIN
-  ```
+- In the keyword-fallback step of `resolveOutcome` (Step 3, only reached when `exact_pct` is null), TRAIL status MUST NOT be mapped to `'WIN'`.
+- If `exact_pct` is null for a TRAIL exit, the outcome is genuinely ambiguous. Return `'OPEN'` so it is excluded from closed-trade metrics.
+- See canonical implementation above: `return 'OPEN'` is the last line, TRAIL falls through to it.
 
 ## Strict Original Entry Baseline & Trailing SL Principles
 - **Original Entry Baseline**: ALL trade percentage returns (`exact_pct`) across web dashboards, mobile applications, and backend webhooks MUST be calculated strictly using the **Original Entry Price** (`entry`).
