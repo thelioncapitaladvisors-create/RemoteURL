@@ -351,3 +351,16 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 - **Safe DOM Ready Execution**: `startMetricsEngine()` MUST inspect `document.readyState` (`if (document.readyState === 'loading') ... else startMetricsEngine()`) to ensure initialization functions (`init()`, `localizeExperience()`) execute reliably even if `DOMContentLoaded` has already fired.
 - **Market-Wide Performance Statistics**: When loading active trades in `loadAllActiveTrades()`, performance statistics MUST NOT be narrowed to a single symbol (`sig.symbol`). The top metrics card is MARKET-WIDE by design, and should only narrow to a specific symbol when the user explicitly searches for that symbol.
 
+## Webhook Background Worker Variable Ordering (TDZ Rule)
+- In `process-webhook-background.js`, ALL payload parsing and condition variables (`calcOpeningBias`, `calcDayType`, `isPivotUpdate`) MUST be fully declared before any guard conditions (such as `if (!isExitOrUpdate && !isPivotUpdate)`).
+- Accessing `const` or `let` variables before their declaration line causes a Temporal Dead Zone (TDZ) `ReferenceError: Cannot access 'variable' before initialization` in Node.js, crashing the serverless worker silently on every incoming webhook.
+
+## Telegram Channel Dispatching (HUB Trades & Lifecycle)
+- Telegram notifications are automatically dispatched when `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` environment variables are present.
+- Dispatches are active across all 3 trade lifecycle events:
+  1. **New Trade Entry**: `🚨 LONG / SHORT Signal` with Entry, SL, TP, Bias, and Day Type.
+  2. **Trade Close / Outcome**: `🎯 WIN / ❌ LOSS / ⚖️ BREAKEVEN` with Exit Price, Status, and Exact PnL %.
+  3. **Trailing SL Update**: `📈 TRAILING SL UPDATED` with new Stop Loss level.
+- Must be maintained in both Netlify background functions (`process-webhook-background.js`) and Next.js mobile routes (`route.ts`).
+
+
