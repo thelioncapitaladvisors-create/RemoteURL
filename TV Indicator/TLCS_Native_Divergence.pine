@@ -350,6 +350,7 @@ bullishDivergenceAlert = input.bool(true, 'Bullish Divergence', 'Alert on bullis
 bullishHiddenDivergenceAlert = input.bool(true, 'Bullish Hidden Divergence', 'Alert on bullish hidden divergence', group = 'Alerts', display = display.none)
 bearishDivergenceAlert = input.bool(true, 'Bearish Divergence', 'Alert on bearish divergence', group = 'Alerts', display = display.none)
 bearishHiddenDivergenceAlert = input.bool(true, 'Bearish Hidden Divergence', 'Alert on bearish hidden divergence', group = 'Alerts', display = display.none)
+webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret', group = 'Alerts', display = display.none)
 
 textColor = chart.bg_color
 trendMethodInt = trendMethod == 'Zigzag' ? 1 : trendMethod == 'External' ? 3 : 2
@@ -504,7 +505,12 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         priceDivergenceLabel = Label.new(pricePoint, priceLabelText, priceTooltipText, priceLabelPropertiesMap.get(divergenceType))
                         
                         if allowedDivergenceTypes.get(divergenceType)
-                            alert('Alert : ' + priceTooltipText, alert.freq_once_per_bar_close)
+                            string divTypeStr = str.tostring(divergenceType)
+                            string _divPay = '{' + str.format(
+                                 '"trigger":"Divergence","secret":"{0}","symbol":"{1}","type":"{2}","price":"{3}","oscillator":"{4}"',
+                                 webhook_secret, syminfo.ticker, divTypeStr, str.tostring(lastPrice, format.mintick), str.tostring(lastMa, '#.##')
+                                 ) + '}'
+                            alert(_divPay, alert.freq_once_per_bar_close)
                             
                         divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, pricePoint, divergenceType)
                         divergenceObject.delete()
@@ -513,6 +519,7 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                     else
                         priceDivergenceLine.delete()
                         false
+
 
     divergenceType
     
