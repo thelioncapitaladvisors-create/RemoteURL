@@ -1,0 +1,491 @@
+//@version=6
+indicator('TLCS Oscillator Divergence (Native)', 'TLCS Osc Div', overlay = false, max_lines_count = 500, max_labels_count = 500, max_polylines_count = 100, calc_bars_count = 500)
+
+// =========================================================================
+// 1. INLINED 'OOTA' LIBRARY (Pruned for CustomSeries & MA)
+// =========================================================================
+enum CustomSeries
+    EMA
+    SMA
+    RMA
+    HMA
+    WMA
+    VWMA
+    SWMA
+    LINREG
+    MEDIAN
+    MOM
+    HIGH
+    LOW
+    MEDIAN_HIGH
+    MEDIAN_LOW
+    PERCENTRANK
+    HIGHLOW
+    
+customseries(float source = close, simple CustomSeries maType = CustomSeries.SMA, simple int length) =>
+    switch maType
+        CustomSeries.EMA => ta.ema(source, length)
+        CustomSeries.SMA => ta.sma(source, length)
+        CustomSeries.RMA => ta.rma(source, length)
+        CustomSeries.HMA => ta.hma(source, length)
+        CustomSeries.WMA => ta.wma(source, length)
+        CustomSeries.VWMA => ta.vwma(source, length)
+        CustomSeries.SWMA => ta.swma(source)
+        CustomSeries.LINREG => ta.linreg(source, length, 0)
+        CustomSeries.MEDIAN => ta.median(source, length)
+        CustomSeries.MOM => ta.mom(source, length)
+        CustomSeries.HIGH => ta.highest(source, length)
+        CustomSeries.LOW => ta.lowest(source, length)
+        CustomSeries.MEDIAN_HIGH => ta.median(ta.highest(source, length), length)
+        CustomSeries.MEDIAN_LOW => ta.median(ta.lowest(source, length), length)
+        CustomSeries.PERCENTRANK => ta.percentrank(source, length)
+        => (ta.highest(length) + ta.lowest(length)) / 2
+
+method ma(simple CustomSeries maType = CustomSeries.SMA, simple int length, float source = close) =>
+    customseries(source, maType, length)
+
+// =========================================================================
+// 2. INLINED 'ZIGZAG' LIBRARY (Pruned OOP Version)
+// =========================================================================
+type Indicator
+	float indicatorHigh
+	float indicatorLow
+
+type PivotCandle
+	float _high = high
+	float _low = low
+	int length = 5
+	int pHighBar
+	int pLowBar
+	float pHigh
+	float pLow
+	array<Indicator> indicators
+
+type Pivot
+	chart.point point
+	int dir
+	int level = 0
+	int componentIndex = 0
+	int subComponents = 0
+	int microComponents = 1
+	float ratio = 1.0
+	float sizeRatio = 1.0
+	float barRatio = 1.0
+	array<Pivot> subPivots
+	array<Pivot> micropivots
+	array<string> indicatorNames
+	array<float> indicatorValues
+	array<float> indicatorRatios
+
+type ZigzagFlags
+	bool newPivot = false
+	bool doublePivot = false
+	bool updateLastPivot = false
+
+type Zigzag
+	int length = 5
+	int numberOfPivots = 20
+	int offset = 0
+	int level = 0
+	array<Pivot> zigzagPivots
+	ZigzagFlags flags
+	
+method init(array<Indicator> indicators, matrix<float> indicatorValues) =>
+    for i = 0 to na(indicatorValues) or indicatorValues.rows() == 0 ? na : indicatorValues.rows() - 1 by 1
+        iRow = indicatorValues.row(i)
+        Indicator indicator = Indicator.new(iRow.first(), iRow.last())
+        indicators.push(indicator)
+    indicators
+
+method init(PivotCandle candle, matrix<float> indicators = na) =>
+    candle.pHighBar := ta.highestbars(candle._high, candle.length)
+    candle.pLowBar := ta.lowestbars(candle._low, candle.length)
+    candle.pHigh := ta.highest(candle._high, candle.length)
+    candle.pLow := ta.lowest(candle._low, candle.length)
+    candle.indicators := array.new<Indicator>()
+    candle.indicators.init(indicators)
+    candle
+
+method unshift(array<Pivot> arr, Pivot val, int maxItems) =>
+    arr.unshift(val)
+    if arr.size() > maxItems
+        arr.pop()
+
+method update(Pivot this, PivotCandle candle, array<string> indicatorNames) =>
+    dir = math.sign(this.dir)
+    array<float> _indicators = array.new<float>()
+    for indicator in candle.indicators
+        indicatorValue = dir > 0 ? indicator.indicatorHigh : indicator.indicatorLow
+        _indicators.push(indicatorValue)
+    this.indicatorNames := indicatorNames
+    this.indicatorValues := _indicators
+    this.indicatorRatios := array.new<float>()
+    this
+
+method init(Zigzag this) =>
+    if na(this.zigzagPivots)
+        this.zigzagPivots := array.new<Pivot>()
+        this.flags := ZigzagFlags.new()
+        this.flags
+    this
+
+method addnewpivot(Zigzag this, Pivot pivot, array<Pivot> components = na) =>
+    dir = math.sign(pivot.dir)
+    if this.zigzagPivots.size() >= 1
+        lastPivot = this.zigzagPivots.get(0)
+        lastValue = lastPivot.point.price
+        pivot.subComponents := lastPivot.componentIndex - pivot.componentIndex
+        if not na(components) ? components.size() > lastPivot.componentIndex : false
+            pivot.subPivots := components.slice(pivot.componentIndex, lastPivot.componentIndex + 1)
+            microComponents = 0
+            for [index, subPivot] in pivot.subPivots
+                if index != pivot.subPivots.size() - 1
+                    microComponents := microComponents + subPivot.microComponents
+                    if na(subPivot.micropivots) or subPivot.micropivots.size() == 0
+                        pivot.micropivots.push(subPivot)
+                    else
+                        pivot.micropivots.concat(subPivot.micropivots)
+                else if pivot.level == 1
+                    pivot.micropivots.push(subPivot)
+            pivot.microComponents := microComponents
+
+        if math.sign(lastPivot.dir) == math.sign(dir)
+            runtime.error('Direction mismatch')
+        if this.zigzagPivots.size() >= 2
+            llastPivot = this.zigzagPivots.get(1)
+            value = pivot.point.price
+            llastValue = llastPivot.point.price
+            newDir = dir * value > dir * llastValue ? dir * 2 : dir
+            pivot.dir := int(newDir)
+            pivot.ratio := math.round(math.abs(lastValue - value) / math.abs(llastValue - lastValue), 3)
+            pivot.barRatio := math.round(math.abs(lastPivot.point.index - pivot.point.index) / math.abs(llastPivot.point.index - lastPivot.point.index), 3)
+
+            if this.zigzagPivots.size() >= 3
+                lllastPivot = this.zigzagPivots.get(2)
+                lllastValue = lllastPivot.point.price
+                pivot.sizeRatio := math.round(math.abs(lastValue - value) / math.abs(lllastValue - llastValue), 3)
+
+            llastIndicators = llastPivot.indicatorValues
+            indicators = pivot.indicatorValues
+            lastIndicators = lastPivot.indicatorValues
+            pivot.indicatorRatios.clear()
+            for [index, indicatorValue] in indicators
+                lastIndicatorValue = lastIndicators.get(index)
+                llastIndicatorValue = llastIndicators.get(index)
+                indicatorRatio = math.round(math.abs(lastIndicatorValue - indicatorValue) / math.abs(llastIndicatorValue - lastIndicatorValue), 3)
+                pivot.indicatorRatios.push(indicatorRatio)
+    this.zigzagPivots.unshift(pivot, this.numberOfPivots)
+    this
+
+method addnewpivot(Zigzag this, Pivot pivot, PivotCandle candle, array<string> indicatorNames, array<Pivot> components = na) =>
+    pivot.update(candle, indicatorNames)
+    this.addnewpivot(pivot, components)
+
+method calculate(Zigzag this, array<float> ohlc, matrix<float> indicators, array<string> indicatorNames, int ltfHighTime = time, int ltfLowTime = time) =>
+    _ohlc = na(ohlc[this.offset]) ? ohlc : ohlc[this.offset]
+    _indicators = na(indicators[this.offset]) ? indicators : indicators[this.offset]
+    this.init()
+    PivotCandle candle = PivotCandle.new(_ohlc.max(), _ohlc.min(), this.length)
+    candle.init(_indicators)
+    pDir = 1
+    Pivot lastPivot = na
+    this.flags.updateLastPivot := false
+    this.flags.newPivot := false
+    this.flags.doublePivot := false
+    newBar = bar_index - this.offset
+    newbartime = time[this.offset]
+    distanceFromLastPivot = 0
+    var counter = 0
+    var lastCounterBar = 0
+    forceDoublePivot = false
+
+    if this.zigzagPivots.size() > 0
+        lastPivot := this.zigzagPivots.get(0)
+        pDir := int(math.sign(lastPivot.dir))
+        distanceFromLastPivot := newBar - lastPivot.point.index
+
+    if this.zigzagPivots.size() > 1
+        llastPivot = this.zigzagPivots.get(1)
+        llastDir = int(math.sign(llastPivot.dir))
+        forceDoublePivot := pDir == 1 and candle.pLowBar == 0 ? candle.pLow < llastPivot.point.price : pDir == -1 and candle.pHighBar == 0 ? candle.pHigh > llastPivot.point.price : false
+
+    overflow = distanceFromLastPivot >= this.length
+
+    if (pDir == 1 and candle.pHighBar == 0 or pDir == -1 and candle.pLowBar == 0) and this.zigzagPivots.size() >= 1
+        value = pDir == 1 ? candle.pHigh : candle.pLow
+        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
+        inewbartime = pDir == 1 ? ltfHighTime[this.offset] : ltfLowTime[this.offset]
+        removeOld = value * lastPivot.dir >= lastPivot.point.price * lastPivot.dir
+        if removeOld
+            this.flags.updateLastPivot := true
+            this.flags.newPivot := true
+            this.zigzagPivots.shift()
+            newPivotObject = Pivot.new(chart.point.from_index(newBar, value), pDir, micropivots = array.new<Pivot>())
+            newPivotObject.point.time := inewbartime
+            this.addnewpivot(newPivotObject, candle, indicatorNames)
+
+    if pDir == 1 and candle.pLowBar == 0 or pDir == -1 and candle.pHighBar == 0 and (not this.flags.newPivot or forceDoublePivot)
+        value = pDir == 1 ? candle.pLow : candle.pHigh
+        inewbartime = pDir == 1 ? ltfLowTime[this.offset] : ltfHighTime[this.offset]
+        newPivotObject = Pivot.new(chart.point.from_index(newBar, value), -pDir, micropivots = array.new<Pivot>())
+        newPivotObject.point.time := inewbartime
+        this.addnewpivot(newPivotObject, candle, indicatorNames)
+        this.flags.doublePivot := this.flags.newPivot
+        this.flags.newPivot := true
+
+    if overflow and not this.flags.newPivot
+        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
+        ipivotbar = pDir == 1 ? newBar + candle.pLowBar : newBar + candle.pHighBar
+        ipivottime = pDir == 1 ? ltfLowTime[newBar - ipivotbar + this.offset] : ltfHighTime[newBar - ipivotbar + this.offset]
+        iCandle = candle[newBar - ipivotbar]
+        newPivotObject = Pivot.new(chart.point.from_index(ipivotbar, ipivot), -pDir, micropivots = array.new<Pivot>())
+        newPivotObject.point.time := ipivottime
+        this.addnewpivot(newPivotObject, iCandle, indicatorNames)
+        this.flags.newPivot := true
+    this
+    
+// =========================================================================
+// 3. TLCS DIVERGENCE SCREENER CODE (Optimized for explicitly drawing Lines)
+// =========================================================================
+oscillator(simple string type = 'rsi', simple int length = 14, float source = close, float highSource = high, float lowSource = low) =>
+    oscillator = switch type
+        'cci' => ta.cci(source, length)
+        'cmo' => ta.cmo(source, length)
+        'cog' => ta.cog(source, length)
+        'mfi' => ta.mfi(source, length)
+        'roc' => ta.roc(source, length)
+        'rsi' => ta.rsi(source, length)
+        'stoch' => ta.stoch(source, highSource, lowSource, length)
+        'wpr' => ta.wpr(length)
+        => ta.rsi(source, length)
+    oscillator
+
+oscillatorType = input.string('rsi', 'Oscillator', ['rsi', 'cci', 'cmo', 'cog', 'mfi', 'roc', 'stoch', 'wpr'], inline = 'osc', group = 'Oscillator', display = display.none)
+length = input.int(14, '', group = 'Oscillator', inline = 'osc', tooltip = 'Built in Oscillator Type and Length', display = display.none)
+useExternalOscillator = input.bool(false, 'Use External Oscillator', inline = 'eosc', group = 'Oscillator', display = display.none)
+externalOscillator = input.source(close, '', 'Use external oscillator instead of the built ins', inline = 'eosc', group = 'Oscillator', display = display.none)
+
+safeExternalOscillator = externalOscillator > 1000 or externalOscillator < -1000 ? ta.rsi(close, 14) : externalOscillator
+oscillator = useExternalOscillator ? safeExternalOscillator : oscillator(oscillatorType, length)
+rsiColor = color.blue
+
+trendTypeTooltip = 'Method to identify trend. \n' + '\tZigzag - HH, HL on the starting pivot of divergence line is considered as uptrend and LL, LH on the starting pivot of divergence line is considered as downtrend\n' + '\tMA Difference - Difference between moving average of divergence line pivot will define the trend\n' + '\tExternal - Use External Oscillator Input'
+trendMethod = input.string('Zigzag', 'Trend Detection Method', ['Zigzag', 'MA Difference', 'External'], group = 'Trend', display = display.none, tooltip = trendTypeTooltip)
+maType = input.enum(CustomSeries.SMA, 'MA Filter', inline = 'ma', group = 'Trend', display = display.none)
+maLength = input.int(200, '', minval = 5, step = 50, inline = 'ma', group = 'Trend', display = display.none, tooltip = 'Moving Average to identify trend.')
+externalTrendSignal = input.source(close, 'External Trend Signal', 'Use External trend signal', group = 'Trend', display = display.none)
+
+zigzagLength = input.int(13, 'Length', group = 'Zigzag', tooltip = 'Zigzag Length', display = display.none)
+repaint = input.bool(true, 'Repaint', 'If selected, divergence lines repaint as per the latest info.', group = 'Miscellaneous', display = display.none)
+
+bullishDivergenceAlert = input.bool(true, 'Bullish Divergence', 'Alert on bullish divergence', group = 'Alerts', display = display.none)
+bullishHiddenDivergenceAlert = input.bool(true, 'Bullish Hidden Divergence', 'Alert on bullish hidden divergence', group = 'Alerts', display = display.none)
+bearishDivergenceAlert = input.bool(true, 'Bearish Divergence', 'Alert on bearish divergence', group = 'Alerts', display = display.none)
+bearishHiddenDivergenceAlert = input.bool(true, 'Bearish Hidden Divergence', 'Alert on bearish hidden divergence', group = 'Alerts', display = display.none)
+
+trendMethodInt = trendMethod == 'Zigzag' ? 1 : trendMethod == 'External' ? 3 : 2
+var map<int, float> priceMap = map.new<int, float>()
+priceMap.put(bar_index, close)
+
+enum DivergenceType
+    BullishDivergence = "Bullish Divergence"
+    BearishDivergence = "Bearish Divergence"
+    BullishHiddenDivergence = "Bullish Hidden Divergence"
+    BearishHiddenDivergence = "Bearish Hidden Divergence"
+    None = "None"
+
+type LineProperties
+	string extend
+	color color
+	string style
+	int width
+
+type LabelProperties
+	string yloc
+	color color
+	string style
+	color textcolor
+	string size
+	string textalign
+
+type DivergenceObject
+    line priceLine
+    line oscillatorLine
+    label priceLabel
+    label oscillatorLabel
+    int startBarIndex
+    int endBarIndex
+    chart.point pricePoint
+    DivergenceType divergenceType
+    bool broken = false
+
+type ZigzagProperties
+	int trendMethod = 1
+	bool repaint = false
+
+enum PivotDirection
+    HH = "Higher High"
+    LH = "Lower High"
+    HL = "Higher Low"
+    LL = "Lower Low"
+
+getDivergenceType(direction, divergence)=>
+    direction > 0?
+         (divergence > 0 ? DivergenceType.BearishDivergence : DivergenceType.BearishHiddenDivergence):
+         (divergence > 0 ? DivergenceType.BullishDivergence : DivergenceType.BullishHiddenDivergence)
+
+getPivotDirection(dir, ratio) =>
+    dir > 0 ? (ratio > 1 ? PivotDirection.HH : PivotDirection.LH) : ratio > 1 ? PivotDirection.LL : PivotDirection.HL
+
+getLinePropertiesMap()=>
+    linePropertiesMap = map.new<DivergenceType, LineProperties>()
+    linePropertiesMap.put(DivergenceType.BullishDivergence, LineProperties.new(extend.none, color.green, line.style_solid, 1))
+    linePropertiesMap.put(DivergenceType.BearishDivergence, LineProperties.new(extend.none, color.red, line.style_solid, 1))
+    linePropertiesMap.put(DivergenceType.BullishHiddenDivergence, LineProperties.new(extend.none, color.lime, line.style_solid, 1))
+    linePropertiesMap.put(DivergenceType.BearishHiddenDivergence, LineProperties.new(extend.none, color.orange, line.style_solid, 1))
+    linePropertiesMap
+
+getLabelPropertiesMap()=>
+    labelPropertiesMap = map.new<DivergenceType, LabelProperties>()
+    labelPropertiesMap.put(DivergenceType.BullishDivergence, LabelProperties.new(yloc.price, color.green, label.style_label_up, chart.bg_color, size.small, text.align_center))
+    labelPropertiesMap.put(DivergenceType.BearishDivergence, LabelProperties.new(yloc.price, color.red, label.style_label_down, chart.bg_color, size.small, text.align_center))
+    labelPropertiesMap.put(DivergenceType.BullishHiddenDivergence, LabelProperties.new(yloc.price, color.lime, label.style_label_up, chart.bg_color, size.small, text.align_center))
+    labelPropertiesMap.put(DivergenceType.BearishHiddenDivergence, LabelProperties.new(yloc.price, color.orange, label.style_label_down, chart.bg_color, size.small, text.align_center))
+    labelPropertiesMap
+
+getAllowedDivergenceTypes()=>
+    allowedDivergenceTypes = map.new<DivergenceType, bool>()
+    allowedDivergenceTypes.put(DivergenceType.BullishDivergence, bullishDivergenceAlert)
+    allowedDivergenceTypes.put(DivergenceType.BullishHiddenDivergence, bullishHiddenDivergenceAlert)
+    allowedDivergenceTypes.put(DivergenceType.BearishDivergence, bearishDivergenceAlert)
+    allowedDivergenceTypes.put(DivergenceType.BearishHiddenDivergence, bearishHiddenDivergenceAlert)
+    allowedDivergenceTypes
+
+const map<DivergenceType, bool> allowedDivergenceTypes = getAllowedDivergenceTypes()
+const map<DivergenceType, LineProperties> linePropertiesMap = getLinePropertiesMap()
+const map<DivergenceType, LabelProperties> labelPropertiesMap = getLabelPropertiesMap()
+
+method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, ZigzagProperties properties) =>
+    startIndex = properties.repaint ? 0 : 1
+    DivergenceType divergenceType = DivergenceType.None
+    if this.zigzagPivots.size() > 2 + startIndex
+        lastPivot = this.zigzagPivots.get(startIndex)
+        llastPivot = this.zigzagPivots.get(startIndex + 2)
+        skip = false
+        if this.flags.updateLastPivot
+            if divergenceObjects.size() > 0
+                lastDivergence = divergenceObjects.last()
+                divergenceStartBar = lastDivergence.startBarIndex
+                llastPivotBar = llastPivot.point.index
+
+                divergenceEndBar = lastDivergence.endBarIndex
+                lastPivotBar = lastPivot.point.index
+                
+                if llastPivotBar == divergenceStartBar and lastPivotBar > divergenceEndBar
+                    div = divergenceObjects.pop()
+                    line.delete(div.priceLine)
+                    line.delete(div.oscillatorLine)
+                    label.delete(div.priceLabel)
+                    label.delete(div.oscillatorLabel)
+                skip := llastPivotBar == divergenceStartBar and lastPivotBar == divergenceEndBar
+                skip
+
+        if this.flags.newPivot and not skip
+            dir = math.sign(lastPivot.dir)
+            lastOsc = lastPivot.point.price
+            lastPrice = lastPivot.indicatorValues.get(0)
+            oscRatio = lastPivot.ratio
+            priceRatio = lastPivot.indicatorRatios.get(0)
+
+            priceDirection = getPivotDirection(lastPivot.dir, priceRatio)
+            oscillatorDirection = getPivotDirection(lastPivot.dir, oscRatio)
+
+            lastTrend = lastPivot.indicatorValues.get(2)
+            lastMa = lastPivot.indicatorValues.get(1)
+
+            pricePoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPrice)
+            oscillatorPoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPivot.point.price)
+
+            if priceDirection != oscillatorDirection and llastPivot.indicatorRatios.size() > 0
+                llastPrice = llastPivot.indicatorValues.get(0)
+                llastRatio = llastPivot.indicatorRatios.get(0)
+                llastMa = llastPivot.indicatorValues.get(1)
+                lastPricePoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPrice)
+                llastOscillatorPoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPivot.point.price)
+
+                sentiment = math.sign(oscRatio - priceRatio)
+                trend = properties.trendMethod == 3 ? math.sign(lastTrend) : properties.trendMethod == 1 ? math.sign(dir * (llastRatio - 1)) : math.sign(llastMa - lastMa)
+                divergence = trend == dir and sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
+                
+                if divergence != 0
+                    divergenceType := getDivergenceType(dir, divergence)
+
+                    validDivergence = true
+                    for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
+                        priceAtBar = priceMap.get(bar)
+                        
+                        px1 = lastPricePoint.index
+                        py1 = lastPricePoint.price
+                        px2 = pricePoint.index
+                        py2 = pricePoint.price
+                        priceTheoPrice = py1 + ((py2 - py1) / (px2 - px1)) * (bar - px1)
+
+                        if priceAtBar * dir > priceTheoPrice * dir
+                            validDivergence := false
+                            break
+
+                    if validDivergence
+                        priceLabelText = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BearishDivergence ? 'D' : 'H'
+                        priceTooltipText = str.tostring(divergenceType) + '\nPrice : ' + str.tostring(lastPrice) + ' ( ' + str.tostring(priceRatio) + ' ) - ' +
+                                         str.tostring(priceDirection) + '\n' + 'Oscillator :' + str.tostring(lastMa) + ' ( ' + str.tostring(oscRatio) + ' ) - ' + str.tostring(oscillatorDirection)
+                        
+                        propLine = linePropertiesMap.get(divergenceType)
+                        propLabel = labelPropertiesMap.get(divergenceType)
+
+                        pLine = line.new(lastPricePoint.time, lastPricePoint.price, pricePoint.time, pricePoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=2, force_overlay=true)
+                        oLine = line.new(llastOscillatorPoint.time, llastOscillatorPoint.price, oscillatorPoint.time, oscillatorPoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=2, force_overlay=false)
+
+                        pLabel = label.new(pricePoint.time, pricePoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=true)
+                        oLabel = label.new(oscillatorPoint.time, oscillatorPoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=false)
+                        
+                        if allowedDivergenceTypes.get(divergenceType)
+                            alert('Alert : ' + priceTooltipText, alert.freq_once_per_bar_close)
+                            
+                        divergenceObject = DivergenceObject.new(pLine, oLine, pLabel, oLabel, lastPricePoint.index, pricePoint.index, pricePoint, divergenceType)
+                        divergenceObjects.push(divergenceObject)
+                        true
+                    else
+                        false
+
+    divergenceType
+    
+ma = maType.ma(maLength)
+indicators = matrix.new<float>()
+indicatorNames = array.from('Price', str.tostring(maType) +'-' +str.tostring(maLength), 'External Trend')
+
+indicators.add_row(0, array.from(close, close, close))
+indicators.add_row(1, array.from(ma, ma, ma))
+indicators.add_row(2, array.from(externalTrendSignal, externalTrendSignal, externalTrendSignal))
+
+var Zigzag zigzag = Zigzag.new(zigzagLength, 300, 0)
+var ZigzagProperties properties = ZigzagProperties.new(trendMethodInt, repaint)
+var divergenceObjects = array.new<DivergenceObject>()
+
+zigzag.calculate(array.from(oscillator), indicators, indicatorNames)
+currentDivergence = zigzag.divergence(divergenceObjects, properties)
+
+for divergence in divergenceObjects
+    direction = divergence.divergenceType == DivergenceType.BullishDivergence or divergence.divergenceType == DivergenceType.BullishHiddenDivergence ? 1 : -1
+    if(not divergence.broken and divergence.pricePoint.price*direction > close*direction)
+        divergence.broken := true
+
+bool isBullishDiv = currentDivergence == DivergenceType.BullishDivergence or currentDivergence == DivergenceType.BullishHiddenDivergence
+bool isBearishDiv = currentDivergence == DivergenceType.BearishDivergence or currentDivergence == DivergenceType.BearishHiddenDivergence
+
+// ========================================================
+// --- OSCILLATOR PLOTS ---
+plot(oscillator, 'Oscillator', color=rsiColor, linewidth=2)
+hline(70, "Upper Band", color=color.gray, linestyle=hline.style_dashed)
+hline(30, "Lower Band", color=color.gray, linestyle=hline.style_dashed)
+hline(50, "Mid Band", color=color.gray, linestyle=hline.style_dotted)
+// ========================================================

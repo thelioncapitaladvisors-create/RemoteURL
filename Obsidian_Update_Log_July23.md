@@ -1,46 +1,38 @@
 # Version 1.5.0 Update Log - July 23, 2026
 
-## 🛠️ Critical Bug Fixes & Feature Enhancements
+## 🛠️ Critical Architectural Fixes & System Upgrades
 
-### 1. Netlify Background Function TDZ ReferenceError Fix (`isPivotUpdate`)
-- **Root Cause**: In commit `b4a82ba`, the recency guard line was updated to `if (!isExitOrUpdate && !isPivotUpdate)`. However, `isPivotUpdate` was declared with `const` further down on line 383.
-- In Node.js ES6+, accessing a `const` or `let` variable before its declaration line triggers a **Temporal Dead Zone (TDZ) `ReferenceError: Cannot access 'isPivotUpdate' before initialization`**.
-- Because the relayer `webhook.js` instantly returned `200 OK` to TradingView, TradingView reported webhooks as delivered. However, `process-webhook-background.js` crashed silently on every alert before writing to Supabase, halting signal ingestion since last night.
-- **Fix**: Reordered variable declarations in `process-webhook-background.js` so `calcOpeningBias`, `calcDayType`, and `isPivotUpdate` are evaluated prior to the `SIGNAL RECENCY GUARD` block. Signal ingestion restored 100%.
-
----
-
-### 2. Automatic Telegram Channel Notifications for HUB Trades
-- **New Trade Entries**: Dispatches structured Telegram alert cards formatted with Symbol, Direction (`LONG/SHORT`), Entry, Stop Loss, Target, Opening Bias, and Day Type.
-  ```markdown
-  🚨 *CRUDEOIL* - *LONG*
-  📍 *Entry*: `6450` | *SL*: `6400` | *TP*: `6550`
-  🎯 *Bias*: `BULLISH` | *Day*: `TREND`
-  📝 New trade signal detected.
-  ```
-- **Trade Close / Outcomes**: Automatically dispatches live trade close notifications to the Telegram channel with emoji indicators (`🎯 WIN`, `❌ LOSS`, `⚖️ BREAKEVEN`), Realized Exit Price, Status (`Hit TP1`, `Hit B/E`, etc.), and Exact PnL `%`.
-  ```markdown
-  🎯 *TRADE CLOSED* — *CRUDEOIL*
-  📊 *Outcome*: *WIN* (`+1.55%`)
-  📍 *Exit Price*: `6550` | *Entry*: `6450`
-  🏷️ *Status*: `Hit TP1`
-  ```
-- **Trailing SL Adjustments**: Notifies the channel whenever a trailing stop loss is adjusted or locked into breakeven.
-  ```markdown
-  📈 *TRAILING SL UPDATED* — *CRUDEOIL*
-  🛡️ *New Trailing Stop*: `6450`
-  📝 Trailing stop level locked.
-  ```
-- **Dual Dispatcher Integration**: Implemented in both Netlify serverless background worker (`process-webhook-background.js`) and Next.js mobile API route (`route.ts`).
+### 1. Permanent Single Source of Truth for Outcome Resolution (`exact_pct` Math Priority)
+- **Root Cause Identified**: Previous implementations of `resolveOutcome` evaluated status strings (such as `"Hit B/E"` or `"Hit Initial SL"`) **before** checking price math (`metadata.exact_pct`). This caused SHORT trades closing with positive profit (+1.35%, +1.33%) to be incorrectly hijacked into `LOSS` or `BREAKEVEN` outcomes, inflating losses and producing artificial **0% Win Rate / 0.00 Profit Factor** readings despite a +6.29% equity curve.
+- **Permanent Solution Deployed**:
+  1. **Frontend Priority**: Updated all 5 canonical `resolveOutcome` implementations across [`trade-metrics.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/trade-metrics.js), [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js), [`commodity-scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/commodity-scanner.js), [`dashboard.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/dashboard.html), and [`page.tsx`](file:///Users/vishant/Documents/Project/Tv-Alert-Mobile/src/app/page.tsx) to evaluate `exact_pct` math **at Step 2**, BEFORE keyword string matching at Step 3 (`exact_pct > 0 → WIN`, `< 0 → LOSS`, `= 0 → BREAKEVEN`).
+  2. **Database Trigger**: Created and applied [`AUTO_CORRECT_OUTCOME_TRIGGER.sql`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/AUTO_CORRECT_OUTCOME_TRIGGER.sql) directly in Supabase PostgreSQL (`trg_auto_correct_outcome`). This BEFORE INSERT/UPDATE trigger enforces outcome math at the database write layer, ensuring corrupted strings can never commit.
+  3. **Self-Healing Cron**: Built and deployed [`cron-heal-outcomes.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/cron-heal-outcomes.js) running every 30 minutes on Netlify to auto-scan up to 2000 closed trades and repair any anomalous outcome values silently.
+  4. **Fixed `dashboard.html` Fallback**: Fixed a regression in `dashboard.html` where `TRAIL` status without `exact_pct` was erroneously defaulting to `WIN`.
 
 ---
 
-### 3. Enhanced HUB Trade Card Share Formatting
-- **Mobile App (`page.tsx`)**: Upgraded `handleShare` text formatting on HUB trade cards to generate Telegram-friendly structured markdown text with entry, target, stop loss, outcome status, and website link when sharing via native share sheet or social channels.
+### 2. Pine Script Indicator & Webhook Payload Hardening
+- **JSON Control Character Sanitization**: Resolved Pine Script `SyntaxError` crashes caused by unescaped multiline newlines (`\n`) in indicator text strings (`'TOP \n SWING \n \n'`). Added `cleanBiasOrDayType` and `str.replace_all(..., '\n', ' ')` sanitization across `process-webhook-background.js`, `route.ts`, and Pine Script alert helpers (`sendAlert`, `sendTrailingSLAlert`, `finalizeTrade`).
+- **Safe Boolean Indexing**: Fixed Pine Script v5/v6 `nz()` compiler error (`CE10123`) on `series bool` by using explicit non-null boolean checks `(TopSwingZ[1] == true)` and `(BEARS[1] == true)`.
+- **Parameter Sequence Alignment**: Re-aligned `initializeAndPushTrade` helper parameter ordering (`z1, dX, mX, d1_message`) to match `sendAlert` function signatures, ensuring Zone, Opening Bias, and Day Type attributes do not swap.
+- **Multi-Key SWING Extraction**: Updated backend webhooks and frontend metrics to defensively map all SWING key variants (`d1`, `market_status`, `SWING`, `swing`, `tradeMessage`).
 
 ---
 
-### 4. Repository & Submodule Synchronization
-- **`TLCS_Website_Deploy`**: Committed and pushed commit `c25ddd3` to `main`.
-- **`Tv-Alert-Mobile`**: Committed and pushed commit `e65400c` to `main`.
-- **Root Repository**: Updated submodule pointers and pushed commit `6d32748` to `main`.
+### 3. Telegram Channel Signal Broadcast Setup
+- **HTML Parse Mode Upgrade**: Upgraded `sendTelegramAlert` in both Netlify background workers ([`process-webhook-background.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/process-webhook-background.js)) and Next.js mobile endpoints ([`route.ts`](file:///Users/vishant/Documents/Project/Tv-Alert-Mobile/src/app/api/webhook/route.ts)) to HTML parse mode, preventing API crashes on special characters (`!`, `_`) in symbol tickers like `NG1!`, `SILVER1!`, `GC1!`.
+- **Bot Administrator Configured**: Created `@TLCS_bot` via `@BotFather`, added it as Channel Administrator with post message permissions in the Telegram channel **TLCS Alerts**.
+- **Netlify Environment Variables**: Bound `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` across builds, functions, and runtime in Netlify. Triggered fresh production deploy `6e3b5fb`.
+
+---
+
+### 4. Canonical System Rules Updated (`AGENTS.md`)
+- Updated [.agents/AGENTS.md](file:///Users/vishant/Documents/Project/.agents/AGENTS.md#L67-L125) with the canonical bit-for-bit `resolveOutcome` code block, regression history notes, and single-source-of-truth rules to prevent future AI or developer regressions.
+
+---
+
+### 5. Repository & Submodule Synchronization
+- **`TLCS_Website_Deploy`**: Committed and pushed commits `1501735`, `98dbc83`, `1b13d51`, `215b712`, `6e3b5fb` to `main`.
+- **`Tv-Alert-Mobile`**: Committed and pushed commits `e65400c`, `589d8dd`, `3e03d54` to `main`.
+- **Root Repository**: Committed and pushed commits `8d99380` and latest submodule pointer updates to `main`.
