@@ -5,6 +5,10 @@
 - The entire web dashboard (`index.html`, `scanner.js`, `commodity-scanner.js`) and the mobile app (`page.tsx`) rely strictly on this `exact_pct`.
 - When calculating Profit Factor, Expectancy, Win Rate, Best Trade, and Max Drawdown, base ALL metrics strictly off the Exact Percentage values, regardless of whether the user is in "Novice Mode" or "Pro Mode".
 
+## Strict Netlify Hosting & Single Infrastructure Rule
+- **NETLIFY ONLY**: The entire system infrastructure (Web Dashboard, Mobile App backend endpoints, Netlify background workers, and Telegram dispatchers) is hosted **EXCLUSIVELY on Netlify** (`thelioncapitalsolutions.com`).
+- **NO VERCEL DEPLOYMENTS EXIST**: Do NOT reference, configure, or troubleshoot Vercel hosting, Vercel routes, or Vercel environment variables. All backend functions (`process-webhook-background.js`, `test-telegram.js`, `cron-heal-outcomes.js`) run as Netlify functions on Netlify servers.
+
 ## Exit Categorization (Rigid vs Dynamic Exits)
 - Do NOT bucket trades into static levels (e.g., "TP3" or "TP4") based on the highest level they *touched*. This corrupts the data because it hides the actual realized exit.
 - A trade belongs in a `TP` bucket ONLY if it *actually closed* at that exact level (e.g., via a limit order, or a step-based trailing stop that precisely locked in that previous level).
