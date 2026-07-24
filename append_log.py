@@ -1,0 +1,7 @@
+with open('/Users/vishant/Documents/Project/Obsidian_Update_Log_July18.md', 'a') as f:
+    f.write('\n## 6. EOD Force Close (Comprehensive Market Capture)\n')
+    f.write('**Issue:** Forex and Crypto active limit trades were lingering past EOD because the EOD cron script explicitly exempted them (`isExempt`) and the Yahoo Finance helper script (`yahoo.ts`) did not map their symbols correctly (e.g. missing `=X` for Forex and `-USD` for Crypto).\n')
+    f.write('**Fix:** Removed all market exemptions from the EOD cron (`route.ts`), forcing it to sweep 100% of open trades across all global markets. Simultaneously mapped Crypto and Forex symbols correctly within the Yahoo Finance API fetcher so it securely pulls exact midnight closing prices to mathematically execute WIN/LOSS categorizations.\n\n')
+    f.write('## 7. Strict Ignorance of Cancelled/Unknown Trades at EOD\n')
+    f.write('**Issue:** Cancelled or Unknown trades lingering in the database with an `OPEN` status ran the risk of being wrongfully processed and mathematically forced into a WIN or LOSS outcome by the EOD engine.\n')
+    f.write('**Fix:** Installed a rigid early-return bypass filter at the top of the EOD processing loop. The engine now instantly scans the `outcome` and `status` strings and straightaway ignores any trades labeled \'CANCEL\' or \'UNKNOWN\', permanently shielding closed metrics from corruption.\n')
