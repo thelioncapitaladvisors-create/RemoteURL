@@ -14,6 +14,7 @@
 - A trade belongs in a `TP` bucket ONLY if it *actually closed* at that exact level (e.g., via a limit order, or a step-based trailing stop that precisely locked in that previous level).
 - For arbitrary, continuous trailing stops that close between defined levels, do NOT mathematically guess the closest level. The Pine Script should explicitly send `"status": "Trailing Stop"`.
 - Both the Web and Mobile UIs have a dedicated `TRAIL` (or `Trailing Stop`) bucket to correctly categorize these dynamic, arbitrary exits without polluting the fixed `TP` buckets.
+- **Strict Level vs Outcome Alignment**: If `resolveOutcome(s) === 'LOSS'` (or `exact_pct < 0`), the trade level label MUST NEVER display `TP1`, `TP2`, `TP3`, or `TP4` (even if TradingView payload sent a mismatched `"Completed TP4"` string). If `resolveOutcome(s) === 'LOSS'`, the level label MUST be `SL` (or `EMA`/`DIV`/`EOD`). Conversely, if `resolveOutcome(s) === 'WIN'` (or `exact_pct > 0`), the level label MUST NEVER display `SL`. Level resolution functions (`getExitLevel`, `getDisplayExitLevel`, `outcomePill`) must enforce canonical outcome validation.
 
 ## Symbol Normalization and Market Categorization
 - ALWAYS normalize symbol names before performing market category checks (e.g., strip exchange prefixes like `NSE:`, `TVC:`, and continuous suffix `1!`). Use the normalized/cleaned symbol for list-based matching.
@@ -310,7 +311,7 @@ function resolveOutcome(s) {
   - `WEEKLY TRADES`: `weeklyClosedSignals.length` (226 closed trades).
   - `WEEKLY SUCCESS`: `(weeklyWins / (weeklyWins + weeklyLosses)) * 100` (41.6%).
   - `WEEKLY PROFIT FACTOR`: `weeklyGrossProfit / weeklyGrossLoss` (0.19).
-  - `TLCS PROFIT FACTOR`: `overallGrossProfit / overallGrossLoss` (0.21).
+  - `TLCS EDGE %`: Displays the Average Profit % (Avg Return per trade across all closed trades from all past periods till this moment, e.g. +0.54%).
 
 
 
