@@ -9,6 +9,11 @@
 - **NETLIFY ONLY**: The entire system infrastructure (Web Dashboard, Mobile App backend endpoints, Netlify background workers, and Telegram dispatchers) is hosted **EXCLUSIVELY on Netlify** (`thelioncapitalsolutions.com`).
 - **NO VERCEL DEPLOYMENTS EXIST**: Do NOT reference, configure, or troubleshoot Vercel hosting, Vercel routes, or Vercel environment variables. All backend functions (`process-webhook-background.js`, `test-telegram.js`, `cron-heal-outcomes.js`) run as Netlify functions on Netlify servers.
 
+## NYMEX-Only Telegram Channel Alerts (Active Trades Only)
+- **NYMEX EXCLUSIVE**: Telegram channel notifications (`@TLCS_Alerts` / `-1001555378566`) are filtered **EXCLUSIVELY for NYMEX market symbols** (`CL`, `GC`, `HG`, `HO`, `NG`, `PA`, `PL`, `RB`, `SI` and continuous contracts like `GC1!`, `CL1!`, `NG1!`). All non-NYMEX symbols (NIFTY, MCX, Crypto, Forex, World Indices) are strictly excluded from Telegram dispatches.
+- **ACTIVE TRADES ONLY (No Active Limits)**: Telegram alerts must **NEVER** fire for unexecuted limit orders (`ACTIVE LIMIT` / `OPEN`). Telegram alerts fire **ONLY** when a NYMEX limit trade actually fills and transitions to a **LIVE ACTIVE** executed trade (`⚡ NYMEX TRADE ACTIVE`), or when an active trade updates trailing stop / closes (`TARGET` / `SL`).
+
+
 ## Exit Categorization (Rigid vs Dynamic Exits)
 - Do NOT bucket trades into static levels (e.g., "TP3" or "TP4") based on the highest level they *touched*. This corrupts the data because it hides the actual realized exit.
 - A trade belongs in a `TP` bucket ONLY if it *actually closed* at that exact level (e.g., via a limit order, or a step-based trailing stop that precisely locked in that previous level).
