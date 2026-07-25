@@ -509,3 +509,9 @@ function resolveOutcome(s) {
 - **Polling**: Polls the Supabase `signals` table every 2 seconds for newly ingested TradingView webhooks.
 - **Order Parsing**: Normalizes TradingView symbols into DhanHQ Security IDs.
 - **Safety**: Managed by the `PAPER_TRADING = True` flag in `.env`. Must be toggled to `False` to send live execution orders.
+
+## Version 2.0 Architecture Updates
+- **Cross-Platform Auto-Refresh Mechanism**: Implemented native auto-reloading intervals for the VectorBT Tearsheet across both platforms to bypass browser caching.
+  - **Mobile App**: Included in a new `ANALYTICS` tab, utilizing a React `useEffect` interval (5 minutes) to forcefully remount the iframe via state `key` injection.
+  - **Website Dashboard**: Admin panel `admin.html` uses a lightweight Vanilla JS `setInterval` (5 minutes) to append cache-busting timestamp queries to the iframe src.
+- **GitHub Actions Cloud Scheduler**: Completely decoupled backtesting from local cron. A dedicated GitHub Action workflow (`generate-tearsheet.yml`) strictly triggers at the 4 distinct global market closes (NIFTY, MCX, US/World, Crypto) to pull Supabase data, compute stats, and push `strategy_tearsheet.html` back to the main branch automatically.
