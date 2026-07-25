@@ -179,7 +179,81 @@ def run_returns_backtest():
     
     # Save Tear Sheet to the website deployment folder
     output_path = os.path.join(os.path.dirname(__file__), '..', 'TLCS_Website_Deploy', 'strategy_tearsheet.html')
-    vbt_returns.plot().write_html(output_path)
+    
+    # 1. Equity Curve
+    fig_equity = vbt_returns.plot(title="Cumulative Equity Curve")
+    fig_equity.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=10))
+    html_equity = fig_equity.to_html(full_html=False, include_plotlyjs=False)
+    
+    # 2. Drawdowns
+    wealth_index = (1 + df_resampled).cumprod()
+    peak = wealth_index.cummax()
+    drawdown = (wealth_index - peak) / peak
+    fig_dd = drawdown.vbt.plot(title="Drawdowns (%)")
+    fig_dd.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=10), yaxis_tickformat='.2%')
+    html_dd = fig_dd.to_html(full_html=False, include_plotlyjs=False)
+    
+    # 3. Raw Returns
+    fig_ret = df_resampled.vbt.plot(title="Raw Returns (%)")
+    fig_ret.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=10), yaxis_tickformat='.2%')
+    html_ret = fig_ret.to_html(full_html=False, include_plotlyjs=False)
+    
+    template = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TLCS Performance Analytics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {{ margin: 0; background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #fff; overflow-x: hidden; }}
+        .tab-container {{ padding: 12px 20px; background-color: #121826; border-bottom: 1px solid #1f2937; display: flex; gap: 10px; overflow-x: auto; white-space: nowrap; }}
+        .tab-btn {{ background-color: #1f2937; color: #9ca3af; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; flex-shrink: 0; }}
+        .tab-btn:hover {{ background-color: #374151; color: #fff; }}
+        .tab-btn.active {{ background-color: #3b82f6; color: #fff; }}
+        .tab-content {{ display: none; padding: 0; width: 100vw; height: calc(100vh - 60px); }}
+        .tab-content.active {{ display: block; }}
+        .plotly-graph-div {{ width: 100% !important; height: 100% !important; }}
+        /* Hide scrollbar for tabs */
+        .tab-container::-webkit-scrollbar {{ display: none; }}
+        .tab-container {{ -ms-overflow-style: none; scrollbar-width: none; }}
+    </style>
+</head>
+<body>
+
+<div class="tab-container">
+    <button class="tab-btn active" onclick="switchTab('equity', this)">Equity Curve</button>
+    <button class="tab-btn" onclick="switchTab('drawdown', this)">Drawdowns</button>
+    <button class="tab-btn" onclick="switchTab('returns', this)">Raw Returns</button>
+</div>
+
+<div id="equity" class="tab-content active">
+    {html_equity}
+</div>
+
+<div id="drawdown" class="tab-content">
+    {html_dd}
+</div>
+
+<div id="returns" class="tab-content">
+    {html_ret}
+</div>
+
+<script>
+    function switchTab(tabId, btnElement) {{
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btnElement.classList.add('active');
+        window.dispatchEvent(new Event('resize'));
+    }}
+</script>
+</body>
+</html>
+"""
+    with open(output_path, "w") as f:
+        f.write(template)
+    
     print(f'\nMulti-market tear sheet saved to {output_path}')
 
 if __name__ == '__main__':
