@@ -172,7 +172,7 @@ def run_returns_backtest():
     else:
         df_resampled = df_pivot.resample('15min').sum().reindex(full_idx, fill_value=0.0)
         
-    empty_markets = [col for col in df_resampled.columns if (df_resampled[col] == 0.0).all()]
+    empty_markets = [col for col in df_resampled.columns if (df_resampled[col] == 0.0).all() or df_resampled[col].isna().all()]
     
     # We no longer replace with np.nan here because VectorBT's cumulative returns 
     # implicitly converts them back to 0.0. We will handle trace nullification in the Plotly figures.
