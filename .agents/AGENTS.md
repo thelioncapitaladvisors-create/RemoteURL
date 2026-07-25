@@ -424,4 +424,12 @@ function resolveOutcome(s) {
   3. **Trailing SL Update**: `📈 TRAILING SL UPDATED` with new Stop Loss level.
 - Must be maintained in both Netlify background functions (`process-webhook-background.js`) and Next.js mobile routes (`route.ts`).
 
+## AI Scanner Statistics Pane & TLCS Edge % Real System Alignment
+- **Default System-Wide Metrics Mode**: The AI Scanner page (`scanner.html` & `scanner.js`) defaults to system-wide mode (`activeTab = 'all'`) where no single market tab is highlighted.
+- **Deselect Market Tab Toggle**: Clicking an active market tab toggles it off back to system-wide `'all'` mode.
+- **Historical System Edge Calculation**:
+  - The default statistics pane (`WIN RATE`, `HALF-KELLY %`, `PROFIT FACTOR`, `AVG PROFIT` / System Edge, `TOTAL TRADES`, `WINS / LOSSES`, `BEST TRADE`) on `scanner.html` and the `TLCS EDGE %` card on `dashboard.html` MUST calculate metrics across **ALL historical closed signals from all 6 markets since Week 1 when trade recording first started, including all to-date data**.
+  - `TLCS EDGE %` on `dashboard.html` and `AVG PROFIT` on `scanner.html` must always produce the exact same mathematical average profit percentage across all historical closed trades since Week 1.
+  - The scanner table (`tabRows`) strictly retains the daily time boundary (`sigTs >= startOfToday`) for active market symbol tracking, while `cachedData.signals` stores `allHistoricalSignals` for overall system edge metrics.
+
 
