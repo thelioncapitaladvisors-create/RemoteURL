@@ -111,3 +111,10 @@
   1. **Telegram Live Execution Lead Funnel**: Direct Telegram Channel CTA (`@TLCS_Alerts`) on [`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) capturing real-time trade alert subscribers.
   2. **Automated Instagram Performance Proof**: Daily session close & weekly performance automated dispatches to `@thelioncapitaladvisors` establishing algorithmic transparency.
   3. **Content Marketing Knowledge Base**: 4 core published articles with glassmorphic modal reader on [`blog.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/blog.html) and standalone reader on [`article.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/article.html) with back buttons (`← Back to Blogs and FAQs`) routing to `#blog-section`.
+
+---
+
+### 21. Market-Wide Edge % Mathematical Calculation Update
+- **CRITICAL FIX**: The Global "TLCS Edge %" for the "MARKET-WIDE (ALL ASSETS)" view has been updated to strictly calculate the **mathematical average of the 6 individual market weekly edges** (NIFTY, MCX, NYMEX, Cryptocurrency, Global Forex, World Indices).
+- **Rationale**: Previously calculated as the raw average of all closed trades combined, which allowed high-frequency scalping markets (like Cryptocurrency) to disproportionately distort the Edge of lower-frequency swing markets (like NIFTY).
+- **Weekly Isolation**: The Global Edge % is now explicitly isolated to the current week's closed trades, ensuring it reflects current market conditions rather than reverting to a lifetime overall value. This applies universally across the Web Dashboard (`dashboard.html`) and the Mobile App (`page.tsx`).
