@@ -172,14 +172,10 @@ def run_returns_backtest():
     else:
         df_resampled = df_pivot.resample('15min').sum().reindex(full_idx, fill_value=0.0)
         
-    # FIX: If any market had 0 trades today, its column will be entirely 0.0.
-    # Plotly struggles to render entirely 0.0 arrays via vectorbt's bdata encoding (results in diagonal lines).
-    # Replacing all-zero columns with np.nan cleanly hides them from the chart.
-    for col in df_resampled.columns:
-        if (df_resampled[col] == 0.0).all():
-            df_resampled[col] = np.nan
+    empty_markets = [col for col in df_resampled.columns if (df_resampled[col] == 0.0).all()]
     
-    
+    # We no longer replace with np.nan here because VectorBT's cumulative returns 
+    # implicitly converts them back to 0.0. We will handle trace nullification in the Plotly figures.
     # Feed to VectorBT (multi-column)
     vbt_returns = df_resampled.vbt.returns(freq='15min')
     
@@ -192,20 +188,29 @@ def run_returns_backtest():
     
     # 1. Equity Curve
     fig_equity = vbt_returns.plot(title="Cumulative Equity Curve")
-    fig_equity.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=60), legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
-    html_equity = fig_equity.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})
+    fig_equity.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
     
     # 2. Drawdowns
     wealth_index = (1 + df_resampled).cumprod()
     peak = wealth_index.cummax()
     drawdown = (wealth_index - peak) / peak
     fig_dd = drawdown.vbt.plot(title="Drawdowns (%)")
-    fig_dd.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=60), yaxis_tickformat='.2%', legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
-    html_dd = fig_dd.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})
+    fig_dd.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
     
     # 3. Raw Returns
     fig_ret = df_resampled.vbt.plot(title="Raw Returns (%)")
-    fig_ret.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=60), yaxis_tickformat='.2%', legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
+    fig_ret.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
+    
+    # Nullify Empty Traces to Prevent Plotly bdata Glitch
+    for fig in [fig_equity, fig_dd, fig_ret]:
+        for trace in fig.data:
+            if trace.name in empty_markets:
+                trace.y = [None] * len(trace.y)
+                trace.showlegend = False
+
+    # Generate HTML
+    html_equity = fig_equity.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})
+    html_dd = fig_dd.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})
     html_ret = fig_ret.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})
     
     # 4. Statistics Table
