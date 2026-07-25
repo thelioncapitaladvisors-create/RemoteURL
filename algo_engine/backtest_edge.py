@@ -1,6 +1,7 @@
 import os
 import json
 import pandas as pd
+import numpy as np
 import vectorbt as vbt
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -167,9 +168,17 @@ def run_returns_backtest():
     
     # Resample to 15-minute frequency and fill missing with 0.0
     if df_pivot.empty:
-        df_resampled = pd.DataFrame(0.0, index=full_idx, columns=markets)
+        df_resampled = pd.DataFrame(np.nan, index=full_idx, columns=markets)
     else:
         df_resampled = df_pivot.resample('15min').sum().reindex(full_idx, fill_value=0.0)
+        
+    # FIX: If any market had 0 trades today, its column will be entirely 0.0.
+    # Plotly struggles to render entirely 0.0 arrays via vectorbt's bdata encoding (results in diagonal lines).
+    # Replacing all-zero columns with np.nan cleanly hides them from the chart.
+    for col in df_resampled.columns:
+        if (df_resampled[col] == 0.0).all():
+            df_resampled[col] = np.nan
+    
     
     # Feed to VectorBT (multi-column)
     vbt_returns = df_resampled.vbt.returns(freq='15min')
