@@ -467,9 +467,18 @@ function resolveOutcome(s) {
 - **Strict Formatting Fallbacks**: All metric summary cards (`WIN RATE`, `HALF-KELLY %`, `PROFIT FACTOR`, `AVG PROFIT`, `BEST TRADE`) and symbol table columns (`SYM WIN%`, `HALF-KELLY %`) MUST display valid numeric defaults (`0.0%`, `+0.00%`, `0.00`, `0%`) instead of `--` when no trades exist or when Half-Kelly evaluates to 0/null.
 
 ## Official Instagram Account (@thelioncapitaladvisors) Automation Architecture
-- **Market Session Close Statistics Dispatcher**: [`cron-instagram-stats.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/cron-instagram-stats.js) runs as a scheduled Netlify background function to compute and post daily/weekly market performance metrics for all 6 market categories (`Nifty 50`, `MCX`, `NYMEX`, `Crypto`, `Forex`, `World Indices`) at market close.
-- **Strict Market Filtering & Metrics**: Posts are filtered by canonical `getMarket` symbol categories and calculate exact Win Rate %, Net System Edge %, Profit Factor, and Best Performer using `resolveOutcome`.
-- **Meta Graph API / Webhook Dispatch**: Posts directly to Meta Graph API (`INSTAGRAM_ACCOUNT_ID` & `INSTAGRAM_ACCESS_TOKEN`) or fallback `INSTAGRAM_WEBHOOK_URL`.
+- **Market Session Close Schedule**: [`cron-instagram-stats.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/cron-instagram-stats.js) evaluates time every 15 minutes and automatically triggers posts linked to the exact session close hours of each market:
+  1. `Nifty 50`: 15:35 IST (10:05 UTC)
+  2. `MCX`: 23:45 IST (18:15 UTC)
+  3. `NYMEX`: 02:35 IST / 17:00 EST (21:35 UTC)
+  4. `Forex`: 02:40 IST / 17:00 EST (21:40 UTC)
+  5. `World Indices`: 02:45 IST / 17:00 EST (21:45 UTC)
+  6. `Crypto`: 05:35 IST (00:05 UTC)
+- **Full Enclosed Market Metrics**: Posts combine 3 tiers of data:
+  1. **Daily Session Metrics**: Executed Trades, Win Rate %, Profit Factor, Avg System Edge %, Avg Winner, Avg Loser, Best Performer.
+  2. **Weekly Performance Cards**: Weekly Trades, Weekly Success %, Weekly Profit Factor, Weekly TLCS Net Edge %.
+  3. **All-Time Cumulative Edge**: Recorded Trades, All-Time Win Rate %, Profit Factor, Realized Half-Kelly Edge %.
+- **Meta Graph API & Webhook Dispatch**: Dispatches formatted posts to Meta Graph API (`INSTAGRAM_ACCOUNT_ID` & `INSTAGRAM_ACCESS_TOKEN`) or fallback `INSTAGRAM_WEBHOOK_URL`.
 - **Manual Diagnostic Endpoint**: [`test-instagram.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/test-instagram.js) enables on-demand test dispatches for any market.
 
 
