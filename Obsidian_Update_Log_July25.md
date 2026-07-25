@@ -23,3 +23,13 @@
 
 ### 4. Single Source of Truth & Rule Base Update (`AGENTS.md`)
 - **Updated System Guidelines**: Appended new architecture rules to [.agents/AGENTS.md](file:///Users/vishant/Documents/Project/.agents/AGENTS.md) enforcing default system-wide metrics mode on the AI Scanner page, tab deselect toggles, and historical Week 1 to date signal aggregation for `TLCS EDGE %`.
+
+---
+
+### 5. Next.js Mobile Scope & Build Error Resolution (`isNYMEXSymbol`)
+- **Resolved Next.js Type Compiler Error**: Defined `isNYMEXSymbol(symbol?: string)` helper function at module scope in [`page.tsx`](file:///Users/vishant/Documents/Project/Tv-Alert-Mobile/src/app/page.tsx) to resolve Netlify Next.js build worker exit error (`Type error: Cannot find name 'isNYMEXSymbol'`). Local build test verified 9/9 pages generated cleanly (`npm run build` exit code 0).
+
+---
+
+### 6. Netlify Secrets Scanning Security Enforcement
+- **Eliminated Hardcoded Secret Credentials**: Sanitized 7 test/utility script files ([`check_crude.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/check_crude.js), [`debug_metrics.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/debug_metrics.js), [`find_outliers.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/find_outliers.js), [`fix_corrupted_mcx.py`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/fix_corrupted_mcx.py), [`inspect_losses.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/inspect_losses.js), [`test_dash_exact.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/test_dash_exact.js), [`test_metrics.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/test_metrics.js)) by replacing hardcoded service role JWTs with dynamic environment variable lookups (`process.env.SUPABASE_SERVICE_KEY` / `os.environ.get(...)`). Netlify automated secrets scanner verified 0 violations.

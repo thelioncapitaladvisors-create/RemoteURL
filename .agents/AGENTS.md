@@ -432,4 +432,19 @@ function resolveOutcome(s) {
   - `TLCS EDGE %` on `dashboard.html` and `AVG PROFIT` on `scanner.html` must always produce the exact same mathematical average profit percentage across all historical closed trades since Week 1.
   - The scanner table (`tabRows`) strictly retains the daily time boundary (`sigTs >= startOfToday`) for active market symbol tracking, while `cachedData.signals` stores `allHistoricalSignals` for overall system edge metrics.
 
+## Strict Secrets & Environment Variable Policy (Netlify Build Security)
+- **NO Hardcoded Secret Keys**: NEVER hardcode real secret key strings (such as `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_SERVICE_KEY`, or `WEBHOOK_SECRET`) into test files, debug scripts, or utility files in the repository.
+- Netlify's automated build engine performs strict secrets scanning across all repo files during build and will immediately reject builds if a secret environment variable's exact value is detected in source code.
+- ALWAYS retrieve credentials dynamically via environment variables:
+  ```javascript
+  const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
+  ```
+  ```python
+  SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY")
+  ```
+
+## Next.js Client Component Scope Integrity (`page.tsx`)
+- All utility functions referenced within Next.js page JSX or component handlers (such as `isNYMEXSymbol`) MUST be explicitly defined at module scope or imported at top of file.
+- Omitting helper function definitions causes Next.js build-time TypeScript linting failures (`Type error: Cannot find name 'isNYMEXSymbol'`).
+
 
