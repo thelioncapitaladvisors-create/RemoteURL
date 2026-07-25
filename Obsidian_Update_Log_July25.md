@@ -81,3 +81,8 @@
 
 ### 15. Beginner Plan FREE Badge Tag Addition
 - **Vibrant FREE Pill Badge**: Added a gradient `🎉 FREE` pill badge to the **TLCS Standard Pivots Indicator** Beginner plan cards on both [`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) and [`products.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/products.html).
+
+---
+
+### 16. Beginner Plan Price Overlay FREE Stamp Badge
+- **Price Overlay FREE Badge**: Placed a secondary `🎉 FREE` pill badge directly over the `₹99/month` (or `$1/month`) price display on the Beginner plan cards ([`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) and [`products.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/products.html)). The badge is rotated `-5deg` and partially overlays the price text to partially hide it with a promotional stamp effect.

@@ -467,6 +467,8 @@ function resolveOutcome(s) {
 - **Strict Formatting Fallbacks**: All metric summary cards (`WIN RATE`, `HALF-KELLY %`, `PROFIT FACTOR`, `AVG PROFIT`, `BEST TRADE`) and symbol table columns (`SYM WIN%`, `HALF-KELLY %`) MUST display valid numeric defaults (`0.0%`, `+0.00%`, `0.00`, `0%`) instead of `--` when no trades exist or when Half-Kelly evaluates to 0/null.
 
 ## Indicator Branding & FREE Tag Badge Rule
-- **Beginner Plan FREE Badge**: The Beginner plan card ([`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) and [`products.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/products.html)) for **TLCS Standard Pivots Indicator** MUST display a vibrant gradient `🎉 FREE` pill badge alongside the Beginner tier label.
+- **Beginner Plan FREE Badges**: The Beginner plan card ([`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) and [`products.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/products.html)) for **TLCS Standard Pivots Indicator** MUST display two `🎉 FREE` pill badges:
+  1. Header badge alongside the Beginner tier label.
+  2. Price overlay stamp badge placed directly on top of the ₹99/mo (or $1/mo) price display, partially hiding the price text with a rotated stamp effect.
 
 
