@@ -9,9 +9,10 @@ The backend VectorBT engine (`algo_engine/backtest_edge.py`) has been overhauled
 - It resamples strictly to a `15min` frequency for granular, synchronous intraday comparison across NIFTY, MCX, NYMEX, Cryptocurrency, Global Forex, and World Indices.
 
 ## 2. Cross-Origin Iframe Embedding Security for Mobile App
-The live Netlify deployment's security headers (`TLCS_Website_Deploy/_headers`) were modified to completely strip the `X-Frame-Options: SAMEORIGIN` block.
-- This globally opens the iframe gateway.
-- It explicitly permits external Capacitor/Expo environments (like the live Mobile App) to seamlessly embed and auto-refresh the VectorBT tearsheet on the newly built ANALYTICS tab without triggering browser origin policy violations.
+The live Netlify deployment's security headers (`TLCS_Website_Deploy/_headers`) were overhauled to definitively fix Capacitor/Expo mobile embedding blocks.
+- Completely removed indented `X-Frame-Options` comments that were misparsed by Netlify as live headers.
+- Explicitly added `frame-ancestors *;` to the `Content-Security-Policy` to globally whitelist external webview framing without triggering browser origin policy violations.
+- Whitelisted `https://cdn.plot.ly` in the CSP `script-src` to guarantee the embedded VectorBT dynamic charts successfully download and render on the new ANALYTICS tab.
 
 ## 3. Interactive Analytics Tearsheet Interface
 Replaced the static, single-plot VectorBT output with a custom, dark-mode HTML template.
