@@ -451,4 +451,8 @@ function resolveOutcome(s) {
   - **Unexecuted Limit Orders** (`!s.updated_at`): Marked as `status: 'CANCELLED'`, `outcome: 'CANCELLED'`, `metadata.exit_reason: 'EXPIRED_LIMIT'`.
   - **Executed Active Positions**: Closed at session end with `status: 'EOD Exit'`, `exit_price: closePrice`, `metadata.exact_pct: exactPct`, and resolved outcome (`WIN` / `LOSS` / `BREAKEVEN`).
 
+## Default Mode Symbol Table Exclusion & Weekly Edge Header Pill
+- **No Symbol Rows in Default Mode**: In default mode (`activeTab = 'all'`), the scanner table (`#scanner-tbody`) MUST NOT display individual market symbol rows. It renders a clean prompt (`SELECT A MARKET CATEGORY ABOVE TO VIEW SYMBOL SIGNALS`). Symbol rows are displayed ONLY when a specific market tab is active.
+- **Weekly Edge Header Market Pill**: The right side of the Weekly Performance Edge header line MUST display a styled theme badge (`#weekly-edge-market-pill`) showing the active market view (e.g., `🌐 SYSTEM-WIDE (ALL MARKETS)` in gold for default mode, `₿ CRYPTO TOP 25` in cyan, `🛢️ NYMEX` in orange, etc.).
+
 

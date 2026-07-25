@@ -39,3 +39,9 @@
 ### 7. Netlify Automated EOD Market Closure Background Worker
 - **Scheduled Netlify Background Cron (`cron-eod-close.js`)**: Created and deployed [`cron-eod-close.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/cron-eod-close.js) scheduled to run every 15 minutes (`schedule("*/15 * * * *")`) on Netlify infrastructure.
 - **Automated Market Closure Sweeping**: Automatically closes all open positions across NYMEX, Nifty, MCX, World, and Forex markets at daily session close and weekend close. Executed 92 stale/weekend trade closures (including `CL1!`, `GC1!`, `NG1!`) as `EOD Exit` or `CANCELLED` (for unexecuted limits), leaving 0 unclosed trades hanging across closed sessions.
+
+---
+
+### 8. Default Mode Symbol Exclusion & Weekly Edge Header Market Badge
+- **Default Mode Symbol Table Cleanliness**: In default mode (`activeTab = 'all'`), the scanner table [`scanner.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.html) no longer dumps individual market symbol rows. Instead, it renders an elegant prompt (`SELECT A MARKET CATEGORY ABOVE TO VIEW SYMBOL SIGNALS`). Symbol rows render ONLY when a specific market category tab is active.
+- **Weekly Performance Edge Market Badge**: Added a dynamic theme badge (`#weekly-edge-market-pill`) to the right side of the Weekly Performance Edge header line in [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js), displaying the current active view (e.g. `🌐 SYSTEM-WIDE (ALL MARKETS)` in gold for default mode, `₿ CRYPTO TOP 25` in cyan, `🛢️ NYMEX` in orange, etc.).
