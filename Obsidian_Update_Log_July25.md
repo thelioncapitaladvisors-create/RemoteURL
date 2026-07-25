@@ -71,3 +71,13 @@
 
 ### 13. Centered Weekly Performance Edge Market Badge Alignment
 - **Centered Header Layout**: Reconfigured [`scanner.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.html) (`.weekly-edge-header-grid`) using a 3-column CSS grid (`1fr auto 1fr`) to shift the active market badge (`#weekly-edge-market-pill`) from the far right edge to the **exact center/middle** of the Weekly Performance Edge header line across all screen sizes.
+
+---
+
+### 14. Zero `--` Fallback Elimination on Real Calculated Metrics
+- **Strict Numeric Formatting Defaults**: Updated `renderSummaryBar`, `fmtWR`, and `fmtExp` across [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js) and [`commodity-scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/commodity-scanner.js) to display clean numeric fallbacks (`0.0%`, `+0.00%`, `0.00`, `0%`) instead of `--` when no trades exist or when Half-Kelly evaluates to 0/null.
+
+---
+
+### 15. Beginner Plan FREE Badge Tag Addition
+- **Vibrant FREE Pill Badge**: Added a gradient `🎉 FREE` pill badge to the **TLCS Standard Pivots Indicator** Beginner plan cards on both [`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) and [`products.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/products.html).
