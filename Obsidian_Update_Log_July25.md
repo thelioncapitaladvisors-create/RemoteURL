@@ -45,3 +45,9 @@
 ### 8. Default Mode Symbol Exclusion & Weekly Edge Header Market Badge
 - **Default Mode Symbol Table Cleanliness**: In default mode (`activeTab = 'all'`), the scanner table [`scanner.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.html) no longer dumps individual market symbol rows. Instead, it renders an elegant prompt (`SELECT A MARKET CATEGORY ABOVE TO VIEW SYMBOL SIGNALS`). Symbol rows render ONLY when a specific market category tab is active.
 - **Weekly Performance Edge Market Badge**: Added a dynamic theme badge (`#weekly-edge-market-pill`) to the right side of the Weekly Performance Edge header line in [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js), displaying the current active view (e.g. `🌐 SYSTEM-WIDE (ALL MARKETS)` in gold for default mode, `₿ CRYPTO TOP 25` in cyan, `🛢️ NYMEX` in orange, etc.).
+
+---
+
+### 9. Default Mode Weekly Performance Edge — Average of All Six Markets Alignment
+- **Pure Average Consolidation**: Updated `fetchWeeklyLogs('all')` in [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js) so that all Weekly Performance Edge table metrics in default mode (`WIN RATE`, `NET EDGE`, `PROFIT FACTOR`, `HALF-KELLY %`) are computed as the **exact mathematical average of all six active markets** for each week (eliminating additive net edge sum inflation).
+- **Cumulative Edge Row (`ALL`)**: The top `ALL - CUMULATIVE EDGE` row computes the average across the weekly consolidated averages, displaying true 6-market portfolio averages.

@@ -455,4 +455,8 @@ function resolveOutcome(s) {
 - **No Symbol Rows in Default Mode**: In default mode (`activeTab = 'all'`), the scanner table (`#scanner-tbody`) MUST NOT display individual market symbol rows. It renders a clean prompt (`SELECT A MARKET CATEGORY ABOVE TO VIEW SYMBOL SIGNALS`). Symbol rows are displayed ONLY when a specific market tab is active.
 - **Weekly Edge Header Market Pill**: The right side of the Weekly Performance Edge header line MUST display a styled theme badge (`#weekly-edge-market-pill`) showing the active market view (e.g., `🌐 SYSTEM-WIDE (ALL MARKETS)` in gold for default mode, `₿ CRYPTO TOP 25` in cyan, `🛢️ NYMEX` in orange, etc.).
 
+## Default Mode Weekly Performance Edge — Average of All Six Markets Rule
+- **Pure Average Consolidation**: In default mode (`activeTab = 'all'`), all metrics in the Weekly Performance Edge table (`WIN RATE`, `NET EDGE`, `PROFIT FACTOR`, `HALF-KELLY %`) MUST be calculated as the **mathematical average of all six active markets** for each week (not the sum).
+- **Cumulative Edge Row (`ALL`)**: The top `ALL - CUMULATIVE EDGE` row computes the average across the weekly consolidated averages, reflecting the true average weekly performance of the entire 6-market portfolio.
+
 
