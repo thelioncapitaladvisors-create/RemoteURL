@@ -183,7 +183,7 @@ def run_returns_backtest():
     
     # 1. Equity Curve
     fig_equity = vbt_returns.plot(title="Cumulative Equity Curve")
-    fig_equity.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=10))
+    fig_equity.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=60), legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
     html_equity = fig_equity.to_html(full_html=False, include_plotlyjs=False)
     
     # 2. Drawdowns
@@ -191,12 +191,12 @@ def run_returns_backtest():
     peak = wealth_index.cummax()
     drawdown = (wealth_index - peak) / peak
     fig_dd = drawdown.vbt.plot(title="Drawdowns (%)")
-    fig_dd.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=10), yaxis_tickformat='.2%')
+    fig_dd.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=60), yaxis_tickformat='.2%', legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
     html_dd = fig_dd.to_html(full_html=False, include_plotlyjs=False)
     
     # 3. Raw Returns
     fig_ret = df_resampled.vbt.plot(title="Raw Returns (%)")
-    fig_ret.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=10), yaxis_tickformat='.2%')
+    fig_ret.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=60), yaxis_tickformat='.2%', legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
     html_ret = fig_ret.to_html(full_html=False, include_plotlyjs=False)
     
     # 4. Statistics Table
