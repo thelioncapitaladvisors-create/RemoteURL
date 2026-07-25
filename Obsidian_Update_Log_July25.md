@@ -103,3 +103,11 @@
 ### 19. Instagram Automation Engine (@thelioncapitaladvisors) — Market Close Schedule & Metrics
 - **Netlify Background Dispatcher**: Built [`cron-instagram-stats.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/cron-instagram-stats.js) and diagnostic test function [`test-instagram.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/test-instagram.js) running every 15 minutes to evaluate time and trigger automated posts linked directly to the session close hours of each market category (`Nifty 50`: 15:35 IST, `MCX`: 23:45 IST, `NYMEX`: 02:35 IST, `Forex`: 02:40 IST, `World Indices`: 02:45 IST, `Crypto`: 05:35 IST).
 - **Full 3-Tier Enclosed Metrics**: Reports include Daily Session Metrics (Closed Executions, Wins/Losses/BE, Win Rate %, Profit Factor, System Edge %, Avg Winner/Loser, Best Trade), Weekly Performance Cards (Weekly Trades, Success %, Profit Factor, TLCS Net Edge %), and All-Time Cumulative Edge (Recorded Trades, Win Rate %, Profit Factor, Half-Kelly %).
+
+---
+
+### 20. Official TLCS Automated Social Media & Marketing Architecture Plan
+- **Unified Marketing & Acquisition Strategy**:
+  1. **Telegram Live Execution Lead Funnel**: Direct Telegram Channel CTA (`@TLCS_Alerts`) on [`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) capturing real-time trade alert subscribers.
+  2. **Automated Instagram Performance Proof**: Daily session close & weekly performance automated dispatches to `@thelioncapitaladvisors` establishing algorithmic transparency.
+  3. **Content Marketing Knowledge Base**: 4 core published articles with glassmorphic modal reader on [`blog.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/blog.html) and standalone reader on [`article.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/article.html) with back buttons (`← Back to Blogs and FAQs`) routing to `#blog-section`.

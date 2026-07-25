@@ -466,19 +466,28 @@ function resolveOutcome(s) {
 ## Zero `--` Display Policy on Real Metrics
 - **Strict Formatting Fallbacks**: All metric summary cards (`WIN RATE`, `HALF-KELLY %`, `PROFIT FACTOR`, `AVG PROFIT`, `BEST TRADE`) and symbol table columns (`SYM WIN%`, `HALF-KELLY %`) MUST display valid numeric defaults (`0.0%`, `+0.00%`, `0.00`, `0%`) instead of `--` when no trades exist or when Half-Kelly evaluates to 0/null.
 
-## Official Instagram Account (@thelioncapitaladvisors) Automation Architecture
-- **Market Session Close Schedule**: [`cron-instagram-stats.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/cron-instagram-stats.js) evaluates time every 15 minutes and automatically triggers posts linked to the exact session close hours of each market:
-  1. `Nifty 50`: 15:35 IST (10:05 UTC)
-  2. `MCX`: 23:45 IST (18:15 UTC)
-  3. `NYMEX`: 02:35 IST / 17:00 EST (21:35 UTC)
-  4. `Forex`: 02:40 IST / 17:00 EST (21:40 UTC)
-  5. `World Indices`: 02:45 IST / 17:00 EST (21:45 UTC)
-  6. `Crypto`: 05:35 IST (00:05 UTC)
-- **Full Enclosed Market Metrics**: Posts combine 3 tiers of data:
-  1. **Daily Session Metrics**: Executed Trades, Win Rate %, Profit Factor, Avg System Edge %, Avg Winner, Avg Loser, Best Performer.
-  2. **Weekly Performance Cards**: Weekly Trades, Weekly Success %, Weekly Profit Factor, Weekly TLCS Net Edge %.
-  3. **All-Time Cumulative Edge**: Recorded Trades, All-Time Win Rate %, Profit Factor, Realized Half-Kelly Edge %.
-- **Meta Graph API & Webhook Dispatch**: Dispatches formatted posts to Meta Graph API (`INSTAGRAM_ACCOUNT_ID` & `INSTAGRAM_ACCESS_TOKEN`) or fallback `INSTAGRAM_WEBHOOK_URL`.
-- **Manual Diagnostic Endpoint**: [`test-instagram.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/test-instagram.js) enables on-demand test dispatches for any market.
+## Official TLCS Automated Social Media & Marketing Architecture Plan
+- **Multi-Channel Distribution Funnel**:
+  1. **Telegram Channel (`@TLCS_Alerts` / `-1001555378566`)**:
+     - **Target Audience**: Active Energy & Metals traders.
+     - **Scope**: Exclusive real-time NYMEX trade execution alerts (`CL`, `GC`, `NG`, `SI`).
+     - **Conversion Lead Capture**: Reframed landing page callout box on [`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) (`Join Telegram Channel (@TLCS_Alerts) →`) driving free traffic to Telegram alerts channel.
+  2. **Instagram Official Account (`@thelioncapitaladvisors`)**:
+     - **Target Audience**: Retail & institutional traders seeking daily/weekly performance transparency.
+     - **Session Close Automation**: Automated Netlify background dispatcher [`cron-instagram-stats.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/cron-instagram-stats.js) posts performance reports linked to exact market close hours:
+       - `Nifty 50`: 15:35 IST (10:05 UTC)
+       - `MCX`: 23:45 IST (18:15 UTC)
+       - `NYMEX`: 02:35 IST / 17:00 EST (21:35 UTC)
+       - `Forex`: 02:40 IST / 17:00 EST (21:40 UTC)
+       - `World Indices`: 02:45 IST / 17:00 EST (21:45 UTC)
+       - `Crypto`: 05:35 IST (00:05 UTC)
+     - **3-Tier Performance Breakdown**: Every post includes Daily Session Close Metrics, Weekly Performance Cards, and All-Time Cumulative Edge.
+  3. **Content Marketing & SEO Knowledge Base (`blog.html` & `article.html`)**:
+     - **4 Core Publications**:
+       1. `🦁 TRADE WHAT YOU SEE, NOT WHAT YOU FEEL` (Trade Management)
+       2. `🌪️ NAVIGATING VOLATILITY IN MODERN MARKETS` (Market Psychology)
+       3. `🎯 MASTERING THE TLCS TERMINAL` (Trading Tools & Systems)
+       4. `🔔 THE PSYCHOLOGY OF ALERTS TRADING` (Trading Automation)
+     - **Reader Navigation**: Glassmorphic fullscreen reader modal on `blog.html` + standalone `article.html?id=...` pages with back buttons (`← Back to Blogs and FAQs`) routing back to `#blog-section`.
 
 
