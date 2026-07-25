@@ -162,16 +162,16 @@ def run_returns_backtest():
     df_pivot = df_pivot[markets]
     
     # Create a full minute-by-minute timeline for today up to current time
-    full_idx = pd.date_range(start=start_of_today_ist, end=now_ist, freq='min')
+    full_idx = pd.date_range(start=start_of_today_ist, end=now_ist, freq='15min')
     
-    # Resample to 1-minute frequency and fill missing with 0.0
+    # Resample to 15-minute frequency and fill missing with 0.0
     if df_pivot.empty:
         df_resampled = pd.DataFrame(0.0, index=full_idx, columns=markets)
     else:
-        df_resampled = df_pivot.resample('min').sum().reindex(full_idx, fill_value=0.0)
+        df_resampled = df_pivot.resample('15min').sum().reindex(full_idx, fill_value=0.0)
     
     # Feed to VectorBT (multi-column)
-    vbt_returns = df_resampled.vbt.returns(freq='min')
+    vbt_returns = df_resampled.vbt.returns(freq='15min')
     
     # Print stats
     print("--- TODAY'S BACKTEST METRICS ---")
