@@ -61,3 +61,8 @@
 
 ### 11. Mandatory Stop, Target & R:R Level Deductions for Closed & EOD Trades
 - **Universal Level Completeness Engine**: Implemented `getTradeLevels` across [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js), [`commodity-scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/commodity-scanner.js), and [`page.tsx`](file:///Users/vishant/Documents/Project/Tv-Alert-Mobile/src/app/page.tsx) so that closed trades (including EOD force closures and divergence signals lacking explicit payload stops/targets) dynamically compute `STOP`, `TARGET`, and `R:R` (e.g., `1.0R`) using entry prices and asset-class stop percentage defaults (`0.5%` Crude/Silver, `0.3%` Gold, `0.35%` Nifty, `0.75%` Crypto, `0.25%` Forex). `STOP`, `TARGET`, and `R:R` are no longer rendered as `--` on any closed trade card or table row.
+
+---
+
+### 12. Individual Market View Cumulative Edge Alignment (Un-inflated Weekly Averages)
+- **Universal Weekly Average Metrics**: Updated `fetchWeeklyLogs` in [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js) so that the `ALL - CUMULATIVE EDGE` row for individual market tabs (e.g., `Crypto Top 25`, `Nifty 50`, `MCX`, `NYMEX`, `Forex Pairs`, `World Indices`) computes the **average weekly performance metrics** across recorded weeks (e.g. Crypto Average Weekly Net Edge = `+11.83%`), completely eliminating additive net edge sum inflation across all market views.

@@ -455,9 +455,9 @@ function resolveOutcome(s) {
 - **No Symbol Rows in Default Mode**: In default mode (`activeTab = 'all'`), the scanner table (`#scanner-tbody`) MUST NOT display individual market symbol rows. It renders a clean prompt (`SELECT A MARKET CATEGORY ABOVE TO VIEW SYMBOL SIGNALS`). Symbol rows are displayed ONLY when a specific market tab is active.
 - **Weekly Edge Header Market Pill**: The right side of the Weekly Performance Edge header line MUST display a styled theme badge (`#weekly-edge-market-pill`) showing the active market view (e.g., `🌐 SYSTEM-WIDE (ALL MARKETS)` in gold for default mode, `₿ CRYPTO TOP 25` in cyan, `🛢️ NYMEX` in orange, etc.).
 
-## Default Mode Weekly Performance Edge — Average of All Six Markets Rule
-- **Pure Average Consolidation**: In default mode (`activeTab = 'all'`), all metrics in the Weekly Performance Edge table (`WIN RATE`, `NET EDGE`, `PROFIT FACTOR`, `HALF-KELLY %`) MUST be calculated as the **mathematical average of all six active markets** for each week (not the sum).
-- **Cumulative Edge Row (`ALL`)**: The top `ALL - CUMULATIVE EDGE` row computes the average across the weekly consolidated averages, reflecting the true average weekly performance of the entire 6-market portfolio.
+## Weekly Performance Edge — Universal Average Metric Rule Across All Views
+- **Pure Average Consolidation (Default & Individual Tabs)**: For ALL market views (both system-wide `all` and individual market tabs like `crypto`, `nifty`, `mcx`, `nymex`, `forex`, `world`), all metrics in the Weekly Performance Edge table MUST reflect weekly averages.
+- **Cumulative Edge Row (`ALL`)**: The top `ALL - CUMULATIVE EDGE` row MUST ALWAYS compute the mathematical average across recorded weeks (e.g. Average Weekly Net Edge, Average Win Rate, Average Profit Factor, Average Half-Kelly %), ensuring cumulative figures are never inflated by summing multiple weeks together.
 
 ## Mandatory Stop, Target & R:R Completeness Rule for Closed & EOD Trades
 - **No Missing Levels on Closed Trades**: All closed trades (including `EOD Exit`, `Hit SL`, `Hit TP`, `Hit B/E`, `Divergence`, and legacy signals) MUST display valid numeric values for `STOP`, `TARGET`, and `R:R` (e.g. `1.0R`, `1.5R`).
