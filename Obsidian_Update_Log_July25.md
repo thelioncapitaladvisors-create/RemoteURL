@@ -33,3 +33,9 @@
 
 ### 6. Netlify Secrets Scanning Security Enforcement
 - **Eliminated Hardcoded Secret Credentials**: Sanitized 7 test/utility script files ([`check_crude.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/check_crude.js), [`debug_metrics.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/debug_metrics.js), [`find_outliers.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/find_outliers.js), [`fix_corrupted_mcx.py`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/fix_corrupted_mcx.py), [`inspect_losses.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/inspect_losses.js), [`test_dash_exact.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/test_dash_exact.js), [`test_metrics.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/test_metrics.js)) by replacing hardcoded service role JWTs with dynamic environment variable lookups (`process.env.SUPABASE_SERVICE_KEY` / `os.environ.get(...)`). Netlify automated secrets scanner verified 0 violations.
+
+---
+
+### 7. Netlify Automated EOD Market Closure Background Worker
+- **Scheduled Netlify Background Cron (`cron-eod-close.js`)**: Created and deployed [`cron-eod-close.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/cron-eod-close.js) scheduled to run every 15 minutes (`schedule("*/15 * * * *")`) on Netlify infrastructure.
+- **Automated Market Closure Sweeping**: Automatically closes all open positions across NYMEX, Nifty, MCX, World, and Forex markets at daily session close and weekend close. Executed 92 stale/weekend trade closures (including `CL1!`, `GC1!`, `NG1!`) as `EOD Exit` or `CANCELLED` (for unexecuted limits), leaving 0 unclosed trades hanging across closed sessions.

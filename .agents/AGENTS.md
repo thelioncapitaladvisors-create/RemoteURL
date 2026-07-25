@@ -445,6 +445,10 @@ function resolveOutcome(s) {
 
 ## Next.js Client Component Scope Integrity (`page.tsx`)
 - All utility functions referenced within Next.js page JSX or component handlers (such as `isNYMEXSymbol`) MUST be explicitly defined at module scope or imported at top of file.
-- Omitting helper function definitions causes Next.js build-time TypeScript linting failures (`Type error: Cannot find name 'isNYMEXSymbol'`).
+## Automated EOD Market Closure Netlify Scheduled Background Worker
+- **15-Minute Netlify Cron (`cron-eod-close.js`)**: Scheduled to run every 15 minutes (`schedule("*/15 * * * *")`) on Netlify background infrastructure (`netlify/functions/cron-eod-close.js`).
+- **Market Closure Sweeping**: Automatically scans and closes all open trades across NYMEX, Nifty, MCX, World, and Forex markets upon session close and weekend close:
+  - **Unexecuted Limit Orders** (`!s.updated_at`): Marked as `status: 'CANCELLED'`, `outcome: 'CANCELLED'`, `metadata.exit_reason: 'EXPIRED_LIMIT'`.
+  - **Executed Active Positions**: Closed at session end with `status: 'EOD Exit'`, `exit_price: closePrice`, `metadata.exact_pct: exactPct`, and resolved outcome (`WIN` / `LOSS` / `BREAKEVEN`).
 
 
