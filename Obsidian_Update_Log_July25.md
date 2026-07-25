@@ -9,9 +9,9 @@
 
 ---
 
-### 2. Historical System Edge Alignment (`TLCS EDGE %`)
-- **Week 1 to Date Historical System Edge**: Updated [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js) (`cachedData.signals`) and [`dashboard.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/dashboard.html) (`systemAvgEdge`) to compute overall system edge over **all historical closed trades across all 6 markets starting from Week 1 to date**.
-- **Dashboard & Scanner Synchronization**: The `TLCS EDGE %` card on `dashboard.html` and the `Avg Profit` summary metric on `scanner.html` now match with 100% mathematical precision, showing the true, real edge of the entire TLCS system since inception.
+### 2. Weekly Consolidated System Edge Alignment (`TLCS EDGE %`)
+- **Current Week Consolidated System Edge**: Updated [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js) (`cachedData.signals`) and [`dashboard.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/dashboard.html) (`systemAvgEdge`) to compute consolidated system edge over **all 6 markets combined for the current week** (starting Monday 00:00 local time).
+- **Dashboard & Scanner Parity**: The `TLCS EDGE %` card on `dashboard.html` and the `Avg Profit` summary metric on `scanner.html` match with 100% mathematical precision, showing the consolidated weekly edge of the entire TLCS system.
 
 ---
 
