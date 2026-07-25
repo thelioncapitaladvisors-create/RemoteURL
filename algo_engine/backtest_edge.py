@@ -193,7 +193,7 @@ def run_returns_backtest():
     # 1. Equity Curve
     fig_equity = vbt_returns.plot(title="Cumulative Equity Curve")
     fig_equity.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=60), legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
-    html_equity = fig_equity.to_html(full_html=False, include_plotlyjs=False)
+    html_equity = fig_equity.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})
     
     # 2. Drawdowns
     wealth_index = (1 + df_resampled).cumprod()
@@ -201,12 +201,12 @@ def run_returns_backtest():
     drawdown = (wealth_index - peak) / peak
     fig_dd = drawdown.vbt.plot(title="Drawdowns (%)")
     fig_dd.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=60), yaxis_tickformat='.2%', legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
-    html_dd = fig_dd.to_html(full_html=False, include_plotlyjs=False)
+    html_dd = fig_dd.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})
     
     # 3. Raw Returns
     fig_ret = df_resampled.vbt.plot(title="Raw Returns (%)")
     fig_ret.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=60), yaxis_tickformat='.2%', legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
-    html_ret = fig_ret.to_html(full_html=False, include_plotlyjs=False)
+    html_ret = fig_ret.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})
     
     # 4. Statistics Table
     with warnings.catch_warnings():
@@ -222,22 +222,23 @@ def run_returns_backtest():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     <style>
-        body {{ margin: 0; background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #fff; overflow-x: hidden; }}
-        .tab-container {{ padding: 12px 20px; background-color: #121826; border-bottom: 1px solid #1f2937; display: flex; gap: 10px; overflow-x: auto; white-space: nowrap; }}
-        .tab-btn {{ background-color: #1f2937; color: #9ca3af; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; flex-shrink: 0; }}
+        body {{ margin: 0; background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #fff; overflow-x: hidden; overflow-y: hidden; }}
+        * {{ box-sizing: border-box; }}
+        .tab-container {{ padding: 8px 10px; background-color: #121826; border-bottom: 1px solid #1f2937; display: flex; gap: 4px; justify-content: space-between; width: 100%; }}
+        .tab-btn {{ background-color: #1f2937; color: #9ca3af; border: none; padding: 6px 4px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; transition: all 0.2s; flex: 1; text-align: center; white-space: normal; line-height: 1.2; }}
         .tab-btn:hover {{ background-color: #374151; color: #fff; }}
         .tab-btn.active {{ background-color: #3b82f6; color: #fff; }}
-        .tab-content {{ display: none; padding: 0; width: 100vw; height: calc(100vh - 60px); }}
+        .tab-content {{ display: none; padding: 0; width: 100%; height: calc(100vh - 50px); }}
         .tab-content.active {{ display: block; }}
         .plotly-graph-div {{ width: 100% !important; height: 100% !important; }}
         /* Hide scrollbar for tabs */
         .tab-container::-webkit-scrollbar {{ display: none; }}
         .tab-container {{ -ms-overflow-style: none; scrollbar-width: none; }}
         /* Stats Table */
-        .stats-container {{ padding: 20px; overflow-y: auto; height: 100%; box-sizing: border-box; }}
-        .stats-table {{ width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; background-color: #121826; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }}
-        .stats-table th {{ background-color: #1f2937; color: #9ca3af; padding: 12px 16px; border-bottom: 1px solid #374151; font-weight: 600; }}
-        .stats-table td {{ padding: 12px 16px; border-bottom: 1px solid #1f2937; color: #d1d5db; }}
+        .stats-container {{ padding: 15px; overflow-y: auto; height: 100%; width: 100%; }}
+        .stats-table {{ width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; background-color: #121826; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }}
+        .stats-table th {{ background-color: #1f2937; color: #9ca3af; padding: 10px 12px; border-bottom: 1px solid #374151; font-weight: 600; }}
+        .stats-table td {{ padding: 10px 12px; border-bottom: 1px solid #1f2937; color: #d1d5db; }}
         .stats-table tr:hover td {{ background-color: #1e293b; }}
     </style>
 </head>
