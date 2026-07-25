@@ -91,3 +91,14 @@
 
 ### 17. Official Blog Publications Upload & Interactive Reader Integration
 - **4 Core Publications Integrated**: Published the 4 official TLCS articles (`🦁 TRADE WHAT YOU SEE, NOT WHAT YOU FEEL`, `🌪️ NAVIGATING VOLATILITY IN MODERN MARKETS`, `🎯 MASTERING THE TLCS TERMINAL`, `🔔 THE PSYCHOLOGY OF ALERTS TRADING`) across [`blog.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/blog.html) and [`article.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/article.html). Integrated an inline full-screen Glassmorphic Article Reader Modal on `blog.html` and enabled standalone reader links (`article.html?id=...`). Persisted articles in Supabase `blogs` table.
+
+---
+
+### 18. Landing Page Real Statistics Mapping & Telegram Channel Diverter
+- **Real Consolidated Metrics**: Mapped the landing page statistics grid on [`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) to the real AI Scanner weekly consolidated metrics (`874+ Trades Analyzed`, `44.5% Avg Win Rate`, `3.59 Profit Factor`, `+3.46% Net Edge`, `+15.07% Half-Kelly`).
+- **Telegram Channel Diverter**: Reframed the email subscription callout box on `index.html` into a direct Telegram Channel diverter promoting real-time NYMEX trade alerts (`@TLCS_Alerts`).
+
+---
+
+### 19. Instagram Automation Engine (@thelioncapitaladvisors)
+- **Netlify Background Dispatcher**: Built [`cron-instagram-stats.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/cron-instagram-stats.js) and diagnostic test function [`test-instagram.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/test-instagram.js) to automate daily & weekly market closing performance reports for all 6 market categories (`Nifty 50`, `MCX`, `NYMEX`, `Crypto`, `Forex`, `World Indices`) sent via Meta Graph API / Webhook.

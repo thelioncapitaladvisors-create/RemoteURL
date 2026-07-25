@@ -466,12 +466,10 @@ function resolveOutcome(s) {
 ## Zero `--` Display Policy on Real Metrics
 - **Strict Formatting Fallbacks**: All metric summary cards (`WIN RATE`, `HALF-KELLY %`, `PROFIT FACTOR`, `AVG PROFIT`, `BEST TRADE`) and symbol table columns (`SYM WIN%`, `HALF-KELLY %`) MUST display valid numeric defaults (`0.0%`, `+0.00%`, `0.00`, `0%`) instead of `--` when no trades exist or when Half-Kelly evaluates to 0/null.
 
-## Official Blog Articles & Knowledge Base Publication Rule
-- **4 Core Publications**: The website's Blogs and FAQs page ([`blog.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/blog.html)) and article viewer ([`article.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/article.html)) MUST feature the 4 official TLCS publications:
-  1. `🦁 TRADE WHAT YOU SEE, NOT WHAT YOU FEEL` (Trade Management)
-  2. `🌪️ NAVIGATING VOLATILITY IN MODERN MARKETS` (Market Psychology)
-  3. `🎯 MASTERING THE TLCS TERMINAL` (Trading Tools & Systems)
-  4. `🔔 THE PSYCHOLOGY OF ALERTS TRADING` (Trading Automation)
-- **Interactive Reader Modal & Standalone Reader**: All 4 articles MUST be available via direct URL (`article.html?id=...`) and via full-screen glassmorphic modal overlays inside `blog.html`. Articles are also persisted in the Supabase `blogs` table.
+## Official Instagram Account (@thelioncapitaladvisors) Automation Architecture
+- **Market Session Close Statistics Dispatcher**: [`cron-instagram-stats.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/cron-instagram-stats.js) runs as a scheduled Netlify background function to compute and post daily/weekly market performance metrics for all 6 market categories (`Nifty 50`, `MCX`, `NYMEX`, `Crypto`, `Forex`, `World Indices`) at market close.
+- **Strict Market Filtering & Metrics**: Posts are filtered by canonical `getMarket` symbol categories and calculate exact Win Rate %, Net System Edge %, Profit Factor, and Best Performer using `resolveOutcome`.
+- **Meta Graph API / Webhook Dispatch**: Posts directly to Meta Graph API (`INSTAGRAM_ACCOUNT_ID` & `INSTAGRAM_ACCESS_TOKEN`) or fallback `INSTAGRAM_WEBHOOK_URL`.
+- **Manual Diagnostic Endpoint**: [`test-instagram.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/netlify/functions/test-instagram.js) enables on-demand test dispatches for any market.
 
 
