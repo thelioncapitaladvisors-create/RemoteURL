@@ -12,3 +12,8 @@ The backend VectorBT engine (`algo_engine/backtest_edge.py`) has been overhauled
 The live Netlify deployment's security headers (`TLCS_Website_Deploy/_headers`) were modified to completely strip the `X-Frame-Options: SAMEORIGIN` block.
 - This globally opens the iframe gateway.
 - It explicitly permits external Capacitor/Expo environments (like the live Mobile App) to seamlessly embed and auto-refresh the VectorBT tearsheet on the newly built ANALYTICS tab without triggering browser origin policy violations.
+
+## 3. Interactive Analytics Tearsheet Interface
+Replaced the static, single-plot VectorBT output with a custom, dark-mode HTML template.
+- The tearsheet now features interactive vanilla JS tab filters to seamlessly toggle between 3 distinct dynamic Plotly visualizations (Full Equity Curve, Drawdowns, and Raw Returns) without reloading the iframe.
+- Admin panel branding was streamlined by removing specific framework references.
