@@ -66,3 +66,8 @@
 
 ### 12. Individual Market View Cumulative Edge Alignment (Un-inflated Weekly Averages)
 - **Universal Weekly Average Metrics**: Updated `fetchWeeklyLogs` in [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js) so that the `ALL - CUMULATIVE EDGE` row for individual market tabs (e.g., `Crypto Top 25`, `Nifty 50`, `MCX`, `NYMEX`, `Forex Pairs`, `World Indices`) computes the **average weekly performance metrics** across recorded weeks (e.g. Crypto Average Weekly Net Edge = `+11.83%`), completely eliminating additive net edge sum inflation across all market views.
+
+---
+
+### 13. Centered Weekly Performance Edge Market Badge Alignment
+- **Centered Header Layout**: Reconfigured [`scanner.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.html) (`.weekly-edge-header-grid`) using a 3-column CSS grid (`1fr auto 1fr`) to shift the active market badge (`#weekly-edge-market-pill`) from the far right edge to the **exact center/middle** of the Weekly Performance Edge header line across all screen sizes.
