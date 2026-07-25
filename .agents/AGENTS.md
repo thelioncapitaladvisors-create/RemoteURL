@@ -466,9 +466,12 @@ function resolveOutcome(s) {
 ## Zero `--` Display Policy on Real Metrics
 - **Strict Formatting Fallbacks**: All metric summary cards (`WIN RATE`, `HALF-KELLY %`, `PROFIT FACTOR`, `AVG PROFIT`, `BEST TRADE`) and symbol table columns (`SYM WIN%`, `HALF-KELLY %`) MUST display valid numeric defaults (`0.0%`, `+0.00%`, `0.00`, `0%`) instead of `--` when no trades exist or when Half-Kelly evaluates to 0/null.
 
-## Indicator Branding & FREE Tag Badge Rule
-- **Beginner Plan FREE Badges**: The Beginner plan card ([`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) and [`products.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/products.html)) for **TLCS Standard Pivots Indicator** MUST display two `🎉 FREE` pill badges:
-  1. Header badge alongside the Beginner tier label.
-  2. Price overlay stamp badge placed directly on top of the ₹99/mo (or $1/mo) price display, partially hiding the price text with a rotated stamp effect.
+## Official Blog Articles & Knowledge Base Publication Rule
+- **4 Core Publications**: The website's Blogs and FAQs page ([`blog.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/blog.html)) and article viewer ([`article.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/article.html)) MUST feature the 4 official TLCS publications:
+  1. `🦁 TRADE WHAT YOU SEE, NOT WHAT YOU FEEL` (Trade Management)
+  2. `🌪️ NAVIGATING VOLATILITY IN MODERN MARKETS` (Market Psychology)
+  3. `🎯 MASTERING THE TLCS TERMINAL` (Trading Tools & Systems)
+  4. `🔔 THE PSYCHOLOGY OF ALERTS TRADING` (Trading Automation)
+- **Interactive Reader Modal & Standalone Reader**: All 4 articles MUST be available via direct URL (`article.html?id=...`) and via full-screen glassmorphic modal overlays inside `blog.html`. Articles are also persisted in the Supabase `blogs` table.
 
 

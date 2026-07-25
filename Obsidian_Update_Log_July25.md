@@ -86,3 +86,8 @@
 
 ### 16. Beginner Plan Price Overlay FREE Stamp Badge
 - **Price Overlay FREE Badge**: Placed a secondary `🎉 FREE` pill badge directly over the `₹99/month` (or `$1/month`) price display on the Beginner plan cards ([`index.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/index.html) and [`products.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/products.html)). The badge is rotated `-5deg` and partially overlays the price text to partially hide it with a promotional stamp effect.
+
+---
+
+### 17. Official Blog Publications Upload & Interactive Reader Integration
+- **4 Core Publications Integrated**: Published the 4 official TLCS articles (`🦁 TRADE WHAT YOU SEE, NOT WHAT YOU FEEL`, `🌪️ NAVIGATING VOLATILITY IN MODERN MARKETS`, `🎯 MASTERING THE TLCS TERMINAL`, `🔔 THE PSYCHOLOGY OF ALERTS TRADING`) across [`blog.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/blog.html) and [`article.html`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/article.html). Integrated an inline full-screen Glassmorphic Article Reader Modal on `blog.html` and enabled standalone reader links (`article.html?id=...`). Persisted articles in Supabase `blogs` table.
