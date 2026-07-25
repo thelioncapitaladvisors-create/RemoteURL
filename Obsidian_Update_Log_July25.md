@@ -56,3 +56,8 @@
 
 ### 10. Local Projects Repository Cleanliness & Push Verification
 - **Full Workspace Synchronization**: Verified that all local repositories ([`TLCS_Website_Deploy`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy), [`Tv-Alert-Mobile`](file:///Users/vishant/Documents/Project/Tv-Alert-Mobile), [`TV Indicator`](file:///Users/vishant/Documents/Project/TV%20Indicator), and the root workspace repository) are 100% clean, fully committed, and synchronized with remote `origin/main`.
+
+---
+
+### 11. Mandatory Stop, Target & R:R Level Deductions for Closed & EOD Trades
+- **Universal Level Completeness Engine**: Implemented `getTradeLevels` across [`scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/scanner.js), [`commodity-scanner.js`](file:///Users/vishant/Documents/Project/TLCS_Website_Deploy/commodity-scanner.js), and [`page.tsx`](file:///Users/vishant/Documents/Project/Tv-Alert-Mobile/src/app/page.tsx) so that closed trades (including EOD force closures and divergence signals lacking explicit payload stops/targets) dynamically compute `STOP`, `TARGET`, and `R:R` (e.g., `1.0R`) using entry prices and asset-class stop percentage defaults (`0.5%` Crude/Silver, `0.3%` Gold, `0.35%` Nifty, `0.75%` Crypto, `0.25%` Forex). `STOP`, `TARGET`, and `R:R` are no longer rendered as `--` on any closed trade card or table row.

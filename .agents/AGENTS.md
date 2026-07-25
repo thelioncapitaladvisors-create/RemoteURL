@@ -459,4 +459,8 @@ function resolveOutcome(s) {
 - **Pure Average Consolidation**: In default mode (`activeTab = 'all'`), all metrics in the Weekly Performance Edge table (`WIN RATE`, `NET EDGE`, `PROFIT FACTOR`, `HALF-KELLY %`) MUST be calculated as the **mathematical average of all six active markets** for each week (not the sum).
 - **Cumulative Edge Row (`ALL`)**: The top `ALL - CUMULATIVE EDGE` row computes the average across the weekly consolidated averages, reflecting the true average weekly performance of the entire 6-market portfolio.
 
+## Mandatory Stop, Target & R:R Completeness Rule for Closed & EOD Trades
+- **No Missing Levels on Closed Trades**: All closed trades (including `EOD Exit`, `Hit SL`, `Hit TP`, `Hit B/E`, `Divergence`, and legacy signals) MUST display valid numeric values for `STOP`, `TARGET`, and `R:R` (e.g. `1.0R`, `1.5R`).
+- **Dynamic Level Deduction Engine (`getTradeLevels`)**: If a trade signal payload lacks explicit `stop` or `target` fields (e.g. EOD force closures or divergence webhooks), the UI layer (`scanner.js`, `commodity-scanner.js`, `page.tsx`) MUST dynamically deduce `stop`, `target`, and `R:R` from `entry`, direction, and asset-class default stop percentages (`0.5%` for Crude/Silver, `0.3%` for Gold, `0.35%` for Nifty, `0.75%` for Crypto, `0.25%` for Forex, `0.4%` for World Indices), ensuring `STOP`, `TARGET`, and `R:R` are NEVER rendered as `--`.
+
 
