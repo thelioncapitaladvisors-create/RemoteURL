@@ -4,6 +4,7 @@ import pandas as pd
 import vectorbt as vbt
 from dotenv import load_dotenv
 from supabase import create_client, Client
+import warnings
 from datetime import datetime
 try:
     from zoneinfo import ZoneInfo
@@ -198,6 +199,12 @@ def run_returns_backtest():
     fig_ret.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=10, t=40, b=10), yaxis_tickformat='.2%')
     html_ret = fig_ret.to_html(full_html=False, include_plotlyjs=False)
     
+    # 4. Statistics Table
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        stats_df = vbt_returns.stats(agg_func=None).T
+    html_stats = stats_df.to_html(classes="stats-table", border=0, justify='left')
+    
     template = f"""<!DOCTYPE html>
 <html>
 <head>
@@ -217,6 +224,12 @@ def run_returns_backtest():
         /* Hide scrollbar for tabs */
         .tab-container::-webkit-scrollbar {{ display: none; }}
         .tab-container {{ -ms-overflow-style: none; scrollbar-width: none; }}
+        /* Stats Table */
+        .stats-container {{ padding: 20px; overflow-y: auto; height: 100%; box-sizing: border-box; }}
+        .stats-table {{ width: 100%; border-collapse: collapse; font-size: 14px; text-align: left; background-color: #121826; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }}
+        .stats-table th {{ background-color: #1f2937; color: #9ca3af; padding: 12px 16px; border-bottom: 1px solid #374151; font-weight: 600; }}
+        .stats-table td {{ padding: 12px 16px; border-bottom: 1px solid #1f2937; color: #d1d5db; }}
+        .stats-table tr:hover td {{ background-color: #1e293b; }}
     </style>
 </head>
 <body>
@@ -225,6 +238,7 @@ def run_returns_backtest():
     <button class="tab-btn active" onclick="switchTab('equity', this)">Equity Curve</button>
     <button class="tab-btn" onclick="switchTab('drawdown', this)">Drawdowns</button>
     <button class="tab-btn" onclick="switchTab('returns', this)">Raw Returns</button>
+    <button class="tab-btn" onclick="switchTab('stats', this)">Statistics</button>
 </div>
 
 <div id="equity" class="tab-content active">
@@ -237,6 +251,12 @@ def run_returns_backtest():
 
 <div id="returns" class="tab-content">
     {html_ret}
+</div>
+
+<div id="stats" class="tab-content">
+    <div class="stats-container">
+        {html_stats}
+    </div>
 </div>
 
 <script>
