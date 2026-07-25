@@ -496,3 +496,16 @@ function resolveOutcome(s) {
 - **CRITICAL DEFINITION**: The Global "TLCS Edge %" for the "MARKET-WIDE (ALL ASSETS)" view must ALWAYS be calculated as the **mathematical average of the 6 individual market weekly edges** (NIFTY, MCX, NYMEX, Cryptocurrency, Global Forex, World Indices).
 - **NO RAW AVERAGES**: It must NEVER be calculated as the raw average of all closed trades combined across the system, because high-frequency scalping markets (like Cryptocurrency) will disproportionately overwrite and distort the Edge of lower-frequency swing markets (like NIFTY).
 - **Weekly Isolation**: The Global Edge % must always be strictly isolated to the current week's closed trades (calculated via `startOfCurrentWeekMS`), preventing the metric from reverting to a lifetime overall value. This applies universally across the Web Dashboard (`dashboard.html`) and the Mobile App (`page.tsx`).
+
+## Dhan HQ Trading & Backtesting Architecture (VectorBT + Supabase)
+
+### 1. VectorBT Backtesting Edge (`algo_engine/backtest_edge.py`)
+- **Data Ingestion Philosophy**: Bypasses theoretical OHLC Dhan historical data entirely.
+- **Supabase Integration**: Connects directly to the `signals` table via `.env` credentials to fetch actual recorded TradingView webhooks.
+- **Outcome Validation**: Strictly enforces `resolveOutcome` to purge invalid limit orders and dynamically extract the true `exact_pct` payload.
+- **Performance Output**: Generates `strategy_tearsheet.html` using VectorBT's `ReturnsAccessor` applied directly to the chronological sequence of exact signal returns. The tearsheet is saved directly into `TLCS_Website_Deploy/` and embedded on the `admin.html` page for real-time portfolio analytics.
+
+### 2. Live Dhan Execution (`algo_engine/dhan_executor.py`)
+- **Polling**: Polls the Supabase `signals` table every 2 seconds for newly ingested TradingView webhooks.
+- **Order Parsing**: Normalizes TradingView symbols into DhanHQ Security IDs.
+- **Safety**: Managed by the `PAPER_TRADING = True` flag in `.env`. Must be toggled to `False` to send live execution orders.

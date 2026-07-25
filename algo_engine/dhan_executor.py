@@ -56,8 +56,9 @@ def clean_symbol(tv_symbol):
 def place_dhan_order(signal):
     """Translates a TV signal into a Dhan HQ API call"""
     tv_symbol = signal.get("symbol", "")
-    action = signal.get("action", "").upper()
-    price = signal.get("price")
+    signal_type = signal.get("type", "").upper()
+    action = "BUY" if "LONG" in signal_type or "BUY" in signal_type else "SELL"
+    price = signal.get("entry")
     
     symbol_clean = clean_symbol(tv_symbol)
     
@@ -100,7 +101,7 @@ def listen_for_signals():
     while True:
         try:
             # Query signals created after our last check
-            response = supabase.table("tv_signals").select("*").gte("created_at", last_checked_at).execute()
+            response = supabase.table("signals").select("*").gt("created_at", last_checked_at).execute()
             
             if response.data:
                 for signal in response.data:
