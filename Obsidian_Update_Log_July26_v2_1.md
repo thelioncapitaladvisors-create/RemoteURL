@@ -18,3 +18,10 @@ The live Netlify deployment's security headers (`TLCS_Website_Deploy/_headers`) 
 Replaced the static, single-plot VectorBT output with a custom, dark-mode HTML template.
 - The tearsheet now features interactive vanilla JS tab filters to seamlessly toggle between 3 distinct dynamic Plotly visualizations (Full Equity Curve, Drawdowns, and Raw Returns) without reloading the iframe.
 - Admin panel branding was streamlined by removing specific framework references.
+
+## 4. UI/UX Improvements & Feature Access (Version 2.1 Finalization)
+- **Mobile Analytics Table Layout**: Restructured the Analytics tab in the Next.js mobile application to expand the statistics table container height (`min-h-[1100px]`), removing internal scrolling and allowing users to view all backtest metric rows sequentially via native app scrolling.
+- **Frozen Statistics Headers**: Updated the VectorBT HTML generator (`algo_engine/backtest_edge.py`) to freeze the top row (`thead th`) of the statistics table using `position: sticky`. It dynamically overlaps with the already frozen first column via `z-index` layering to ensure market category names remain visible during vertical scrolling.
+- **Website Products Page Optimization**: Relocated the "Terminal & Contact" section from the AI Dashboard to the Products page, positioning it below the subscription pricing to streamline user inquiries.
+- **Public Performance Analytics**: Moved the comprehensive "Alerts Intelligence Edge: Performance Analytics" iframe from the authenticated Admin panel directly into the public AI Dashboard. This guarantees that all website visitors, regardless of subscription status, can view the live multi-market statistical tearsheet.
+- **Version Bumping**: Standardized the overarching application version tags to **v2.1** across both the mobile application (`page.tsx`) and the website endpoints (`auth.js`, `sw.js`).
