@@ -25,3 +25,8 @@ Replaced the static, single-plot VectorBT output with a custom, dark-mode HTML t
 - **Website Products Page Optimization**: Relocated the "Terminal & Contact" section from the AI Dashboard to the Products page, positioning it below the subscription pricing to streamline user inquiries.
 - **Public Performance Analytics**: Moved the comprehensive "Alerts Intelligence Edge: Performance Analytics" iframe from the authenticated Admin panel directly into the public AI Dashboard. This guarantees that all website visitors, regardless of subscription status, can view the live multi-market statistical tearsheet.
 - **Version Bumping**: Standardized the overarching application version tags to **v2.1** across both the mobile application (`page.tsx`) and the website endpoints (`auth.js`, `sw.js`).
+
+## 5. Data Integrity and Security Enhancements
+- **Webhook and Frontend Security**: Completed a security audit verifying that no `SERVICE_ROLE` keys are exposed, and all database updates (`.update`, `.insert`, etc.) securely pass through authenticated serverless webhook endpoints instead of client-side queries. Verified Supabase v2 PostgREST syntax compliance.
+- **Canonical `resolveOutcome` Fix**: Permanently patched a critical data regression across all 5 UIs (`trade-metrics.js`, `scanner.js`, `commodity-scanner.js`, `dashboard.html`, and `page.tsx`). The engine now calculates the mathematical `exact_pct` prior to executing any legacy string keyword evaluations, completely eliminating the "Hit B/E" miscategorization error.
+- **Date Parsing Safety**: Audited `Intl.DateTimeFormat` across the codebase, confirming that backend derivations properly wrap instances in an `!isNaN()` check before execution to mitigate fatal `RangeError: Invalid time value` crashes.
