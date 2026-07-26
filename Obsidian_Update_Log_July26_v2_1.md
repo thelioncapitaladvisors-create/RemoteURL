@@ -30,3 +30,7 @@ Replaced the static, single-plot VectorBT output with a custom, dark-mode HTML t
 - **Webhook and Frontend Security**: Completed a security audit verifying that no `SERVICE_ROLE` keys are exposed, and all database updates (`.update`, `.insert`, etc.) securely pass through authenticated serverless webhook endpoints instead of client-side queries. Verified Supabase v2 PostgREST syntax compliance.
 - **Canonical `resolveOutcome` Fix**: Permanently patched a critical data regression across all 5 UIs (`trade-metrics.js`, `scanner.js`, `commodity-scanner.js`, `dashboard.html`, and `page.tsx`). The engine now calculates the mathematical `exact_pct` prior to executing any legacy string keyword evaluations, completely eliminating the "Hit B/E" miscategorization error.
 - **Date Parsing Safety**: Audited `Intl.DateTimeFormat` across the codebase, confirming that backend derivations properly wrap instances in an `!isNaN()` check before execution to mitigate fatal `RangeError: Invalid time value` crashes.
+
+## 6. Telegram Channel Market Routing Setup
+- **Landing Page Integration**: Added missing `FOREX` and `WORLD` market buttons to the "Get Real-Time Market Alerts" section on the public landing page (`index.html`).
+- **Dynamic Routing URLs**: Injected exact public channel URLs mapping directly to the new 6 Telegram channels (`TLCS_NYMEX_Alerts`, `TLCS_NIFTY50_Alerts`, `TLCS_MCX_Alerts`, `TLCS_Crypto_Alerts`, `TLCS_Forex_Alerts`, `TLCS_World_Market_Alerts`) while standardizing all buttons to display the official Telegram SVG icon.
