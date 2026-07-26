@@ -245,6 +245,12 @@ def run_returns_backtest():
         .stats-table td {{ padding: 10px 12px; border-bottom: 1px solid #1f2937; color: #d1d5db; }}
         .stats-table tr:hover td {{ background-color: #1e293b; }}
         
+        .stats-table thead th {{
+            position: sticky;
+            top: 0;
+            background-color: #1f2937;
+            z-index: 3;
+        }}
         /* Freeze first column */
         .stats-table th:first-child,
         .stats-table td:first-child {{
@@ -253,6 +259,9 @@ def run_returns_backtest():
             background-color: #1f2937;
             z-index: 2;
             border-right: 1px solid #374151;
+        }}
+        .stats-table thead th:first-child {{
+            z-index: 4;
         }}
         .stats-table td:first-child {{
             background-color: #121826;
