@@ -9,9 +9,9 @@
 - **NETLIFY ONLY**: The entire system infrastructure (Web Dashboard, Mobile App backend endpoints, Netlify background workers, and Telegram dispatchers) is hosted **EXCLUSIVELY on Netlify** (`thelioncapitalsolutions.com`).
 - **NO VERCEL DEPLOYMENTS EXIST**: Do NOT reference, configure, or troubleshoot Vercel hosting, Vercel routes, or Vercel environment variables. All backend functions (`process-webhook-background.js`, `test-telegram.js`, `cron-heal-outcomes.js`) run as Netlify functions on Netlify servers.
 
-## NYMEX-Only Telegram Channel Alerts (Active Trades Only)
-- **NYMEX EXCLUSIVE**: Telegram channel notifications (`@TLCS_Alerts` / `-1001555378566`) are filtered **EXCLUSIVELY for NYMEX market symbols** (`CL`, `GC`, `HG`, `HO`, `NG`, `PA`, `PL`, `RB`, `SI` and continuous contracts like `GC1!`, `CL1!`, `NG1!`). All non-NYMEX symbols (NIFTY, MCX, Crypto, Forex, World Indices) are strictly excluded from Telegram dispatches.
-- **ACTIVE TRADES ONLY (No Active Limits)**: Telegram alerts must **NEVER** fire for unexecuted limit orders (`ACTIVE LIMIT` / `OPEN`). Telegram alerts fire **ONLY** when a NYMEX limit trade actually fills and transitions to a **LIVE ACTIVE** executed trade (`⚡ NYMEX TRADE ACTIVE`), or when an active trade updates trailing stop / closes (`TARGET` / `SL`).
+## Market-Wise Telegram Channel Routing (Active Trades Only)
+- **MARKET-WISE ROUTING**: Telegram channel notifications are distributed dynamically based on the market category of the symbol (NIFTY, MCX, NYMEX, Crypto, Forex, World Indices). The backend resolves the market and looks up the corresponding environment variable for the Chat ID (e.g., `TELEGRAM_CHAT_ID_NIFTY`, `TELEGRAM_CHAT_ID_CRYPTO`, etc.).
+- **ACTIVE TRADES ONLY (No Active Limits)**: Telegram alerts must **NEVER** fire for unexecuted limit orders (`ACTIVE LIMIT` / `OPEN`). Telegram alerts fire **ONLY** when a limit trade actually fills and transitions to a **LIVE ACTIVE** executed trade (`⚡ TRADE ACTIVE`), or when an active trade updates trailing stop / closes (`TARGET` / `SL`).
 
 
 ## Exit Categorization (Rigid vs Dynamic Exits)
@@ -316,7 +316,7 @@ function resolveOutcome(s) {
   - `WEEKLY TRADES`: `weeklyClosedSignals.length` (226 closed trades).
   - `WEEKLY SUCCESS`: `(weeklyWins / (weeklyWins + weeklyLosses)) * 100` (41.6%).
   - `WEEKLY PROFIT FACTOR`: `weeklyGrossProfit / weeklyGrossLoss` (0.19).
-  - `TLCS EDGE %`: Displays the Average Profit % (Avg Return per trade across all closed trades from all past periods till this moment, e.g. +0.54%).
+  - `TLCS WEEKLY EXPECTANCY`: Displays the Average Profit % (Avg Return per trade across all closed trades from all past periods till this moment, e.g. +0.54%).
 
 
 
@@ -424,12 +424,12 @@ function resolveOutcome(s) {
   3. **Trailing SL Update**: `📈 TRAILING SL UPDATED` with new Stop Loss level.
 - Must be maintained in both Netlify background functions (`process-webhook-background.js`) and Next.js mobile routes (`route.ts`).
 
-## AI Scanner Statistics Pane & TLCS Edge % Real System Alignment
+## AI Scanner Statistics Pane & TLCS WEEKLY EXPECTANCY Real System Alignment
 - **Default System-Wide Metrics Mode**: The AI Scanner page (`scanner.html` & `scanner.js`) defaults to system-wide mode (`activeTab = 'all'`) where no single market tab is highlighted.
 - **Deselect Market Tab Toggle**: Clicking an active market tab toggles it off back to system-wide `'all'` mode.
 - **Consolidated Weekly System Edge Calculation**:
-  - The default statistics pane (`WIN RATE`, `HALF-KELLY %`, `PROFIT FACTOR`, `AVG PROFIT` / System Edge, `TOTAL TRADES`, `WINS / LOSSES`, `BEST TRADE`) on `scanner.html` and the `TLCS EDGE %` card on `dashboard.html` MUST calculate metrics for **all 6 markets' consolidated metrics for the current week** (starting Monday 00:00 local time).
-  - `TLCS EDGE %` on `dashboard.html` and `AVG PROFIT` on `scanner.html` must always produce the exact same mathematical average profit percentage for the current week across all 6 markets consolidated.
+  - The default statistics pane (`WIN RATE`, `HALF-KELLY %`, `PROFIT FACTOR`, `AVG PROFIT` / System Edge, `TOTAL TRADES`, `WINS / LOSSES`, `BEST TRADE`) on `scanner.html` and the `TLCS WEEKLY EXPECTANCY` card on `dashboard.html` MUST calculate metrics for **all 6 markets' consolidated metrics for the current week** (starting Monday 00:00 local time).
+  - `TLCS WEEKLY EXPECTANCY` on `dashboard.html` and `AVG PROFIT` on `scanner.html` must always produce the exact same mathematical average profit percentage for the current week across all 6 markets consolidated.
   - The scanner table (`tabRows`) strictly retains the daily time boundary (`sigTs >= startOfToday`) for active market symbol tracking, while `cachedData.signals` stores `weeklySignals` for current week consolidated metrics.
 
 ## Strict Secrets & Environment Variable Policy (Netlify Build Security)
@@ -493,7 +493,7 @@ function resolveOutcome(s) {
 
 
 ## Market-Wide Edge % Mathematical Calculation
-- **CRITICAL DEFINITION**: The Global "TLCS Edge %" for the "MARKET-WIDE (ALL ASSETS)" view must ALWAYS be calculated as the **mathematical average of the 6 individual market weekly edges** (NIFTY, MCX, NYMEX, Cryptocurrency, Global Forex, World Indices).
+- **CRITICAL DEFINITION**: The Global "TLCS WEEKLY EXPECTANCY" for the "MARKET-WIDE (ALL ASSETS)" view must ALWAYS be calculated as the **mathematical average of the 6 individual market weekly edges** (NIFTY, MCX, NYMEX, Cryptocurrency, Global Forex, World Indices).
 - **NO RAW AVERAGES**: It must NEVER be calculated as the raw average of all closed trades combined across the system, because high-frequency scalping markets (like Cryptocurrency) will disproportionately overwrite and distort the Edge of lower-frequency swing markets (like NIFTY).
 - **Weekly Isolation**: The Global Edge % must always be strictly isolated to the current week's closed trades (calculated via `startOfCurrentWeekMS`), preventing the metric from reverting to a lifetime overall value. This applies universally across the Web Dashboard (`dashboard.html`) and the Mobile App (`page.tsx`).
 

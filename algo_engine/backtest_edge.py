@@ -173,6 +173,7 @@ def run_returns_backtest():
         df_resampled = df_pivot.resample('15min').sum().reindex(full_idx, fill_value=0.0)
         
     empty_markets = [col for col in df_resampled.columns if (df_resampled[col] == 0.0).all() or df_resampled[col].isna().all()]
+    print(f"DEBUG: empty_markets identified as: {empty_markets}")
     
     # We no longer replace with np.nan here because VectorBT's cumulative returns 
     # implicitly converts them back to 0.0. We will handle trace nullification in the Plotly figures.
@@ -188,18 +189,18 @@ def run_returns_backtest():
     
     # 1. Equity Curve
     fig_equity = vbt_returns.plot(title="Cumulative Equity Curve")
-    fig_equity.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
+    fig_equity.update_layout(width=None, height=300, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
     
     # 2. Drawdowns
     wealth_index = (1 + df_resampled).cumprod()
     peak = wealth_index.cummax()
     drawdown = (wealth_index - peak) / peak
     fig_dd = drawdown.vbt.plot(title="Drawdowns (%)")
-    fig_dd.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
+    fig_dd.update_layout(width=None, height=300, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
     
     # 3. Raw Returns
     fig_ret = df_resampled.vbt.plot(title="Raw Returns (%)")
-    fig_ret.update_layout(template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
+    fig_ret.update_layout(width=None, height=300, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
     
     # Nullify Empty Traces to Prevent Plotly bdata Glitch
     for fig in [fig_equity, fig_dd, fig_ret]:
@@ -207,6 +208,7 @@ def run_returns_backtest():
             if trace.name in empty_markets:
                 trace.y = [None] * len(trace.y)
                 trace.showlegend = False
+                print(f"DEBUG: Nullified trace {trace.name}, showlegend is now {trace.showlegend}")
 
     # Generate HTML
     html_equity = fig_equity.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})
@@ -236,15 +238,36 @@ def run_returns_backtest():
         .tab-content {{ display: none; padding: 0; width: 100%; height: calc(100vh - 50px); }}
         .tab-content.active {{ display: block; }}
         .plotly-graph-div {{ width: 100% !important; height: 100% !important; }}
-        /* Hide scrollbar for tabs */
-        .tab-container::-webkit-scrollbar {{ display: none; }}
-        .tab-container {{ -ms-overflow-style: none; scrollbar-width: none; }}
         /* Stats Table */
-        .stats-container {{ padding: 15px; overflow-y: auto; height: 100%; width: 100%; }}
-        .stats-table {{ width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; background-color: #121826; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }}
+        .stats-container {{ padding: 15px; overflow-y: auto; overflow-x: auto; height: 100%; width: 100%; }}
+        .stats-table {{ width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; text-align: left; background-color: #121826; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }}
         .stats-table th {{ background-color: #1f2937; color: #9ca3af; padding: 10px 12px; border-bottom: 1px solid #374151; font-weight: 600; }}
         .stats-table td {{ padding: 10px 12px; border-bottom: 1px solid #1f2937; color: #d1d5db; }}
         .stats-table tr:hover td {{ background-color: #1e293b; }}
+        
+        /* Freeze first column */
+        .stats-table th:first-child,
+        .stats-table td:first-child {{
+            position: sticky;
+            left: 0;
+            background-color: #1f2937;
+            z-index: 2;
+            border-right: 1px solid #374151;
+        }}
+        .stats-table td:first-child {{
+            background-color: #121826;
+        }}
+        .stats-table tr:hover td:first-child {{
+            background-color: #1e293b;
+        }}
+        
+        /* Layout overrides for modes */
+        body.mode-charts .tab-btn[onclick*="stats"] {{ display: none !important; }}
+        body.mode-charts #stats {{ display: none !important; }}
+        
+        body.mode-stats .tab-container {{ display: none !important; }}
+        body.mode-stats .tab-content {{ display: none !important; }}
+        body.mode-stats #stats {{ display: block !important; }}
     </style>
 </head>
 <body>
@@ -281,6 +304,15 @@ def run_returns_backtest():
         document.getElementById(tabId).classList.add('active');
         btnElement.classList.add('active');
         window.dispatchEvent(new Event('resize'));
+    }}
+    
+    // Check mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    if (mode === 'charts') {{
+        document.body.classList.add('mode-charts');
+    }} else if (mode === 'stats') {{
+        document.body.classList.add('mode-stats');
     }}
 </script>
 </body>
