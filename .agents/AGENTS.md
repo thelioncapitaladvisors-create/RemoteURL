@@ -19,7 +19,7 @@
 - A trade belongs in a `TP` bucket ONLY if it *actually closed* at that exact level (e.g., via a limit order, or a step-based trailing stop that precisely locked in that previous level).
 - For arbitrary, continuous trailing stops that close between defined levels, do NOT mathematically guess the closest level. The Pine Script should explicitly send `"status": "Trailing Stop"`.
 - Both the Web and Mobile UIs have a dedicated `TRAIL` (or `Trailing Stop`) bucket to correctly categorize these dynamic, arbitrary exits without polluting the fixed `TP` buckets.
-- **Strict Level vs Outcome Alignment**: If `resolveOutcome(s) === 'LOSS'` (or `exact_pct < 0`), the trade level label MUST NEVER display `TP1`, `TP2`, `TP3`, or `TP4` (even if TradingView payload sent a mismatched `"Completed TP4"` string). If `resolveOutcome(s) === 'LOSS'`, the level label MUST be `SL` (or `EMA`/`DIV`/`EOD`). Conversely, if `resolveOutcome(s) === 'WIN'` (or `exact_pct > 0`), the level label MUST NEVER display `SL`. Level resolution functions (`getExitLevel`, `getDisplayExitLevel`, `outcomePill`) must enforce canonical outcome validation.
+- **Strict Level vs Outcome Alignment**: If `resolveOutcome(s) === 'LOSS'` (or `exact_pct < 0`), the trade level label MUST NEVER display `TP1`, `TP2`, `TP3`, or `TP4` (even if TradingView payload sent a mismatched `"Completed TP4"` string). If `resolveOutcome(s) === 'LOSS'`, the level label MUST be `SL` (or `EMA`/`DIV`/`EOD`). Conversely, if `resolveOutcome(s) === 'WIN'` (or `exact_pct > 0`), the level label MUST NEVER display `SL` or `B/E`. (Winning trades that hit a breakeven trailing stop should be labeled as `TRAIL`). Level resolution functions (`getExitLevel`, `getDisplayExitLevel`, `outcomePill`) must enforce canonical outcome validation.
 
 ## Symbol Normalization and Market Categorization
 - ALWAYS normalize symbol names before performing market category checks (e.g., strip exchange prefixes like `NSE:`, `TVC:`, and continuous suffix `1!`). Use the normalized/cleaned symbol for list-based matching.
@@ -537,3 +537,24 @@ function resolveOutcome(s) {
 ## User Session Management
 - **Strict Subscription Enforcement**: Once a user's subscription ends or expires, they MUST be completely cut off and forcefully logged out (e.g. via `client.auth.signOut()`) from ALL access points, including the web dashboard, the mobile application, and Telegram. Do not allow expired users to linger in the system.
 - **Free Promotion Access**: If a registered user is offered a free subscription (e.g., a 3-month trial), their `subscription_status` is considered active until the expiry date. During this active period, they MUST receive full, unrestricted access to everything that is otherwise available to paid users (treated as 'Elite'). **Exception:** This free tier equivalence applies ONLY to website/mobile app plans and does NOT include access to premium TradingView Indicator subscriptions.
+
+
+## Exact UI Exit Price Fallback Logic
+- The UI MUST NEVER rigidly default to printing `---` just because the `exit_price` column in the database is strictly null (which occurs heavily on legacy webhooks). 
+- The UI layer MUST proactively use the underlying mathematical engine logic to deduce the exit price (by pulling `trail_sl`, `stop`, or the appropriate `TP` target based on the status string) and dynamically inject that calculated value into the `EXIT` or `EXITED AT` visual card.
+- Cosmetic string labels (like `B/E` or `SL`) MUST ONLY be rendered in the specific outcome badging pills next to the symbol, NEVER in the primary numeric price output boxes (like Entry or Exit).
+
+## Strict One-Column Tablet UI for Trade Feeds
+- The `GLOBAL SIGNAL FEED` (Dashboard/HUB tab) and `LOGS` tab trade feeds must strictly render trade cards in a single column (`grid-cols-1`) across both Mobile and Tablet (iPad) breakpoints.
+- Do NOT introduce multi-column `md:grid-cols-2` or `lg:grid-cols-3` layouts for dense trade feed cards, as it violently squishes and vertically stretches the internal 6-box (`Entry`, `Stop`, `Outcome`, `Target`, etc.) matrices.
+
+## INSIGHTS Tab Bulletin Layout
+- The `INSIGHTS` tab strategy filter tags (`LONG MISSILE`, `SHORT SCALP`, etc.) must strictly utilize a rigid CSS Grid (`grid-cols-2`) to guarantee exactly two pills per row globally (including iPad). Do not rely on dynamic flex-wrapping for these top-level filters, which could artificially misalign them into 3-tag or 4-tag clusters on wider viewports.
+
+
+## Plotly BData Glitch (iOS/Android WebViews)
+- **UNIVERSAL BYPASS**: Plotly aggressively compresses identically numbered NumPy arrays (e.g. `[0.0, 0.0]`) into binary Base64 `bdata` strings to save memory. Standard iOS/Android WebViews cannot natively decode these binary arrays, causing Plotly to drop the `Y` values and artificially plot sequence indices instead, creating perfectly overlapping diagonal lines up to 9600%.
+- **Strict Casting**: To globally circumvent this, ALWAYS explicitly cast Plotly `trace.x` and `trace.y` data from numpy arrays into pure Python lists (e.g., `trace.y.tolist()`) before calling `.to_html()` or `.to_json()`. This forces the Plotly JSON encoder to serialize the arrays as standard JSON lists `[...]` rather than `bdata`, fully immunizing the Mobile App and Web Dashboards against rendering glitches.
+
+## Dynamic Telegram Market Prefixing
+- **No Hardcoded Markets**: The Telegram dispatcher (`process-webhook-background.js`) MUST dynamically resolve the market prefix using `getMarketForSymbol(sym).toUpperCase()` instead of hardcoding `NYMEX TRADE ACTIVE` for all channels.

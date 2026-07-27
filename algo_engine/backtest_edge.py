@@ -202,13 +202,18 @@ def run_returns_backtest():
     fig_ret = df_resampled.vbt.plot(title="Raw Returns (%)")
     fig_ret.update_layout(width=None, height=300, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
     
-    # Nullify Empty Traces to Prevent Plotly bdata Glitch
+    # Universal Plotly bdata Glitch Fix
+    # iOS/Android WebViews fail to decode Plotly's base64 bdata strings.
+    # We must explicitly cast all numpy arrays to pure Python lists to force standard JSON serialization.
+    # UI Persistent Market Rendering rule: we NEVER hide empty markets.
     for fig in [fig_equity, fig_dd, fig_ret]:
         for trace in fig.data:
-            if trace.name in empty_markets:
-                trace.y = [None] * len(trace.y)
-                trace.showlegend = False
-                print(f"DEBUG: Nullified trace {trace.name}, showlegend is now {trace.showlegend}")
+            if hasattr(trace, 'x') and trace.x is not None:
+                try: trace.x = trace.x.tolist()
+                except: trace.x = list(trace.x)
+            if hasattr(trace, 'y') and trace.y is not None:
+                try: trace.y = trace.y.tolist()
+                except: trace.y = list(trace.y)
 
     # Generate HTML
     html_equity = fig_equity.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})

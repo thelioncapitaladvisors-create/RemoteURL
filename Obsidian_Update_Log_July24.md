@@ -49,3 +49,9 @@
 - **`TLCS_Website_Deploy`**: Committed and pushed `00867f4`, `8c2f345`, `a24ce37`, `81685f3`, `86c8ad4`, `84ceb63` to `main`.
 - **`Tv-Alert-Mobile`**: Committed and pushed `3c8bfd6`, `c1e3af9`, `33ad377`, `768e901`, `f726ca5`, `c34b540` to `main`.
 - **Root Repository**: Committed and pushed `1453158`, `fb2f1e1` and latest submodule pointer updates to `main`.
+
+---
+
+### 7. WIN Outcome vs B/E Badging Fix
+- **Resolved "Win% Flagged as B/E" Bug**: Removed the flawed `B/E` fallback check from the `WIN` block inside `getDisplayExitLevel(signal)` in both `page.tsx` and `trade-metrics.js`.
+- **Logic Adjustment**: Trades with positive exact percentage (`exact_pct > 0`) resolve to `WIN` and now correctly render as `TRAIL` (or their specific TP level) instead of inappropriately falling back to `B/E`. 
