@@ -572,8 +572,11 @@ function resolveOutcome(s) {
 - **Mathematical Fallback**: If the Dhan API is slow or unavailable, the engine uses fixed mathematical multipliers (e.g. `$83.5` USD/INR exchange rate, adjusting for Troy Ounce/Gram conversions) on the NYMEX Entry price to instantly compute a safe fallback ATM strike.
 
 ## Live Trades vs Active Limits Categorization
-- **The Issue**: By default, unexecuted limit orders have an `OPEN` outcome and a null `updated_at` timestamp. Previously, the UI classified any `OPEN` trade lacking an `updated_at` as an `ACTIVE LIMIT`. However, trades executed instantly at Market send an initial webhook (with status like `"TRADE ACTIVE"`) which also lacks an `updated_at` (because it is the first DB insert, not an update). This falsely categorized actual live trades as active limits.
-- **The Fix**: The frontend engine (in `Tv-Alert-Mobile/src/app/page.tsx` and `trade-metrics.js`) MUST use `const isLive = !!s.updated_at || (s.status || '').toUpperCase().includes('ACTIVE');` to correctly categorize trades. Any trade containing `ACTIVE` in its status string must bypass the limit check and forcefully render as a `LIVE TRADE`.
+- **The Issue**: By default, unexecuted limit orders have an `OPEN` outcome and a null `updated_at` timestamp. Previously, the UI classified any `OPEN` trade lacking an `updated_at` as an `ACTIVE LIMIT`. However, live Market Executions send an initial webhook (with `status: "OPEN"` and `trigger: null`) which also lacks an `updated_at` (first DB insert). The frontend falsely categorized these live market executions as active limits because it relied on `updated_at`.
+- **The Fix**: The frontend engine (in `Tv-Alert-Mobile/src/app/page.tsx` and `trade-metrics.js`) MUST mathematically mirror the backend's `isLimit` parser. It must check if `status` or `trigger` contains the word `LIMIT`. If a trade is NOT explicitly a limit order, it is inherently a `LIVE TRADE`, bypassing the `updated_at` check:
+  `const isLimitStatus = (s.status || '').toUpperCase().includes('LIMIT');`
+  `const isLimitTrigger = (s.trigger || '').toUpperCase().includes('LIMIT');`
+  `const isLive = !!s.updated_at || (!isLimitStatus && !isLimitTrigger);`
 
 ## System Reliability & Webhook Hardening
 - **Pine Script JSON Sanitization**: TradingView webhooks often contain unescaped control characters (`\n`, `\t`, `\r`, `\f`) within multi-line string fields (like `opening_bias`). The backend webhook (`process-webhook-background.js`) MUST globally intercept and sanitize all literal control characters using `replace(/[\n\r\t\v\f\b]+/g, ' ')` before calling `JSON.parse()` to prevent fatal `400 Invalid JSON` parse errors.
