@@ -558,3 +558,19 @@ function resolveOutcome(s) {
 
 ## Dynamic Telegram Market Prefixing
 - **No Hardcoded Markets**: The Telegram dispatcher (`process-webhook-background.js`) MUST dynamically resolve the market prefix using `getMarketForSymbol(sym).toUpperCase()` instead of hardcoding `NYMEX TRADE ACTIVE` for all channels.
+
+## Supabase CDN Independence
+- **Local Vendoring**: Do not rely on external CDNs (like `cdn.jsdelivr.net`) for critical libraries like `supabase-js-v2`. Adblockers or strict network firewalls often block these domains, which causes silent JavaScript failures that break SSO interception and UI updates. Always vendor `supabase-js-v2.min.js` locally in `TLCS_Website_Deploy` and reference the local file.
+
+## Bulletproof DOMContentLoaded Timing
+- **readyState Fallback**: Never attach `document.addEventListener('DOMContentLoaded', ...)` without checking `document.readyState === 'loading'` first. If a script executes asynchronously or at the bottom of the body tag, the `DOMContentLoaded` event may have already fired, causing the initialization function (e.g., `bootAuth` or `initMain`) to never execute. Always use the standard fallback pattern: `if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initFn); } else { initFn(); }`
+
+## Automated NYMEX to MCX Live Trading Integration (Dhan Engine)
+- **Symbol Mirroring**: NYMEX active limit alerts (`CL`, `NG`, `GC`, `SI`) are fully integrated into the live Dhan execution engine (`dhan-engine.js`). The backend intercepts these signals and automatically translates them into their MCX counterparts (`CRUDEOIL`, `NATURALGAS`, `GOLD`, `SILVER`).
+- **Session Time Guard**: MCX Automated Trading via NYMEX alerts is strictly bounded by live MCX session timings (9:00 AM to 11:30 PM IST, Monday - Friday). If a NYMEX alert fires outside of these hours (e.g. 2:00 AM IST), the engine gracefully aborts execution to prevent rejected API calls and false execution logs.
+- **Strike Price Resolution (Option B)**: The Dhan engine fetches the exact At-The-Money (ATM) Option strike by querying the Dhan HQ Marketfeed API (`/marketfeed/ltp`) for the live MCX Futures contract the moment the NYMEX alert fires. This perfectly syncs the strike to the live INR spot price.
+- **Mathematical Fallback**: If the Dhan API is slow or unavailable, the engine uses fixed mathematical multipliers (e.g. `$83.5` USD/INR exchange rate, adjusting for Troy Ounce/Gram conversions) on the NYMEX Entry price to instantly compute a safe fallback ATM strike.
+
+## Live Trades vs Active Limits Categorization
+- **The Issue**: By default, unexecuted limit orders have an `OPEN` outcome and a null `updated_at` timestamp. Previously, the UI classified any `OPEN` trade lacking an `updated_at` as an `ACTIVE LIMIT`. However, trades executed instantly at Market send an initial webhook (with status like `"TRADE ACTIVE"`) which also lacks an `updated_at` (because it is the first DB insert, not an update). This falsely categorized actual live trades as active limits.
+- **The Fix**: The frontend engine (in `Tv-Alert-Mobile/src/app/page.tsx` and `trade-metrics.js`) MUST use `const isLive = !!s.updated_at || (s.status || '').toUpperCase().includes('ACTIVE');` to correctly categorize trades. Any trade containing `ACTIVE` in its status string must bypass the limit check and forcefully render as a `LIVE TRADE`.
