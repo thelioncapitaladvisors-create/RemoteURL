@@ -82,18 +82,13 @@ def get_market(symbol):
             return m
     return 'UNKNOWN'
 
-def fetch_closed_trades_for_today():
-    print("Fetching today's historical trades from Supabase...")
+def fetch_all_closed_trades():
+    print("Fetching all-time historical trades from Supabase...")
     
-    # 0 Hrs strict local boundary (Asia/Kolkata)
     ist = ZoneInfo('Asia/Kolkata')
     now_ist = datetime.now(ist)
-    start_of_today_ist = datetime(now_ist.year, now_ist.month, now_ist.day, tzinfo=ist)
     
-    # Convert to UTC string for Supabase query
-    start_utc = start_of_today_ist.astimezone(ZoneInfo('UTC')).isoformat()
-    
-    response = supabase.table('signals').select('*').gte('created_at', start_utc).order('created_at', desc=False).limit(2000).execute()
+    response = supabase.table('signals').select('*').order('created_at', desc=False).limit(10000).execute()
     data = response.data
     
     closed_trades = []
@@ -129,28 +124,28 @@ def fetch_closed_trades_for_today():
                 except ValueError:
                     continue
                     
-    return closed_trades, start_of_today_ist, now_ist
+    return closed_trades, now_ist
 
 def run_returns_backtest():
-    trades, start_of_today_ist, now_ist = fetch_closed_trades_for_today()
+    trades, now_ist = fetch_all_closed_trades()
     
     markets = ['NIFTY', 'MCX', 'NYMEX', 'CRYPTO', 'FOREX', 'WORLD']
     
     if not trades:
-        print('No closed trades found for today with valid exact_pct. Creating empty timeline.')
+        print('No closed trades found with valid exact_pct. Creating empty timeline.')
         df_pivot = pd.DataFrame(columns=markets)
     else:
         df = pd.DataFrame(trades)
         df.set_index('datetime', inplace=True)
         df.sort_index(inplace=True)
         
-        print(f'\nLoaded {len(df)} closed trades for today.')
+        print(f'\nLoaded {len(df)} closed trades for all-time.')
         print('Analyzing performance using VectorBT...\n')
         
         # Ensure timezone aware (UTC -> IST)
         if df.index.tz is None:
             df.index = df.index.tz_localize('UTC')
-        df.index = df.index.tz_convert(start_of_today_ist.tzinfo)
+        df.index = df.index.tz_convert(now_ist.tzinfo)
         
         # Pivot table so each market has its own column, sum returns for simultaneous trades
         df_pivot = df.pivot_table(index='datetime', columns='market', values='return', aggfunc='sum').fillna(0.0)
@@ -163,8 +158,13 @@ def run_returns_backtest():
     # Filter out UNKNOWN markets and order columns
     df_pivot = df_pivot[markets]
     
-    # Create a full minute-by-minute timeline for today up to current time
-    full_idx = pd.date_range(start=start_of_today_ist, end=now_ist, freq='15min')
+    # Create a full timeline from the first trade up to current time
+    if df_pivot.empty:
+        start_idx = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
+    else:
+        start_idx = df_pivot.index.min().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    full_idx = pd.date_range(start=start_idx, end=now_ist, freq='15min')
     
     # Resample to 15-minute frequency and fill missing with 0.0
     if df_pivot.empty:
@@ -181,7 +181,7 @@ def run_returns_backtest():
     vbt_returns = df_resampled.vbt.returns(freq='15min')
     
     # Print stats
-    print("--- TODAY'S BACKTEST METRICS ---")
+    print("--- ALL-TIME BACKTEST METRICS ---")
     print(vbt_returns.stats())
     
     # Save Tear Sheet to the website deployment folder

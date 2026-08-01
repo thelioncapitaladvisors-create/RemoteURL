@@ -282,6 +282,7 @@ bullishDivergenceAlert = input.bool(true, 'Bullish Divergence', 'Alert on bullis
 bullishHiddenDivergenceAlert = input.bool(true, 'Bullish Hidden Divergence', 'Alert on bullish hidden divergence', group = 'Alerts', display = display.none)
 bearishDivergenceAlert = input.bool(true, 'Bearish Divergence', 'Alert on bearish divergence', group = 'Alerts', display = display.none)
 bearishHiddenDivergenceAlert = input.bool(true, 'Bearish Hidden Divergence', 'Alert on bearish hidden divergence', group = 'Alerts', display = display.none)
+webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret', group = 'Alerts', display = display.none)
 
 trendMethodInt = trendMethod == 'Zigzag' ? 1 : trendMethod == 'External' ? 3 : 2
 var map<int, float> priceMap = map.new<int, float>()
@@ -449,7 +450,12 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         oLabel = label.new(oscillatorPoint.time, oscillatorPoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=false)
                         
                         if allowedDivergenceTypes.get(divergenceType)
-                            alert('Alert : ' + priceTooltipText, alert.freq_once_per_bar_close)
+                            string divTypeStr = str.tostring(divergenceType)
+                            string _divPay = '{' + str.format(
+                                 '"trigger":"Divergence","secret":"{0}","symbol":"{1}","type":"{2}","price":"{3}","oscillator":"{4}"',
+                                 webhook_secret, syminfo.ticker, divTypeStr, str.tostring(lastPrice, format.mintick), str.tostring(lastMa, '#.##')
+                                 ) + '}'
+                            alert(_divPay, alert.freq_once_per_bar_close)
                             
                         divergenceObject = DivergenceObject.new(pLine, oLine, pLabel, oLabel, lastPricePoint.index, pricePoint.index, pricePoint, divergenceType)
                         divergenceObjects.push(divergenceObject)

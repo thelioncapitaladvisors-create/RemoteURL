@@ -586,3 +586,10 @@ function resolveOutcome(s) {
 
 ## Signal Interface Definition
 - The `Signal` interface in Next.js (e.g. `page.tsx`) MUST include `trigger?: string;` to ensure the strict Netlify production build compiles successfully when checking for limit order triggers.
+
+## UI Active Limit Signal Time Rule
+- Real entry and active limit can never be the same time. For an ACTIVE LIMIT trade (which has not executed yet), the UI MUST dynamically display **SIGNAL TIME** instead of **REAL ENTRY**. Once the limit order actually fills and becomes an executed active trade, the text should dynamically flip back to reading **REAL ENTRY**.
+
+## Supabase CDN Fallback & Webhook Error Resilience
+- **Supabase UMD CDN Dependency**: Do NOT rely on locally hosting the `supabase-js-v2.min.js` file if downloaded directly via CLI. CDNs often block raw CLI downloads, resulting in corrupted script files that break the frontend. ALWAYS use the direct CDN link (`https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2`) in `<script>` tags.
+- **Netlify Webhook False Positives**: Background functions (`*-background.js`) in Netlify inherently return a `202 Accepted` response before execution. TradingView interprets this as a "Webhook successfully delivered" even if the payload parsing fails. ALWAYS ensure Pine Script `alert()` functions format the string exactly as JSON (e.g. `_divPay`), avoiding generic plain text strings like `"Alert: " + text`, which cause silent 400 Bad Request errors inside the Netlify function.
