@@ -160,8 +160,8 @@ function resolveOutcome(s) {
 - If an optimization or feature request seems to require fundamentally changing how data is parsed, categorized, or handled, you MUST stop and ask the user for permission and explain the proposed architectural shift before writing the code.
 
 ## Hold Duration & "Real Trade" Timestamps
-- When calculating Hold Duration or displaying timestamps on the UIs, NEVER base calculations on the limit trade entry time (`signal_ts`). Always prioritize `created_at` (the actual time the webhook fired and the real trade was executed).
-- For Exit times, prioritize `exit_at` or `updated_at`, but if a trade opens and closes in the exact same webhook (rendering `exit_at` missing/null), you MUST gracefully fallback to `created_at` so that a valid 0-minute or <1m hold duration is calculated and exit dates are rendered instead of displaying `--`.
+- When calculating Hold Duration or displaying timestamps on the UIs, NEVER base calculations strictly on the limit trade entry time (`signal_ts` or `created_at`). Always prioritize `metadata.real_entry_time` (the exact millisecond the limit order filled). Only fall back to `created_at` if `real_entry_time` is missing.
+- For Exit times, prioritize `exit_at` or `updated_at`, but if a trade opens and closes in the exact same webhook (rendering `exit_at` missing/null), you MUST gracefully fallback to `real_entry_time` or `created_at` so that a valid 0-minute or <1m hold duration is calculated and exit dates are rendered instead of displaying `--`.
 
 ## Pine Script JSON & Exact Percentage Math (Version 1.1)
 - Always enforce that Pine Script webhooks send clean numeric parameters (using `format.mintick` on all prices) and explicitly provide a `"trigger":"TradeClose"` property in the payload.
