@@ -107,6 +107,11 @@ def fetch_all_closed_trades():
                 try:
                     pct_return = float(meta['exact_pct']) / 100.0  # Convert 1.35 to 0.0135
                     
+                    # Sanity check: prevent mathematically impossible single-trade returns from corrupting the graph
+                    if abs(pct_return) > 5.0:  # >500% single trade return is mathematically anomalous
+                        print(f"Skipping anomalous exact_pct: {meta['exact_pct']}% on {s.get('symbol')}")
+                        continue
+                    
                     # Prioritize exit_at or updated_at, fallback to created_at
                     ts_str = s.get('exit_at') or s.get('updated_at') or s.get('created_at')
                     try:
@@ -188,7 +193,10 @@ def run_returns_backtest():
     output_path = os.path.join(os.path.dirname(__file__), '..', 'TLCS_Website_Deploy', 'strategy_tearsheet.html')
     
     # 1. Equity Curve
-    fig_equity = vbt_returns.plot(title="Cumulative Equity Curve")
+    # EXPLICIT CUMULATIVE RETURN CALCULATION
+    # By strictly converting to 1-based index and calculating cumprod, we avoid vectorbt's raw return plotting anomaly
+    cum_returns = (1 + df_resampled).cumprod() - 1
+    fig_equity = cum_returns.vbt.plot(title="Cumulative Equity Curve")
     fig_equity.update_layout(width=None, height=300, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
     
     # 2. Drawdowns
