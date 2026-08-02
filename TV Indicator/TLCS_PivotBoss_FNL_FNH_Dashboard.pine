@@ -1,0 +1,279 @@
+//@version=6
+indicator("PivotBoss FNL / FNH Dashboard", overlay=true, max_labels_count=500)
+
+// =====================================================================================
+// PIVOTBOSS "FAILED NEW LOW / HIGH" — MULTI-SYMBOL DASHBOARD
+// Scans 40 symbols (editable) across 6 market types on the DAILY timeframe and shows a
+// live table of which symbols currently satisfy the Failed New Low or Failed New High
+// criteria from the PivotBoss Swing Trade Pro 2.0 methodology.
+//
+// FNL (Bullish): Low sweeps below prior low, close recovers above yMID, range >= ADR%.
+// FNH (Bearish): High sweeps above prior high, close drops below yMID, range >= ADR%.
+//
+// IMPORTANT PLATFORM LIMIT: TradingView caps a single script at 40 request.security()
+// calls. This script uses all 40 on the symbol scan.
+// =====================================================================================
+
+// ---------------------------- FILTER RULES ----------------------------
+g1 = "1) Range Filter"
+adrLen     = input.int(10, "ADR Lookback (days)", minval=2, group=g1)
+adrMinPct  = input.float(75, "Min Range vs ADR (%)", step=5, group=g1) / 100
+
+g2 = "2) Sweep Filter"
+sweepLookback = input.int(1, "Sweep Lookback (days)", minval=1, maxval=20, group=g2, tooltip="1 = sweep yesterday's low/high only. Higher values check multi-day lows/highs.")
+
+g3 = "3) Close Location Filter"
+requireAboveYMid = input.bool(true, "Require close above yMID (FNL) / below yMID (FNH)", group=g3)
+
+g5 = "Dashboard Display"
+showOnlyHits = input.bool(true, "Show only symbols with an active signal", group=g5)
+tablePosStr  = input.string("Top Right", "Table Position", options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group=g5)
+tableTextSz  = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Normal"], group=g5)
+
+// ---------------------------- SYMBOL UNIVERSE: 40 slots across 6 market types ----------------------------
+gCrypto = "Crypto (8)"
+c1 = input.symbol("BINANCE:BTCUSDT",  "Crypto 1", group=gCrypto)
+c2 = input.symbol("BINANCE:ETHUSDT",  "Crypto 2", group=gCrypto)
+c3 = input.symbol("BINANCE:SOLUSDT",  "Crypto 3", group=gCrypto)
+c4 = input.symbol("BINANCE:BNBUSDT",  "Crypto 4", group=gCrypto)
+c5 = input.symbol("BINANCE:XRPUSDT",  "Crypto 5", group=gCrypto)
+c6 = input.symbol("BINANCE:ADAUSDT",  "Crypto 6", group=gCrypto)
+c7 = input.symbol("BINANCE:DOGEUSDT", "Crypto 7", group=gCrypto)
+c8 = input.symbol("BINANCE:AVAXUSDT", "Crypto 8", group=gCrypto)
+
+gStock = "Stocks (8)"
+s1 = input.symbol("NASDAQ:AAPL",  "Stock 1", group=gStock)
+s2 = input.symbol("NASDAQ:MSFT",  "Stock 2", group=gStock)
+s3 = input.symbol("NASDAQ:NVDA",  "Stock 3", group=gStock)
+s4 = input.symbol("NASDAQ:AMZN",  "Stock 4", group=gStock)
+s5 = input.symbol("NASDAQ:GOOGL", "Stock 5", group=gStock)
+s6 = input.symbol("NASDAQ:TSLA",  "Stock 6", group=gStock)
+s7 = input.symbol("NYSE:JPM",     "Stock 7", group=gStock)
+s8 = input.symbol("NYSE:WMT",     "Stock 8", group=gStock)
+
+gForex = "Forex (7)"
+f1 = input.symbol("FX:EURUSD", "Forex 1", group=gForex)
+f2 = input.symbol("FX:GBPUSD", "Forex 2", group=gForex)
+f3 = input.symbol("FX:USDJPY", "Forex 3", group=gForex)
+f4 = input.symbol("FX:USDCHF", "Forex 4", group=gForex)
+f5 = input.symbol("FX:AUDUSD", "Forex 5", group=gForex)
+f6 = input.symbol("FX:USDCAD", "Forex 6", group=gForex)
+f7 = input.symbol("FX:NZDUSD", "Forex 7", group=gForex)
+
+gIndex = "Indices (6)"
+i1 = input.symbol("SP:SPX",     "Index 1", group=gIndex)
+i2 = input.symbol("NASDAQ:NDX", "Index 2", group=gIndex)
+i3 = input.symbol("DJ:DJI",     "Index 3", group=gIndex)
+i4 = input.symbol("TVC:UKX",    "Index 4", group=gIndex)
+i5 = input.symbol("TVC:NI225",  "Index 5", group=gIndex)
+i6 = input.symbol("TVC:HSI",    "Index 6", group=gIndex)
+
+gFutures = "Futures (6)"
+u1 = input.symbol("NYMEX:CL1!", "Futures 1", group=gFutures)
+u2 = input.symbol("NYMEX:NG1!", "Futures 2", group=gFutures)
+u3 = input.symbol("COMEX:HG1!", "Futures 3", group=gFutures)
+u4 = input.symbol("COMEX:GC1!", "Futures 4", group=gFutures)
+u5 = input.symbol("COMEX:SI1!", "Futures 5", group=gFutures)
+u6 = input.symbol("NYMEX:PA1!", "Futures 6", group=gFutures)
+
+gBond = "Bonds (5)"
+b1 = input.symbol("TVC:US10Y", "Bond 1", group=gBond)
+b2 = input.symbol("TVC:US02Y", "Bond 2", group=gBond)
+b3 = input.symbol("TVC:US30Y", "Bond 3", group=gBond)
+b4 = input.symbol("TVC:DE10Y", "Bond 4", group=gBond)
+b5 = input.symbol("TVC:JP10Y", "Bond 5", group=gBond)
+
+// ---------------------------- FNL / FNH CALC (runs inside each request.security call) ----------------------------
+f_calc() =>
+    rng    = high - low
+    mid    = (high + low) / 2.0
+
+    // ADR from previous bars (exclude current bar)
+    avgRange = ta.sma(ta.tr(true), adrLen)[1]
+
+    // Sweep reference levels from prior bars
+    priorLow  = ta.lowest(low, sweepLookback)[1]
+    priorHigh = ta.highest(high, sweepLookback)[1]
+
+    // Yesterday's midpoint
+    yMid = (high[1] + low[1]) / 2.0
+
+    // Range filter
+    rangeOK = avgRange > 0 and rng >= adrMinPct * avgRange
+
+    // FNL (Bullish): low sweeps below prior low, close recovers above yMID
+    fnlSweep  = low < priorLow
+    fnlClose  = requireAboveYMid ? close > yMid : close > mid
+    fnlSignal = rangeOK and fnlSweep and fnlClose
+
+    // FNH (Bearish): high sweeps above prior high, close drops below yMID
+    fnhSweep  = high > priorHigh
+    fnhClose  = requireAboveYMid ? close < yMid : close < mid
+    fnhSignal = rangeOK and fnhSweep and fnhClose
+
+    [fnlSignal, fnhSignal, mid, close]
+
+// ---------------------------- 40 SECURITY CALLS (platform max) ----------------------------
+[c1b, c1s, c1m, c1c] = request.security(c1, "D", f_calc())
+[c2b, c2s, c2m, c2c] = request.security(c2, "D", f_calc())
+[c3b, c3s, c3m, c3c] = request.security(c3, "D", f_calc())
+[c4b, c4s, c4m, c4c] = request.security(c4, "D", f_calc())
+[c5b, c5s, c5m, c5c] = request.security(c5, "D", f_calc())
+[c6b, c6s, c6m, c6c] = request.security(c6, "D", f_calc())
+[c7b, c7s, c7m, c7c] = request.security(c7, "D", f_calc())
+[c8b, c8s, c8m, c8c] = request.security(c8, "D", f_calc())
+
+[s1b, s1s, s1m, s1c] = request.security(s1, "D", f_calc())
+[s2b, s2s, s2m, s2c] = request.security(s2, "D", f_calc())
+[s3b, s3s, s3m, s3c] = request.security(s3, "D", f_calc())
+[s4b, s4s, s4m, s4c] = request.security(s4, "D", f_calc())
+[s5b, s5s, s5m, s5c] = request.security(s5, "D", f_calc())
+[s6b, s6s, s6m, s6c] = request.security(s6, "D", f_calc())
+[s7b, s7s, s7m, s7c] = request.security(s7, "D", f_calc())
+[s8b, s8s, s8m, s8c] = request.security(s8, "D", f_calc())
+
+[f1b, f1s, f1m, f1c] = request.security(f1, "D", f_calc())
+[f2b, f2s, f2m, f2c] = request.security(f2, "D", f_calc())
+[f3b, f3s, f3m, f3c] = request.security(f3, "D", f_calc())
+[f4b, f4s, f4m, f4c] = request.security(f4, "D", f_calc())
+[f5b, f5s, f5m, f5c] = request.security(f5, "D", f_calc())
+[f6b, f6s, f6m, f6c] = request.security(f6, "D", f_calc())
+[f7b, f7s, f7m, f7c] = request.security(f7, "D", f_calc())
+
+[i1b, i1s, i1m, i1c] = request.security(i1, "D", f_calc())
+[i2b, i2s, i2m, i2c] = request.security(i2, "D", f_calc())
+[i3b, i3s, i3m, i3c] = request.security(i3, "D", f_calc())
+[i4b, i4s, i4m, i4c] = request.security(i4, "D", f_calc())
+[i5b, i5s, i5m, i5c] = request.security(i5, "D", f_calc())
+[i6b, i6s, i6m, i6c] = request.security(i6, "D", f_calc())
+
+[u1b, u1s, u1m, u1c] = request.security(u1, "D", f_calc())
+[u2b, u2s, u2m, u2c] = request.security(u2, "D", f_calc())
+[u3b, u3s, u3m, u3c] = request.security(u3, "D", f_calc())
+[u4b, u4s, u4m, u4c] = request.security(u4, "D", f_calc())
+[u5b, u5s, u5m, u5c] = request.security(u5, "D", f_calc())
+[u6b, u6s, u6m, u6c] = request.security(u6, "D", f_calc())
+
+[b1b, b1s, b1m, b1c] = request.security(b1, "D", f_calc())
+[b2b, b2s, b2m, b2c] = request.security(b2, "D", f_calc())
+[b3b, b3s, b3m, b3c] = request.security(b3, "D", f_calc())
+[b4b, b4s, b4m, b4c] = request.security(b4, "D", f_calc())
+[b5b, b5s, b5m, b5c] = request.security(b5, "D", f_calc())
+
+// ---------------------------- COLLECT RESULTS INTO ARRAYS ----------------------------
+symArr  = array.new_string()
+catArr  = array.new_string()
+fnlArr  = array.new_bool()
+fnhArr  = array.new_bool()
+midArr  = array.new_float()
+cloArr  = array.new_float()
+
+f_add(sym, cat, b, s, m, c) =>
+    if sym != ""
+        array.push(symArr, sym)
+        array.push(catArr, cat)
+        array.push(fnlArr, b)
+        array.push(fnhArr, s)
+        array.push(midArr, m)
+        array.push(cloArr, c)
+
+f_add(c1, "Crypto", c1b, c1s, c1m, c1c)
+f_add(c2, "Crypto", c2b, c2s, c2m, c2c)
+f_add(c3, "Crypto", c3b, c3s, c3m, c3c)
+f_add(c4, "Crypto", c4b, c4s, c4m, c4c)
+f_add(c5, "Crypto", c5b, c5s, c5m, c5c)
+f_add(c6, "Crypto", c6b, c6s, c6m, c6c)
+f_add(c7, "Crypto", c7b, c7s, c7m, c7c)
+f_add(c8, "Crypto", c8b, c8s, c8m, c8c)
+
+f_add(s1, "Stock", s1b, s1s, s1m, s1c)
+f_add(s2, "Stock", s2b, s2s, s2m, s2c)
+f_add(s3, "Stock", s3b, s3s, s3m, s3c)
+f_add(s4, "Stock", s4b, s4s, s4m, s4c)
+f_add(s5, "Stock", s5b, s5s, s5m, s5c)
+f_add(s6, "Stock", s6b, s6s, s6m, s6c)
+f_add(s7, "Stock", s7b, s7s, s7m, s7c)
+f_add(s8, "Stock", s8b, s8s, s8m, s8c)
+
+f_add(f1, "Forex", f1b, f1s, f1m, f1c)
+f_add(f2, "Forex", f2b, f2s, f2m, f2c)
+f_add(f3, "Forex", f3b, f3s, f3m, f3c)
+f_add(f4, "Forex", f4b, f4s, f4m, f4c)
+f_add(f5, "Forex", f5b, f5s, f5m, f5c)
+f_add(f6, "Forex", f6b, f6s, f6m, f6c)
+f_add(f7, "Forex", f7b, f7s, f7m, f7c)
+
+f_add(i1, "Index", i1b, i1s, i1m, i1c)
+f_add(i2, "Index", i2b, i2s, i2m, i2c)
+f_add(i3, "Index", i3b, i3s, i3m, i3c)
+f_add(i4, "Index", i4b, i4s, i4m, i4c)
+f_add(i5, "Index", i5b, i5s, i5m, i5c)
+f_add(i6, "Index", i6b, i6s, i6m, i6c)
+
+f_add(u1, "Futures", u1b, u1s, u1m, u1c)
+f_add(u2, "Futures", u2b, u2s, u2m, u2c)
+f_add(u3, "Futures", u3b, u3s, u3m, u3c)
+f_add(u4, "Futures", u4b, u4s, u4m, u4c)
+f_add(u5, "Futures", u5b, u5s, u5m, u5c)
+f_add(u6, "Futures", u6b, u6s, u6m, u6c)
+
+f_add(b1, "Bond", b1b, b1s, b1m, b1c)
+f_add(b2, "Bond", b2b, b2s, b2m, b2c)
+f_add(b3, "Bond", b3b, b3s, b3m, b3c)
+f_add(b4, "Bond", b4b, b4s, b4m, b4c)
+f_add(b5, "Bond", b5b, b5s, b5m, b5c)
+
+// ---------------------------- DASHBOARD TABLE ----------------------------
+if barstate.islast
+    tablePos = tablePosStr == "Top Right" ? position.top_right : tablePosStr == "Top Left" ? position.top_left : tablePosStr == "Bottom Right" ? position.bottom_right : position.bottom_left
+    txtSize  = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
+
+    // Count rows and totals
+    rowCount = 0
+    fnlTotal = 0
+    fnhTotal = 0
+    for idx = 0 to array.size(symArr) - 1
+        bb = array.get(fnlArr, idx)
+        ss = array.get(fnhArr, idx)
+        if bb
+            fnlTotal += 1
+        if ss
+            fnhTotal += 1
+        if (bb or ss) or not showOnlyHits
+            rowCount += 1
+
+    dash = table.new(tablePos, 5, rowCount + 2, border_width=1, frame_width=1, frame_color=color.gray)
+
+    // Header row
+    headerTxt = "FNL/FNH Scan — " + str.tostring(fnlTotal) + " FNL / " + str.tostring(fnhTotal) + " FNH (of " + str.tostring(array.size(symArr)) + ")"
+    table.merge_cells(dash, 0, 0, 4, 0)
+    table.cell(dash, 0, 0, headerTxt, bgcolor=color.new(color.gray, 0), text_color=color.white, text_size=txtSize)
+
+    table.cell(dash, 0, 1, "Symbol",  bgcolor=color.new(color.gray, 40), text_color=color.white, text_size=txtSize)
+    table.cell(dash, 1, 1, "Type",    bgcolor=color.new(color.gray, 40), text_color=color.white, text_size=txtSize)
+    table.cell(dash, 2, 1, "Signal",  bgcolor=color.new(color.gray, 40), text_color=color.white, text_size=txtSize)
+    table.cell(dash, 3, 1, "Close",   bgcolor=color.new(color.gray, 40), text_color=color.white, text_size=txtSize)
+    table.cell(dash, 4, 1, "MID",     bgcolor=color.new(color.gray, 40), text_color=color.white, text_size=txtSize)
+
+    row = 2
+    for idx = 0 to array.size(symArr) - 1
+        sym = array.get(symArr, idx)
+        cat = array.get(catArr, idx)
+        bb  = array.get(fnlArr, idx)
+        ss  = array.get(fnhArr, idx)
+        mm  = array.get(midArr, idx)
+        cc  = array.get(cloArr, idx)
+        if (bb or ss) or not showOnlyHits
+            sigTxt   = bb ? "FNL ▲ (Bull)" : ss ? "FNH ▼ (Bear)" : "-"
+            sigColor = bb ? color.lime : ss ? color.red : color.gray
+            rowBg    = bb ? color.new(color.lime, 82) : ss ? color.new(color.red, 82) : na
+            table.cell(dash, 0, row, sym, text_size=txtSize, bgcolor=rowBg)
+            table.cell(dash, 1, row, cat, text_size=txtSize, bgcolor=rowBg)
+            table.cell(dash, 2, row, sigTxt, text_color=sigColor, text_size=txtSize, bgcolor=rowBg)
+            table.cell(dash, 3, row, str.tostring(cc, format.mintick), text_size=txtSize, bgcolor=rowBg)
+            table.cell(dash, 4, row, str.tostring(mm, format.mintick), text_size=txtSize, bgcolor=rowBg)
+            row += 1
+
+// ---------------------------- ALERTS ----------------------------
+alertcondition(c1b or c2b or c3b or c4b or c5b or c6b or c7b or c8b or s1b or s2b or s3b or s4b or s5b or s6b or s7b or s8b or f1b or f2b or f3b or f4b or f5b or f6b or f7b or i1b or i2b or i3b or i4b or i5b or i6b or u1b or u2b or u3b or u4b or u5b or u6b or b1b or b2b or b3b or b4b or b5b, title="Any Failed New Low Detected (Bullish)", message="At least one scanned symbol just printed a Failed New Low — check the FNL/FNH dashboard on {{ticker}}'s chart")
+alertcondition(c1s or c2s or c3s or c4s or c5s or c6s or c7s or c8s or s1s or s2s or s3s or s4s or s5s or s6s or s7s or s8s or f1s or f2s or f3s or f4s or f5s or f6s or f7s or i1s or i2s or i3s or i4s or i5s or i6s or u1s or u2s or u3s or u4s or u5s or u6s or b1s or b2s or b3s or b4s or b5s, title="Any Failed New High Detected (Bearish)", message="At least one scanned symbol just printed a Failed New High — check the FNL/FNH dashboard on {{ticker}}'s chart")

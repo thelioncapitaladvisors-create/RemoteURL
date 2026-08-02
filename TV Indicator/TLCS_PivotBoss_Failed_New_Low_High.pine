@@ -1,0 +1,261 @@
+//@version=6
+indicator("PivotBoss Failed New Low / High", overlay=true, max_labels_count=500, max_boxes_count=500, max_lines_count=500)
+
+// =====================================================================================
+// PIVOTBOSS "FAILED NEW LOW / HIGH BLUEPRINT" — DAILY TIMEFRAME INDICATOR
+//
+// Detects Failed New Low (FNL — Bullish) and Failed New High (FNH — Bearish) day types
+// from the PivotBoss Swing Trade Pro 2.0 methodology.
+//
+// FNL (Bullish):
+//   1. Today's LOW sweeps below yesterday's LOW (or multi-day low).
+//   2. Today's CLOSE rallies back above yesterday's MID (midpoint).
+//   3. Today's range is at least X% of the Average Daily Range (ADR).
+//   4. An Absorption Zone is drawn from yLO to the FNL candle's MID, projecting forward.
+//   5. Setup invalidates if a subsequent daily close drops below the FNL's MID.
+//
+// FNH (Bearish): Exact inverse of FNL.
+// =====================================================================================
+
+// ============================= USER INPUTS =====================================
+
+g1 = "1) Range Filter"
+adrLen      = input.int(10,   "ADR Lookback (days)",        minval=2,  group=g1)
+adrMinPct   = input.float(75, "Min Range vs ADR (%)",       step=5,    group=g1) / 100
+
+g2 = "2) Sweep Filter"
+sweepLookback = input.int(1,  "Sweep Lookback (days)",      minval=1, maxval=20, group=g2, tooltip="1 = sweep yesterday's low/high only. Higher values check multi-day lows/highs.")
+
+g3 = "3) Close Location Filter"
+requireAboveYMid = input.bool(true, "Require close above yMID (FNL) / below yMID (FNH)", group=g3, tooltip="When enabled, the close must rally past yesterday's midpoint for FNL (or drop below for FNH). Disabling relaxes the filter.")
+
+g4 = "4) Absorption Zone"
+absZoneDays   = input.int(5, "Max Absorption Zone Duration (days)", minval=1, maxval=20, group=g4)
+absZoneColor  = input.color(color.new(color.lime, 80), "FNL Absorption Zone Color", group=g4)
+absZoneColorB = input.color(color.new(color.red, 80),  "FNH Absorption Zone Color", group=g4)
+
+g5 = "5) Display"
+showLabels    = input.bool(true,  "Show FNL/FNH Labels",           group=g5)
+showMidLine   = input.bool(true,  "Show FNL/FNH MID Line",         group=g5)
+showAbsZone   = input.bool(true,  "Show Absorption Zone Box",      group=g5)
+showInfoTable = input.bool(true,  "Show Info Table",                group=g5)
+tablePosStr   = input.string("Top Right", "Table Position", options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group=g5)
+tableTextSz   = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Normal"], group=g5)
+
+// ============================= CALCULATIONS ====================================
+
+// We need daily data — force daily resolution via request.security if chart is intraday
+[dOpen, dHigh, dLow, dClose] = request.security(syminfo.tickerid, "D", [open, high, low, close], lookahead=barmerge.lookahead_on)
+[dOpen1, dHigh1, dLow1, dClose1] = request.security(syminfo.tickerid, "D", [open[1], high[1], low[1], close[1]], lookahead=barmerge.lookahead_on)
+
+// Previous session values
+yHigh = dHigh1
+yLow  = dLow1
+yMid  = (yHigh + yLow) / 2.0
+
+// Current session values
+todayHigh  = dHigh
+todayLow   = dLow
+todayClose = dClose
+todayOpen  = dOpen
+todayMid   = (todayHigh + todayLow) / 2.0
+todayRange = todayHigh - todayLow
+
+// ADR calculation (uses previous bars to avoid lookahead)
+f_adr() =>
+    sum = 0.0
+    for i = 1 to adrLen
+        h = request.security(syminfo.tickerid, "D", high[i], lookahead=barmerge.lookahead_on)
+        l = request.security(syminfo.tickerid, "D", low[i], lookahead=barmerge.lookahead_on)
+        sum += (h - l)
+    sum / adrLen
+
+// Multi-day sweep reference levels
+f_multiLow() =>
+    lowest = yLow
+    for i = 2 to sweepLookback
+        pLow = request.security(syminfo.tickerid, "D", low[i], lookahead=barmerge.lookahead_on)
+        if pLow < lowest
+            lowest := pLow
+    lowest
+
+f_multiHigh() =>
+    highest = yHigh
+    for i = 2 to sweepLookback
+        pHigh = request.security(syminfo.tickerid, "D", high[i], lookahead=barmerge.lookahead_on)
+        if pHigh > highest
+            highest := pHigh
+    highest
+
+// Use ta.tr and ta.sma for ADR — simpler approach without loop security calls
+adr = request.security(syminfo.tickerid, "D", ta.sma(ta.tr(true), adrLen)[1], lookahead=barmerge.lookahead_on)
+
+// Multi-day low/high for sweep detection
+sweepRefLow  = request.security(syminfo.tickerid, "D", ta.lowest(low, sweepLookback)[1], lookahead=barmerge.lookahead_on)
+sweepRefHigh = request.security(syminfo.tickerid, "D", ta.highest(high, sweepLookback)[1], lookahead=barmerge.lookahead_on)
+
+// ============================= FNL / FNH DETECTION =============================
+
+// --- FAILED NEW LOW (Bullish) ---
+// 1. Today's low swept below the reference low (yesterday or multi-day)
+// 2. Today's close recovered above yesterday's midpoint
+// 3. Today's range is at least adrMinPct of the ADR
+fnlSweepOK  = todayLow < sweepRefLow
+fnlCloseOK  = requireAboveYMid ? todayClose > yMid : todayClose > todayMid
+fnlRangeOK  = adr > 0 and todayRange >= adrMinPct * adr
+fnlDetected = fnlSweepOK and fnlCloseOK and fnlRangeOK
+
+// --- FAILED NEW HIGH (Bearish) ---
+// 1. Today's high swept above the reference high (yesterday or multi-day)
+// 2. Today's close dropped below yesterday's midpoint
+// 3. Today's range is at least adrMinPct of the ADR
+fnhSweepOK  = todayHigh > sweepRefHigh
+fnhCloseOK  = requireAboveYMid ? todayClose < yMid : todayClose < todayMid
+fnhRangeOK  = adr > 0 and todayRange >= adrMinPct * adr
+fnhDetected = fnhSweepOK and fnhCloseOK and fnhRangeOK
+
+// ============================= STATE TRACKING ==================================
+// Track active FNL/FNH setups and their absorption zones
+
+// Persistent variables for tracking active setups
+var float  activeFnlMid       = na
+var float  activeFnlAbsBottom = na
+var int    activeFnlBarIdx    = na
+var bool   activeFnlValid     = false
+var box    activeFnlBox       = na
+var line   activeFnlMidLine   = na
+
+var float  activeFnhMid       = na
+var float  activeFnhAbsTop    = na
+var int    activeFnhBarIdx    = na
+var bool   activeFnhValid     = false
+var box    activeFnhBox       = na
+var line   activeFnhMidLine   = na
+
+// Only process on daily bar close (or last bar for real-time)
+isDailyBar = timeframe.isdaily
+
+if isDailyBar
+    // ---- FNL SETUP DETECTION ----
+    if fnlDetected
+        // Record the new FNL setup
+        activeFnlMid       := todayMid
+        activeFnlAbsBottom := sweepRefLow
+        activeFnlBarIdx    := bar_index
+        activeFnlValid     := true
+
+        // Draw Absorption Zone box (from yLO to FNL MID, projecting forward)
+        if showAbsZone
+            if not na(activeFnlBox)
+                box.delete(activeFnlBox)
+            activeFnlBox := box.new(bar_index, todayMid, bar_index + absZoneDays, sweepRefLow, border_color=color.lime, bgcolor=absZoneColor, border_width=1, border_style=line.style_dashed)
+
+        // Draw MID reference line
+        if showMidLine
+            if not na(activeFnlMidLine)
+                line.delete(activeFnlMidLine)
+            activeFnlMidLine := line.new(bar_index, todayMid, bar_index + absZoneDays, todayMid, color=color.lime, width=2, style=line.style_solid)
+
+        // Draw label
+        if showLabels
+            label.new(bar_index, todayLow, "FNL ▲\nMID " + str.tostring(todayMid, format.mintick), style=label.style_label_up, color=color.new(color.lime, 20), textcolor=color.white, size=size.small)
+
+    // ---- FNH SETUP DETECTION ----
+    if fnhDetected
+        activeFnhMid       := todayMid
+        activeFnhAbsTop    := sweepRefHigh
+        activeFnhBarIdx    := bar_index
+        activeFnhValid     := true
+
+        if showAbsZone
+            if not na(activeFnhBox)
+                box.delete(activeFnhBox)
+            activeFnhBox := box.new(bar_index, sweepRefHigh, bar_index + absZoneDays, todayMid, border_color=color.red, bgcolor=absZoneColorB, border_width=1, border_style=line.style_dashed)
+
+        if showMidLine
+            if not na(activeFnhMidLine)
+                line.delete(activeFnhMidLine)
+            activeFnhMidLine := line.new(bar_index, todayMid, bar_index + absZoneDays, todayMid, color=color.red, width=2, style=line.style_solid)
+
+        if showLabels
+            label.new(bar_index, todayHigh, "FNH ▼\nMID " + str.tostring(todayMid, format.mintick), style=label.style_label_down, color=color.new(color.red, 20), textcolor=color.white, size=size.small)
+
+    // ---- INVALIDATION CHECK ----
+    // FNL invalidates if a daily close drops below the FNL's MID
+    if activeFnlValid and not fnlDetected
+        daysSinceFnl = bar_index - activeFnlBarIdx
+        if todayClose < activeFnlMid or daysSinceFnl > absZoneDays
+            activeFnlValid := false
+
+    // FNH invalidates if a daily close rises above the FNH's MID
+    if activeFnhValid and not fnhDetected
+        daysSinceFnh = bar_index - activeFnhBarIdx
+        if todayClose > activeFnhMid or daysSinceFnh > absZoneDays
+            activeFnhValid := false
+
+// ============================= INFO TABLE ======================================
+if barstate.islast and showInfoTable
+    tablePos = tablePosStr == "Top Right" ? position.top_right : tablePosStr == "Top Left" ? position.top_left : tablePosStr == "Bottom Right" ? position.bottom_right : position.bottom_left
+    txtSize  = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
+
+    tbl = table.new(tablePos, 2, 12, border_width=1, frame_width=1, frame_color=color.gray)
+
+    // Header
+    table.merge_cells(tbl, 0, 0, 1, 0)
+    table.cell(tbl, 0, 0, "Failed New Low / High", bgcolor=color.new(color.gray, 0), text_color=color.white, text_size=txtSize)
+
+    // Range filter status
+    rangeRatio = adr > 0 ? todayRange / adr * 100 : 0
+    rangeOK    = adr > 0 and todayRange >= adrMinPct * adr
+    table.cell(tbl, 0, 1, "Range vs ADR", text_size=txtSize, bgcolor=color.new(color.gray, 85))
+    table.cell(tbl, 1, 1, str.tostring(rangeRatio, "#.0") + "%", text_color=rangeOK ? color.lime : color.red, text_size=txtSize, bgcolor=color.new(color.gray, 85))
+
+    // Sweep status
+    table.cell(tbl, 0, 2, "Low < Prev Low", text_size=txtSize, bgcolor=color.new(color.gray, 90))
+    table.cell(tbl, 1, 2, fnlSweepOK ? "✔" : "✘", text_color=fnlSweepOK ? color.lime : color.red, text_size=txtSize, bgcolor=color.new(color.gray, 90))
+
+    table.cell(tbl, 0, 3, "High > Prev High", text_size=txtSize, bgcolor=color.new(color.gray, 85))
+    table.cell(tbl, 1, 3, fnhSweepOK ? "✔" : "✘", text_color=fnhSweepOK ? color.lime : color.red, text_size=txtSize, bgcolor=color.new(color.gray, 85))
+
+    // Close location
+    table.cell(tbl, 0, 4, "Close > yMID (FNL)", text_size=txtSize, bgcolor=color.new(color.gray, 90))
+    table.cell(tbl, 1, 4, fnlCloseOK ? "✔" : "✘", text_color=fnlCloseOK ? color.lime : color.red, text_size=txtSize, bgcolor=color.new(color.gray, 90))
+
+    table.cell(tbl, 0, 5, "Close < yMID (FNH)", text_size=txtSize, bgcolor=color.new(color.gray, 85))
+    table.cell(tbl, 1, 5, fnhCloseOK ? "✔" : "✘", text_color=fnhCloseOK ? color.lime : color.red, text_size=txtSize, bgcolor=color.new(color.gray, 85))
+
+    // Active setup result
+    table.cell(tbl, 0, 6, "Active FNL Setup", text_size=txtSize, bgcolor=color.new(color.gray, 90))
+    table.cell(tbl, 1, 6, fnlDetected ? "BULL ▲" : activeFnlValid ? "ACTIVE" : "-", text_color=fnlDetected ? color.lime : activeFnlValid ? color.yellow : color.gray, text_size=txtSize, bgcolor=color.new(color.gray, 90))
+
+    table.cell(tbl, 0, 7, "Active FNH Setup", text_size=txtSize, bgcolor=color.new(color.gray, 85))
+    table.cell(tbl, 1, 7, fnhDetected ? "BEAR ▼" : activeFnhValid ? "ACTIVE" : "-", text_color=fnhDetected ? color.red : activeFnhValid ? color.yellow : color.gray, text_size=txtSize, bgcolor=color.new(color.gray, 85))
+
+    // Reference levels
+    table.cell(tbl, 0, 8, "yMID", text_size=txtSize, bgcolor=color.new(color.gray, 90))
+    table.cell(tbl, 1, 8, str.tostring(yMid, format.mintick), text_size=txtSize, bgcolor=color.new(color.gray, 90))
+
+    table.cell(tbl, 0, 9, "Today MID", text_size=txtSize, bgcolor=color.new(color.gray, 85))
+    table.cell(tbl, 1, 9, str.tostring(todayMid, format.mintick), text_size=txtSize, bgcolor=color.new(color.gray, 85))
+
+    // Absorption zone
+    table.cell(tbl, 0, 10, "Absorption Zone", text_size=txtSize, bgcolor=color.new(color.gray, 90))
+    absZoneTxt = activeFnlValid ? str.tostring(activeFnlAbsBottom, format.mintick) + " — " + str.tostring(activeFnlMid, format.mintick) : activeFnhValid ? str.tostring(activeFnhMid, format.mintick) + " — " + str.tostring(activeFnhAbsTop, format.mintick) : "-"
+    table.cell(tbl, 1, 10, absZoneTxt, text_size=txtSize, bgcolor=color.new(color.gray, 90))
+
+    // Absorption entry validity (Day 2: Open > MID for FNL)
+    absEntryValid = activeFnlValid and todayOpen > activeFnlMid
+    absEntryValidFNH = activeFnhValid and todayOpen < activeFnhMid
+    table.cell(tbl, 0, 11, "Absorption Entry Valid", text_size=txtSize, bgcolor=color.new(color.gray, 85))
+    table.cell(tbl, 1, 11, absEntryValid ? "✔ BULL" : absEntryValidFNH ? "✔ BEAR" : "-", text_color=absEntryValid ? color.lime : absEntryValidFNH ? color.red : color.gray, text_size=txtSize, bgcolor=color.new(color.gray, 85))
+
+// ============================= BACKGROUND HIGHLIGHT ============================
+// Subtle background color on FNL/FNH days
+bgcolor(isDailyBar and fnlDetected ? color.new(color.lime, 90) : na, title="FNL Day Highlight")
+bgcolor(isDailyBar and fnhDetected ? color.new(color.red, 90)  : na, title="FNH Day Highlight")
+
+// ============================= ALERTS ==========================================
+alertcondition(fnlDetected, title="Failed New Low Detected (Bullish)", message="PivotBoss FNL detected on {{ticker}} — Bullish reversal setup. MID: {{close}}")
+alertcondition(fnhDetected, title="Failed New High Detected (Bearish)", message="PivotBoss FNH detected on {{ticker}} — Bearish reversal setup. MID: {{close}}")
+alertcondition(activeFnlValid and todayOpen > activeFnlMid, title="FNL Absorption Entry (Day 2+)", message="{{ticker}} opened above FNL MID — Absorption Zone entry is valid for bullish swing.")
+alertcondition(activeFnhValid and todayOpen < activeFnhMid, title="FNH Absorption Entry (Day 2+)", message="{{ticker}} opened below FNH MID — Absorption Zone entry is valid for bearish swing.")

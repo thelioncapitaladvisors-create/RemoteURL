@@ -1,9 +1,0 @@
-# July 27, 2026 - Bug Fixes & Hotfixes
-
-## 1. Plotly BData Glitch (iOS/Android WebViews) Fixed
-- **Issue:** When a market had identically numbered cumulative returns (e.g., exactly `0.0` due to no executed trades for the day or breakevens), Plotly automatically compressed the massive NumPy arrays into Base64 `bdata` strings for memory efficiency. Since standard iOS and Android WebViews lack native decoding for Plotly's binary arrays, the Plotly JS renderer lost its `Y-axis` coordinates. As a fallback, it plotted raw sequence indices across the timeline, producing artificial, perfectly overlapping diagonal lines spiking up to 9600%.
-- **Fix:** Implemented a universal bypass in `algo_engine/backtest_edge.py`. The HTML generation engine now aggressively intercepts `fig.data` and strictly casts all `trace.x` and `trace.y` NumPy arrays into standard pure Python lists (e.g. `trace.y.tolist()`). This forcefully circumvents Plotly's `bdata` compression, ensuring the data is strictly serialized as standard JSON lists `[...]`. The Mobile App and Web Dashboards are now fully immunized against rendering glitches and display true 0.00% flat lines correctly.
-
-## 2. Dynamic Telegram Market Prefixing Fixed
-- **Issue:** The Telegram alerts dispatched from the backend correctly routed messages into the appropriate channels (Crypto, Forex, NIFTY50, etc.), but the message prefix was stubbornly hardcoded to state `⚡ *NYMEX TRADE ACTIVE*` regardless of the actual market type. 
-- **Fix:** Refactored `process-webhook-background.js` to strip out the hardcoded `NYMEX` string. The telegram dispatcher now hooks into the `getMarketForSymbol(sym)` utility function to dynamically resolve the canonical market name for the incoming asset, capitalizes it, and seamlessly injects it into the template payload (e.g. `⚡ *CRYPTO TRADE ACTIVE*`, `⚡ *NIFTY TRADE ACTIVE*`).

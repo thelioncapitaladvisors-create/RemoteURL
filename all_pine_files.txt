@@ -1,2 +1,0 @@
-/Users/vishant/Documents/Project/TV Indicator/TLCS_Native_Divergence.pine
-/Users/vishant/Documents/Project/TV Indicator/TLCS_Native_Oscillator.pine
