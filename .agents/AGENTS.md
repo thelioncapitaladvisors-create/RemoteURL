@@ -607,3 +607,8 @@ function resolveOutcome(s) {
 ## Supabase CDN Fallback & Webhook Error Resilience
 - **Supabase UMD CDN Dependency**: Do NOT rely on locally hosting the `supabase-js-v2.min.js` file if downloaded directly via CLI. CDNs often block raw CLI downloads, resulting in corrupted script files that break the frontend. ALWAYS use the direct CDN link (`https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2`) in `<script>` tags.
 - **Netlify Webhook False Positives**: Background functions (`*-background.js`) in Netlify inherently return a `202 Accepted` response before execution. TradingView interprets this as a "Webhook successfully delivered" even if the payload parsing fails. ALWAYS ensure Pine Script `alert()` functions format the string exactly as JSON (e.g. `_divPay`), avoiding generic plain text strings like `"Alert: " + text`, which cause silent 400 Bad Request errors inside the Netlify function.
+
+## PivotBoss Combined Dashboard (V2.2.4)
+- The AI Dashboard (`dashboard.html`) and Mobile ANALYSIS tab (`page.tsx`) now include the PivotBoss Combined Scanner table.
+- Day-type blueprints (Rejection, FNL/FNH, Absorption, Outside, Stop Run) are sourced from `pivotboss_scans` table (JSONB `scan_data` column).
+- Do not break the JSONB parsing logic (`typeof s === "string" ? JSON.parse(s) : s`) when rendering this table.
