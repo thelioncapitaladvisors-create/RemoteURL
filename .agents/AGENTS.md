@@ -153,6 +153,9 @@ function resolveOutcome(s) {
 - **Scanners**:
   - `PIVOTBOSS COMBINED SCANNER` is renamed and strictly labeled as **TLCS DAY TYPE SCANNER**. It resides on the Web Dashboard and the Analytics tab of the Mobile App.
 
+## Push Notification Dispatch Rules
+- **Scanner Aggregation**: Scanners (e.g., TLCS Day Type Scanner) send bulk JSON array payloads. The Netlify `send-push-background` dispatcher MUST parse the array and aggregate active signals to send a single summarized push notification (e.g., "3 Blueprints detected..."). It MUST NOT iterate and fire individual push notifications for every symbol.
+- **Empty Scanner Guard**: If a scanner payload arrives with 0 active blueprints, the `send-push-background` dispatcher must forcefully abort and skip sending any push notifications to prevent spam.
 ## Standard Strategy Filters
 - The 6 standard strategy filters (`LONG MISSILE`, `SHORT MISSILE`, `LONG SCALP`, `SHORT SCALP`, `LONG LIGHTNING`, `SHORT LIGHTNING`) are permanently hardcoded in the INSIGHTS tab of the mobile app to ensure they remain visible even on days with 0 active trades.
 
