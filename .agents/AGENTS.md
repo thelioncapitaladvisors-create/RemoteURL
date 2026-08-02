@@ -149,7 +149,9 @@ function resolveOutcome(s) {
   - Alerts Tab (`id: ALERTS`) is labeled as **LOGS**.
   - Analysis Tab (`id: ANALYSIS`) is labeled as **MARKETS**.
   - Insights Tab (`id: INSIGHTS`) remains **INSIGHTS**.
-
+  - Analytics Tab (`id: ANALYTICS`) is labeled as **ANALYTICS**.
+- **Scanners**:
+  - `PIVOTBOSS COMBINED SCANNER` is renamed and strictly labeled as **TLCS DAY TYPE SCANNER**. It resides on the Web Dashboard and the Analytics tab of the Mobile App.
 
 ## Standard Strategy Filters
 - The 6 standard strategy filters (`LONG MISSILE`, `SHORT MISSILE`, `LONG SCALP`, `SHORT SCALP`, `LONG LIGHTNING`, `SHORT LIGHTNING`) are permanently hardcoded in the INSIGHTS tab of the mobile app to ensure they remain visible even on days with 0 active trades.
