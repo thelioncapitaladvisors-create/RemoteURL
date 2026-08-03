@@ -617,3 +617,17 @@ function resolveOutcome(s) {
 - The AI Dashboard (`dashboard.html`) and Mobile ANALYSIS tab (`page.tsx`) now include the PivotBoss Combined Scanner table.
 - Day-type blueprints (Rejection, FNL/FNH, Absorption, Outside, Stop Run) are sourced from `pivotboss_scans` table (JSONB `scan_data` column).
 - Do not break the JSONB parsing logic (`typeof s === "string" ? JSON.parse(s) : s`) when rendering this table.
+
+## Standardized PivotBoss Taxonomy (Blueprints & Sequences)
+- **Day Type Blueprints (5 Categories)**:
+  1. Rejection Day Blueprint
+  2. Absorption Day Blueprint
+  3. Failed New Low Blueprint
+  4. Outside Day Blueprint
+  5. Stop Run Day Blueprint
+- **Trade Sequences (4 Sequences)**:
+  1. Rejection Day Sequence
+  2. Stop Run Sequence
+  3. Failed Absorption Sequence
+  4. Accumulation Sequence
+- This taxonomy MUST be kept identical across Pine Script indicators, Supabase table contracts (`pivotboss_scans`), Netlify background workers, Web Dashboard (`dashboard.html`), and Mobile Application (`page.tsx`).

@@ -1,0 +1,313 @@
+//@version=6
+indicator("TLCS Sequence Indicator", overlay=true, max_labels_count=500)
+
+// ---------------------------- SHARED SETTINGS ----------------------------
+gShared = "Shared: ADR Lookback"
+adrLen = input.int(10, "ADR Lookback (days)", minval=2, group=gShared)
+
+// ---------------------------- ACCUMULATION / DISTRIBUTION ----------------------------
+gAcc = "Accumulation / Distribution"
+accLen = input.int(20, "Accumulation Lookback", minval=5, group=gAcc)
+accMaxRangeMult = input.float(3.0, "Max Range vs ADR (x)", step=0.1, group=gAcc, tooltip="The total range over the lookback period must be <= this multiple of the ADR")
+
+// ---------------------------- REJECTION DAY FILTER RULES ----------------------------
+gRej1 = "Rejection Day — Range"
+adrMultMin = input.float(1.25, "Min Range vs ADR (x)", step=0.05, group=gRej1)
+
+gRej2 = "Rejection Day — Tail / Body"
+tailBodyMult = input.float(2.5, "Min Tail / Body Ratio", step=0.1, group=gRej2)
+
+gRej3 = "Rejection Day — Close Location"
+closeZonePct = input.float(35, "Close within top/bottom X% of range", minval=1, maxval=50, group=gRej3) / 100
+
+gRej4 = "Rejection Day — Location / Structure"
+useStructure = input.bool(true, "Require near prior swing extreme", group=gRej4)
+structLen    = input.int(20, "Lookback for prior swing high/low", minval=2, group=gRej4)
+structTolPct = input.float(1.0, "Tolerance around prior extreme (%)", step=0.1, group=gRej4) / 100
+
+
+// ---------------------------- OUTSIDE DAY FILTER RULES ----------------------------
+gOd1 = "Outside Day — Range"
+odAdrMultMin = input.float(1.05, "Min Range vs ADR (x)", step=0.05, group=gOd1)
+
+// ---------------------------- FNL / FNH FILTER RULES ----------------------------
+gFnl1 = "FNL/FNH — Range"
+adrMinPct = input.float(75, "Min Range vs ADR (%)", step=5, group=gFnl1) / 100
+
+gFnl2 = "FNL/FNH — Sweep"
+sweepLookback = input.int(1, "Sweep Lookback (days)", minval=1, maxval=20, group=gFnl2)
+
+gFnl3 = "FNL/FNH — Close Location"
+requireAboveYMid = input.bool(true, "Require close above yMID (FNL) / below yMID (FNH)", group=gFnl3)
+
+// ---------------------------- ABSORPTION DAY FILTER RULES ----------------------------
+gAbs1 = "Absorption Day — Range"
+absAdrMaxMult = input.float(0.75, "Max Range vs ADR (x)", step=0.05, group=gAbs1)
+
+gAbs2 = "Absorption Day — Location"
+absMidTolPct = input.float(1.0, "Tolerance: Low/High near yMID (%)", step=0.1, group=gAbs2) / 100
+
+gAbs3 = "Absorption Day — Close Confirmation"
+requireBodyConfirm = input.bool(true, "Require body confirmation (Close vs Open)", group=gAbs3)
+
+// ---------------------------- STOP RUN DAY FILTER RULES ----------------------------
+gSrd1 = "Stop Run Day — Range"
+srdAdrMultMin = input.float(2.0, "Min Range vs ADR (x)", step=0.1, group=gSrd1)
+
+gSrd2 = "Stop Run Day — Close Location"
+srdCloseZonePct = input.float(15, "Close within top/bottom X% of range", minval=1, maxval=50, group=gSrd2) / 100
+
+gSrd3 = "Stop Run Day — Structure"
+srdStructLen = input.int(5, "Lookback for prior swing high/low for MID check (days)", minval=1, group=gSrd3)
+
+// ---------------------------- SEQUENCE CALC ----------------------------
+rng    = high - low
+body   = math.abs(close - open)
+upWick = high - math.max(open, close)
+dnWick = math.min(open, close) - low
+mid    = (high + low) / 2
+
+avgRange = ta.sma(ta.tr(true), adrLen)[1]
+closePos = rng != 0 ? (close - low) / rng : 0.5
+
+// ---- 9. Accumulation / Distribution Phase ----
+accHigh = ta.highest(high, accLen)
+accLow  = ta.lowest(low, accLen)
+accRange = accHigh - accLow
+isCompressing = avgRange > 0 and accRange <= accMaxRangeMult * avgRange
+
+bullAcc = isCompressing and close >= (accHigh + accLow) / 2
+bearDist = isCompressing and close < (accHigh + accLow) / 2
+
+// ---- 1. Rejection Day Trigger ----
+rejRangeOK  = avgRange > 0 and rng > adrMultMin * avgRange
+bullTailOK  = body > 0 ? dnWick > tailBodyMult * body : dnWick > 0
+bearTailOK  = body > 0 ? upWick > tailBodyMult * body : upWick > 0
+bullCloseOK = closePos >= (1 - closeZonePct)
+bearCloseOK = closePos <= closeZonePct
+
+priorLowStruct  = ta.lowest(low, structLen)[1]
+priorHighStruct = ta.highest(high, structLen)[1]
+nearPriorLow  = low  <= priorLowStruct  * (1 + structTolPct)
+nearPriorHigh = high >= priorHighStruct * (1 - structTolPct)
+structBullOK = not useStructure or nearPriorLow
+structBearOK = not useStructure or nearPriorHigh
+
+bullRej = rejRangeOK and bullTailOK and bullCloseOK and structBullOK
+bearRej = rejRangeOK and bearTailOK and bearCloseOK and structBearOK
+
+// ---- 2. Stop Run Day Trigger ----
+srdRangeOK = avgRange > 0 and rng > srdAdrMultMin * avgRange
+
+bullSrdClosePosOK = closePos >= (1 - srdCloseZonePct)
+bullSrdCloseExt   = close > high[1]
+bullSrdMidExt     = mid >= ta.highest(high, srdStructLen)[1]
+bullSrdSignal     = srdRangeOK and bullSrdClosePosOK and bullSrdCloseExt and bullSrdMidExt
+
+bearSrdClosePosOK = closePos <= srdCloseZonePct
+bearSrdCloseExt   = close < low[1]
+bearSrdMidExt     = mid <= ta.lowest(low, srdStructLen)[1]
+bearSrdSignal     = srdRangeOK and bearSrdClosePosOK and bearSrdCloseExt and bearSrdMidExt
+
+// ---- STATE TRACKING: REJECTION SEQUENCE & FAILED ABSORPTION ----
+var float rejActiveMid   = na
+var float rejActiveHigh  = na
+var float rejActiveLow   = na
+var bool  bullRejActive  = false
+var bool  bearRejActive  = false
+var int   rejBarIndex    = na
+
+var bool  bullFailedAbsActive = false
+var bool  bearFailedAbsActive = false
+var int   faBarIndex          = na
+
+if bullRej
+    rejActiveMid  := mid
+    rejActiveHigh := high
+    rejActiveLow  := low
+    bullRejActive := true
+    bearRejActive := false
+    bullFailedAbsActive := false
+    bearFailedAbsActive := false
+    rejBarIndex   := bar_index
+    faBarIndex    := na
+else if bearRej
+    rejActiveMid  := mid
+    rejActiveHigh := high
+    rejActiveLow  := low
+    bearRejActive := true
+    bullRejActive := false
+    bullFailedAbsActive := false
+    bearFailedAbsActive := false
+    rejBarIndex   := bar_index
+    faBarIndex    := na
+
+// Check Rejection Failure -> triggers Failed Absorption Context
+if bullRejActive and close < rejActiveMid
+    bullRejActive := false
+    bearFailedAbsActive := true
+    faBarIndex := bar_index
+if bearRejActive and close > rejActiveMid
+    bearRejActive := false
+    bullFailedAbsActive := true
+    faBarIndex := bar_index
+
+// Invalidate Failed Absorption Context
+if bearFailedAbsActive and close > rejActiveHigh
+    bearFailedAbsActive := false
+if bullFailedAbsActive and close < rejActiveLow
+    bullFailedAbsActive := false
+
+// ---- STATE TRACKING: STOP RUN SEQUENCE ----
+var float srdActiveMid   = na
+var float srdActiveExt   = na
+var bool  bullSrdActive  = false
+var bool  bearSrdActive  = false
+var int   srdBarIndex    = na
+
+if bullSrdSignal
+    srdActiveMid  := mid
+    srdActiveExt  := high
+    bullSrdActive := true
+    bearSrdActive := false
+    srdBarIndex   := bar_index
+else if bearSrdSignal
+    srdActiveMid  := mid
+    srdActiveExt  := low
+    bearSrdActive := true
+    bullSrdActive := false
+    srdBarIndex   := bar_index
+
+if bullSrdActive and close < srdActiveMid
+    bullSrdActive := false
+if bearSrdActive and close > srdActiveMid
+    bearSrdActive := false
+
+// ---- 3. Fade After Stop Run (Applies to SRD Sequence Only) ----
+bullFade = bullSrdActive and bar_index > srdBarIndex and high >= srdActiveExt * 0.995 and close < open
+bearFade = bearSrdActive and bar_index > srdBarIndex and low <= srdActiveExt * 1.005 and close > open
+
+// ---- 4. Absorption Day (Applies to Rej and SRD sequences) ----
+absRangeOK = avgRange > 0 and rng < absAdrMaxMult * avgRange
+
+bullAbs_Rej = bullRejActive and bar_index > rejBarIndex and absRangeOK and close > rejActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - rejActiveMid) <= rejActiveMid * absMidTolPct
+bearAbs_Rej = bearRejActive and bar_index > rejBarIndex and absRangeOK and close < rejActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - rejActiveMid) <= rejActiveMid * absMidTolPct
+
+bullAbs_Srd = bullSrdActive and bar_index > srdBarIndex and absRangeOK and close > srdActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - srdActiveMid) <= srdActiveMid * absMidTolPct
+bearAbs_Srd = bearSrdActive and bar_index > srdBarIndex and absRangeOK and close < srdActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - srdActiveMid) <= srdActiveMid * absMidTolPct
+
+// ---- X. Outside Day ----
+odRangeOK = avgRange > 0 and rng > odAdrMultMin * avgRange
+bullOd = odRangeOK and low < low[1] and close > high[1]
+bearOd = odRangeOK and high > high[1] and close < low[1]
+
+// ---- 5. FNL / FNH (Applies to both sequences) ----
+fnlRangeOK = avgRange > 0 and rng >= adrMinPct * avgRange
+priorLowSweep  = ta.lowest(low, sweepLookback)[1]
+priorHighSweep = ta.highest(high, sweepLookback)[1]
+yMidFnl = (high[1] + low[1]) / 2.0
+
+fnlSweep  = low < priorLowSweep
+fnlClose  = requireAboveYMid ? close > yMidFnl : close > mid
+fnlSignal = fnlRangeOK and fnlSweep and fnlClose
+
+fnhSweep  = high > priorHighSweep
+fnhClose  = requireAboveYMid ? close < yMidFnl : close < mid
+fnhSignal = fnlRangeOK and fnhSweep and fnhClose
+
+bullFnl_Rej = bullRejActive and bar_index > rejBarIndex and fnlSignal
+bearFnh_Rej = bearRejActive and bar_index > rejBarIndex and fnhSignal
+
+bullFnl_Srd = bullSrdActive and bar_index > srdBarIndex and fnlSignal
+bearFnh_Srd = bearSrdActive and bar_index > srdBarIndex and fnhSignal
+
+unifiedBullFnl = bullFnl_Rej or bullFnl_Srd
+unifiedBearFnh = bearFnh_Rej or bearFnh_Srd
+
+// ---- 6. Failed Breakout (Applies to Failed Absorption Context) ----
+bullFailedBreakout = bullFailedAbsActive and bar_index > faBarIndex and low <= low[1] and close > open
+bearFailedBreakout = bearFailedAbsActive and bar_index > faBarIndex and high >= high[1] and close < open
+
+// ---- 7. Retest After Stop Run (Applies to Failed Absorption Context) ----
+bullRetestAfterSrd = bullFailedAbsActive and (bullFade or bullAbs_Srd)
+bearRetestAfterSrd = bearFailedAbsActive and (bearFade or bearAbs_Srd)
+
+// Mask Retest days out of the standard Fade/Abs rows for cleaner dashboard reporting
+bullFade_final = bullFade and not bullRetestAfterSrd
+bearFade_final = bearFade and not bearRetestAfterSrd
+
+unifiedBullAbs = bullAbs_Rej or (bullAbs_Srd and not bullRetestAfterSrd)
+unifiedBearAbs = bearAbs_Rej or (bearAbs_Srd and not bearRetestAfterSrd)
+
+// ---- 8. Continuation Day ----
+var bool prevActiveDayBull = false
+var bool prevActiveDayBear = false
+
+bullCont = prevActiveDayBull and close > close[1]
+bearCont = prevActiveDayBear and close < close[1]
+
+prevActiveDayBull := bullRej or bullSrdSignal or unifiedBullAbs or unifiedBullFnl or bullFailedBreakout or bullRetestAfterSrd
+prevActiveDayBear := bearRej or bearSrdSignal or unifiedBearAbs or unifiedBearFnh or bearFailedBreakout or bearRetestAfterSrd
+
+// ---------------------------- PLOTTING ----------------------------
+
+plotshape(bullRej, style=shape.triangleup, location=location.belowbar, color=color.new(color.lime, 0), size=size.small, title="Bullish Rejection")
+plotshape(bearRej, style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 0), size=size.small, title="Bearish Rejection")
+
+plotshape(bullSrdSignal, style=shape.labelup, location=location.belowbar, color=color.new(color.blue, 0), size=size.small, title="Bullish SRD")
+plotshape(bearSrdSignal, style=shape.labeldown, location=location.abovebar, color=color.new(color.fuchsia, 0), size=size.small, title="Bearish SRD")
+
+plotshape(bullFade_final, style=shape.diamond, location=location.abovebar, color=color.new(color.red, 0), size=size.small, title="Fade After Bull SRD")
+plotshape(bearFade_final, style=shape.diamond, location=location.belowbar, color=color.new(color.lime, 0), size=size.small, title="Fade After Bear SRD")
+
+plotshape(unifiedBullAbs, style=shape.circle, location=location.belowbar, color=color.new(color.aqua, 0), size=size.small, title="Bullish Absorption")
+plotshape(unifiedBearAbs, style=shape.circle, location=location.abovebar, color=color.new(color.orange, 0), size=size.small, title="Bearish Absorption")
+
+plotshape(unifiedBullFnl, style=shape.xcross, location=location.belowbar, color=color.new(color.lime, 0), size=size.small, title="Bullish FNL")
+plotshape(unifiedBearFnh, style=shape.xcross, location=location.abovebar, color=color.new(color.red, 0), size=size.small, title="Bearish FNH")
+
+plotshape(bullOd, style=shape.triangleup,   location=location.belowbar, color=color.rgb(19, 219, 116), size=size.small, title="Bullish Outside Day")
+plotshape(bearOd, style=shape.triangledown, location=location.abovebar, color=color.rgb(241, 48, 67),  size=size.small, title="Bearish Outside Day")
+
+plotshape(bullFailedBreakout, style=shape.square, location=location.belowbar, color=color.new(color.lime, 0), size=size.small, title="Bullish Failed Breakout")
+plotshape(bearFailedBreakout, style=shape.square, location=location.abovebar, color=color.new(color.red, 0), size=size.small, title="Bearish Failed Breakout")
+
+plotshape(bullRetestAfterSrd, style=shape.flag, location=location.belowbar, color=color.new(color.teal, 0), size=size.small, title="Bullish Retest after SRD")
+plotshape(bearRetestAfterSrd, style=shape.flag, location=location.abovebar, color=color.new(color.maroon, 0), size=size.small, title="Bearish Retest after SRD")
+
+plotshape(bullCont, style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 50), size=size.tiny, title="Bullish Continuation")
+plotshape(bearCont, style=shape.triangledown, location=location.abovebar, color=color.new(color.maroon, 50), size=size.tiny, title="Bearish Continuation")
+
+// Accumulation / Distribution Background Highlighting
+bgcolor(bullAcc ? color.new(color.lime, 90) : bearDist ? color.new(color.red, 90) : na, title="Accumulation / Distribution Phase")
+
+// ---------------------------- ALERTS ----------------------------
+alertcondition(bullAcc, title="Accumulation Phase",    message="TLCS Sequence: Bullish Accumulation Phase")
+alertcondition(bearDist, title="Distribution Phase",    message="TLCS Sequence: Bearish Distribution Phase")
+
+alertcondition(bullRej, title="Bullish Rejection Day", message="TLCS Sequence: Bullish Rejection Day")
+alertcondition(bearRej, title="Bearish Rejection Day", message="TLCS Sequence: Bearish Rejection Day")
+
+alertcondition(bullOd, title="Bullish Outside Day", message="TLCS Sequence: Bullish Outside Day")
+alertcondition(bearOd, title="Bearish Outside Day", message="TLCS Sequence: Bearish Outside Day")
+
+alertcondition(bullSrdSignal, title="Bullish Stop Run Day", message="TLCS Sequence: Bullish Stop Run Day")
+alertcondition(bearSrdSignal, title="Bearish Stop Run Day", message="TLCS Sequence: Bearish Stop Run Day")
+
+alertcondition(bullFade_final, title="Bullish Fade After SRD", message="TLCS Sequence: Bullish Fade After SRD")
+alertcondition(bearFade_final, title="Bearish Fade After SRD", message="TLCS Sequence: Bearish Fade After SRD")
+
+alertcondition(unifiedBullAbs, title="Bullish Absorption Day", message="TLCS Sequence: Bullish Absorption Day")
+alertcondition(unifiedBearAbs, title="Bearish Absorption Day", message="TLCS Sequence: Bearish Absorption Day")
+
+alertcondition(unifiedBullFnl, title="Bullish FNL", message="TLCS Sequence: Bullish Failed New Low")
+alertcondition(unifiedBearFnh, title="Bearish FNH", message="TLCS Sequence: Bearish Failed New High")
+
+alertcondition(bullFailedBreakout, title="Bullish Failed Breakout", message="TLCS Sequence: Bullish Failed Breakout")
+alertcondition(bearFailedBreakout, title="Bearish Failed Breakout", message="TLCS Sequence: Bearish Failed Breakout")
+
+alertcondition(bullRetestAfterSrd, title="Bullish Retest After SRD", message="TLCS Sequence: Bullish Retest After SRD")
+alertcondition(bearRetestAfterSrd, title="Bearish Retest After SRD", message="TLCS Sequence: Bearish Retest After SRD")
+
+alertcondition(bullCont, title="Bullish Continuation", message="TLCS Sequence: Bullish Continuation Day")
+alertcondition(bearCont, title="Bearish Continuation", message="TLCS Sequence: Bearish Continuation Day")
