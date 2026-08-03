@@ -649,4 +649,16 @@ function resolveOutcome(s) {
 - **Recommended Chart Setup**:
   - Load `TLCS Dashboards` on an intraday timeframe (e.g., **15-Minute** chart) with TradingView alert set to `Any alert() function call` and frequency `Once Per Bar Close`.
 
+## System Architecture Major Release (Version 3.0 — August 3, 2026)
+- **Version 3.0 Standardization**:
+  - Global Version 3.0 release for both the Web Application (`TLCS_Website_Deploy`, package version `3.0.0`) and Mobile Application (`Tv-Alert-Mobile`, package version `3.0.0`, header `TLCS TERMINAL v3.0`).
+- **PivotBoss Blueprint & Sequence Unified Architecture**:
+  - Complete integration of 5 Day Type Blueprints (Rejection, Absorption, Failed New Low, Outside, Stop Run) and 4 Trade Sequences (Rejection, Stop Run, Failed Absorption, Accumulation).
+- **Timeframe & Resolution Agnostic Pine Engine**:
+  - Pine Script `TLCS Dashboards` engine is 100% timeframe and symbol independent via `ta.barssince` state evaluation.
+- **Fast-Relayer & Multi-Market Alignment**:
+  - 100ms fast-relayer (`/.netlify/functions/webhook`) prevents 3-second TradingView timeouts.
+  - Automatic continuous updates after each of the 6 market closures (NSE, MCX, NYMEX, Forex, World Indices, Crypto) with guarded push notification dispatches.
+
+
 
