@@ -631,3 +631,12 @@ function resolveOutcome(s) {
   3. Failed Absorption Sequence
   4. Accumulation Sequence
 - This taxonomy MUST be kept identical across Pine Script indicators, Supabase table contracts (`pivotboss_scans`), Netlify background workers, Web Dashboard (`dashboard.html`), and Mobile Application (`page.tsx`).
+
+## System Architecture Update (Version 2.2.8 — August 3, 2026)
+- **TradingView Webhook Fast-Relayer Routing**:
+  - TradingView enforces a strict 3-second HTTP timeout on webhooks. TradingView alerts must point to `https://thelioncapitalsolutions.com/.netlify/functions/webhook` (the fast relayer) which responds with `200 OK` in <100ms and forwards payloads to background functions to prevent `Webhook delivery failed — request took too long and timed out` errors.
+- **Dynamic Scanner Table Auto-Hiding (Pine Script & UI)**:
+  - The `TLCS Dashboards` Pine Script indicator (`TLCS_Sequence_Dashboard.pine`) and dashboard components dynamically calculate `activeRows` and hide rows with nil data (`-`), maintaining a compact UI.
+- **Timeframe & Symbol Independence Engine (`ta.barssince`)**:
+  - The `TLCS Dashboards` indicator replaces chart-dependent `bar_index` lookups with `ta.barssince(...)` in sequence state tracking. This ensures the scanner produces 100% identical and consistent blueprint/sequence results whether viewed on a 1m, 5m, 15m, 1h, or 1D chart.
+
