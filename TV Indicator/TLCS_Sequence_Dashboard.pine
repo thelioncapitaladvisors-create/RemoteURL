@@ -764,5 +764,5 @@ if array.size(symArr) > 0
 json_array := json_array + "]"
 string webhook_payload = "{\"type\": \"PivotBossScan\", \"scan_data\": " + json_array + "}"
 
-if barstate.isrealtime and barstate.islast and has_any_alerts
+if barstate.isrealtime and barstate.islast
     alert(webhook_payload, alert.freq_once_per_bar_close)
