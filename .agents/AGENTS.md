@@ -640,3 +640,13 @@ function resolveOutcome(s) {
 - **Timeframe & Symbol Independence Engine (`ta.barssince`)**:
   - The `TLCS Dashboards` indicator replaces chart-dependent `bar_index` lookups with `ta.barssince(...)` in sequence state tracking. This ensures the scanner produces 100% identical and consistent blueprint/sequence results whether viewed on a 1m, 5m, 15m, 1h, or 1D chart.
 
+## System Architecture Update (Version 2.2.9 — August 3, 2026)
+- **Continuous Multi-Market Closure Refresh**:
+  - Pine Script `alert()` in `TLCS_Sequence_Dashboard.pine` is configured to trigger on every bar close (`alert.freq_once_per_bar_close` without blocking on `has_any_alerts`).
+  - This ensures that as each of the 6 market categories (NSE at 15:30 IST, MCX at 23:30 IST, Forex/NYMEX at 02:30 IST, Crypto at 05:30 IST, etc.) reaches its market closure, the Supabase `pivotboss_scans` table is immediately updated with a fresh `updated_at` timestamp.
+- **Push Notification Filtering**:
+  - While Supabase always receives fresh timestamp updates, push notifications via `send-push-background.js` remain strictly guarded (`hitCount > 0`). Push notifications fire ONLY when active blueprints/sequences are detected, preventing 0-hit notification spam.
+- **Recommended Chart Setup**:
+  - Load `TLCS Dashboards` on an intraday timeframe (e.g., **15-Minute** chart) with TradingView alert set to `Any alert() function call` and frequency `Once Per Bar Close`.
+
+
