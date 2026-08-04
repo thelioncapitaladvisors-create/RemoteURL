@@ -31,6 +31,13 @@
   - Map `"Double Distribution"` to `"DD"` (and `"Double Distribution Trend"` to `"DD Trend"`) to match the dashboard conventions.
 - Maintain column sizing for table containers (`min-width: 180px` for Bias and `min-width: 160px` for Day Type) on the scanner pages to prevent longer text labels from truncating or wrapping.
 
+## Strict Prohibition on Scanner & Day Type Name Alterations
+- **NEVER** introduce extra, fictitious, or variant terminology (e.g. `"Failed Breakout"`, `"Retest"`, `"Fade"`, `"Continuation"`) into scanner headers, subtitles, card descriptions, or table labels.
+- The ONLY valid, canonical names for Day Type Blueprints and Sequences across the entire Web & Mobile platform are:
+  - **Day Type Blueprints**: `Rejection Day Blueprint`, `Absorption Day Blueprint`, `Failed New Low Blueprint`, `Outside Day Blueprint`, `Stop Run Day Blueprint`.
+  - **Trade Sequences**: `Rejection Day Sequence`, `Stop Run Sequence`, `Failed Absorption Sequence`, `Accumulation / Distribution Sequence`.
+- Always keep the original names strictly intact without any alterations or variations.
+
 
 ## Global Market Symbols Memory
 This is the definitive truth for symbol-to-market mappings. ALWAYS refer to these sets when categorizing markets or setting up filters.
