@@ -16,6 +16,9 @@ indicator("TLCS Dashboards", overlay=true, max_labels_count=500)
 // =====================================================================================
 
 // ---------------------------- SHARED SETTINGS ----------------------------
+gAlerts = "Alerts & Webhook"
+webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret', group = gAlerts, display = display.none)
+
 gShared = "Shared: ADR Lookback"
 adrLen = input.int(10, "ADR Lookback (days)", minval=2, group=gShared)
 
@@ -762,7 +765,7 @@ if array.size(symArr) > 0
             has_any_alerts := true
 
 json_array := json_array + "]"
-string webhook_payload = "{\"type\": \"PivotBossScan\", \"scan_data\": " + json_array + "}"
+string webhook_payload = "{\"type\": \"PivotBossScan\", \"secret\": \"" + webhook_secret + "\", \"scan_data\": " + json_array + "}"
 
 if barstate.isrealtime and barstate.islast
     alert(webhook_payload, alert.freq_once_per_bar_close)
