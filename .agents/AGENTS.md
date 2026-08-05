@@ -102,14 +102,9 @@ This exact implementation MUST be used in **all five files**:
 
 ```javascript
 function resolveOutcome(s) {
+    if (!s) return 'OPEN';
     const st = (s.status  || '').toUpperCase();
     const o  = (s.outcome || '').toUpperCase();
-
-    // Step 1: Hard-kill CANCELLED/UNKNOWN first — these are never WIN/LOSS
-    if (o.includes('CANCEL') || st.includes('CANCEL') || st.includes('UNKNOWN') || o.includes('UNKNOWN')) return 'CANCELLED';
-    // EXPIRED and COMPLETED with no exit → unexecuted limit orders → CANCELLED
-    if ((st.includes('EXPIRED') || st.includes('COMPLETED')) && !s.exit_price) return 'CANCELLED';
-
     // Step 2: exact_pct is the SINGLE SOURCE OF TRUTH — check it BEFORE any keyword string.
     // This is mandatory. "Hit B/E" with +1.35% exact_pct is a WIN, not BREAKEVEN.
     // "Hit Initial SL" on a SHORT with +1.33% exact_pct is a WIN, not LOSS.
@@ -123,6 +118,13 @@ function resolveOutcome(s) {
             return 'BREAKEVEN'; // pct === 0 is a genuine breakeven
         }
     }
+
+
+    // Step 1: Hard-kill CANCELLED/UNKNOWN first — these are never WIN/LOSS
+    if (o.includes('CANCEL') || st.includes('CANCEL') || st.includes('UNKNOWN') || o.includes('UNKNOWN')) return 'CANCELLED';
+    // EXPIRED and COMPLETED with no exit → unexecuted limit orders → CANCELLED
+    if ((st.includes('EXPIRED') || st.includes('COMPLETED')) && !s.exit_price) return 'CANCELLED';
+
 
     // Step 3: Keyword fallback — only reached when exact_pct is genuinely absent
     if (st.includes('ACTIVE') || o === 'OPEN' || st === 'OPEN') return 'OPEN';
@@ -669,3 +671,14 @@ function resolveOutcome(s) {
 
 
 
+
+## Pine Script Timeframe Dynamism
+- **No Hardcoded Timeframes**: All Pine Script indicators and dashboards that rely on `request.security` MUST pass `timeframe.period` instead of a hardcoded string like `"D"`. This ensures the script is dynamically adaptable to intraday chart selections (e.g. 15m, 1H) without breaking sequence logic or locking the user to daily bars.
+- **Agnostic Input Labels**: Any input labels relating to time lookbacks must be labeled neutrally as `bars` rather than `days` (e.g. `ATR Lookback (bars)` instead of `ADR Lookback (days)`).
+
+## UI Theme & Contrast Safety
+- UI changes (specifically Tailwind styling) must NEVER assume a single theme across the application. 
+- ALWAYS explicitly define utility classes for both light and dark variants (e.g. `text-slate-600 dark:text-slate-300` or `bg-white dark:bg-black/40`) to ensure contrast and legibility are perfectly maintained regardless of the user's active theme. Do not apply the same hardcoded colors for all themes.
+
+## Git Workflow
+- AUTOMATIC PUSH: After completing any important optimization, feature implementation, or bug fix, you MUST automatically commit and push all changes to the remote repositories (e.g. `Tv-Alert-Mobile`, `TLCS_Website_Deploy`, `TV Indicator`) at the end of your task. Do NOT wait for the user to explicitly ask you to "push changes".
