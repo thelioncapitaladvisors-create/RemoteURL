@@ -725,7 +725,17 @@ f_build_json_row(sym, acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, 
     
     has_active = (acc != "NONE" or rej != "NONE" or srd != "NONE" or out != "NONE" or fade != "NONE" or abs != "NONE" or fnl != "NONE" or fb != "NONE" or rt != "NONE" or cont != "NONE")
     
-    json_obj = "{\"sym\":\"" + sym + "\", \"acc\":\"" + acc + "\", \"rej\":\"" + rej + "\", \"srd\":\"" + srd + "\", \"out\":\"" + out + "\", \"fade\":\"" + fade + "\", \"abs\":\"" + abs + "\", \"fnl\":\"" + fnl + "\", \"fb\":\"" + fb + "\", \"rt\":\"" + rt + "\", \"cont\":\"" + cont + "\"}"
+    json_obj = "{\"sym\":\"" + sym + 
+      "\", \"acc\":\"" + acc + 
+      "\", \"rej\":\"" + rej + 
+      "\", \"srd\":\"" + srd + 
+      "\", \"out\":\"" + out + 
+      "\", \"fade\":\"" + fade + 
+      "\", \"abs\":\"" + abs + 
+      "\", \"fnl\":\"" + fnl + 
+      "\", \"fb\":\"" + fb + 
+      "\", \"rt\":\"" + rt + 
+      "\", \"cont\":\"" + cont + "\"}"
     
     [has_active, json_obj]
 
