@@ -78,7 +78,7 @@ srdStructLen = input.int(5, "Lookback for prior swing high/low for MID check (ba
 
 // ---------------------------- DASHBOARD DISPLAY ----------------------------
 gDisplay = "Dashboard Display"
-tablePosStr  = input.string("Top Right", "Table Position", options=["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group=gDisplay)
+tablePosStr  = input.string("Middle Right", "Table Position", options=["Middle Right", "Middle Left", "Top Right", "Top Left", "Bottom Right", "Bottom Left"], group=gDisplay)
 tableTextSz  = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Normal"], group=gDisplay)
 
 // ---------------------------- SYMBOL UNIVERSE: 40 slots across 5 market types ----------------------------
@@ -493,7 +493,7 @@ for idx = 0 to array.size(symArr) - 1
 
 // ---------------------------- DASHBOARD TABLE ----------------------------
 if barstate.islast
-    tablePos = tablePosStr == "Top Right" ? position.top_right : tablePosStr == "Top Left" ? position.top_left : tablePosStr == "Bottom Right" ? position.bottom_right : position.middle_left
+    tablePos = tablePosStr == "Middle Left" ? position.middle_left : tablePosStr == "Top Left" ? position.top_left : tablePosStr == "Bottom Left" ? position.bottom_left : tablePosStr == "Top Right" ? position.top_right : tablePosStr == "Bottom Right" ? position.bottom_right : position.middle_right
     txtSize  = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
 
     bullAccList = "", bearAccList = ""
@@ -600,7 +600,8 @@ if barstate.islast
                       (bullOdCount  > 0 or bearOdCount  > 0 ? 1 : 0) + 
                       (bullSrdCount > 0 or bearSrdCount > 0 ? 1 : 0)
 
-    dash1 = table.new(tablePosStr == "Bottom center" ? position.top_center : tablePosStr == "Top Left" ? position.top_left : tablePosStr == "Bottom Right" ? position.bottom_right : position.top_center, 3, math.max(1, activeRows1) + 1, border_width=1, frame_width=1, frame_color=color.rgb(12, 246, 250))
+    // Blueprints table sits at the chosen position
+    dash1 = table.new(tablePos, 3, math.max(1, activeRows1) + 1, border_width=1, frame_width=1, frame_color=color.rgb(12, 246, 250))
 
     headerTxt1 = "DAY TYPE BLUEPRINTS (" + str.tostring(array.size(symArr)) + ")"
     table.merge_cells(dash1, 0, 0, 2, 0)
@@ -648,7 +649,9 @@ if barstate.islast
                       ((bullFbCount + bullRtCount) > 0 or (bearFbCount + bearRtCount) > 0 ? 1 : 0) + 
                       (bullAccCount > 0 or bearAccCount > 0 ? 1 : 0)
 
-    dash2 = table.new(tablePosStr == "Bottom center" ? position.bottom_left : tablePosStr == "Top Left" ? position.bottom_left : tablePosStr == "Bottom Right" ? position.top_right : position.bottom_center, 3, math.max(1, activeRows2) + 1, border_width=1, frame_width=1, frame_color=color.rgb(226, 179, 60))
+    // Sequences table sits strictly BELOW the Blueprints table to avoid overlapping
+    pos2 = tablePosStr == "Middle Left" ? position.bottom_left : tablePosStr == "Top Left" ? position.middle_left : tablePosStr == "Bottom Left" ? position.bottom_center : tablePosStr == "Top Right" ? position.middle_right : tablePosStr == "Bottom Right" ? position.bottom_center : position.bottom_right
+    dash2 = table.new(pos2, 3, math.max(1, activeRows2) + 1, border_width=1, frame_width=1, frame_color=color.rgb(226, 179, 60))
 
     headerTxt2 = "TRADE SEQUENCES (" + str.tostring(array.size(symArr)) + ")"
     table.merge_cells(dash2, 0, 0, 2, 0)
