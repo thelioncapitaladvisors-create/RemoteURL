@@ -88,8 +88,19 @@ def fetch_all_closed_trades():
     ist = ZoneInfo('Asia/Kolkata')
     now_ist = datetime.now(ist)
     
-    response = supabase.table('signals').select('*').order('created_at', desc=False).limit(10000).execute()
-    data = response.data
+    data = []
+    page_size = 1000
+    start = 0
+    
+    while True:
+        response = supabase.table('signals').select('*').order('created_at', desc=False).range(start, start + page_size - 1).execute()
+        chunk = response.data
+        if not chunk:
+            break
+        data.extend(chunk)
+        if len(chunk) < page_size:
+            break
+        start += page_size
     
     closed_trades = []
     

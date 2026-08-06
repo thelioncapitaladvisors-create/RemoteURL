@@ -1,0 +1,665 @@
+//@version=6
+indicator("TLCS Dashboards - 4 Commodities", overlay=true, max_labels_count=500)
+
+// =====================================================================================
+// PIVOTBOSS UNIFIED SEQUENCE DASHBOARD 
+// Tracks the progression of both Rejection Day and Stop Run Day Sequences:
+// 1. Rejection Day Blueprint
+// 2. Stop Run Day Blueprint
+// 3. Fade After Stop Run
+// 4. Absorption Day Blueprint
+// 5. Failed New Low/High Blueprint
+// 6. Failed Breakout (Failed Absorption Sequence)
+// 7. Retest After Stop Run (Failed Absorption Sequence)
+// 8. Continuation Day
+// 9. Accumulation / Distribution Sequence
+// =====================================================================================
+
+// ---------------------------- SHARED SETTINGS ----------------------------
+gAlerts = "Alerts & Webhook"
+webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret', group = gAlerts, display = display.none)
+
+gShared = "Shared: ADR Lookback"
+adrLen = input.int(10, "ATR Lookback (bars)", minval=2, group=gShared)
+
+// ---------------------------- ACCUMULATION / DISTRIBUTION ----------------------------
+gAcc = "Accumulation / Distribution"
+accLen = input.int(20, "Accumulation Lookback", minval=5, group=gAcc)
+accMaxRangeMult = input.float(3.0, "Max Range vs ATR (x)", step=0.1, group=gAcc, tooltip="The total range over the lookback period must be <= this multiple of the ADR")
+
+// ---------------------------- REJECTION DAY FILTER RULES ----------------------------
+gRej1 = "Rejection Day — Range"
+adrMultMin = input.float(1.25, "Min Range vs ATR (x)", step=0.05, group=gRej1)
+
+gRej2 = "Rejection Day — Tail / Body"
+tailBodyMult = input.float(2.5, "Min Tail / Body Ratio", step=0.1, group=gRej2)
+
+gRej3 = "Rejection Day — Close Location"
+closeZonePct = input.float(35, "Close within top/bottom X% of range", minval=1, maxval=50, group=gRej3) / 100
+
+gRej4 = "Rejection Day — Location / Structure"
+useStructure = input.bool(true, "Require near prior swing extreme", group=gRej4)
+structLen    = input.int(20, "Lookback for prior swing high/low", minval=2, group=gRej4)
+structTolPct = input.float(1.0, "Tolerance around prior extreme (%)", step=0.1, group=gRej4) / 100
+
+// ---------------------------- OUTSIDE DAY FILTER RULES ----------------------------
+gOd1 = "Outside Day — Range"
+odAdrMultMin = input.float(1.05, "Min Range vs ATR (x)", step=0.05, group=gOd1)
+
+// ---------------------------- FNL / FNH FILTER RULES ----------------------------
+gFnl1 = "FNL/FNH — Range"
+adrMinPct = input.float(75, "Min Range vs ATR (%)", step=5, group=gFnl1) / 100
+
+gFnl2 = "FNL/FNH — Sweep"
+sweepLookback = input.int(1, "Sweep Lookback (bars)", minval=1, maxval=20, group=gFnl2)
+
+gFnl3 = "FNL/FNH — Close Location"
+requireAboveYMid = input.bool(true, "Require close above yMID (FNL) / below yMID (FNH)", group=gFnl3)
+
+// ---------------------------- ABSORPTION DAY FILTER RULES ----------------------------
+gAbs1 = "Absorption Day — Range"
+absAdrMaxMult = input.float(0.75, "Max Range vs ATR (x)", step=0.05, group=gAbs1)
+
+gAbs2 = "Absorption Day — Location"
+absMidTolPct = input.float(1.0, "Tolerance: Low/High near yMID (%)", step=0.1, group=gAbs2) / 100
+
+gAbs3 = "Absorption Day — Close Confirmation"
+requireBodyConfirm = input.bool(true, "Require body confirmation (Close vs Open)", group=gAbs3)
+
+// ---------------------------- STOP RUN DAY FILTER RULES ----------------------------
+gSrd1 = "Stop Run Day — Range"
+srdAdrMultMin = input.float(2.0, "Min Range vs ATR (x)", step=0.1, group=gSrd1)
+
+gSrd2 = "Stop Run Day — Close Location"
+srdCloseZonePct = input.float(15, "Close within top/bottom X% of range", minval=1, maxval=50, group=gSrd2) / 100
+
+gSrd3 = "Stop Run Day — Structure"
+srdStructLen = input.int(5, "Lookback for prior swing high/low for MID check (bars)", minval=1, group=gSrd3)
+
+// ---------------------------- DASHBOARD DISPLAY ----------------------------
+gDisplay = "Dashboard Display"
+tablePosStr  = input.string("Middle Right", "Table Position", options=["Middle Right", "Middle Left", "Top Right", "Top Left", "Bottom Right", "Bottom Left"], group=gDisplay)
+tableTextSz  = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Normal"], group=gDisplay)
+
+// ---------------------------- SYMBOL UNIVERSE: 4 Commodities Only ----------------------------
+gCommodities = "Commodities (NYMEX/COMEX)"
+u1 = input.symbol("NYMEX:CL1!", "Futures 1 (Crude)", group=gCommodities)
+u2 = input.symbol("NYMEX:NG1!", "Futures 2 (NatGas)", group=gCommodities)
+u3 = input.symbol("COMEX:GC1!", "Futures 3 (Gold)", group=gCommodities)
+u4 = input.symbol("COMEX:SI1!", "Futures 4 (Silver)", group=gCommodities)
+
+// ---------------------------- SEQUENCE CALC ----------------------------
+f_calc() =>
+    rng    = high - low
+    body   = math.abs(close - open)
+    upWick = high - math.max(open, close)
+    dnWick = math.min(open, close) - low
+    mid    = (high + low) / 2
+
+    avgRange = ta.sma(ta.tr(true), adrLen)[1]
+    closePos = rng != 0 ? (close - low) / rng : 0.5
+
+    // ---- 0. Accumulation / Distribution Phase ----
+    accHigh = ta.highest(high, accLen)
+    accLow  = ta.lowest(low, accLen)
+    accRange = accHigh - accLow
+    isCompressing = avgRange > 0 and accRange <= accMaxRangeMult * avgRange
+    
+    bullAcc = isCompressing and close >= (accHigh + accLow) / 2
+    bearDist = isCompressing and close < (accHigh + accLow) / 2
+
+    // ---- 1. Rejection Day Trigger ----
+    rejRangeOK  = avgRange > 0 and rng > adrMultMin * avgRange
+    bullTailOK  = body > 0 ? dnWick > tailBodyMult * body : dnWick > 0
+    bearTailOK  = body > 0 ? upWick > tailBodyMult * body : upWick > 0
+    bullCloseOK = closePos >= (1 - closeZonePct)
+    bearCloseOK = closePos <= closeZonePct
+
+    priorLowStruct  = ta.lowest(low, structLen)[1]
+    priorHighStruct = ta.highest(high, structLen)[1]
+    nearPriorLow  = low  <= priorLowStruct  * (1 + structTolPct)
+    nearPriorHigh = high >= priorHighStruct * (1 - structTolPct)
+    structBullOK = not useStructure or nearPriorLow
+    structBearOK = not useStructure or nearPriorHigh
+
+    bullRej = rejRangeOK and bullTailOK and bullCloseOK and structBullOK
+    bearRej = rejRangeOK and bearTailOK and bearCloseOK and structBearOK
+
+    // ---- 2. Stop Run Day Trigger ----
+    srdRangeOK = avgRange > 0 and rng > srdAdrMultMin * avgRange
+    
+    bullSrdClosePosOK = closePos >= (1 - srdCloseZonePct)
+    bullSrdCloseExt   = close > high[1]
+    bullSrdMidExt     = mid >= ta.highest(high, srdStructLen)[1]
+    bullSrdSignal     = srdRangeOK and bullSrdClosePosOK and bullSrdCloseExt and bullSrdMidExt
+
+    bearSrdClosePosOK = closePos <= srdCloseZonePct
+    bearSrdCloseExt   = close < low[1]
+    bearSrdMidExt     = mid <= ta.lowest(low, srdStructLen)[1]
+    bearSrdSignal     = srdRangeOK and bearSrdClosePosOK and bearSrdCloseExt and bearSrdMidExt
+
+    // ---- STATE TRACKING: REJECTION SEQUENCE & FAILED ABSORPTION ----
+    var float rejActiveMid   = na
+    var float rejActiveHigh  = na
+    var float rejActiveLow   = na
+    var bool  bullRejActive  = false
+    var bool  bearRejActive  = false
+
+    var bool  bullFailedAbsActive = false
+    var bool  bearFailedAbsActive = false
+
+    int barsSinceRej = ta.barssince(bullRej or bearRej)
+
+    if bullRej
+        rejActiveMid  := mid
+        rejActiveHigh := high
+        rejActiveLow  := low
+        bullRejActive := true
+        bearRejActive := false
+        bullFailedAbsActive := false
+        bearFailedAbsActive := false
+    else if bearRej
+        rejActiveMid  := mid
+        rejActiveHigh := high
+        rejActiveLow  := low
+        bearRejActive := true
+        bullRejActive := false
+        bullFailedAbsActive := false
+        bearFailedAbsActive := false
+
+    // Check Rejection Failure -> triggers Failed Absorption Context
+    if bullRejActive and close < rejActiveMid
+        bullRejActive := false
+        bearFailedAbsActive := true
+    if bearRejActive and close > rejActiveMid
+        bearRejActive := false
+        bullFailedAbsActive := true
+
+    // Invalidate Failed Absorption Context
+    if bearFailedAbsActive and close > rejActiveHigh
+        bearFailedAbsActive := false
+    if bullFailedAbsActive and close < rejActiveLow
+        bullFailedAbsActive := false
+
+    // ---- STATE TRACKING: STOP RUN SEQUENCE ----
+    var float srdActiveMid   = na
+    var float srdActiveExt   = na
+    var bool  bullSrdActive  = false
+    var bool  bearSrdActive  = false
+
+    int barsSinceSrd = ta.barssince(bullSrdSignal or bearSrdSignal)
+
+    if bullSrdSignal
+        srdActiveMid  := mid
+        srdActiveExt  := high
+        bullSrdActive := true
+        bearSrdActive := false
+    else if bearSrdSignal
+        srdActiveMid  := mid
+        srdActiveExt  := low
+        bearSrdActive := true
+        bullSrdActive := false
+
+    if bullSrdActive and close < srdActiveMid
+        bullSrdActive := false
+    if bearSrdActive and close > srdActiveMid
+        bearSrdActive := false
+
+    // ---- 3. Fade After Stop Run (Applies to SRD Sequence Only) ----
+    bullFade = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and high >= srdActiveExt * 0.995 and close < open
+    bearFade = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and low <= srdActiveExt * 1.005 and close > open
+
+    // ---- 4. Absorption Day (Applies to Rej and SRD sequences) ----
+    absRangeOK = avgRange > 0 and rng < absAdrMaxMult * avgRange
+
+    bullAbs_Rej = bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close > rejActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - rejActiveMid) <= rejActiveMid * absMidTolPct
+    bearAbs_Rej = bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close < rejActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - rejActiveMid) <= rejActiveMid * absMidTolPct
+
+    bullAbs_Srd = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close > srdActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - srdActiveMid) <= srdActiveMid * absMidTolPct
+    bearAbs_Srd = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close < srdActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - srdActiveMid) <= srdActiveMid * absMidTolPct
+
+    // ---- X. Outside Day ----
+    odRangeOK = avgRange > 0 and rng > odAdrMultMin * avgRange
+    odBull = odRangeOK and low < low[1] and close > high[1]
+    odBear = odRangeOK and high > high[1] and close < low[1]
+
+    // ---- 5. FNL / FNH (Applies to both sequences) ----
+    fnlRangeOK = avgRange > 0 and rng >= adrMinPct * avgRange
+    priorLowSweep  = ta.lowest(low, sweepLookback)[1]
+    priorHighSweep = ta.highest(high, sweepLookback)[1]
+    yMidFnl = (high[1] + low[1]) / 2.0
+
+    fnlSweep  = low < priorLowSweep
+    fnlClose  = requireAboveYMid ? close > yMidFnl : close > mid
+    fnlSignal = fnlRangeOK and fnlSweep and fnlClose
+
+    fnhSweep  = high > priorHighSweep
+    fnhClose  = requireAboveYMid ? close < yMidFnl : close < mid
+    fnhSignal = fnlRangeOK and fnhSweep and fnhClose
+
+    bullFnl_Rej = bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnlSignal
+    bearFnh_Rej = bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnhSignal
+    
+    bullFnl_Srd = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnlSignal
+    bearFnh_Srd = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnhSignal
+
+    unifiedBullFnl = bullFnl_Rej or bullFnl_Srd
+    unifiedBearFnh = bearFnh_Rej or bearFnh_Srd
+
+    // ---- 6. Failed Breakout (Applies to Failed Absorption Context) ----
+    int barsSinceFa = ta.barssince(bullFailedAbsActive or bearFailedAbsActive)
+    bullFailedBreakout = bullFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and low <= low[1] and close > open
+    bearFailedBreakout = bearFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and high >= high[1] and close < open
+
+    // ---- 7. Retest After Stop Run (Applies to Failed Absorption Context) ----
+    bullRetestAfterSrd = bullFailedAbsActive and (bullFade or bullAbs_Srd)
+    bearRetestAfterSrd = bearFailedAbsActive and (bearFade or bearAbs_Srd)
+
+    // Mask Retest days out of the standard Fade/Abs rows for cleaner dashboard reporting
+    bullFade_final = bullFade and not bullRetestAfterSrd
+    bearFade_final = bearFade and not bearRetestAfterSrd
+    
+    unifiedBullAbs = bullAbs_Rej or (bullAbs_Srd and not bullRetestAfterSrd)
+    unifiedBearAbs = bearAbs_Rej or (bearAbs_Srd and not bearRetestAfterSrd)
+
+    // ---- 8. Continuation Day ----
+    var bool prevActiveDayBull = false
+    var bool prevActiveDayBear = false
+    
+    bullCont = prevActiveDayBull and close > close[1]
+    bearCont = prevActiveDayBear and close < close[1]
+    
+    prevActiveDayBull := bullRej or bullSrdSignal or unifiedBullAbs or fnlSignal or bullFailedBreakout or bullRetestAfterSrd
+    prevActiveDayBear := bearRej or bearSrdSignal or unifiedBearAbs or fnhSignal or bearFailedBreakout or bearRetestAfterSrd
+
+    // Return 20 booleans
+    [bullAcc, bearDist, bullRej, bearRej, bullSrdSignal, bearSrdSignal, odBull, odBear, bullFade_final, bearFade_final, unifiedBullAbs, unifiedBearAbs, fnlSignal, fnhSignal, bullFailedBreakout, bearFailedBreakout, bullRetestAfterSrd, bearRetestAfterSrd, bullCont, bearCont]
+
+// ---------------------------- 4 SECURITY CALLS ----------------------------
+[u1acB, u1acS, u1rB, u1rS, u1sB, u1sS, u1odB, u1odS, u1fdB, u1fdS, u1aB, u1aS, u1fB, u1fS, u1fbB, u1fbS, u1rtB, u1rtS, u1cB, u1cS] = request.security(u1, "D", f_calc())
+[u2acB, u2acS, u2rB, u2rS, u2sB, u2sS, u2odB, u2odS, u2fdB, u2fdS, u2aB, u2aS, u2fB, u2fS, u2fbB, u2fbS, u2rtB, u2rtS, u2cB, u2cS] = request.security(u2, "D", f_calc())
+[u3acB, u3acS, u3rB, u3rS, u3sB, u3sS, u3odB, u3odS, u3fdB, u3fdS, u3aB, u3aS, u3fB, u3fS, u3fbB, u3fbS, u3rtB, u3rtS, u3cB, u3cS] = request.security(u3, "D", f_calc())
+[u4acB, u4acS, u4rB, u4rS, u4sB, u4sS, u4odB, u4odS, u4fdB, u4fdS, u4aB, u4aS, u4fB, u4fS, u4fbB, u4fbS, u4rtB, u4rtS, u4cB, u4cS] = request.security(u4, "D", f_calc())
+
+// ---------------------------- COLLECT RESULTS INTO ARRAYS ----------------------------
+symArr     = array.new_string()
+bullAccArr = array.new_bool()
+bearAccArr = array.new_bool()
+bullRejArr = array.new_bool()
+bearRejArr = array.new_bool()
+bullSrdArr = array.new_bool()
+bearSrdArr = array.new_bool()
+bullOdArr  = array.new_bool()
+bearOdArr  = array.new_bool()
+bullFadeArr= array.new_bool()
+bearFadeArr= array.new_bool()
+bullAbsArr = array.new_bool()
+bearAbsArr = array.new_bool()
+bullFnlArr = array.new_bool()
+bearFnhArr = array.new_bool()
+bullFbArr  = array.new_bool()
+bearFbArr  = array.new_bool()
+bullRtArr  = array.new_bool()
+bearRtArr  = array.new_bool()
+bullContArr= array.new_bool()
+bearContArr= array.new_bool()
+
+f_add(sym, acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, 
+     aB, aS, fB, fS, fbB, fbS, rtB, rtS, cB, cS) =>
+    if sym != ""
+        array.push(symArr, sym)
+        array.push(bullAccArr, acB)
+        array.push(bearAccArr, acS)
+        array.push(bullRejArr, rB)
+        array.push(bearRejArr, rS)
+        array.push(bullSrdArr, sB)
+        array.push(bearSrdArr, sS)
+        array.push(bullOdArr, odB)
+        array.push(bearOdArr, odS)
+        array.push(bullFadeArr, fdB)
+        array.push(bearFadeArr, fdS)
+        array.push(bullAbsArr, aB)
+        array.push(bearAbsArr, aS)
+        array.push(bullFnlArr, fB)
+        array.push(bearFnhArr, fS)
+        array.push(bullFbArr, fbB)
+        array.push(bearFbArr, fbS)
+        array.push(bullRtArr, rtB)
+        array.push(bearRtArr, rtS)
+        array.push(bullContArr, cB)
+        array.push(bearContArr, cS)
+
+f_add(u1, u1acB, u1acS, u1rB, u1rS, u1sB, u1sS, u1odB, u1odS, u1fdB, u1fdS, u1aB, u1aS, u1fB, u1fS, u1fbB, u1fbS, u1rtB, u1rtS, u1cB, u1cS)
+f_add(u2, u2acB, u2acS, u2rB, u2rS, u2sB, u2sS, u2odB, u2odS, u2fdB, u2fdS, u2aB, u2aS, u2fB, u2fS, u2fbB, u2fbS, u2rtB, u2rtS, u2cB, u2cS)
+f_add(u3, u3acB, u3acS, u3rB, u3rS, u3sB, u3sS, u3odB, u3odS, u3fdB, u3fdS, u3aB, u3aS, u3fB, u3fS, u3fbB, u3fbS, u3rtB, u3rtS, u3cB, u3cS)
+f_add(u4, u4acB, u4acS, u4rB, u4rS, u4sB, u4sS, u4odB, u4odS, u4fdB, u4fdS, u4aB, u4aS, u4fB, u4fS, u4fbB, u4fbS, u4rtB, u4rtS, u4cB, u4cS)
+
+// ---------------------------- ANY-SIGNAL FLAGS FOR ALERTS ----------------------------
+anyBullAcc  = false, anyBearAcc  = false
+anyBullRej  = false, anyBearRej  = false
+anyBullSrd  = false, anyBearSrd  = false
+anyBullOd  = false, anyBearOd  = false
+anyBullFade = false, anyBearFade = false
+anyBullAbs  = false, anyBearAbs  = false
+anyBullFnl  = false, anyBearFnh  = false
+anyBullFb   = false, anyBearFb   = false
+anyBullRt   = false, anyBearRt   = false
+anyBullCont = false, anyBearCont = false
+
+for idx = 0 to array.size(symArr) - 1
+    anyBullAcc  := anyBullAcc  or array.get(bullAccArr, idx)
+    anyBearAcc  := anyBearAcc  or array.get(bearAccArr, idx)
+    anyBullRej  := anyBullRej  or array.get(bullRejArr, idx)
+    anyBearRej  := anyBearRej  or array.get(bearRejArr, idx)
+    anyBullSrd  := anyBullSrd  or array.get(bullSrdArr, idx)
+    anyBearSrd  := anyBearSrd  or array.get(bearSrdArr, idx)
+    anyBullOd   := anyBullOd   or array.get(bullOdArr, idx)
+    anyBearOd   := anyBearOd   or array.get(bearOdArr, idx)
+    anyBullFade := anyBullFade or array.get(bullFadeArr, idx)
+    anyBearFade := anyBearFade or array.get(bearFadeArr, idx)
+    anyBullAbs  := anyBullAbs  or array.get(bullAbsArr, idx)
+    anyBearAbs  := anyBearAbs  or array.get(bearAbsArr, idx)
+    anyBullFnl  := anyBullFnl  or array.get(bullFnlArr, idx)
+    anyBearFnh  := anyBearFnh  or array.get(bearFnhArr, idx)
+    anyBullFb   := anyBullFb   or array.get(bullFbArr, idx)
+    anyBearFb   := anyBearFb   or array.get(bearFbArr, idx)
+    anyBullRt   := anyBullRt   or array.get(bullRtArr, idx)
+    anyBearRt   := anyBearRt   or array.get(bearRtArr, idx)
+    anyBullCont := anyBullCont or array.get(bullContArr, idx)
+    anyBearCont := anyBearCont or array.get(bearContArr, idx)
+
+// ---------------------------- DASHBOARD TABLE ----------------------------
+if barstate.islast
+    tablePos = tablePosStr == "Middle Left" ? position.middle_left : tablePosStr == "Top Left" ? position.top_left : tablePosStr == "Bottom Left" ? position.bottom_left : tablePosStr == "Top Right" ? position.top_right : tablePosStr == "Bottom Right" ? position.bottom_right : position.middle_right
+    txtSize  = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
+
+    bullAccList = "", bearAccList = ""
+    bullRejList = "", bearRejList = ""
+    bullSrdList = "", bearSrdList = ""
+    bullOdList  = "", bearOdList  = ""
+    bullFadeList= "", bearFadeList= ""
+    bullAbsList = "", bearAbsList = ""
+    bullFnlList = "", bearFnhList = ""
+    bullFbList  = "", bearFbList  = ""
+    bullRtList  = "", bearRtList  = ""
+    bullContList= "", bearContList= ""
+    
+    bullAccCount = 0, bearAccCount = 0
+    bullRejCount = 0, bearRejCount = 0
+    bullSrdCount = 0, bearSrdCount = 0
+    bullOdCount = 0, bearOdCount = 0
+    bullFadeCount= 0, bearFadeCount= 0
+    bullAbsCount = 0, bearAbsCount = 0
+    bullFnlCount = 0, bearFnhCount = 0
+    bullFbCount  = 0, bearFbCount  = 0
+    bullRtCount  = 0, bearRtCount  = 0
+    bullContCount= 0, bearContCount= 0
+
+    for idx = 0 to array.size(symArr) - 1
+        sym = array.get(symArr, idx)
+        splitSym = str.split(sym, ":")
+        cleanSym = array.size(splitSym) > 1 ? array.get(splitSym, 1) : sym
+        
+        if array.get(bullAccArr, idx)
+            bullAccList += (bullAccList == "" ? "" : ", ") + cleanSym
+            bullAccCount += 1
+        if array.get(bearAccArr, idx)
+            bearAccList += (bearAccList == "" ? "" : ", ") + cleanSym
+            bearAccCount += 1
+            
+        if array.get(bullRejArr, idx)
+            bullRejList += (bullRejList == "" ? "" : ", ") + cleanSym
+            bullRejCount += 1
+        if array.get(bearRejArr, idx)
+            bearRejList += (bearRejList == "" ? "" : ", ") + cleanSym
+            bearRejCount += 1
+            
+        if array.get(bullSrdArr, idx)
+            bullSrdList += (bullSrdList == "" ? "" : ", ") + cleanSym
+            bullSrdCount += 1
+        if array.get(bearSrdArr, idx)
+            bearSrdList += (bearSrdList == "" ? "" : ", ") + cleanSym
+            bearSrdCount += 1
+            
+        if array.get(bullOdArr, idx)
+            bullOdList += (bullOdList == "" ? "" : ", ") + cleanSym
+            bullOdCount += 1
+        if array.get(bearOdArr, idx)
+            bearOdList += (bearOdList == "" ? "" : ", ") + cleanSym
+            bearOdCount += 1
+            
+        if array.get(bullFadeArr, idx)
+            bullFadeList += (bullFadeList == "" ? "" : ", ") + cleanSym
+            bullFadeCount += 1
+        if array.get(bearFadeArr, idx)
+            bearFadeList += (bearFadeList == "" ? "" : ", ") + cleanSym
+            bearFadeCount += 1
+            
+        if array.get(bullAbsArr, idx)
+            bullAbsList += (bullAbsList == "" ? "" : ", ") + cleanSym
+            bullAbsCount += 1
+        if array.get(bearAbsArr, idx)
+            bearAbsList += (bearAbsList == "" ? "" : ", ") + cleanSym
+            bearAbsCount += 1
+            
+        if array.get(bullFnlArr, idx)
+            bullFnlList += (bullFnlList == "" ? "" : ", ") + cleanSym
+            bullFnlCount += 1
+        if array.get(bearFnhArr, idx)
+            bearFnhList += (bearFnhList == "" ? "" : ", ") + cleanSym
+            bearFnhCount += 1
+            
+        if array.get(bullFbArr, idx)
+            bullFbList += (bullFbList == "" ? "" : ", ") + cleanSym
+            bullFbCount += 1
+        if array.get(bearFbArr, idx)
+            bearFbList += (bearFbList == "" ? "" : ", ") + cleanSym
+            bearFbCount += 1
+            
+        if array.get(bullRtArr, idx)
+            bullRtList += (bullRtList == "" ? "" : ", ") + cleanSym
+            bullRtCount += 1
+        if array.get(bearRtArr, idx)
+            bearRtList += (bearRtList == "" ? "" : ", ") + cleanSym
+            bearRtCount += 1
+            
+        if array.get(bullContArr, idx)
+            bullContList += (bullContList == "" ? "" : ", ") + cleanSym
+            bullContCount += 1
+        if array.get(bearContArr, idx)
+            bearContList += (bearContList == "" ? "" : ", ") + cleanSym
+            bearContCount += 1
+
+    // Setup Table 1: Day Type Blueprints (Dynamic active rows)
+    int activeRows1 = (bullRejCount > 0 or bearRejCount > 0 ? 1 : 0) + 
+                      (bullAbsCount > 0 or bearAbsCount > 0 ? 1 : 0) + 
+                      (bullFnlCount > 0 or bearFnhCount > 0 ? 1 : 0) + 
+                      (bullOdCount  > 0 or bearOdCount  > 0 ? 1 : 0) + 
+                      (bullSrdCount > 0 or bearSrdCount > 0 ? 1 : 0)
+
+    // Blueprints table sits at the chosen position
+    dash1 = table.new(tablePos, 3, math.max(1, activeRows1) + 1, border_width=1, frame_width=1, frame_color=color.rgb(12, 246, 250))
+
+    headerTxt1 = "DAY TYPE BLUEPRINTS (" + str.tostring(array.size(symArr)) + ")"
+    table.merge_cells(dash1, 0, 0, 2, 0)
+    table.cell(dash1, 0, 0, headerTxt1, bgcolor=color.new(#116ac2, 0), text_color=color.rgb(12, 246, 250), text_size=txtSize)
+
+    int rowIdx1 = 1
+
+    if bullRejCount > 0 or bearRejCount > 0
+        table.cell(dash1, 0, rowIdx1, "1. Rejection Day Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash1, 1, rowIdx1, bullRejCount > 0 ? "▲ " + str.tostring(bullRejCount) + "\n" + bullRejList : "-", bgcolor=bullRejCount > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=bullRejCount > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rowIdx1, bearRejCount > 0 ? "▼ " + str.tostring(bearRejCount) + "\n" + bearRejList : "-", bgcolor=bearRejCount > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=bearRejCount > 0 ? color.red : color.gray, text_size=txtSize)
+        rowIdx1 := rowIdx1 + 1
+
+    if bullAbsCount > 0 or bearAbsCount > 0
+        table.cell(dash1, 0, rowIdx1, "2. Absorption Day Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash1, 1, rowIdx1, bullAbsCount > 0 ? "▲ " + str.tostring(bullAbsCount) + "\n" + bullAbsList : "-", bgcolor=bullAbsCount > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=bullAbsCount > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rowIdx1, bearAbsCount > 0 ? "▼ " + str.tostring(bearAbsCount) + "\n" + bearAbsList : "-", bgcolor=bearAbsCount > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=bearAbsCount > 0 ? color.red : color.gray, text_size=txtSize)
+        rowIdx1 := rowIdx1 + 1
+
+    if bullFnlCount > 0 or bearFnhCount > 0
+        table.cell(dash1, 0, rowIdx1, "3. Failed New Low Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash1, 1, rowIdx1, bullFnlCount > 0 ? "▲ " + str.tostring(bullFnlCount) + "\n" + bullFnlList : "-", bgcolor=bullFnlCount > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=bullFnlCount > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rowIdx1, bearFnhCount > 0 ? "▼ " + str.tostring(bearFnhCount) + "\n" + bearFnhList : "-", bgcolor=bearFnhCount > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=bearFnhCount > 0 ? color.red : color.gray, text_size=txtSize)
+        rowIdx1 := rowIdx1 + 1
+
+    if bullOdCount > 0 or bearOdCount > 0
+        table.cell(dash1, 0, rowIdx1, "4. Outside Day Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash1, 1, rowIdx1, bullOdCount > 0 ? "▲ " + str.tostring(bullOdCount) + "\n" + bullOdList : "-", bgcolor=bullOdCount > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=bullOdCount > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rowIdx1, bearOdCount > 0 ? "▼ " + str.tostring(bearOdCount) + "\n" + bearOdList : "-", bgcolor=bearOdCount > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=bearOdCount > 0 ? color.red : color.gray, text_size=txtSize)
+        rowIdx1 := rowIdx1 + 1
+
+    if bullSrdCount > 0 or bearSrdCount > 0
+        table.cell(dash1, 0, rowIdx1, "5. Stop Run Day Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash1, 1, rowIdx1, bullSrdCount > 0 ? "▲ " + str.tostring(bullSrdCount) + "\n" + bullSrdList : "-", bgcolor=bullSrdCount > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=bullSrdCount > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rowIdx1, bearSrdCount > 0 ? "▼ " + str.tostring(bearSrdCount) + "\n" + bearSrdList : "-", bgcolor=bearSrdCount > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=bearSrdCount > 0 ? color.red : color.gray, text_size=txtSize)
+        rowIdx1 := rowIdx1 + 1
+
+    if activeRows1 == 0
+        table.merge_cells(dash1, 0, 1, 2, 1)
+        table.cell(dash1, 0, 1, "No Active Day Type Blueprints Today", bgcolor=color.new(color.gray, 85), text_color=color.gray, text_size=txtSize)
+
+    // Setup Table 2: Trade Sequences (Dynamic active rows)
+    int activeRows2 = (bullRejCount > 0 or bearRejCount > 0 ? 1 : 0) + 
+                      (bullSrdCount > 0 or bearSrdCount > 0 ? 1 : 0) + 
+                      ((bullFbCount + bullRtCount) > 0 or (bearFbCount + bearRtCount) > 0 ? 1 : 0) + 
+                      (bullAccCount > 0 or bearAccCount > 0 ? 1 : 0)
+
+    // Sequences table sits strictly BELOW the Blueprints table to avoid overlapping
+    pos2 = tablePosStr == "Middle Left" ? position.bottom_left : tablePosStr == "Top Left" ? position.middle_left : tablePosStr == "Bottom Left" ? position.bottom_center : tablePosStr == "Top Right" ? position.middle_right : tablePosStr == "Bottom Right" ? position.bottom_center : position.bottom_right
+    dash2 = table.new(pos2, 3, math.max(1, activeRows2) + 1, border_width=1, frame_width=1, frame_color=color.rgb(226, 179, 60))
+
+    headerTxt2 = "TRADE SEQUENCES (" + str.tostring(array.size(symArr)) + ")"
+    table.merge_cells(dash2, 0, 0, 2, 0)
+    table.cell(dash2, 0, 0, headerTxt2, bgcolor=color.rgb(17, 106, 194), text_color=color.rgb(12, 246, 250), text_size=txtSize)
+
+    int rowIdx2 = 1
+
+    if bullRejCount > 0 or bearRejCount > 0
+        table.cell(dash2, 0, rowIdx2, "1. Rejection Day Sequence", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash2, 1, rowIdx2, bullRejCount > 0 ? "▲ " + str.tostring(bullRejCount) + "\n" + bullRejList : "-", bgcolor=bullRejCount > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=bullRejCount > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash2, 2, rowIdx2, bearRejCount > 0 ? "▼ " + str.tostring(bearRejCount) + "\n" + bearRejList : "-", bgcolor=bearRejCount > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=bearRejCount > 0 ? color.red : color.gray, text_size=txtSize)
+        rowIdx2 := rowIdx2 + 1
+
+    if bullSrdCount > 0 or bearSrdCount > 0
+        table.cell(dash2, 0, rowIdx2, "2. Stop Run Sequence", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash2, 1, rowIdx2, bullSrdCount > 0 ? "▲ " + str.tostring(bullSrdCount) + "\n" + bullSrdList : "-", bgcolor=bullSrdCount > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=bullSrdCount > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash2, 2, rowIdx2, bearSrdCount > 0 ? "▼ " + str.tostring(bearSrdCount) + "\n" + bearSrdList : "-", bgcolor=bearSrdCount > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=bearSrdCount > 0 ? color.red : color.gray, text_size=txtSize)
+        rowIdx2 := rowIdx2 + 1
+
+    if (bullFbCount + bullRtCount) > 0 or (bearFbCount + bearRtCount) > 0
+        table.cell(dash2, 0, rowIdx2, "3. Failed Absorption Sequence", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash2, 1, rowIdx2, (bullFbCount + bullRtCount) > 0 ? "▲ " + str.tostring(bullFbCount + bullRtCount) + "\n" + (bullFbList != "" ? bullFbList : bullRtList) : "-", bgcolor=(bullFbCount + bullRtCount) > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=(bullFbCount + bullRtCount) > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash2, 2, rowIdx2, (bearFbCount + bearRtCount) > 0 ? "▼ " + str.tostring(bearFbCount + bearRtCount) + "\n" + (bearFbList != "" ? bearFbList : bearRtList) : "-", bgcolor=(bearFbCount + bearRtCount) > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=(bearFbCount + bearRtCount) > 0 ? color.red : color.gray, text_size=txtSize)
+        rowIdx2 := rowIdx2 + 1
+
+    if bullAccCount > 0 or bearAccCount > 0
+        table.cell(dash2, 0, rowIdx2, "4. Accumulation Sequence", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash2, 1, rowIdx2, bullAccCount > 0 ? "▲ " + str.tostring(bullAccCount) + "\n" + bullAccList : "-", bgcolor=bullAccCount > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=bullAccCount > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash2, 2, rowIdx2, bearAccCount > 0 ? "▼ " + str.tostring(bearAccCount) + "\n" + bearAccList : "-", bgcolor=bearAccCount > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=bearAccCount > 0 ? color.red : color.gray, text_size=txtSize)
+        rowIdx2 := rowIdx2 + 1
+
+    if activeRows2 == 0
+        table.merge_cells(dash2, 0, 1, 2, 1)
+        table.cell(dash2, 0, 1, "No Active Trade Sequences Today", bgcolor=color.new(color.gray, 85), text_color=color.gray, text_size=txtSize)
+
+// ---------------------------- ALERTS ----------------------------
+
+alertcondition(anyBullAcc, title="Accumulation Phase",    message="TLCS Sequence: Bullish Accumulation Phase on {{ticker}}")
+alertcondition(anyBearAcc, title="Distribution Phase",    message="TLCS Sequence: Bearish Distribution Phase on {{ticker}}")
+alertcondition(anyBullRej, title="Bullish Rejection Day", message="TLCS Sequence: Bullish Rejection Day on {{ticker}}")
+alertcondition(anyBearRej, title="Bearish Rejection Day", message="TLCS Sequence: Bearish Rejection Day on {{ticker}}")
+alertcondition(anyBullOd, title="Bullish Outside Day", message="TLCS Sequence: Bullish Outside Day on {{ticker}}")
+alertcondition(anyBearOd, title="Bearish Outside Day", message="TLCS Sequence: Bearish Outside Day on {{ticker}}")
+alertcondition(anyBullSrd, title="Bullish Stop Run Day",  message="TLCS Sequence: Bullish Stop Run Day on {{ticker}}")
+alertcondition(anyBearSrd, title="Bearish Stop Run Day",  message="TLCS Sequence: Bearish Stop Run Day on {{ticker}}")
+alertcondition(anyBullFade,title="Bullish Fade (SRD)",    message="TLCS Sequence: Bullish Fade After SRD on {{ticker}}")
+alertcondition(anyBearFade,title="Bearish Fade (SRD)",    message="TLCS Sequence: Bearish Fade After SRD on {{ticker}}")
+alertcondition(anyBullAbs, title="Bullish Absorption",    message="TLCS Sequence: Bullish Absorption Day on {{ticker}}")
+alertcondition(anyBearAbs, title="Bearish Absorption",    message="TLCS Sequence: Bearish Absorption Day on {{ticker}}")
+alertcondition(anyBullFnl, title="Bullish FNL (Seq)",     message="TLCS Sequence: Bullish FNL on {{ticker}}")
+alertcondition(anyBearFnh, title="Bearish FNH (Seq)",     message="TLCS Sequence: Bearish FNH on {{ticker}}")
+alertcondition(anyBullFb,  title="Bullish Failed Breakout",message="TLCS Sequence: Bullish Failed Breakout on {{ticker}}")
+alertcondition(anyBearFb,  title="Bearish Failed Breakout",message="TLCS Sequence: Bearish Failed Breakout on {{ticker}}")
+alertcondition(anyBullRt,  title="Bullish Retest (SRD)",  message="TLCS Sequence: Bullish Retest After SRD on {{ticker}}")
+alertcondition(anyBearRt,  title="Bearish Retest (SRD)",  message="TLCS Sequence: Bearish Retest After SRD on {{ticker}}")
+alertcondition(anyBullCont,title="Bullish Continuation",  message="TLCS Sequence: Bullish Continuation Day on {{ticker}}")
+alertcondition(anyBearCont,title="Bearish Continuation",  message="TLCS Sequence: Bearish Continuation Day on {{ticker}}")
+
+// =====================================================================================
+// JSON PAYLOAD BUILDER & ALERT DISPATCHER
+// =====================================================================================
+
+f_build_json_row(sym, acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cB, cS) =>
+    acc  = acB ? "Bullish" : acS ? "Bearish" : "NONE"
+    rej  = rB ? "Bullish" : rS ? "Bearish" : "NONE"
+    srd  = sB ? "Bullish" : sS ? "Bearish" : "NONE"
+    out  = odB ? "Bullish" : odS ? "Bearish" : "NONE"
+    fade = fdB? "Bullish" : fdS? "Bearish" : "NONE"
+    abs  = aB ? "Bullish" : aS ? "Bearish" : "NONE"
+    fnl  = fB ? "Bullish" : fS ? "Bearish" : "NONE"
+    fb   = fbB? "Bullish" : fbS? "Bearish" : "NONE"
+    rt   = rtB? "Bullish" : rtS? "Bearish" : "NONE"
+    cont = cB ? "Bullish" : cS ? "Bearish" : "NONE"
+    
+    has_active = (acc != "NONE" or rej != "NONE" or srd != "NONE" or out != "NONE" or fade != "NONE" or abs != "NONE" or fnl != "NONE" or fb != "NONE" or rt != "NONE" or cont != "NONE")
+    
+    json_obj = "{\"sym\":\"" + sym + 
+      "\", \"acc\":\"" + acc + 
+      "\", \"rej\":\"" + rej + 
+      "\", \"srd\":\"" + srd + 
+      "\", \"out\":\"" + out + 
+      "\", \"fade\":\"" + fade + 
+      "\", \"abs\":\"" + abs + 
+      "\", \"fnl\":\"" + fnl + 
+      "\", \"fb\":\"" + fb + 
+      "\", \"rt\":\"" + rt + 
+      "\", \"cont\":\"" + cont + "\"}"
+    
+    [has_active, json_obj]
+
+string json_array = "["
+bool has_any_alerts = false
+
+if array.size(symArr) > 0
+    for i = 0 to array.size(symArr) - 1
+        [is_active, row_json] = f_build_json_row(
+          array.get(symArr, i), 
+          array.get(bullAccArr, i), 
+          array.get(bearAccArr, i), 
+          array.get(bullRejArr, i), 
+          array.get(bearRejArr, i), 
+          array.get(bullSrdArr, i),
+          array.get(bearSrdArr, i),
+          array.get(bullOdArr, i),
+          array.get(bearOdArr, i),
+          array.get(bullFadeArr, i),
+          array.get(bearFadeArr, i),
+          array.get(bullAbsArr, i), 
+          array.get(bearAbsArr, i), 
+          array.get(bullFnlArr, i),
+          array.get(bearFnhArr, i),
+          array.get(bullFbArr, i),
+          array.get(bearFbArr, i),
+          array.get(bullRtArr, i),
+          array.get(bearRtArr, i),
+          array.get(bullContArr, i),
+          array.get(bearContArr, i)
+        )
+        
+        if is_active
+            if has_any_alerts
+                json_array := json_array + ", " 
+            json_array := json_array + row_json
+            has_any_alerts := true
+
+json_array := json_array + "]"
+string webhook_payload = "{\"type\": \"PivotBossScan\", \"secret\": \"" + webhook_secret + "\", \"scan_data\": " + json_array + "}"
+
+// Only trigger the alert on the last intraday bar of the daily session (or every bar if on a Daily chart).
+// This ensures we only get 1 alert per day at market close, rather than every 15 minutes.
+bool is_market_close = (time_close == time_close("D"))
+
+if barstate.isrealtime and barstate.islast and is_market_close
+    alert(webhook_payload, alert.freq_once_per_bar_close)
