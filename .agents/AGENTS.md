@@ -682,3 +682,7 @@ function resolveOutcome(s) {
 
 ## Git Workflow
 - AUTOMATIC PUSH: After completing any important optimization, feature implementation, or bug fix, you MUST automatically commit and push all changes to the remote repositories (e.g. `Tv-Alert-Mobile`, `TLCS_Website_Deploy`, `TV Indicator`) at the end of your task. Do NOT wait for the user to explicitly ask you to "push changes".
+
+## UI Display Conventions & Analytics
+- **Trade Cards Timestamps**: The UI MUST differentiate between Signal Time and Real Entry. The top-right header of trade cards (or equivalent) MUST strictly display the **SIGNAL TIME** (limit order placement time, `signal_ts` or `created_at`), while the `ENTRY` block inside the card MUST strictly display the **REAL ENTRY TIME** (the exact time the order filled, `real_entry_time`). Do not duplicate `real_entry_time` in both places.
+- **Analytics Filtering**: Analytics tables for `Day Type Blueprints` and `Trade Sequences` MUST conditionally hide empty rows. If a sequence or blueprint contains 0 active signals (both Bullish and Bearish values are `--`), the row must NOT render, keeping the UI clean on low-volume days.

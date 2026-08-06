@@ -1,0 +1,712 @@
+2c2
+< indicator("TLCS Dashboards", overlay=true, max_labels_count=500)
+---
+> indicator("TLCS Intraday Dashboards", overlay=true, max_labels_count=500)
+7,8c7,8
+< // 1. Rejection Day Blueprint
+< // 2. Stop Run Day Blueprint
+---
+> // 1. Rejection Blueprint
+> // 2. Stop Run Blueprint
+10c10
+< // 4. Absorption Day Blueprint
+---
+> // 4. Absorption Blueprint
+14c14
+< // 8. Continuation Day
+---
+> // 8. Continuation 
+19,22c19
+< gAlerts = "Alerts & Webhook"
+< webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret', group = gAlerts, display = display.none)
+< 
+< gShared = "Shared: ADR Lookback"
+---
+> gShared = "Shared: ATR Lookback"
+28c25
+< accMaxRangeMult = input.float(3.0, "Max Range vs ATR (x)", step=0.1, group=gAcc, tooltip="The total range over the lookback period must be <= this multiple of the ADR")
+---
+> accMaxRangeMult = input.float(3.0, "Max Range vs ATR (x)", step=0.1, group=gAcc, tooltip="The total range over the lookback period must be <= this multiple of the ATR")
+30,31c27,28
+< // ---------------------------- REJECTION DAY FILTER RULES ----------------------------
+< gRej1 = "Rejection Day — Range"
+---
+> // ---------------------------- REJECTION FILTER RULES ----------------------------
+> gRej1 = "Rejection — Range"
+34c31
+< gRej2 = "Rejection Day — Tail / Body"
+---
+> gRej2 = "Rejection — Tail / Body"
+37c34
+< gRej3 = "Rejection Day — Close Location"
+---
+> gRej3 = "Rejection — Close Location"
+40c37
+< gRej4 = "Rejection Day — Location / Structure"
+---
+> gRej4 = "Rejection — Location / Structure"
+45,46c42,43
+< // ---------------------------- OUTSIDE DAY FILTER RULES ----------------------------
+< gOd1 = "Outside Day — Range"
+---
+> // ---------------------------- OUTSIDE FILTER RULES ----------------------------
+> gOd1 = "Outside — Range"
+57c54
+< requireAboveYMid = input.bool(true, "Require close above yMID (FNL) / below yMID (FNH)", group=gFnl3)
+---
+> requireAboveYMid = input.bool(true, "Require close above prior MID (FNL) / below prior MID (FNH)", group=gFnl3)
+59,60c56,57
+< // ---------------------------- ABSORPTION DAY FILTER RULES ----------------------------
+< gAbs1 = "Absorption Day — Range"
+---
+> // ---------------------------- ABSORPTION FILTER RULES ----------------------------
+> gAbs1 = "Absorption — Range"
+63,64c60,61
+< gAbs2 = "Absorption Day — Location"
+< absMidTolPct = input.float(1.0, "Tolerance: Low/High near yMID (%)", step=0.1, group=gAbs2) / 100
+---
+> gAbs2 = "Absorption — Location"
+> absMidTolPct = input.float(1.0, "Tolerance: Low/High near prior MID (%)", step=0.1, group=gAbs2) / 100
+66c63
+< gAbs3 = "Absorption Day — Close Confirmation"
+---
+> gAbs3 = "Absorption — Close Confirmation"
+69,70c66,67
+< // ---------------------------- STOP RUN DAY FILTER RULES ----------------------------
+< gSrd1 = "Stop Run Day — Range"
+---
+> // ---------------------------- STOP RUN FILTER RULES ----------------------------
+> gSrd1 = "Stop Run — Range"
+73c70
+< gSrd2 = "Stop Run Day — Close Location"
+---
+> gSrd2 = "Stop Run — Close Location"
+76c73
+< gSrd3 = "Stop Run Day — Structure"
+---
+> gSrd3 = "Stop Run — Structure"
+137,141c134,144
+<     rng    = high - low
+<     body   = math.abs(close - open)
+<     upWick = high - math.max(open, close)
+<     dnWick = math.min(open, close) - low
+<     mid    = (high + low) / 2
+---
+>     var int cached_encoded = 0
+>     var bool initial_calc = true
+>     if barstate.isrealtime and not barstate.isconfirmed and not initial_calc
+>         cached_encoded
+>     else
+>         initial_calc := false
+>         rng    = high - low
+>         body   = math.abs(close - open)
+>         upWick = high - math.max(open, close)
+>         dnWick = math.min(open, close) - low
+>         mid    = (high + low) / 2
+143,144c146,147
+<     avgRange = ta.sma(ta.tr(true), adrLen)[1]
+<     closePos = rng != 0 ? (close - low) / rng : 0.5
+---
+>         avgRange = ta.sma(ta.tr(true), adrLen)[1]
+>         closePos = rng != 0 ? (close - low) / rng : 0.5
+146,150c149,153
+<     // ---- 0. Accumulation / Distribution Phase ----
+<     accHigh = ta.highest(high, accLen)
+<     accLow  = ta.lowest(low, accLen)
+<     accRange = accHigh - accLow
+<     isCompressing = avgRange > 0 and accRange <= accMaxRangeMult * avgRange
+---
+>         // ---- 0. Accumulation / Distribution Phase ----
+>         accHigh = ta.highest(high, accLen)
+>         accLow  = ta.lowest(low, accLen)
+>         accRange = accHigh - accLow
+>         isCompressing = avgRange > 0 and accRange <= accMaxRangeMult * avgRange
+152,153c155,156
+<     bullAcc = isCompressing and close >= (accHigh + accLow) / 2
+<     bearDist = isCompressing and close < (accHigh + accLow) / 2
+---
+>         bullAcc = isCompressing and close >= (accHigh + accLow) / 2
+>         bearDist = isCompressing and close < (accHigh + accLow) / 2
+155,160c158,163
+<     // ---- 1. Rejection Day Trigger ----
+<     rejRangeOK  = avgRange > 0 and rng > adrMultMin * avgRange
+<     bullTailOK  = body > 0 ? dnWick > tailBodyMult * body : dnWick > 0
+<     bearTailOK  = body > 0 ? upWick > tailBodyMult * body : upWick > 0
+<     bullCloseOK = closePos >= (1 - closeZonePct)
+<     bearCloseOK = closePos <= closeZonePct
+---
+>         // ---- 1. Rejection Trigger ----
+>         rejRangeOK  = avgRange > 0 and rng > adrMultMin * avgRange
+>         bullTailOK  = body > 0 ? dnWick > tailBodyMult * body : dnWick > 0
+>         bearTailOK  = body > 0 ? upWick > tailBodyMult * body : upWick > 0
+>         bullCloseOK = closePos >= (1 - closeZonePct)
+>         bearCloseOK = closePos <= closeZonePct
+162,167c165,170
+<     priorLowStruct  = ta.lowest(low, structLen)[1]
+<     priorHighStruct = ta.highest(high, structLen)[1]
+<     nearPriorLow  = low  <= priorLowStruct  * (1 + structTolPct)
+<     nearPriorHigh = high >= priorHighStruct * (1 - structTolPct)
+<     structBullOK = not useStructure or nearPriorLow
+<     structBearOK = not useStructure or nearPriorHigh
+---
+>         priorLowStruct  = ta.lowest(low, structLen)[1]
+>         priorHighStruct = ta.highest(high, structLen)[1]
+>         nearPriorLow  = low  <= priorLowStruct  * (1 + structTolPct)
+>         nearPriorHigh = high >= priorHighStruct * (1 - structTolPct)
+>         structBullOK = not useStructure or nearPriorLow
+>         structBearOK = not useStructure or nearPriorHigh
+169,170c172,173
+<     bullRej = rejRangeOK and bullTailOK and bullCloseOK and structBullOK
+<     bearRej = rejRangeOK and bearTailOK and bearCloseOK and structBearOK
+---
+>         bullRej = rejRangeOK and bullTailOK and bullCloseOK and structBullOK
+>         bearRej = rejRangeOK and bearTailOK and bearCloseOK and structBearOK
+172,173c175,176
+<     // ---- 2. Stop Run Day Trigger ----
+<     srdRangeOK = avgRange > 0 and rng > srdAdrMultMin * avgRange
+---
+>         // ---- 2. Stop Run Trigger ----
+>         srdRangeOK = avgRange > 0 and rng > srdAdrMultMin * avgRange
+175,178c178,181
+<     bullSrdClosePosOK = closePos >= (1 - srdCloseZonePct)
+<     bullSrdCloseExt   = close > high[1]
+<     bullSrdMidExt     = mid >= ta.highest(high, srdStructLen)[1]
+<     bullSrdSignal     = srdRangeOK and bullSrdClosePosOK and bullSrdCloseExt and bullSrdMidExt
+---
+>         bullSrdClosePosOK = closePos >= (1 - srdCloseZonePct)
+>         bullSrdCloseExt   = close > high[1]
+>         bullSrdMidExt     = mid >= ta.highest(high, srdStructLen)[1]
+>         bullSrdSignal     = srdRangeOK and bullSrdClosePosOK and bullSrdCloseExt and bullSrdMidExt
+180,183c183,186
+<     bearSrdClosePosOK = closePos <= srdCloseZonePct
+<     bearSrdCloseExt   = close < low[1]
+<     bearSrdMidExt     = mid <= ta.lowest(low, srdStructLen)[1]
+<     bearSrdSignal     = srdRangeOK and bearSrdClosePosOK and bearSrdCloseExt and bearSrdMidExt
+---
+>         bearSrdClosePosOK = closePos <= srdCloseZonePct
+>         bearSrdCloseExt   = close < low[1]
+>         bearSrdMidExt     = mid <= ta.lowest(low, srdStructLen)[1]
+>         bearSrdSignal     = srdRangeOK and bearSrdClosePosOK and bearSrdCloseExt and bearSrdMidExt
+185,190c188,193
+<     // ---- STATE TRACKING: REJECTION SEQUENCE & FAILED ABSORPTION ----
+<     var float rejActiveMid   = na
+<     var float rejActiveHigh  = na
+<     var float rejActiveLow   = na
+<     var bool  bullRejActive  = false
+<     var bool  bearRejActive  = false
+---
+>         // ---- STATE TRACKING: REJECTION SEQUENCE & FAILED ABSORPTION ----
+>         var float rejActiveMid   = na
+>         var float rejActiveHigh  = na
+>         var float rejActiveLow   = na
+>         var bool  bullRejActive  = false
+>         var bool  bearRejActive  = false
+192,193c195,196
+<     var bool  bullFailedAbsActive = false
+<     var bool  bearFailedAbsActive = false
+---
+>         var bool  bullFailedAbsActive = false
+>         var bool  bearFailedAbsActive = false
+195c198
+<     int barsSinceRej = ta.barssince(bullRej or bearRej)
+---
+>         int barsSinceRej = ta.barssince(bullRej or bearRej)
+197,212c200,215
+<     if bullRej
+<         rejActiveMid  := mid
+<         rejActiveHigh := high
+<         rejActiveLow  := low
+<         bullRejActive := true
+<         bearRejActive := false
+<         bullFailedAbsActive := false
+<         bearFailedAbsActive := false
+<     else if bearRej
+<         rejActiveMid  := mid
+<         rejActiveHigh := high
+<         rejActiveLow  := low
+<         bearRejActive := true
+<         bullRejActive := false
+<         bullFailedAbsActive := false
+<         bearFailedAbsActive := false
+---
+>         if bullRej
+>             rejActiveMid  := mid
+>             rejActiveHigh := high
+>             rejActiveLow  := low
+>             bullRejActive := true
+>             bearRejActive := false
+>             bullFailedAbsActive := false
+>             bearFailedAbsActive := false
+>         else if bearRej
+>             rejActiveMid  := mid
+>             rejActiveHigh := high
+>             rejActiveLow  := low
+>             bearRejActive := true
+>             bullRejActive := false
+>             bullFailedAbsActive := false
+>             bearFailedAbsActive := false
+214,220c217,223
+<     // Check Rejection Failure -> triggers Failed Absorption Context
+<     if bullRejActive and close < rejActiveMid
+<         bullRejActive := false
+<         bearFailedAbsActive := true
+<     if bearRejActive and close > rejActiveMid
+<         bearRejActive := false
+<         bullFailedAbsActive := true
+---
+>         // Check Rejection Failure -> triggers Failed Absorption Context
+>         if bullRejActive and close < rejActiveMid
+>             bullRejActive := false
+>             bearFailedAbsActive := true
+>         if bearRejActive and close > rejActiveMid
+>             bearRejActive := false
+>             bullFailedAbsActive := true
+222,226c225,229
+<     // Invalidate Failed Absorption Context
+<     if bearFailedAbsActive and close > rejActiveHigh
+<         bearFailedAbsActive := false
+<     if bullFailedAbsActive and close < rejActiveLow
+<         bullFailedAbsActive := false
+---
+>         // Invalidate Failed Absorption Context
+>         if bearFailedAbsActive and close > rejActiveHigh
+>             bearFailedAbsActive := false
+>         if bullFailedAbsActive and close < rejActiveLow
+>             bullFailedAbsActive := false
+228,232c231,235
+<     // ---- STATE TRACKING: STOP RUN SEQUENCE ----
+<     var float srdActiveMid   = na
+<     var float srdActiveExt   = na
+<     var bool  bullSrdActive  = false
+<     var bool  bearSrdActive  = false
+---
+>         // ---- STATE TRACKING: STOP RUN SEQUENCE ----
+>         var float srdActiveMid   = na
+>         var float srdActiveExt   = na
+>         var bool  bullSrdActive  = false
+>         var bool  bearSrdActive  = false
+234c237
+<     int barsSinceSrd = ta.barssince(bullSrdSignal or bearSrdSignal)
+---
+>         int barsSinceSrd = ta.barssince(bullSrdSignal or bearSrdSignal)
+236,245c239,248
+<     if bullSrdSignal
+<         srdActiveMid  := mid
+<         srdActiveExt  := high
+<         bullSrdActive := true
+<         bearSrdActive := false
+<     else if bearSrdSignal
+<         srdActiveMid  := mid
+<         srdActiveExt  := low
+<         bearSrdActive := true
+<         bullSrdActive := false
+---
+>         if bullSrdSignal
+>             srdActiveMid  := mid
+>             srdActiveExt  := high
+>             bullSrdActive := true
+>             bearSrdActive := false
+>         else if bearSrdSignal
+>             srdActiveMid  := mid
+>             srdActiveExt  := low
+>             bearSrdActive := true
+>             bullSrdActive := false
+247,250c250,253
+<     if bullSrdActive and close < srdActiveMid
+<         bullSrdActive := false
+<     if bearSrdActive and close > srdActiveMid
+<         bearSrdActive := false
+---
+>         if bullSrdActive and close < srdActiveMid
+>             bullSrdActive := false
+>         if bearSrdActive and close > srdActiveMid
+>             bearSrdActive := false
+252,254c255,257
+<     // ---- 3. Fade After Stop Run (Applies to SRD Sequence Only) ----
+<     bullFade = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and high >= srdActiveExt * 0.995 and close < open
+<     bearFade = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and low <= srdActiveExt * 1.005 and close > open
+---
+>         // ---- 3. Fade After Stop Run (Applies to SRD Sequence Only) ----
+>         bullFade = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and high >= srdActiveExt * 0.995 and close < open
+>         bearFade = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and low <= srdActiveExt * 1.005 and close > open
+256,257c259,260
+<     // ---- 4. Absorption Day (Applies to Rej and SRD sequences) ----
+<     absRangeOK = avgRange > 0 and rng < absAdrMaxMult * avgRange
+---
+>         // ---- 4. Absorption (Applies to Rej and SRD sequences) ----
+>         absRangeOK = avgRange > 0 and rng < absAdrMaxMult * avgRange
+259,260c262,263
+<     bullAbs_Rej = bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close > rejActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - rejActiveMid) <= rejActiveMid * absMidTolPct
+<     bearAbs_Rej = bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close < rejActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - rejActiveMid) <= rejActiveMid * absMidTolPct
+---
+>         bullAbs_Rej = bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close > rejActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - rejActiveMid) <= rejActiveMid * absMidTolPct
+>         bearAbs_Rej = bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close < rejActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - rejActiveMid) <= rejActiveMid * absMidTolPct
+262,263c265,266
+<     bullAbs_Srd = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close > srdActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - srdActiveMid) <= srdActiveMid * absMidTolPct
+<     bearAbs_Srd = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close < srdActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - srdActiveMid) <= srdActiveMid * absMidTolPct
+---
+>         bullAbs_Srd = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close > srdActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - srdActiveMid) <= srdActiveMid * absMidTolPct
+>         bearAbs_Srd = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close < srdActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - srdActiveMid) <= srdActiveMid * absMidTolPct
+265,268c268,271
+<     // ---- X. Outside Day ----
+<     odRangeOK = avgRange > 0 and rng > odAdrMultMin * avgRange
+<     odBull = odRangeOK and low < low[1] and close > high[1]
+<     odBear = odRangeOK and high > high[1] and close < low[1]
+---
+>         // ---- X. Outside ----
+>         odRangeOK = avgRange > 0 and rng > odAdrMultMin * avgRange
+>         odBull = odRangeOK and low < low[1] and close > high[1]
+>         odBear = odRangeOK and high > high[1] and close < low[1]
+270,274c273,277
+<     // ---- 5. FNL / FNH (Applies to both sequences) ----
+<     fnlRangeOK = avgRange > 0 and rng >= adrMinPct * avgRange
+<     priorLowSweep  = ta.lowest(low, sweepLookback)[1]
+<     priorHighSweep = ta.highest(high, sweepLookback)[1]
+<     yMidFnl = (high[1] + low[1]) / 2.0
+---
+>         // ---- 5. FNL / FNH (Applies to both sequences) ----
+>         fnlRangeOK = avgRange > 0 and rng >= adrMinPct * avgRange
+>         priorLowSweep  = ta.lowest(low, sweepLookback)[1]
+>         priorHighSweep = ta.highest(high, sweepLookback)[1]
+>         yMidFnl = (high[1] + low[1]) / 2.0
+276,278c279,281
+<     fnlSweep  = low < priorLowSweep
+<     fnlClose  = requireAboveYMid ? close > yMidFnl : close > mid
+<     fnlSignal = fnlRangeOK and fnlSweep and fnlClose
+---
+>         fnlSweep  = low < priorLowSweep
+>         fnlClose  = requireAboveYMid ? close > yMidFnl : close > mid
+>         fnlSignal = fnlRangeOK and fnlSweep and fnlClose
+280,285c283,288
+<     fnhSweep  = high > priorHighSweep
+<     fnhClose  = requireAboveYMid ? close < yMidFnl : close < mid
+<     fnhSignal = fnlRangeOK and fnhSweep and fnhClose
+< 
+<     bullFnl_Rej = bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnlSignal
+<     bearFnh_Rej = bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnhSignal
+---
+>         fnhSweep  = high > priorHighSweep
+>         fnhClose  = requireAboveYMid ? close < yMidFnl : close < mid
+>         fnhSignal = fnlRangeOK and fnhSweep and fnhClose
+> 
+>         bullFnl_Rej = bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnlSignal
+>         bearFnh_Rej = bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnhSignal
+287,288c290,291
+<     bullFnl_Srd = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnlSignal
+<     bearFnh_Srd = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnhSignal
+---
+>         bullFnl_Srd = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnlSignal
+>         bearFnh_Srd = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnhSignal
+290,291c293,294
+<     unifiedBullFnl = bullFnl_Rej or bullFnl_Srd
+<     unifiedBearFnh = bearFnh_Rej or bearFnh_Srd
+---
+>         unifiedBullFnl = bullFnl_Rej or bullFnl_Srd
+>         unifiedBearFnh = bearFnh_Rej or bearFnh_Srd
+293,296c296,299
+<     // ---- 6. Failed Breakout (Applies to Failed Absorption Context) ----
+<     int barsSinceFa = ta.barssince(bullFailedAbsActive or bearFailedAbsActive)
+<     bullFailedBreakout = bullFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and low <= low[1] and close > open
+<     bearFailedBreakout = bearFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and high >= high[1] and close < open
+---
+>         // ---- 6. Failed Breakout (Applies to Failed Absorption Context) ----
+>         int barsSinceFa = ta.barssince(bullFailedAbsActive or bearFailedAbsActive)
+>         bullFailedBreakout = bullFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and low <= low[1] and close > open
+>         bearFailedBreakout = bearFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and high >= high[1] and close < open
+298,300c301,303
+<     // ---- 7. Retest After Stop Run (Applies to Failed Absorption Context) ----
+<     bullRetestAfterSrd = bullFailedAbsActive and (bullFade or bullAbs_Srd)
+<     bearRetestAfterSrd = bearFailedAbsActive and (bearFade or bearAbs_Srd)
+---
+>         // ---- 7. Retest After Stop Run (Applies to Failed Absorption Context) ----
+>         bullRetestAfterSrd = bullFailedAbsActive and (bullFade or bullAbs_Srd)
+>         bearRetestAfterSrd = bearFailedAbsActive and (bearFade or bearAbs_Srd)
+302,304c305,307
+<     // Mask Retest days out of the standard Fade/Abs rows for cleaner dashboard reporting
+<     bullFade_final = bullFade and not bullRetestAfterSrd
+<     bearFade_final = bearFade and not bearRetestAfterSrd
+---
+>         // Mask Retest days out of the standard Fade/Abs rows for cleaner dashboard reporting
+>         bullFade_final = bullFade and not bullRetestAfterSrd
+>         bearFade_final = bearFade and not bearRetestAfterSrd
+306,307c309,310
+<     unifiedBullAbs = bullAbs_Rej or (bullAbs_Srd and not bullRetestAfterSrd)
+<     unifiedBearAbs = bearAbs_Rej or (bearAbs_Srd and not bearRetestAfterSrd)
+---
+>         unifiedBullAbs = bullAbs_Rej or (bullAbs_Srd and not bullRetestAfterSrd)
+>         unifiedBearAbs = bearAbs_Rej or (bearAbs_Srd and not bearRetestAfterSrd)
+309,311c312,314
+<     // ---- 8. Continuation Day ----
+<     var bool prevActiveDayBull = false
+<     var bool prevActiveDayBear = false
+---
+>         // ---- 8. Continuation ----
+>         var bool prevActiveDayBull = false
+>         var bool prevActiveDayBear = false
+313,314c316,317
+<     bullCont = prevActiveDayBull and close > close[1]
+<     bearCont = prevActiveDayBear and close < close[1]
+---
+>         bullCont = prevActiveDayBull and close > close[1]
+>         bearCont = prevActiveDayBear and close < close[1]
+316,317c319,320
+<     prevActiveDayBull := bullRej or bullSrdSignal or unifiedBullAbs or fnlSignal or bullFailedBreakout or bullRetestAfterSrd
+<     prevActiveDayBear := bearRej or bearSrdSignal or unifiedBearAbs or fnhSignal or bearFailedBreakout or bearRetestAfterSrd
+---
+>         prevActiveDayBull := bullRej or bullSrdSignal or unifiedBullAbs or fnlSignal or bullFailedBreakout or bullRetestAfterSrd
+>         prevActiveDayBear := bearRej or bearSrdSignal or unifiedBearAbs or fnhSignal or bearFailedBreakout or bearRetestAfterSrd
+319,320c322,345
+<     // Return 20 booleans
+<     [bullAcc, bearDist, bullRej, bearRej, bullSrdSignal, bearSrdSignal, odBull, odBear, bullFade_final, bearFade_final, unifiedBullAbs, unifiedBearAbs, fnlSignal, fnhSignal, bullFailedBreakout, bearFailedBreakout, bullRetestAfterSrd, bearRetestAfterSrd, bullCont, bearCont]
+---
+>         // Return single integer encoded with all booleans to bypass memory limits
+>         int encoded = 0
+>         encoded += bullAcc ? 1 : 0
+>         encoded += bearDist ? 2 : 0
+>         encoded += bullRej ? 4 : 0
+>         encoded += bearRej ? 8 : 0
+>         encoded += bullSrdSignal ? 16 : 0
+>         encoded += bearSrdSignal ? 32 : 0
+>         encoded += odBull ? 64 : 0
+>         encoded += odBear ? 128 : 0
+>         encoded += bullFade_final ? 256 : 0
+>         encoded += bearFade_final ? 512 : 0
+>         encoded += unifiedBullAbs ? 1024 : 0
+>         encoded += unifiedBearAbs ? 2048 : 0
+>         encoded += fnlSignal ? 4096 : 0
+>         encoded += fnhSignal ? 8192 : 0
+>         encoded += bullFailedBreakout ? 16384 : 0
+>         encoded += bearFailedBreakout ? 32768 : 0
+>         encoded += bullRetestAfterSrd ? 65536 : 0
+>         encoded += bearRetestAfterSrd ? 131072 : 0
+>         encoded += bullCont ? 262144 : 0
+>         encoded += bearCont ? 524288 : 0
+>         cached_encoded := encoded
+>         encoded
+321a347,390
+> f_decode(int val) =>
+>     int temp = val
+>     acB = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     acS = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     rB  = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     rS  = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     sB  = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     sS  = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     odB = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     odS = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     fdB = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     fdS = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     aB  = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     aS  = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     fB  = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     fS  = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     fbB = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     fbS = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     rtB = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     rtS = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     cB  = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     cS  = (temp % 2) != 0
+>     temp := math.floor(temp / 2)
+>     [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cB, cS]
+> 
+323,330c392,399
+< [c1acB, c1acS, c1rB, c1rS, c1sB, c1sS, c1odB, c1odS, c1fdB, c1fdS, c1aB, c1aS, c1fB, c1fS, c1fbB, c1fbS, c1rtB, c1rtS, c1cB, c1cS] = request.security(c1, "D", f_calc())
+< [c2acB, c2acS, c2rB, c2rS, c2sB, c2sS, c2odB, c2odS, c2fdB, c2fdS, c2aB, c2aS, c2fB, c2fS, c2fbB, c2fbS, c2rtB, c2rtS, c2cB, c2cS] = request.security(c2, "D", f_calc())
+< [c3acB, c3acS, c3rB, c3rS, c3sB, c3sS, c3odB, c3odS, c3fdB, c3fdS, c3aB, c3aS, c3fB, c3fS, c3fbB, c3fbS, c3rtB, c3rtS, c3cB, c3cS] = request.security(c3, "D", f_calc())
+< [c4acB, c4acS, c4rB, c4rS, c4sB, c4sS, c4odB, c4odS, c4fdB, c4fdS, c4aB, c4aS, c4fB, c4fS, c4fbB, c4fbS, c4rtB, c4rtS, c4cB, c4cS] = request.security(c4, "D", f_calc())
+< [c5acB, c5acS, c5rB, c5rS, c5sB, c5sS, c5odB, c5odS, c5fdB, c5fdS, c5aB, c5aS, c5fB, c5fS, c5fbB, c5fbS, c5rtB, c5rtS, c5cB, c5cS] = request.security(c5, "D", f_calc())
+< [c6acB, c6acS, c6rB, c6rS, c6sB, c6sS, c6odB, c6odS, c6fdB, c6fdS, c6aB, c6aS, c6fB, c6fS, c6fbB, c6fbS, c6rtB, c6rtS, c6cB, c6cS] = request.security(c6, "D", f_calc())
+< [c7acB, c7acS, c7rB, c7rS, c7sB, c7sS, c7odB, c7odS, c7fdB, c7fdS, c7aB, c7aS, c7fB, c7fS, c7fbB, c7fbS, c7rtB, c7rtS, c7cB, c7cS] = request.security(c7, "D", f_calc())
+< [c8acB, c8acS, c8rB, c8rS, c8sB, c8sS, c8odB, c8odS, c8fdB, c8fdS, c8aB, c8aS, c8fB, c8fS, c8fbB, c8fbS, c8rtB, c8rtS, c8cB, c8cS] = request.security(c8, "D", f_calc())
+---
+> [c1acB, c1acS, c1rB, c1rS, c1sB, c1sS, c1odB, c1odS, c1fdB, c1fdS, c1aB, c1aS, c1fB, c1fS, c1fbB, c1fbS, c1rtB, c1rtS, c1cB, c1cS] = f_decode(request.security(c1, timeframe.period, f_calc()))
+> [c2acB, c2acS, c2rB, c2rS, c2sB, c2sS, c2odB, c2odS, c2fdB, c2fdS, c2aB, c2aS, c2fB, c2fS, c2fbB, c2fbS, c2rtB, c2rtS, c2cB, c2cS] = f_decode(request.security(c2, timeframe.period, f_calc()))
+> [c3acB, c3acS, c3rB, c3rS, c3sB, c3sS, c3odB, c3odS, c3fdB, c3fdS, c3aB, c3aS, c3fB, c3fS, c3fbB, c3fbS, c3rtB, c3rtS, c3cB, c3cS] = f_decode(request.security(c3, timeframe.period, f_calc()))
+> [c4acB, c4acS, c4rB, c4rS, c4sB, c4sS, c4odB, c4odS, c4fdB, c4fdS, c4aB, c4aS, c4fB, c4fS, c4fbB, c4fbS, c4rtB, c4rtS, c4cB, c4cS] = f_decode(request.security(c4, timeframe.period, f_calc()))
+> [c5acB, c5acS, c5rB, c5rS, c5sB, c5sS, c5odB, c5odS, c5fdB, c5fdS, c5aB, c5aS, c5fB, c5fS, c5fbB, c5fbS, c5rtB, c5rtS, c5cB, c5cS] = f_decode(request.security(c5, timeframe.period, f_calc()))
+> [c6acB, c6acS, c6rB, c6rS, c6sB, c6sS, c6odB, c6odS, c6fdB, c6fdS, c6aB, c6aS, c6fB, c6fS, c6fbB, c6fbS, c6rtB, c6rtS, c6cB, c6cS] = f_decode(request.security(c6, timeframe.period, f_calc()))
+> [c7acB, c7acS, c7rB, c7rS, c7sB, c7sS, c7odB, c7odS, c7fdB, c7fdS, c7aB, c7aS, c7fB, c7fS, c7fbB, c7fbS, c7rtB, c7rtS, c7cB, c7cS] = f_decode(request.security(c7, timeframe.period, f_calc()))
+> [c8acB, c8acS, c8rB, c8rS, c8sB, c8sS, c8odB, c8odS, c8fdB, c8fdS, c8aB, c8aS, c8fB, c8fS, c8fbB, c8fbS, c8rtB, c8rtS, c8cB, c8cS] = f_decode(request.security(c8, timeframe.period, f_calc()))
+332,344c401,413
+< [s1acB, s1acS, s1rB, s1rS, s1sB, s1sS, s1odB, s1odS, s1fdB, s1fdS, s1aB, s1aS, s1fB, s1fS, s1fbB, s1fbS, s1rtB, s1rtS, s1cB, s1cS]     = request.security(s1, "D", f_calc())
+< [s2acB, s2acS, s2rB, s2rS, s2sB, s2sS, s2odB, s2odS, s2fdB, s2fdS, s2aB, s2aS, s2fB, s2fS, s2fbB, s2fbS, s2rtB, s2rtS, s2cB, s2cS]     = request.security(s2, "D", f_calc())
+< [s3acB, s3acS, s3rB, s3rS, s3sB, s3sS, s3odB, s3odS, s3fdB, s3fdS, s3aB, s3aS, s3fB, s3fS, s3fbB, s3fbS, s3rtB, s3rtS, s3cB, s3cS]     = request.security(s3, "D", f_calc())
+< [s4acB, s4acS, s4rB, s4rS, s4sB, s4sS, s4odB, s4odS, s4fdB, s4fdS, s4aB, s4aS, s4fB, s4fS, s4fbB, s4fbS, s4rtB, s4rtS, s4cB, s4cS]     = request.security(s4, "D", f_calc())
+< [s5acB, s5acS, s5rB, s5rS, s5sB, s5sS, s5odB, s5odS, s5fdB, s5fdS, s5aB, s5aS, s5fB, s5fS, s5fbB, s5fbS, s5rtB, s5rtS, s5cB, s5cS]     = request.security(s5, "D", f_calc())
+< [s6acB, s6acS, s6rB, s6rS, s6sB, s6sS, s6odB, s6odS, s6fdB, s6fdS, s6aB, s6aS, s6fB, s6fS, s6fbB, s6fbS, s6rtB, s6rtS, s6cB, s6cS]     = request.security(s6, "D", f_calc())
+< [s7acB, s7acS, s7rB, s7rS, s7sB, s7sS, s7odB, s7odS, s7fdB, s7fdS, s7aB, s7aS, s7fB, s7fS, s7fbB, s7fbS, s7rtB, s7rtS, s7cB, s7cS]     = request.security(s7, "D", f_calc())
+< [s8acB, s8acS, s8rB, s8rS, s8sB, s8sS, s8odB, s8odS, s8fdB, s8fdS, s8aB, s8aS, s8fB, s8fS, s8fbB, s8fbS, s8rtB, s8rtS, s8cB, s8cS]     = request.security(s8, "D", f_calc())
+< [s9acB, s9acS, s9rB, s9rS, s9sB, s9sS, s9odB, s9odS, s9fdB, s9fdS, s9aB, s9aS, s9fB, s9fS, s9fbB, s9fbS, s9rtB, s9rtS, s9cB, s9cS]     = request.security(s9, "D", f_calc())
+< [s10acB, s10acS, s10rB, s10rS, s10sB, s10sS, s10odB, s10odS, s10fdB, s10fdS, s10aB, s10aS, s10fB, s10fS, s10fbB, s10fbS, s10rtB, s10rtS, s10cB, s10cS] = request.security(s10, "D", f_calc())
+< [s11acB, s11acS, s11rB, s11rS, s11sB, s11sS, s11odB, s11odS, s11fdB, s11fdS, s11aB, s11aS, s11fB, s11fS, s11fbB, s11fbS, s11rtB, s11rtS, s11cB, s11cS] = request.security(s11, "D", f_calc())
+< [s12acB, s12acS, s12rB, s12rS, s12sB, s12sS, s12odB, s12odS, s12fdB, s12fdS, s12aB, s12aS, s12fB, s12fS, s12fbB, s12fbS, s12rtB, s12rtS, s12cB, s12cS] = request.security(s12, "D", f_calc())
+< [s13acB, s13acS, s13rB, s13rS, s13sB, s13sS, s13odB, s13odS, s13fdB, s13fdS, s13aB, s13aS, s13fB, s13fS, s13fbB, s13fbS, s13rtB, s13rtS, s13cB, s13cS] = request.security(s13, "D", f_calc())
+---
+> [s1acB, s1acS, s1rB, s1rS, s1sB, s1sS, s1odB, s1odS, s1fdB, s1fdS, s1aB, s1aS, s1fB, s1fS, s1fbB, s1fbS, s1rtB, s1rtS, s1cB, s1cS]     = f_decode(request.security(s1, timeframe.period, f_calc()))
+> [s2acB, s2acS, s2rB, s2rS, s2sB, s2sS, s2odB, s2odS, s2fdB, s2fdS, s2aB, s2aS, s2fB, s2fS, s2fbB, s2fbS, s2rtB, s2rtS, s2cB, s2cS]     = f_decode(request.security(s2, timeframe.period, f_calc()))
+> [s3acB, s3acS, s3rB, s3rS, s3sB, s3sS, s3odB, s3odS, s3fdB, s3fdS, s3aB, s3aS, s3fB, s3fS, s3fbB, s3fbS, s3rtB, s3rtS, s3cB, s3cS]     = f_decode(request.security(s3, timeframe.period, f_calc()))
+> [s4acB, s4acS, s4rB, s4rS, s4sB, s4sS, s4odB, s4odS, s4fdB, s4fdS, s4aB, s4aS, s4fB, s4fS, s4fbB, s4fbS, s4rtB, s4rtS, s4cB, s4cS]     = f_decode(request.security(s4, timeframe.period, f_calc()))
+> [s5acB, s5acS, s5rB, s5rS, s5sB, s5sS, s5odB, s5odS, s5fdB, s5fdS, s5aB, s5aS, s5fB, s5fS, s5fbB, s5fbS, s5rtB, s5rtS, s5cB, s5cS]     = f_decode(request.security(s5, timeframe.period, f_calc()))
+> [s6acB, s6acS, s6rB, s6rS, s6sB, s6sS, s6odB, s6odS, s6fdB, s6fdS, s6aB, s6aS, s6fB, s6fS, s6fbB, s6fbS, s6rtB, s6rtS, s6cB, s6cS]     = f_decode(request.security(s6, timeframe.period, f_calc()))
+> [s7acB, s7acS, s7rB, s7rS, s7sB, s7sS, s7odB, s7odS, s7fdB, s7fdS, s7aB, s7aS, s7fB, s7fS, s7fbB, s7fbS, s7rtB, s7rtS, s7cB, s7cS]     = f_decode(request.security(s7, timeframe.period, f_calc()))
+> [s8acB, s8acS, s8rB, s8rS, s8sB, s8sS, s8odB, s8odS, s8fdB, s8fdS, s8aB, s8aS, s8fB, s8fS, s8fbB, s8fbS, s8rtB, s8rtS, s8cB, s8cS]     = f_decode(request.security(s8, timeframe.period, f_calc()))
+> [s9acB, s9acS, s9rB, s9rS, s9sB, s9sS, s9odB, s9odS, s9fdB, s9fdS, s9aB, s9aS, s9fB, s9fS, s9fbB, s9fbS, s9rtB, s9rtS, s9cB, s9cS]     = f_decode(request.security(s9, timeframe.period, f_calc()))
+> [s10acB, s10acS, s10rB, s10rS, s10sB, s10sS, s10odB, s10odS, s10fdB, s10fdS, s10aB, s10aS, s10fB, s10fS, s10fbB, s10fbS, s10rtB, s10rtS, s10cB, s10cS] = f_decode(request.security(s10, timeframe.period, f_calc()))
+> [s11acB, s11acS, s11rB, s11rS, s11sB, s11sS, s11odB, s11odS, s11fdB, s11fdS, s11aB, s11aS, s11fB, s11fS, s11fbB, s11fbS, s11rtB, s11rtS, s11cB, s11cS] = f_decode(request.security(s11, timeframe.period, f_calc()))
+> [s12acB, s12acS, s12rB, s12rS, s12sB, s12sS, s12odB, s12odS, s12fdB, s12fdS, s12aB, s12aS, s12fB, s12fS, s12fbB, s12fbS, s12rtB, s12rtS, s12cB, s12cS] = f_decode(request.security(s12, timeframe.period, f_calc()))
+> [s13acB, s13acS, s13rB, s13rS, s13sB, s13sS, s13odB, s13odS, s13fdB, s13fdS, s13aB, s13aS, s13fB, s13fS, s13fbB, s13fbS, s13rtB, s13rtS, s13cB, s13cS] = f_decode(request.security(s13, timeframe.period, f_calc()))
+346,352c415,421
+< [f1acB, f1acS, f1rB, f1rS, f1sB, f1sS, f1odB, f1odS, f1fdB, f1fdS, f1aB, f1aS, f1fB, f1fS, f1fbB, f1fbS, f1rtB, f1rtS, f1cB, f1cS] = request.security(f1, "D", f_calc())
+< [f2acB, f2acS, f2rB, f2rS, f2sB, f2sS, f2odB, f2odS, f2fdB, f2fdS, f2aB, f2aS, f2fB, f2fS, f2fbB, f2fbS, f2rtB, f2rtS, f2cB, f2cS] = request.security(f2, "D", f_calc())
+< [f3acB, f3acS, f3rB, f3rS, f3sB, f3sS, f3odB, f3odS, f3fdB, f3fdS, f3aB, f3aS, f3fB, f3fS, f3fbB, f3fbS, f3rtB, f3rtS, f3cB, f3cS] = request.security(f3, "D", f_calc())
+< [f4acB, f4acS, f4rB, f4rS, f4sB, f4sS, f4odB, f4odS, f4fdB, f4fdS, f4aB, f4aS, f4fB, f4fS, f4fbB, f4fbS, f4rtB, f4rtS, f4cB, f4cS] = request.security(f4, "D", f_calc())
+< [f5acB, f5acS, f5rB, f5rS, f5sB, f5sS, f5odB, f5odS, f5fdB, f5fdS, f5aB, f5aS, f5fB, f5fS, f5fbB, f5fbS, f5rtB, f5rtS, f5cB, f5cS] = request.security(f5, "D", f_calc())
+< [f6acB, f6acS, f6rB, f6rS, f6sB, f6sS, f6odB, f6odS, f6fdB, f6fdS, f6aB, f6aS, f6fB, f6fS, f6fbB, f6fbS, f6rtB, f6rtS, f6cB, f6cS] = request.security(f6, "D", f_calc())
+< [f7acB, f7acS, f7rB, f7rS, f7sB, f7sS, f7odB, f7odS, f7fdB, f7fdS, f7aB, f7aS, f7fB, f7fS, f7fbB, f7fbS, f7rtB, f7rtS, f7cB, f7cS] = request.security(f7, "D", f_calc())
+---
+> [f1acB, f1acS, f1rB, f1rS, f1sB, f1sS, f1odB, f1odS, f1fdB, f1fdS, f1aB, f1aS, f1fB, f1fS, f1fbB, f1fbS, f1rtB, f1rtS, f1cB, f1cS] = f_decode(request.security(f1, timeframe.period, f_calc()))
+> [f2acB, f2acS, f2rB, f2rS, f2sB, f2sS, f2odB, f2odS, f2fdB, f2fdS, f2aB, f2aS, f2fB, f2fS, f2fbB, f2fbS, f2rtB, f2rtS, f2cB, f2cS] = f_decode(request.security(f2, timeframe.period, f_calc()))
+> [f3acB, f3acS, f3rB, f3rS, f3sB, f3sS, f3odB, f3odS, f3fdB, f3fdS, f3aB, f3aS, f3fB, f3fS, f3fbB, f3fbS, f3rtB, f3rtS, f3cB, f3cS] = f_decode(request.security(f3, timeframe.period, f_calc()))
+> [f4acB, f4acS, f4rB, f4rS, f4sB, f4sS, f4odB, f4odS, f4fdB, f4fdS, f4aB, f4aS, f4fB, f4fS, f4fbB, f4fbS, f4rtB, f4rtS, f4cB, f4cS] = f_decode(request.security(f4, timeframe.period, f_calc()))
+> [f5acB, f5acS, f5rB, f5rS, f5sB, f5sS, f5odB, f5odS, f5fdB, f5fdS, f5aB, f5aS, f5fB, f5fS, f5fbB, f5fbS, f5rtB, f5rtS, f5cB, f5cS] = f_decode(request.security(f5, timeframe.period, f_calc()))
+> [f6acB, f6acS, f6rB, f6rS, f6sB, f6sS, f6odB, f6odS, f6fdB, f6fdS, f6aB, f6aS, f6fB, f6fS, f6fbB, f6fbS, f6rtB, f6rtS, f6cB, f6cS] = f_decode(request.security(f6, timeframe.period, f_calc()))
+> [f7acB, f7acS, f7rB, f7rS, f7sB, f7sS, f7odB, f7odS, f7fdB, f7fdS, f7aB, f7aS, f7fB, f7fS, f7fbB, f7fbS, f7rtB, f7rtS, f7cB, f7cS] = f_decode(request.security(f7, timeframe.period, f_calc()))
+354,359c423,428
+< [i1acB, i1acS, i1rB, i1rS, i1sB, i1sS, i1odB, i1odS, i1fdB, i1fdS, i1aB, i1aS, i1fB, i1fS, i1fbB, i1fbS, i1rtB, i1rtS, i1cB, i1cS] = request.security(i1, "D", f_calc())
+< [i2acB, i2acS, i2rB, i2rS, i2sB, i2sS, i2odB, i2odS, i2fdB, i2fdS, i2aB, i2aS, i2fB, i2fS, i2fbB, i2fbS, i2rtB, i2rtS, i2cB, i2cS] = request.security(i2, "D", f_calc())
+< [i3acB, i3acS, i3rB, i3rS, i3sB, i3sS, i3odB, i3odS, i3fdB, i3fdS, i3aB, i3aS, i3fB, i3fS, i3fbB, i3fbS, i3rtB, i3rtS, i3cB, i3cS] = request.security(i3, "D", f_calc())
+< [i4acB, i4acS, i4rB, i4rS, i4sB, i4sS, i4odB, i4odS, i4fdB, i4fdS, i4aB, i4aS, i4fB, i4fS, i4fbB, i4fbS, i4rtB, i4rtS, i4cB, i4cS] = request.security(i4, "D", f_calc())
+< [i5acB, i5acS, i5rB, i5rS, i5sB, i5sS, i5odB, i5odS, i5fdB, i5fdS, i5aB, i5aS, i5fB, i5fS, i5fbB, i5fbS, i5rtB, i5rtS, i5cB, i5cS] = request.security(i5, "D", f_calc())
+< [i6acB, i6acS, i6rB, i6rS, i6sB, i6sS, i6odB, i6odS, i6fdB, i6fdS, i6aB, i6aS, i6fB, i6fS, i6fbB, i6fbS, i6rtB, i6rtS, i6cB, i6cS] = request.security(i6, "D", f_calc())
+---
+> [i1acB, i1acS, i1rB, i1rS, i1sB, i1sS, i1odB, i1odS, i1fdB, i1fdS, i1aB, i1aS, i1fB, i1fS, i1fbB, i1fbS, i1rtB, i1rtS, i1cB, i1cS] = f_decode(request.security(i1, timeframe.period, f_calc()))
+> [i2acB, i2acS, i2rB, i2rS, i2sB, i2sS, i2odB, i2odS, i2fdB, i2fdS, i2aB, i2aS, i2fB, i2fS, i2fbB, i2fbS, i2rtB, i2rtS, i2cB, i2cS] = f_decode(request.security(i2, timeframe.period, f_calc()))
+> [i3acB, i3acS, i3rB, i3rS, i3sB, i3sS, i3odB, i3odS, i3fdB, i3fdS, i3aB, i3aS, i3fB, i3fS, i3fbB, i3fbS, i3rtB, i3rtS, i3cB, i3cS] = f_decode(request.security(i3, timeframe.period, f_calc()))
+> [i4acB, i4acS, i4rB, i4rS, i4sB, i4sS, i4odB, i4odS, i4fdB, i4fdS, i4aB, i4aS, i4fB, i4fS, i4fbB, i4fbS, i4rtB, i4rtS, i4cB, i4cS] = f_decode(request.security(i4, timeframe.period, f_calc()))
+> [i5acB, i5acS, i5rB, i5rS, i5sB, i5sS, i5odB, i5odS, i5fdB, i5fdS, i5aB, i5aS, i5fB, i5fS, i5fbB, i5fbS, i5rtB, i5rtS, i5cB, i5cS] = f_decode(request.security(i5, timeframe.period, f_calc()))
+> [i6acB, i6acS, i6rB, i6rS, i6sB, i6sS, i6odB, i6odS, i6fdB, i6fdS, i6aB, i6aS, i6fB, i6fS, i6fbB, i6fbS, i6rtB, i6rtS, i6cB, i6cS] = f_decode(request.security(i6, timeframe.period, f_calc()))
+361,366c430,435
+< [u1acB, u1acS, u1rB, u1rS, u1sB, u1sS, u1odB, u1odS, u1fdB, u1fdS, u1aB, u1aS, u1fB, u1fS, u1fbB, u1fbS, u1rtB, u1rtS, u1cB, u1cS] = request.security(u1, "D", f_calc())
+< [u2acB, u2acS, u2rB, u2rS, u2sB, u2sS, u2odB, u2odS, u2fdB, u2fdS, u2aB, u2aS, u2fB, u2fS, u2fbB, u2fbS, u2rtB, u2rtS, u2cB, u2cS] = request.security(u2, "D", f_calc())
+< [u3acB, u3acS, u3rB, u3rS, u3sB, u3sS, u3odB, u3odS, u3fdB, u3fdS, u3aB, u3aS, u3fB, u3fS, u3fbB, u3fbS, u3rtB, u3rtS, u3cB, u3cS] = request.security(u3, "D", f_calc())
+< [u4acB, u4acS, u4rB, u4rS, u4sB, u4sS, u4odB, u4odS, u4fdB, u4fdS, u4aB, u4aS, u4fB, u4fS, u4fbB, u4fbS, u4rtB, u4rtS, u4cB, u4cS] = request.security(u4, "D", f_calc())
+< [u5acB, u5acS, u5rB, u5rS, u5sB, u5sS, u5odB, u5odS, u5fdB, u5fdS, u5aB, u5aS, u5fB, u5fS, u5fbB, u5fbS, u5rtB, u5rtS, u5cB, u5cS] = request.security(u5, "D", f_calc())
+< [u6acB, u6acS, u6rB, u6rS, u6sB, u6sS, u6odB, u6odS, u6fdB, u6fdS, u6aB, u6aS, u6fB, u6fS, u6fbB, u6fbS, u6rtB, u6rtS, u6cB, u6cS] = request.security(u6, "D", f_calc())
+---
+> [u1acB, u1acS, u1rB, u1rS, u1sB, u1sS, u1odB, u1odS, u1fdB, u1fdS, u1aB, u1aS, u1fB, u1fS, u1fbB, u1fbS, u1rtB, u1rtS, u1cB, u1cS] = f_decode(request.security(u1, timeframe.period, f_calc()))
+> [u2acB, u2acS, u2rB, u2rS, u2sB, u2sS, u2odB, u2odS, u2fdB, u2fdS, u2aB, u2aS, u2fB, u2fS, u2fbB, u2fbS, u2rtB, u2rtS, u2cB, u2cS] = f_decode(request.security(u2, timeframe.period, f_calc()))
+> [u3acB, u3acS, u3rB, u3rS, u3sB, u3sS, u3odB, u3odS, u3fdB, u3fdS, u3aB, u3aS, u3fB, u3fS, u3fbB, u3fbS, u3rtB, u3rtS, u3cB, u3cS] = f_decode(request.security(u3, timeframe.period, f_calc()))
+> [u4acB, u4acS, u4rB, u4rS, u4sB, u4sS, u4odB, u4odS, u4fdB, u4fdS, u4aB, u4aS, u4fB, u4fS, u4fbB, u4fbS, u4rtB, u4rtS, u4cB, u4cS] = f_decode(request.security(u4, timeframe.period, f_calc()))
+> [u5acB, u5acS, u5rB, u5rS, u5sB, u5sS, u5odB, u5odS, u5fdB, u5fdS, u5aB, u5aS, u5fB, u5fS, u5fbB, u5fbS, u5rtB, u5rtS, u5cB, u5cS] = f_decode(request.security(u5, timeframe.period, f_calc()))
+> [u6acB, u6acS, u6rB, u6rS, u6sB, u6sS, u6odB, u6odS, u6fdB, u6fdS, u6aB, u6aS, u6fB, u6fS, u6fbB, u6fbS, u6rtB, u6rtS, u6cB, u6cS] = f_decode(request.security(u6, timeframe.period, f_calc()))
+495c564,566
+< if barstate.islast
+---
+> var bool is_initial_draw = true
+> if barstate.islast and (barstate.isconfirmed or is_initial_draw)
+>     is_initial_draw := false
+596c667
+<     // Setup Table 1: Day Type Blueprints (Dynamic active rows)
+---
+>     // Setup Table 1: Blueprints (Dynamic active rows)
+603c674
+<     dash1 = table.new(tablePosStr == "Bottom center" ? position.top_center : tablePosStr == "Top Left" ? position.top_left : tablePosStr == "Bottom Right" ? position.bottom_right : position.top_center, 3, math.max(1, activeRows1) + 1, border_width=1, frame_width=1, frame_color=color.rgb(12, 246, 250))
+---
+>     dash1 = table.new(tablePosStr == "Bottom center" ? position.middle_left : tablePosStr == "Top Left" ? position.top_left : tablePosStr == "Bottom Right" ? position.bottom_right : position.middle_left, 3, math.max(1, activeRows1) + 1, border_width=1, frame_width=1, frame_color=color.rgb(12, 246, 250))
+605c676
+<     headerTxt1 = "DAY TYPE BLUEPRINTS (" + str.tostring(array.size(symArr)) + ")"
+---
+>     headerTxt1 = "INTRADAY BLUEPRINTS (" + str.tostring(array.size(symArr)) + ")"
+607c678
+<     table.cell(dash1, 0, 0, headerTxt1, bgcolor=color.new(#116ac2, 0), text_color=color.rgb(12, 246, 250), text_size=txtSize)
+---
+>     table.cell(dash1, 0, 0, headerTxt1, bgcolor=color.new(#116ac2, 0), text_color=#23fbff, text_size=txtSize)
+612c683
+<         table.cell(dash1, 0, rowIdx1, "1. Rejection Day Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+---
+>         table.cell(dash1, 0, rowIdx1, "1. Rejection Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+618c689
+<         table.cell(dash1, 0, rowIdx1, "2. Absorption Day Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+---
+>         table.cell(dash1, 0, rowIdx1, "2. Absorption Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+630c701
+<         table.cell(dash1, 0, rowIdx1, "4. Outside Day Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+---
+>         table.cell(dash1, 0, rowIdx1, "4. Outside Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+636c707
+<         table.cell(dash1, 0, rowIdx1, "5. Stop Run Day Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+---
+>         table.cell(dash1, 0, rowIdx1, "5. Stop Run Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+643c714
+<         table.cell(dash1, 0, 1, "No Active Day Type Blueprints Today", bgcolor=color.new(color.gray, 85), text_color=color.gray, text_size=txtSize)
+---
+>         table.cell(dash1, 0, 1, "No Active Blueprints Found", bgcolor=color.new(color.gray, 85), text_color=color.gray, text_size=txtSize)
+651c722
+<     dash2 = table.new(tablePosStr == "Bottom center" ? position.bottom_left : tablePosStr == "Top Left" ? position.bottom_left : tablePosStr == "Bottom Right" ? position.top_right : position.bottom_center, 3, math.max(1, activeRows2) + 1, border_width=1, frame_width=1, frame_color=color.rgb(226, 179, 60))
+---
+>     dash2 = table.new(tablePosStr == "Bottom center" ? position.middle_right : tablePosStr == "Top Left" ? position.bottom_left : tablePosStr == "Bottom Right" ? position.top_right : position.middle_right, 3, math.max(1, activeRows2) + 1, border_width=1, frame_width=1,  frame_color=color.rgb(12, 246, 250))
+653c724
+<     headerTxt2 = "TRADE SEQUENCES (" + str.tostring(array.size(symArr)) + ")"
+---
+>     headerTxt2 = "INTRADAY TRADE SEQUENCES (" + str.tostring(array.size(symArr)) + ")"
+655c726
+<     table.cell(dash2, 0, 0, headerTxt2, bgcolor=color.new(#116ac2, 0), text_color=color.rgb(226, 179, 60), text_size=txtSize)
+---
+>     table.cell(dash2, 0, 0, headerTxt2, bgcolor=#8b047b, text_color=color.rgb(12, 246, 250), text_size=txtSize)
+660c731
+<         table.cell(dash2, 0, rowIdx2, "1. Rejection Day Sequence", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+---
+>         table.cell(dash2, 0, rowIdx2, "1. Rejection Sequence", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+691,696c762,767
+< alertcondition(anyBullRej, title="Bullish Rejection Day", message="TLCS Sequence: Bullish Rejection Day on {{ticker}}")
+< alertcondition(anyBearRej, title="Bearish Rejection Day", message="TLCS Sequence: Bearish Rejection Day on {{ticker}}")
+< alertcondition(anyBullOd, title="Bullish Outside Day", message="TLCS Sequence: Bullish Outside Day on {{ticker}}")
+< alertcondition(anyBearOd, title="Bearish Outside Day", message="TLCS Sequence: Bearish Outside Day on {{ticker}}")
+< alertcondition(anyBullSrd, title="Bullish Stop Run Day",  message="TLCS Sequence: Bullish Stop Run Day on {{ticker}}")
+< alertcondition(anyBearSrd, title="Bearish Stop Run Day",  message="TLCS Sequence: Bearish Stop Run Day on {{ticker}}")
+---
+> alertcondition(anyBullRej, title="Bullish Rejection", message="TLCS Sequence: Bullish Rejection on {{ticker}}")
+> alertcondition(anyBearRej, title="Bearish Rejection", message="TLCS Sequence: Bearish Rejection on {{ticker}}")
+> alertcondition(anyBullOd, title="Bullish Outside", message="TLCS Sequence: Bullish Outside on {{ticker}}")
+> alertcondition(anyBearOd, title="Bearish Outside", message="TLCS Sequence: Bearish Outside on {{ticker}}")
+> alertcondition(anyBullSrd, title="Bullish Stop Run",  message="TLCS Sequence: Bullish Stop Run on {{ticker}}")
+> alertcondition(anyBearSrd, title="Bearish Stop Run",  message="TLCS Sequence: Bearish Stop Run on {{ticker}}")
+699,700c770,771
+< alertcondition(anyBullAbs, title="Bullish Absorption",    message="TLCS Sequence: Bullish Absorption Day on {{ticker}}")
+< alertcondition(anyBearAbs, title="Bearish Absorption",    message="TLCS Sequence: Bearish Absorption Day on {{ticker}}")
+---
+> alertcondition(anyBullAbs, title="Bullish Absorption",    message="TLCS Sequence: Bullish Absorption on {{ticker}}")
+> alertcondition(anyBearAbs, title="Bearish Absorption",    message="TLCS Sequence: Bearish Absorption on {{ticker}}")
+707,708c778,779
+< alertcondition(anyBullCont,title="Bullish Continuation",  message="TLCS Sequence: Bullish Continuation Day on {{ticker}}")
+< alertcondition(anyBearCont,title="Bearish Continuation",  message="TLCS Sequence: Bearish Continuation Day on {{ticker}}")
+---
+> alertcondition(anyBullCont,title="Bullish Continuation",  message="TLCS Sequence: Bullish Continuation on {{ticker}}")
+> alertcondition(anyBearCont,title="Bearish Continuation",  message="TLCS Sequence: Bearish Continuation on {{ticker}}")
+768c839
+< string webhook_payload = "{\"type\": \"PivotBossScan\", \"secret\": \"" + webhook_secret + "\", \"scan_data\": " + json_array + "}"
+---
+> string webhook_payload = "{\"type\": \"PivotBossScan\", \"scan_data\": " + json_array + "}"
+770c841
+< if barstate.isrealtime and barstate.islast
+---
+> if barstate.isrealtime and barstate.islast and barstate.isconfirmed
