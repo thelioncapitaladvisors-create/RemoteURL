@@ -347,6 +347,58 @@ def run_returns_backtest():
     }} else if (mode === 'stats') {{
         document.body.classList.add('mode-stats');
     }}
+    
+    // Check theme
+    if (urlParams.get('theme') === 'theme-gray' || urlParams.get('theme') === 'theme-light') {{
+        document.body.style.backgroundColor = 'transparent';
+        document.body.style.color = '#334155';
+        
+        // Inject light mode CSS for tabs and table
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .tab-container { background-color: transparent !important; border-bottom: 1px solid rgba(0,0,0,0.1) !important; }
+            .tab-btn { background-color: rgba(255,255,255,0.5) !important; color: #475569 !important; border: 1px solid rgba(0,0,0,0.05) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
+            .tab-btn:hover { background-color: rgba(255,255,255,0.8) !important; }
+            .tab-btn.active { background-color: #f1f5f9 !important; color: #0f172a !important; border-color: rgba(0,0,0,0.1) !important; font-weight: 800 !important; }
+            .stats-table { background-color: rgba(255,255,255,0.5) !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important; }
+            .stats-table th { background-color: rgba(241,245,249,0.8) !important; color: #334155 !important; border-bottom: 1px solid rgba(0,0,0,0.1) !important; }
+            .stats-table td { border-bottom: 1px solid rgba(0,0,0,0.05) !important; color: #475569 !important; }
+            .stats-table tr:hover td { background-color: rgba(255,255,255,0.9) !important; }
+            .stats-table thead th, .stats-table th:first-child, .stats-table td:first-child { background-color: rgba(241,245,249,0.95) !important; border-right: 1px solid rgba(0,0,0,0.1) !important; color: #334155 !important; }
+            .stats-table tr:hover td:first-child { background-color: rgba(226,232,240,0.95) !important; }
+        `;
+        document.head.appendChild(style);
+
+        // Update Plotly charts iteratively when they load
+        const updateCharts = () => {{
+            const chartDivs = document.querySelectorAll('.plotly-graph-div');
+            let allUpdated = chartDivs.length > 0;
+            
+            chartDivs.forEach(div => {{
+                if(div.data) {{
+                    Plotly.relayout(div, {{
+                        'paper_bgcolor': 'transparent',
+                        'plot_bgcolor': 'transparent',
+                        'font.color': '#334155',
+                        'xaxis.gridcolor': 'rgba(0,0,0,0.05)',
+                        'yaxis.gridcolor': 'rgba(0,0,0,0.05)',
+                        'xaxis.zerolinecolor': 'rgba(0,0,0,0.1)',
+                        'yaxis.zerolinecolor': 'rgba(0,0,0,0.1)',
+                        'xaxis.linecolor': 'rgba(0,0,0,0.1)',
+                        'yaxis.linecolor': 'rgba(0,0,0,0.1)'
+                    }});
+                }} else {{
+                    allUpdated = false;
+                }}
+            }});
+            
+            if (!allUpdated) {{
+                setTimeout(updateCharts, 100);
+            }}
+        }};
+        
+        setTimeout(updateCharts, 100);
+    }}
 </script>
 </body>
 </html>
