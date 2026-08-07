@@ -23,9 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout repository
+      - name: Checkout main repository
         uses: actions/checkout@v4
         
+      - name: Checkout website repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'thelioncapitaladvisors-create/TLCS_Website'
+          path: 'TLCS_Website_Deploy'
+          token: ${{ secrets.GH_PAT }}
+          
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -44,10 +51,11 @@ jobs:
           cd algo_engine
           python backtest_edge.py
           
-      - name: Commit and push changes
+      - name: Commit and push changes to Website Repo
         run: |
+          cd TLCS_Website_Deploy
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add TLCS_Website_Deploy/strategy_tearsheet.html
+          git add strategy_tearsheet.html
           git commit -m "Auto-generate strategy tearsheet [skip ci]" || echo "No changes to commit"
           git push
