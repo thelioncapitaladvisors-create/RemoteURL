@@ -3711,8 +3711,8 @@ plotshape(JustScalpBuy,  title = 'Long Scalp',  style = shape.diamond, location 
 plotshape(JustScalpSell, title = 'Short Scalp', style = shape.diamond, location = location.abovebar, color = color.red,  size = size.small)
 
 // ✅ DIVERGENCE PLOTS
-plotshape(isBullishDiv, title="Bullish Divergence", location=location.belowbar, color=color.green, style=shape.xcross, size=size.small)
-plotshape(isBearishDiv, title="Bearish Divergence", location=location.abovebar, color=color.red, style=shape.xcross, size=size.small)
+plotshape(isBullishDiv and not isBullishDiv[1], title="Bullish Divergence", location=location.belowbar, color=color.green, style=shape.xcross, size=size.small)
+plotshape(isBearishDiv and not isBearishDiv[1], title="Bearish Divergence", location=location.abovebar, color=color.red, style=shape.xcross, size=size.small)
 
 // ⚡ LIGHTNING & BOUNCE PLOTS (Unchanged)
 plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup  ,   location = location.belowbar, color = color.green,  size = size.large)
