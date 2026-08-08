@@ -3055,6 +3055,49 @@ bool ScalpSell = (emaCanSell and StepDn)
 string z1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? 'LONG ZONE' : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? 'SHORT ZONE' : ANYDAY and close > DBc and close < DTc ? 'WAIT FOR SIGNAL' : 'WAITING'
 
 // =========================================================================
+// 1. INLINED 'OOTA' LIBRARY (Pruned for CustomSeries & MA)
+// =========================================================================
+enum CustomSeries
+    EMA
+    SMA
+    RMA
+    HMA
+    WMA
+    VWMA
+    SWMA
+    LINREG
+    MEDIAN
+    MOM
+    HIGH
+    LOW
+    MEDIAN_HIGH
+    MEDIAN_LOW
+    PERCENTRANK
+    HIGHLOW
+    
+customseries(float source = close, simple CustomSeries maType = CustomSeries.SMA, simple int length) =>
+    switch maType
+        CustomSeries.EMA => ta.ema(source, length)
+        CustomSeries.SMA => ta.sma(source, length)
+        CustomSeries.RMA => ta.rma(source, length)
+        CustomSeries.HMA => ta.hma(source, length)
+        CustomSeries.WMA => ta.wma(source, length)
+        CustomSeries.VWMA => ta.vwma(source, length)
+        CustomSeries.SWMA => ta.swma(source)
+        CustomSeries.LINREG => ta.linreg(source, length, 0)
+        CustomSeries.MEDIAN => ta.median(source, length)
+        CustomSeries.MOM => ta.mom(source, length)
+        CustomSeries.HIGH => ta.highest(source, length)
+        CustomSeries.LOW => ta.lowest(source, length)
+        CustomSeries.MEDIAN_HIGH => ta.median(ta.highest(source, length), length)
+        CustomSeries.MEDIAN_LOW => ta.median(ta.lowest(source, length), length)
+        CustomSeries.PERCENTRANK => ta.percentrank(source, length)
+        => (ta.highest(length) + ta.lowest(length)) / 2
+
+method ma(simple CustomSeries maType = CustomSeries.SMA, simple int length, float source = close) =>
+    customseries(source, maType, length)
+
+// =========================================================================
 // 2. INLINED 'DRAWING' LIBRARY (Pruned for Line & Label logic)
 // =========================================================================
 type LineProperties
@@ -3121,7 +3164,6 @@ method draw(Label this) =>
     else
         this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family)
     this.object
-
 
 // =========================================================================
 // 3. INLINED 'ZIGZAG' LIBRARY (Pruned OOP Version)
@@ -3322,7 +3364,6 @@ method calculate(Zigzag this, array<float> ohlc, matrix<float> indicators, array
         this.addnewpivot(newPivotObject, iCandle, indicatorNames)
         this.flags.newPivot := true
     this
-    
 
 // =========================================================================
 // 4. TLCS DIVERGENCE SCREENER CODE (Optimized for Main Chart Overlay)
@@ -3814,47 +3855,3 @@ if barstate.islast
 // TODAY I DEBUGGED MY WEBSITE AND MOBILE APPLICATIONS AND ALSO BUILT HBOM DASHBOARD AS MY WORK COMPANION
 //I RECEIVED MONEY FROM INDIRA SCHOOL FOR MANASVI AND PAID SONAM'S FEE AS MONEY GIVEN BY ASHISH WERE LOST IN TRADING
 //HENCEFORTH ONLY TRADING FOR WINNING. NO GREED OR FEAR. JUST BUILD THE ALGO TRADING TO TRADE MARKETS AND SPEND LIFE READING AND ON HOBBIES AND SOCIAL WORK.
-
-// =========================================================================
-// 1. INLINED 'OOTA' LIBRARY (Pruned for CustomSeries & MA)
-// =========================================================================
-enum CustomSeries
-    EMA
-    SMA
-    RMA
-    HMA
-    WMA
-    VWMA
-    SWMA
-    LINREG
-    MEDIAN
-    MOM
-    HIGH
-    LOW
-    MEDIAN_HIGH
-    MEDIAN_LOW
-    PERCENTRANK
-    HIGHLOW
-    
-customseries(float source = close, simple CustomSeries maType = CustomSeries.SMA, simple int length) =>
-    switch maType
-        CustomSeries.EMA => ta.ema(source, length)
-        CustomSeries.SMA => ta.sma(source, length)
-        CustomSeries.RMA => ta.rma(source, length)
-        CustomSeries.HMA => ta.hma(source, length)
-        CustomSeries.WMA => ta.wma(source, length)
-        CustomSeries.VWMA => ta.vwma(source, length)
-        CustomSeries.SWMA => ta.swma(source)
-        CustomSeries.LINREG => ta.linreg(source, length, 0)
-        CustomSeries.MEDIAN => ta.median(source, length)
-        CustomSeries.MOM => ta.mom(source, length)
-        CustomSeries.HIGH => ta.highest(source, length)
-        CustomSeries.LOW => ta.lowest(source, length)
-        CustomSeries.MEDIAN_HIGH => ta.median(ta.highest(source, length), length)
-        CustomSeries.MEDIAN_LOW => ta.median(ta.lowest(source, length), length)
-        CustomSeries.PERCENTRANK => ta.percentrank(source, length)
-        => (ta.highest(length) + ta.lowest(length)) / 2
-
-method ma(simple CustomSeries maType = CustomSeries.SMA, simple int length, float source = close) =>
-    customseries(source, maType, length)
-
