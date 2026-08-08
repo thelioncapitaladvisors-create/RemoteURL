@@ -3421,6 +3421,7 @@ enum DivergenceType
 type DivergenceObject
     Line priceLine
     Label priceLabel
+    Label xcrossLabel
     chart.point pricePoint
     DivergenceType divergenceType
     bool broken = false
@@ -3428,12 +3429,14 @@ type DivergenceObject
 method delete(DivergenceObject this)=>
     this.priceLine.delete()
     this.priceLabel.delete()
+    this.xcrossLabel.delete()
     this
 
 method draw(DivergenceObject this)=>
     this.delete()
     this.priceLine.draw()
     this.priceLabel.draw()
+    this.xcrossLabel.draw()
     this
 
 type ZigzagProperties
@@ -3565,7 +3568,11 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                                  ) + '}'
                             alert(_divPay, alert.freq_once_per_bar_close)
                             
-                        divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, pricePoint, divergenceType)
+                        color xColor = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? color.green : color.red
+                        string xYloc = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? yloc.belowbar : yloc.abovebar
+                        LabelProperties xcrossProps = LabelProperties.new(xloc.bar_time, xYloc, xColor, label.style_xcross, color.new(color.white, 100), size.small, force_overlay = false)
+                        Label xcrossLabelObj = Label.new(pricePoint, "", "", xcrossProps)
+                        divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, xcrossLabelObj, pricePoint, divergenceType)
                         divergenceObject.delete()
                         divergenceObjects.push(divergenceObject.draw())
                         true
@@ -3710,9 +3717,6 @@ plotshape(JustMissileSell, title = 'Short Signal', style = shape.triangledown, l
 plotshape(JustScalpBuy,  title = 'Long Scalp',  style = shape.diamond, location = location.belowbar, color = color.green,   size = size.small)
 plotshape(JustScalpSell, title = 'Short Scalp', style = shape.diamond, location = location.abovebar, color = color.red,  size = size.small)
 
-// ✅ DIVERGENCE PLOTS
-plotshape(isBullishDiv and not isBullishDiv[1], title="Bullish Divergence", location=location.belowbar, color=color.green, style=shape.xcross, size=size.small)
-plotshape(isBearishDiv and not isBearishDiv[1], title="Bearish Divergence", location=location.abovebar, color=color.red, style=shape.xcross, size=size.small)
 
 // ⚡ LIGHTNING & BOUNCE PLOTS (Unchanged)
 plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup  ,   location = location.belowbar, color = color.green,  size = size.large)
