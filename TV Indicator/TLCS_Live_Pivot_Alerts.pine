@@ -2,7 +2,7 @@
 
 //@version=6
 
-indicator('TLCS Live Pivot Alerts', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
+indicator('TLCS All Signal Alerts', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
 // ──── INPUTS ────────────────────────────────────────────────────────
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
@@ -2915,8 +2915,10 @@ initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string lo
 
     // 🛡️ BLOCK SIDEWAYS TRADES — Exception: Narrow CPR days bypass the sideways filter
     // NCPR = true when CPR width < 0.2% of pivot → compression day → expect breakout
-    if (buyCond or sellCond) and not alreadyOpenedThisBar and (not isSideways or NCPR)
-        TradeLogic newTrade = initializeTradeSession(settings, buyCond ? longName : shortName)
+    bool _buy = buyCond and close < H4
+    bool _sell = sellCond and close > L4
+    if (_buy or _sell) and not alreadyOpenedThisBar and (not isSideways or NCPR)
+        TradeLogic newTrade = initializeTradeSession(settings, _buy ? longName : shortName)
         TradeVisuals newVis = TradeVisuals.new()
         sendAlert(settings, newTrade, dX, mX, z1, d1_message)
 //        if settings.showTPSL
@@ -3610,15 +3612,22 @@ bool hasBullishDiv = isBullishDiv
 bool hasBearishDiv = isBearishDiv
 
 // 2. Lightning fires if (Missile OR Scalp) fires natively... OR if there's a strict [1] bar Divergence + Power Signal
-bool LightningBuy  = (CanBuy and ScalpBuy)   or (hasBullishDiv[1] and GrS)
-bool LightningSell = (CanSell and ScalpSell) or (hasBearishDiv[1] and ReS)
+// ====================================================================
+// ── GATING LOGIC (H4/L4 & DAY ALLOWED) ──────────────────────────────
+// ====================================================================
+bool longAllowed = close < H4
+bool shortAllowed = close > L4
+bool dayallowed = true
+
+bool LightningBuy  = ((CanBuy and ScalpBuy)   or (hasBullishDiv[1] and GrS)) and longAllowed and dayallowed
+bool LightningSell = ((CanSell and ScalpSell) or (hasBearishDiv[1] and ReS)) and shortAllowed and dayallowed
 
 // 3. Filter out individual trades so they don't fire when Lightning fires
-bool JustMissileBuy  = CanBuy and not LightningBuy
-bool JustMissileSell = CanSell and not LightningSell
+bool JustMissileBuy  = CanBuy and not LightningBuy and longAllowed and dayallowed
+bool JustMissileSell = CanSell and not LightningSell and shortAllowed and dayallowed
 
-bool JustScalpBuy  = ScalpBuy and not LightningBuy
-bool JustScalpSell = ScalpSell and not LightningSell
+bool JustScalpBuy  = ScalpBuy and not LightningBuy and longAllowed and dayallowed
+bool JustScalpSell = ScalpSell and not LightningSell and shortAllowed and dayallowed
 
 
 // ====================================================================
@@ -3702,8 +3711,8 @@ plotshape(JustScalpBuy,  title = 'Long Scalp',  style = shape.diamond, location 
 plotshape(JustScalpSell, title = 'Short Scalp', style = shape.diamond, location = location.abovebar, color = color.red,  size = size.small)
 
 // ✅ DIVERGENCE PLOTS
-plotshape(isBullishDiv, title="Bullish Divergence", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
-plotshape(isBearishDiv, title="Bearish Divergence", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+plotshape(isBullishDiv, title="Bullish Divergence", location=location.belowbar, color=color.green, style=shape.xcross, size=size.small)
+plotshape(isBearishDiv, title="Bearish Divergence", location=location.abovebar, color=color.red, style=shape.xcross, size=size.small)
 
 // ⚡ LIGHTNING & BOUNCE PLOTS (Unchanged)
 plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup  ,   location = location.belowbar, color = color.green,  size = size.large)
