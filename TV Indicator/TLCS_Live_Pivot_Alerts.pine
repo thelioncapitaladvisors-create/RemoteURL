@@ -3715,22 +3715,24 @@ plotchar(LightningSell, title="Lightning Sell", char='★', location=location.ab
 plotchar(LightningBuy,  title="Lightning Buy",  char='⚡', location=location.belowbar, color=color.lime, size=size.normal)
 plotchar(LightningSell, title="Lightning Sell", char='⚡', location=location.abovebar, color=color.lime, size=size.normal)
 
+//
 // ====================================================================
 // SIGNAL FUNCTIONS 
 // ====================================================================
+bool LightningBuyPure  = (CanBuy and ScalpBuy)
+bool LightningSellPure = (CanSell and ScalpSell)
+
 LongSignalFunc() => CanBuy
 ShortSignalFunc() => CanSell
 MidSignalFunc() => ScalpBuy
 RejSignalFunc() => ScalpSell
-CanSignalFunc() => LightningBuy
-ERSignalFunc() => LightningSell
+CanSignalFunc() => LightningBuyPure
+ERSignalFunc() => LightningSellPure
 
 // AST OPTIMIZATION: Call the booleans directly instead of triggering 6 wrapper functions
 SignalFunc() =>
-    [CanBuy, CanSell, ScalpBuy, ScalpSell, LightningBuy, LightningSell]
-    
-// ====================================================================
-// TICKER PROCESSING ENGINE & SUBSCRIBER INPUTS
+    [CanBuy, CanSell, ScalpBuy, ScalpSell, LightningBuyPure, LightningSellPure]
+
 // ====================================================================
 ProcessTicker(triggeredLong, triggeredShort, triggeredMid, triggeredRej, triggeredCan, triggeredER, ticker, customName) =>
     displayName = customName != "" ? customName : ticker
