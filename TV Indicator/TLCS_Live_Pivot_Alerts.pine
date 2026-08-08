@@ -3055,6 +3055,276 @@ bool ScalpSell = (emaCanSell and StepDn)
 string z1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? 'LONG ZONE' : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? 'SHORT ZONE' : ANYDAY and close > DBc and close < DTc ? 'WAIT FOR SIGNAL' : 'WAITING'
 
 // =========================================================================
+// 2. INLINED 'DRAWING' LIBRARY (Pruned for Line & Label logic)
+// =========================================================================
+type LineProperties
+	string xloc = xloc.bar_index
+	string extend = extend.none
+	color color = color.blue
+	string style = line.style_solid
+	int width = 1
+    bool force_overlay = false
+
+type Line
+	chart.point start
+	chart.point end
+	LineProperties properties
+	line object
+
+method get_price(Line this, int bar) =>
+    stepPerBar = (this.end.price - this.start.price) / (this.end.index - this.start.index)
+    distance = bar - this.start.index
+    this.start.price + distance * stepPerBar
+
+type LabelProperties
+	string xloc = xloc.bar_index
+	string yloc = yloc.price
+	color color = color.blue
+	string style = label.style_none
+	color textcolor = color.black
+	string size = size.normal
+	string textalign = text.align_center
+	string text_font_family = font.family_default
+    bool force_overlay = false
+
+type Label
+	chart.point point
+	string lblText
+	string tooltip = na
+	LabelProperties properties
+	label object
+
+deleteObj(this) =>
+    this.object.delete()
+    this
+
+method delete(Line this) =>
+    deleteObj(this)
+
+method delete(Label this) =>
+    deleteObj(this)
+
+method draw(Line this) =>
+    this.object.delete()
+    this.properties := na(this.properties) ? LineProperties.new() : this.properties
+    if(this.properties.force_overlay)
+        this.object := line.new(this.properties.xloc == xloc.bar_index ? this.start.index : this.start.time, this.start.price, this.properties.xloc == xloc.bar_index ? this.end.index : this.end.time, this.end.price, this.properties.xloc, this.properties.extend, this.properties.color, this.properties.style, this.properties.width, true)
+    else
+        this.object := line.new(this.properties.xloc == xloc.bar_index ? this.start.index : this.start.time, this.start.price, this.properties.xloc == xloc.bar_index ? this.end.index : this.end.time, this.end.price, this.properties.xloc, this.properties.extend, this.properties.color, this.properties.style, this.properties.width)
+    this.object
+
+method draw(Label this) =>
+    this.object.delete()
+    this.properties := na(this.properties) ? LabelProperties.new() : this.properties
+    if(this.properties.force_overlay)
+        this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family, true)
+    else
+        this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family)
+    this.object
+
+
+// =========================================================================
+// 3. INLINED 'ZIGZAG' LIBRARY (Pruned OOP Version)
+// =========================================================================
+type Indicator
+	float indicatorHigh
+	float indicatorLow
+
+type PivotCandle
+	float _high = high
+	float _low = low
+	int length = 5
+	int pHighBar
+	int pLowBar
+	float pHigh
+	float pLow
+	array<Indicator> indicators
+
+type Pivot
+	chart.point point
+	int dir
+	int level = 0
+	int componentIndex = 0
+	int subComponents = 0
+	int microComponents = 1
+	float ratio = 1.0
+	float sizeRatio = 1.0
+	float barRatio = 1.0
+	array<Pivot> subPivots
+	array<Pivot> micropivots
+	array<string> indicatorNames
+	array<float> indicatorValues
+	array<float> indicatorRatios
+
+type ZigzagFlags
+	bool newPivot = false
+	bool doublePivot = false
+	bool updateLastPivot = false
+
+type Zigzag
+	int length = 5
+	int numberOfPivots = 20
+	int offset = 0
+	int level = 0
+	array<Pivot> zigzagPivots
+	ZigzagFlags flags
+	
+method init(array<Indicator> indicators, matrix<float> indicatorValues) =>
+    for i = 0 to na(indicatorValues) or indicatorValues.rows() == 0 ? na : indicatorValues.rows() - 1 by 1
+        iRow = indicatorValues.row(i)
+        Indicator indicator = Indicator.new(iRow.first(), iRow.last())
+        indicators.push(indicator)
+    indicators
+
+method init(PivotCandle candle, matrix<float> indicators = na) =>
+    candle.pHighBar := ta.highestbars(candle._high, candle.length)
+    candle.pLowBar := ta.lowestbars(candle._low, candle.length)
+    candle.pHigh := ta.highest(candle._high, candle.length)
+    candle.pLow := ta.lowest(candle._low, candle.length)
+    candle.indicators := array.new<Indicator>()
+    candle.indicators.init(indicators)
+    candle
+
+method unshift(array<Pivot> arr, Pivot val, int maxItems) =>
+    arr.unshift(val)
+    if arr.size() > maxItems
+        arr.pop()
+
+method update(Pivot this, PivotCandle candle, array<string> indicatorNames) =>
+    dir = math.sign(this.dir)
+    array<float> _indicators = array.new<float>()
+    for indicator in candle.indicators
+        indicatorValue = dir > 0 ? indicator.indicatorHigh : indicator.indicatorLow
+        _indicators.push(indicatorValue)
+    this.indicatorNames := indicatorNames
+    this.indicatorValues := _indicators
+    this.indicatorRatios := array.new<float>()
+    this
+
+method init(Zigzag this) =>
+    if na(this.zigzagPivots)
+        this.zigzagPivots := array.new<Pivot>()
+        this.flags := ZigzagFlags.new()
+        this.flags
+    this
+
+method addnewpivot(Zigzag this, Pivot pivot, array<Pivot> components = na) =>
+    dir = math.sign(pivot.dir)
+    if this.zigzagPivots.size() >= 1
+        lastPivot = this.zigzagPivots.get(0)
+        lastValue = lastPivot.point.price
+        pivot.subComponents := lastPivot.componentIndex - pivot.componentIndex
+        if not na(components) ? components.size() > lastPivot.componentIndex : false
+            pivot.subPivots := components.slice(pivot.componentIndex, lastPivot.componentIndex + 1)
+            microComponents = 0
+            for [index, subPivot] in pivot.subPivots
+                if index != pivot.subPivots.size() - 1
+                    microComponents := microComponents + subPivot.microComponents
+                    if na(subPivot.micropivots) or subPivot.micropivots.size() == 0
+                        pivot.micropivots.push(subPivot)
+                    else
+                        pivot.micropivots.concat(subPivot.micropivots)
+                else if pivot.level == 1
+                    pivot.micropivots.push(subPivot)
+            pivot.microComponents := microComponents
+
+        if math.sign(lastPivot.dir) == math.sign(dir)
+            runtime.error('Direction mismatch')
+        if this.zigzagPivots.size() >= 2
+            llastPivot = this.zigzagPivots.get(1)
+            value = pivot.point.price
+            llastValue = llastPivot.point.price
+            newDir = dir * value > dir * llastValue ? dir * 2 : dir
+            pivot.dir := int(newDir)
+            pivot.ratio := math.round(math.abs(lastValue - value) / math.abs(llastValue - lastValue), 3)
+            pivot.barRatio := math.round(math.abs(lastPivot.point.index - pivot.point.index) / math.abs(llastPivot.point.index - lastPivot.point.index), 3)
+
+            if this.zigzagPivots.size() >= 3
+                lllastPivot = this.zigzagPivots.get(2)
+                lllastValue = lllastPivot.point.price
+                pivot.sizeRatio := math.round(math.abs(lastValue - value) / math.abs(lllastValue - llastValue), 3)
+
+            llastIndicators = llastPivot.indicatorValues
+            indicators = pivot.indicatorValues
+            lastIndicators = lastPivot.indicatorValues
+            pivot.indicatorRatios.clear()
+            for [index, indicatorValue] in indicators
+                lastIndicatorValue = lastIndicators.get(index)
+                llastIndicatorValue = llastIndicators.get(index)
+                indicatorRatio = math.round(math.abs(lastIndicatorValue - indicatorValue) / math.abs(llastIndicatorValue - lastIndicatorValue), 3)
+                pivot.indicatorRatios.push(indicatorRatio)
+    this.zigzagPivots.unshift(pivot, this.numberOfPivots)
+    this
+
+method addnewpivot(Zigzag this, Pivot pivot, PivotCandle candle, array<string> indicatorNames, array<Pivot> components = na) =>
+    pivot.update(candle, indicatorNames)
+    this.addnewpivot(pivot, components)
+
+method calculate(Zigzag this, array<float> ohlc, matrix<float> indicators, array<string> indicatorNames, int ltfHighTime = time, int ltfLowTime = time) =>
+    _ohlc = na(ohlc[this.offset]) ? ohlc : ohlc[this.offset]
+    _indicators = na(indicators[this.offset]) ? indicators : indicators[this.offset]
+    this.init()
+    PivotCandle candle = PivotCandle.new(_ohlc.max(), _ohlc.min(), this.length)
+    candle.init(_indicators)
+    pDir = 1
+    Pivot lastPivot = na
+    this.flags.updateLastPivot := false
+    this.flags.newPivot := false
+    this.flags.doublePivot := false
+    newBar = bar_index - this.offset
+    newbartime = time[this.offset]
+    distanceFromLastPivot = 0
+    var counter = 0
+    var lastCounterBar = 0
+    forceDoublePivot = false
+
+    if this.zigzagPivots.size() > 0
+        lastPivot := this.zigzagPivots.get(0)
+        pDir := int(math.sign(lastPivot.dir))
+        distanceFromLastPivot := newBar - lastPivot.point.index
+
+    if this.zigzagPivots.size() > 1
+        llastPivot = this.zigzagPivots.get(1)
+        llastDir = int(math.sign(llastPivot.dir))
+        forceDoublePivot := pDir == 1 and candle.pLowBar == 0 ? candle.pLow < llastPivot.point.price : pDir == -1 and candle.pHighBar == 0 ? candle.pHigh > llastPivot.point.price : false
+
+    overflow = distanceFromLastPivot >= this.length
+
+    if (pDir == 1 and candle.pHighBar == 0 or pDir == -1 and candle.pLowBar == 0) and this.zigzagPivots.size() >= 1
+        value = pDir == 1 ? candle.pHigh : candle.pLow
+        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
+        inewbartime = pDir == 1 ? ltfHighTime[this.offset] : ltfLowTime[this.offset]
+        removeOld = value * lastPivot.dir >= lastPivot.point.price * lastPivot.dir
+        if removeOld
+            this.flags.updateLastPivot := true
+            this.flags.newPivot := true
+            this.zigzagPivots.shift()
+            newPivotObject = Pivot.new(chart.point.from_index(newBar, value), pDir, micropivots = array.new<Pivot>())
+            newPivotObject.point.time := inewbartime
+            this.addnewpivot(newPivotObject, candle, indicatorNames)
+
+    if pDir == 1 and candle.pLowBar == 0 or pDir == -1 and candle.pHighBar == 0 and (not this.flags.newPivot or forceDoublePivot)
+        value = pDir == 1 ? candle.pLow : candle.pHigh
+        inewbartime = pDir == 1 ? ltfLowTime[this.offset] : ltfHighTime[this.offset]
+        newPivotObject = Pivot.new(chart.point.from_index(newBar, value), -pDir, micropivots = array.new<Pivot>())
+        newPivotObject.point.time := inewbartime
+        this.addnewpivot(newPivotObject, candle, indicatorNames)
+        this.flags.doublePivot := this.flags.newPivot
+        this.flags.newPivot := true
+
+    if overflow and not this.flags.newPivot
+        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
+        ipivotbar = pDir == 1 ? newBar + candle.pLowBar : newBar + candle.pHighBar
+        ipivottime = pDir == 1 ? ltfLowTime[newBar - ipivotbar + this.offset] : ltfHighTime[newBar - ipivotbar + this.offset]
+        iCandle = candle[newBar - ipivotbar]
+        newPivotObject = Pivot.new(chart.point.from_index(ipivotbar, ipivot), -pDir, micropivots = array.new<Pivot>())
+        newPivotObject.point.time := ipivottime
+        this.addnewpivot(newPivotObject, iCandle, indicatorNames)
+        this.flags.newPivot := true
+    this
+    
+
+// =========================================================================
 // 4. TLCS DIVERGENCE SCREENER CODE (Optimized for Main Chart Overlay)
 // =========================================================================
 oscillator(simple string type = 'rsi', simple int length = 14, float source = close, float highSource = high, float lowSource = low) =>
@@ -3588,272 +3858,3 @@ customseries(float source = close, simple CustomSeries maType = CustomSeries.SMA
 method ma(simple CustomSeries maType = CustomSeries.SMA, simple int length, float source = close) =>
     customseries(source, maType, length)
 
-// =========================================================================
-// 2. INLINED 'DRAWING' LIBRARY (Pruned for Line & Label logic)
-// =========================================================================
-type LineProperties
-	string xloc = xloc.bar_index
-	string extend = extend.none
-	color color = color.blue
-	string style = line.style_solid
-	int width = 1
-    bool force_overlay = false
-
-type Line
-	chart.point start
-	chart.point end
-	LineProperties properties
-	line object
-
-method get_price(Line this, int bar) =>
-    stepPerBar = (this.end.price - this.start.price) / (this.end.index - this.start.index)
-    distance = bar - this.start.index
-    this.start.price + distance * stepPerBar
-
-type LabelProperties
-	string xloc = xloc.bar_index
-	string yloc = yloc.price
-	color color = color.blue
-	string style = label.style_none
-	color textcolor = color.black
-	string size = size.normal
-	string textalign = text.align_center
-	string text_font_family = font.family_default
-    bool force_overlay = false
-
-type Label
-	chart.point point
-	string lblText
-	string tooltip = na
-	LabelProperties properties
-	label object
-
-deleteObj(this) =>
-    this.object.delete()
-    this
-
-method delete(Line this) =>
-    deleteObj(this)
-
-method delete(Label this) =>
-    deleteObj(this)
-
-method draw(Line this) =>
-    this.object.delete()
-    this.properties := na(this.properties) ? LineProperties.new() : this.properties
-    if(this.properties.force_overlay)
-        this.object := line.new(this.properties.xloc == xloc.bar_index ? this.start.index : this.start.time, this.start.price, this.properties.xloc == xloc.bar_index ? this.end.index : this.end.time, this.end.price, this.properties.xloc, this.properties.extend, this.properties.color, this.properties.style, this.properties.width, true)
-    else
-        this.object := line.new(this.properties.xloc == xloc.bar_index ? this.start.index : this.start.time, this.start.price, this.properties.xloc == xloc.bar_index ? this.end.index : this.end.time, this.end.price, this.properties.xloc, this.properties.extend, this.properties.color, this.properties.style, this.properties.width)
-    this.object
-
-method draw(Label this) =>
-    this.object.delete()
-    this.properties := na(this.properties) ? LabelProperties.new() : this.properties
-    if(this.properties.force_overlay)
-        this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family, true)
-    else
-        this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family)
-    this.object
-
-
-// =========================================================================
-// 3. INLINED 'ZIGZAG' LIBRARY (Pruned OOP Version)
-// =========================================================================
-type Indicator
-	float indicatorHigh
-	float indicatorLow
-
-type PivotCandle
-	float _high = high
-	float _low = low
-	int length = 5
-	int pHighBar
-	int pLowBar
-	float pHigh
-	float pLow
-	array<Indicator> indicators
-
-type Pivot
-	chart.point point
-	int dir
-	int level = 0
-	int componentIndex = 0
-	int subComponents = 0
-	int microComponents = 1
-	float ratio = 1.0
-	float sizeRatio = 1.0
-	float barRatio = 1.0
-	array<Pivot> subPivots
-	array<Pivot> micropivots
-	array<string> indicatorNames
-	array<float> indicatorValues
-	array<float> indicatorRatios
-
-type ZigzagFlags
-	bool newPivot = false
-	bool doublePivot = false
-	bool updateLastPivot = false
-
-type Zigzag
-	int length = 5
-	int numberOfPivots = 20
-	int offset = 0
-	int level = 0
-	array<Pivot> zigzagPivots
-	ZigzagFlags flags
-	
-method init(array<Indicator> indicators, matrix<float> indicatorValues) =>
-    for i = 0 to na(indicatorValues) or indicatorValues.rows() == 0 ? na : indicatorValues.rows() - 1 by 1
-        iRow = indicatorValues.row(i)
-        Indicator indicator = Indicator.new(iRow.first(), iRow.last())
-        indicators.push(indicator)
-    indicators
-
-method init(PivotCandle candle, matrix<float> indicators = na) =>
-    candle.pHighBar := ta.highestbars(candle._high, candle.length)
-    candle.pLowBar := ta.lowestbars(candle._low, candle.length)
-    candle.pHigh := ta.highest(candle._high, candle.length)
-    candle.pLow := ta.lowest(candle._low, candle.length)
-    candle.indicators := array.new<Indicator>()
-    candle.indicators.init(indicators)
-    candle
-
-method unshift(array<Pivot> arr, Pivot val, int maxItems) =>
-    arr.unshift(val)
-    if arr.size() > maxItems
-        arr.pop()
-
-method update(Pivot this, PivotCandle candle, array<string> indicatorNames) =>
-    dir = math.sign(this.dir)
-    array<float> _indicators = array.new<float>()
-    for indicator in candle.indicators
-        indicatorValue = dir > 0 ? indicator.indicatorHigh : indicator.indicatorLow
-        _indicators.push(indicatorValue)
-    this.indicatorNames := indicatorNames
-    this.indicatorValues := _indicators
-    this.indicatorRatios := array.new<float>()
-    this
-
-method init(Zigzag this) =>
-    if na(this.zigzagPivots)
-        this.zigzagPivots := array.new<Pivot>()
-        this.flags := ZigzagFlags.new()
-        this.flags
-    this
-
-method addnewpivot(Zigzag this, Pivot pivot, array<Pivot> components = na) =>
-    dir = math.sign(pivot.dir)
-    if this.zigzagPivots.size() >= 1
-        lastPivot = this.zigzagPivots.get(0)
-        lastValue = lastPivot.point.price
-        pivot.subComponents := lastPivot.componentIndex - pivot.componentIndex
-        if not na(components) ? components.size() > lastPivot.componentIndex : false
-            pivot.subPivots := components.slice(pivot.componentIndex, lastPivot.componentIndex + 1)
-            microComponents = 0
-            for [index, subPivot] in pivot.subPivots
-                if index != pivot.subPivots.size() - 1
-                    microComponents := microComponents + subPivot.microComponents
-                    if na(subPivot.micropivots) or subPivot.micropivots.size() == 0
-                        pivot.micropivots.push(subPivot)
-                    else
-                        pivot.micropivots.concat(subPivot.micropivots)
-                else if pivot.level == 1
-                    pivot.micropivots.push(subPivot)
-            pivot.microComponents := microComponents
-
-        if math.sign(lastPivot.dir) == math.sign(dir)
-            runtime.error('Direction mismatch')
-        if this.zigzagPivots.size() >= 2
-            llastPivot = this.zigzagPivots.get(1)
-            value = pivot.point.price
-            llastValue = llastPivot.point.price
-            newDir = dir * value > dir * llastValue ? dir * 2 : dir
-            pivot.dir := int(newDir)
-            pivot.ratio := math.round(math.abs(lastValue - value) / math.abs(llastValue - lastValue), 3)
-            pivot.barRatio := math.round(math.abs(lastPivot.point.index - pivot.point.index) / math.abs(llastPivot.point.index - lastPivot.point.index), 3)
-
-            if this.zigzagPivots.size() >= 3
-                lllastPivot = this.zigzagPivots.get(2)
-                lllastValue = lllastPivot.point.price
-                pivot.sizeRatio := math.round(math.abs(lastValue - value) / math.abs(lllastValue - llastValue), 3)
-
-            llastIndicators = llastPivot.indicatorValues
-            indicators = pivot.indicatorValues
-            lastIndicators = lastPivot.indicatorValues
-            pivot.indicatorRatios.clear()
-            for [index, indicatorValue] in indicators
-                lastIndicatorValue = lastIndicators.get(index)
-                llastIndicatorValue = llastIndicators.get(index)
-                indicatorRatio = math.round(math.abs(lastIndicatorValue - indicatorValue) / math.abs(llastIndicatorValue - lastIndicatorValue), 3)
-                pivot.indicatorRatios.push(indicatorRatio)
-    this.zigzagPivots.unshift(pivot, this.numberOfPivots)
-    this
-
-method addnewpivot(Zigzag this, Pivot pivot, PivotCandle candle, array<string> indicatorNames, array<Pivot> components = na) =>
-    pivot.update(candle, indicatorNames)
-    this.addnewpivot(pivot, components)
-
-method calculate(Zigzag this, array<float> ohlc, matrix<float> indicators, array<string> indicatorNames, int ltfHighTime = time, int ltfLowTime = time) =>
-    _ohlc = na(ohlc[this.offset]) ? ohlc : ohlc[this.offset]
-    _indicators = na(indicators[this.offset]) ? indicators : indicators[this.offset]
-    this.init()
-    PivotCandle candle = PivotCandle.new(_ohlc.max(), _ohlc.min(), this.length)
-    candle.init(_indicators)
-    pDir = 1
-    Pivot lastPivot = na
-    this.flags.updateLastPivot := false
-    this.flags.newPivot := false
-    this.flags.doublePivot := false
-    newBar = bar_index - this.offset
-    newbartime = time[this.offset]
-    distanceFromLastPivot = 0
-    var counter = 0
-    var lastCounterBar = 0
-    forceDoublePivot = false
-
-    if this.zigzagPivots.size() > 0
-        lastPivot := this.zigzagPivots.get(0)
-        pDir := int(math.sign(lastPivot.dir))
-        distanceFromLastPivot := newBar - lastPivot.point.index
-
-    if this.zigzagPivots.size() > 1
-        llastPivot = this.zigzagPivots.get(1)
-        llastDir = int(math.sign(llastPivot.dir))
-        forceDoublePivot := pDir == 1 and candle.pLowBar == 0 ? candle.pLow < llastPivot.point.price : pDir == -1 and candle.pHighBar == 0 ? candle.pHigh > llastPivot.point.price : false
-
-    overflow = distanceFromLastPivot >= this.length
-
-    if (pDir == 1 and candle.pHighBar == 0 or pDir == -1 and candle.pLowBar == 0) and this.zigzagPivots.size() >= 1
-        value = pDir == 1 ? candle.pHigh : candle.pLow
-        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
-        inewbartime = pDir == 1 ? ltfHighTime[this.offset] : ltfLowTime[this.offset]
-        removeOld = value * lastPivot.dir >= lastPivot.point.price * lastPivot.dir
-        if removeOld
-            this.flags.updateLastPivot := true
-            this.flags.newPivot := true
-            this.zigzagPivots.shift()
-            newPivotObject = Pivot.new(chart.point.from_index(newBar, value), pDir, micropivots = array.new<Pivot>())
-            newPivotObject.point.time := inewbartime
-            this.addnewpivot(newPivotObject, candle, indicatorNames)
-
-    if pDir == 1 and candle.pLowBar == 0 or pDir == -1 and candle.pHighBar == 0 and (not this.flags.newPivot or forceDoublePivot)
-        value = pDir == 1 ? candle.pLow : candle.pHigh
-        inewbartime = pDir == 1 ? ltfLowTime[this.offset] : ltfHighTime[this.offset]
-        newPivotObject = Pivot.new(chart.point.from_index(newBar, value), -pDir, micropivots = array.new<Pivot>())
-        newPivotObject.point.time := inewbartime
-        this.addnewpivot(newPivotObject, candle, indicatorNames)
-        this.flags.doublePivot := this.flags.newPivot
-        this.flags.newPivot := true
-
-    if overflow and not this.flags.newPivot
-        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
-        ipivotbar = pDir == 1 ? newBar + candle.pLowBar : newBar + candle.pHighBar
-        ipivottime = pDir == 1 ? ltfLowTime[newBar - ipivotbar + this.offset] : ltfHighTime[newBar - ipivotbar + this.offset]
-        iCandle = candle[newBar - ipivotbar]
-        newPivotObject = Pivot.new(chart.point.from_index(ipivotbar, ipivot), -pDir, micropivots = array.new<Pivot>())
-        newPivotObject.point.time := ipivottime
-        this.addnewpivot(newPivotObject, iCandle, indicatorNames)
-        this.flags.newPivot := true
-    this
-    
