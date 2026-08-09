@@ -1,5 +1,5 @@
 //@version=6
-indicator("TLCS Dashboards - 4 Commodities - Unified", overlay=true, max_labels_count=500)
+indicator("TLCS Dashboards - 4 Commodities - Blueprints", overlay=true, max_labels_count=500)
 
 // ---------------------------- SHARED SETTINGS ----------------------------
 gAlerts = "Alerts & Webhook"
@@ -10,7 +10,7 @@ adrLen = input.int(10, "ATR Lookback (bars)", minval=2, group=gShared)
 
 gAcc = "Accumulation / Distribution"
 accLen = input.int(20, "Accumulation Lookback", minval=5, group=gAcc)
-accMaxRangeMult = input.float(3.0, "Max Range vs ATR (x)", step=0.1, group=gAcc, tooltip="The total range over the lookback period must be <= this multiple of the ADR")
+accMaxRangeMult = input.float(3.0, "Max Range vs ATR (x)", step=0.1, group=gAcc)
 
 gRej1 = "Rejection Day — Range"
 adrMultMin = input.float(1.25, "Min Range vs ATR (x)", step=0.05, group=gRej1)
@@ -90,7 +90,6 @@ u4 = input.symbol("COMEX:SI1!", "Futures 4 (Silver)", group=gCommodities)
 
 // ---------------------------- SEQUENCE & SIGNAL CALC ----------------------------
 f_calc() =>
-    // existing sequence math...
     rng    = high - low
     body   = math.abs(close - open)
     upWick = high - math.max(open, close)
@@ -223,41 +222,6 @@ f_calc() =>
     prevActiveDayBear := bearRej or bearSrdSignal or unifiedBearAbs or fnhSignal or bearFailedBreakout or bearRetestAfterSrd
 
 
-    // --- TLCS SIGNALS LOGIC (Extracted from Live Alerts) ---
-    // EMA Logic
-    fPivot = (high + low + close) / 3
-    fFastEMA1 = 5
-    fSlowEMA1 = 13
-    fPivotEMAF1 = ta.ema(fPivot, fFastEMA1)
-    fPivotEMAF2 = ta.ema(fPivotEMAF1, fFastEMA1)
-    fPivotEMAS1 = ta.ema(fPivot, fSlowEMA1)
-    fPivotEMAS2 = ta.ema(fPivotEMAS1, fSlowEMA1)
-    PDEMAF = fPivotEMAF1 * 2 - fPivotEMAF2
-    PDEMAS = fPivotEMAS1 * 2 - fPivotEMAS2
-    fPivotPDEMAF = ta.ema(PDEMAF, fFastEMA1)
-    fPivotPDEMAS = ta.ema(PDEMAS, fSlowEMA1)
-    fShortEMA = ta.ema(fPivot, 13)
-    fMedEMA = ta.ema(fPivot, 32)
-    
-    // MACD / STEP LOGIC
-    upper = ta.highest(92)
-    lower = ta.lowest(92)
-    out = 100 * (close - upper) / (upper - lower)
-    m0 = ta.ema(out, 21)
-    m10 = ta.sma(out, 96)
-    
-    len14 = 14
-    up14 = ta.change(high)
-    down14 = -ta.change(low)
-    plusDM = na(up14) ? na : up14 > down14 and up14 > 0 ? up14 : 0
-    minusDM = na(down14) ? na : down14 > up14 and down14 > 0 ? down14 : 0
-    trur = ta.rma(ta.tr, len14)
-    plus = fixnan(100 * ta.rma(plusDM, len14) / trur)
-    minus = fixnan(100 * ta.rma(minusDM, len14) / trur)
-
-    GREENZONE = (plus > minus) and (m0 > m10)
-    REDZONE = (minus > plus) and (m0 < m10)
-
     // REVERSALS MATH
     pivotlbar = 10
     highleftempty = ta.pivothigh(pivotlbar, 0)
@@ -270,6 +234,24 @@ f_calc() =>
 
     Wlong = close > open and open - low >= (close - open) * wick_multiplier and high - close <= (high - low) * body_percentage or close < open and close - low >= (open - close) * wick_multiplier and high - close <= (high - low) * body_percentage or close == open and close != high and high - low >= (high - close) * wick_multiplier and high - close <= (high - low) * body_percentage or open == high and close == high and high - low >= ta.sma(high - low, 50)
     Wshort = close < open and high - open >= (open - close) * wick_multiplier and close - low <= (high - low) * body_percentage or close > open and high - close >= (close - open) * wick_multiplier and close - low <= (high - low) * body_percentage or close == open and close != low and high - low >= (close - low) * wick_multiplier and close - low <= (high - low) * body_percentage or open == low and close == low and high - low >= ta.sma(high - low, 50)
+
+    upperLine = ta.highest(92)
+    lowerLine = ta.lowest(92)
+    outLine = 100 * (close - upperLine) / (upperLine - lowerLine)
+    m0 = ta.ema(outLine, 21)
+    m10 = ta.sma(outLine, 96)
+
+    len = 14
+    upM = ta.change(high)
+    downM = -ta.change(low)
+    plusDM = na(upM) ? na : (upM > downM and upM > 0 ? upM : 0)
+    minusDM = na(downM) ? na : (downM > upM and downM > 0 ? downM : 0)
+    trur = ta.rma(ta.tr, len)
+    plus = fixnan(100 * ta.rma(plusDM, len) / trur)
+    minus = fixnan(100 * ta.rma(minusDM, len) / trur)
+
+    GREENZONE = (plus > minus) and (m0 > m10)
+    REDZONE = (minus > plus) and (m0 < m10)
 
     Wlongsig = GREENZONE and bool(lowleftempty) and L01 and Wlong and high - low >= WAverageCandle * WBarMultiplier
     Wshortsig = REDZONE and bool(highleftempty) and L01 and Wshort and high - low >= WAverageCandle * WBarMultiplier
@@ -290,37 +272,16 @@ f_calc() =>
     Dlongsig = GREENZONE and bool(lowleftempty) and L04 and Dlong and high - low >= WAverageCandle * DBarMultiplier
     Dshortsig = REDZONE and bool(highleftempty) and L04 and Dshort and high - low >= WAverageCandle * DBarMultiplier
 
-    // SIGNAL MATH - Using simple representations due to compilation limits inside request.security on massive ZigZag divergence arrays
-    // A simplified Missile proxy using the engine variables
-    RisingUp = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10)
-    FallingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10)
-    
-    R_up = RisingUp and close > open
-    R_dn = FallingDown and close < open
-    
-    // Using simple proxies for Bounce and Signals
-    MissileBuy = R_up and fShortEMA > fMedEMA and close > fMedEMA
-    MissileSell = R_dn and fShortEMA < fMedEMA and close < fMedEMA
-    
-    ScalpBuy = RisingUp and close > open and ta.crossover(fShortEMA, fMedEMA)
-    ScalpSell = FallingDown and close < open and ta.crossunder(fShortEMA, fMedEMA)
-    
-    LightningBuy = RisingUp and ta.crossover(m0, m10)
-    LightningSell = FallingDown and ta.crossunder(m0, m10)
-    
-    CallBuy = RisingUp and close > open and ta.crossover(close, fMedEMA)
-    PutSell = FallingDown and close < open and ta.crossunder(close, fMedEMA)
-    
-    [bullAcc, bearDist, bullRej, bearRej, bullSrdSignal, bearSrdSignal, odBull, odBear, bullFade_final, bearFade_final, unifiedBullAbs, unifiedBearAbs, fnlSignal, fnhSignal, bullFailedBreakout, bearFailedBreakout, bullRetestAfterSrd, bearRetestAfterSrd, bullCont, bearCont, Wlongsig, Wshortsig, Elongsig, Eshortsig, Olongsig, Oshortsig, Dlongsig, Dshortsig, MissileBuy, MissileSell, ScalpBuy, ScalpSell, LightningBuy, LightningSell, CallBuy, PutSell]
+    [bullAcc, bearDist, bullRej, bearRej, bullSrdSignal, bearSrdSignal, odBull, odBear, bullFade_final, bearFade_final, unifiedBullAbs, unifiedBearAbs, fnlSignal, fnhSignal, bullFailedBreakout, bearFailedBreakout, bullRetestAfterSrd, bearRetestAfterSrd, bullCont, bearCont, Wlongsig, Wshortsig, Elongsig, Eshortsig, Olongsig, Oshortsig, Dlongsig, Dshortsig]
 
 // ---------------------------- 4 SECURITY CALLS ----------------------------
-[u1acB, u1acS, u1rB, u1rS, u1sB, u1sS, u1odB, u1odS, u1fdB, u1fdS, u1aB, u1aS, u1fB, u1fS, u1fbB, u1fbS, u1rtB, u1rtS, u1cB, u1cS, u1wB, u1wS, u1eB, u1eS, u1oB, u1oS, u1dB, u1dS, u1mB, u1mS, u1scB, u1scS, u1lB, u1lS, u1clB, u1ptS] = request.security(u1, "D", f_calc())
-[u2acB, u2acS, u2rB, u2rS, u2sB, u2sS, u2odB, u2odS, u2fdB, u2fdS, u2aB, u2aS, u2fB, u2fS, u2fbB, u2fbS, u2rtB, u2rtS, u2cB, u2cS, u2wB, u2wS, u2eB, u2eS, u2oB, u2oS, u2dB, u2dS, u2mB, u2mS, u2scB, u2scS, u2lB, u2lS, u2clB, u2ptS] = request.security(u2, "D", f_calc())
-[u3acB, u3acS, u3rB, u3rS, u3sB, u3sS, u3odB, u3odS, u3fdB, u3fdS, u3aB, u3aS, u3fB, u3fS, u3fbB, u3fbS, u3rtB, u3rtS, u3cB, u3cS, u3wB, u3wS, u3eB, u3eS, u3oB, u3oS, u3dB, u3dS, u3mB, u3mS, u3scB, u3scS, u3lB, u3lS, u3clB, u3ptS] = request.security(u3, "D", f_calc())
-[u4acB, u4acS, u4rB, u4rS, u4sB, u4sS, u4odB, u4odS, u4fdB, u4fdS, u4aB, u4aS, u4fB, u4fS, u4fbB, u4fbS, u4rtB, u4rtS, u4cB, u4cS, u4wB, u4wS, u4eB, u4eS, u4oB, u4oS, u4dB, u4dS, u4mB, u4mS, u4scB, u4scS, u4lB, u4lS, u4clB, u4ptS] = request.security(u4, "D", f_calc())
+[u1acB, u1acS, u1rB, u1rS, u1sB, u1sS, u1odB, u1odS, u1fdB, u1fdS, u1aB, u1aS, u1fB, u1fS, u1fbB, u1fbS, u1rtB, u1rtS, u1cB, u1cS, u1wB, u1wS, u1eB, u1eS, u1oB, u1oS, u1dB, u1dS] = request.security(u1, "D", f_calc())
+[u2acB, u2acS, u2rB, u2rS, u2sB, u2sS, u2odB, u2odS, u2fdB, u2fdS, u2aB, u2aS, u2fB, u2fS, u2fbB, u2fbS, u2rtB, u2rtS, u2cB, u2cS, u2wB, u2wS, u2eB, u2eS, u2oB, u2oS, u2dB, u2dS] = request.security(u2, "D", f_calc())
+[u3acB, u3acS, u3rB, u3rS, u3sB, u3sS, u3odB, u3odS, u3fdB, u3fdS, u3aB, u3aS, u3fB, u3fS, u3fbB, u3fbS, u3rtB, u3rtS, u3cB, u3cS, u3wB, u3wS, u3eB, u3eS, u3oB, u3oS, u3dB, u3dS] = request.security(u3, "D", f_calc())
+[u4acB, u4acS, u4rB, u4rS, u4sB, u4sS, u4odB, u4odS, u4fdB, u4fdS, u4aB, u4aS, u4fB, u4fS, u4fbB, u4fbS, u4rtB, u4rtS, u4cB, u4cS, u4wB, u4wS, u4eB, u4eS, u4oB, u4oS, u4dB, u4dS] = request.security(u4, "D", f_calc())
 
-// ---------------------------- COLLECT RESULTS INTO ARRAYS ----------------------------
-symArr     = array.new_string()
+// Arrays
+symArr = array.new_string()
 bullAccArr = array.new_bool()
 bearAccArr = array.new_bool()
 bullRejArr = array.new_bool()
@@ -341,7 +302,6 @@ bullRtArr  = array.new_bool()
 bearRtArr  = array.new_bool()
 bullContArr= array.new_bool()
 bearContArr= array.new_bool()
-// Reversals
 wBArr = array.new_bool()
 wSArr = array.new_bool()
 eBArr = array.new_bool()
@@ -350,17 +310,8 @@ oBArr = array.new_bool()
 oSArr = array.new_bool()
 dBArr = array.new_bool()
 dSArr = array.new_bool()
-// Signals
-mBArr = array.new_bool()
-mSArr = array.new_bool()
-scBArr = array.new_bool()
-scSArr = array.new_bool()
-lBArr = array.new_bool()
-lSArr = array.new_bool()
-clBArr = array.new_bool()
-ptSArr = array.new_bool()
 
-f_add(sym, acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cB, cS, wB, wS, eB, eS, oB, oS, dB, dS, mB, mS, scB, scS, lB, lS, clB, ptS) =>
+f_add(sym, acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cB, cS, wB, wS, eB, eS, oB, oS, dB, dS) =>
     if sym != ""
         array.push(symArr, sym)
         array.push(bullAccArr, acB)
@@ -391,111 +342,148 @@ f_add(sym, acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fb
         array.push(oSArr, oS)
         array.push(dBArr, dB)
         array.push(dSArr, dS)
-        array.push(mBArr, mB)
-        array.push(mSArr, mS)
-        array.push(scBArr, scB)
-        array.push(scSArr, scS)
-        array.push(lBArr, lB)
-        array.push(lSArr, lS)
-        array.push(clBArr, clB)
-        array.push(ptSArr, ptS)
 
-f_add(u1, u1acB, u1acS, u1rB, u1rS, u1sB, u1sS, u1odB, u1odS, u1fdB, u1fdS, u1aB, u1aS, u1fB, u1fS, u1fbB, u1fbS, u1rtB, u1rtS, u1cB, u1cS, u1wB, u1wS, u1eB, u1eS, u1oB, u1oS, u1dB, u1dS, u1mB, u1mS, u1scB, u1scS, u1lB, u1lS, u1clB, u1ptS)
-f_add(u2, u2acB, u2acS, u2rB, u2rS, u2sB, u2sS, u2odB, u2odS, u2fdB, u2fdS, u2aB, u2aS, u2fB, u2fS, u2fbB, u2fbS, u2rtB, u2rtS, u2cB, u2cS, u2wB, u2wS, u2eB, u2eS, u2oB, u2oS, u2dB, u2dS, u2mB, u2mS, u2scB, u2scS, u2lB, u2lS, u2clB, u2ptS)
-f_add(u3, u3acB, u3acS, u3rB, u3rS, u3sB, u3sS, u3odB, u3odS, u3fdB, u3fdS, u3aB, u3aS, u3fB, u3fS, u3fbB, u3fbS, u3rtB, u3rtS, u3cB, u3cS, u3wB, u3wS, u3eB, u3eS, u3oB, u3oS, u3dB, u3dS, u3mB, u3mS, u3scB, u3scS, u3lB, u3lS, u3clB, u3ptS)
-f_add(u4, u4acB, u4acS, u4rB, u4rS, u4sB, u4sS, u4odB, u4odS, u4fdB, u4fdS, u4aB, u4aS, u4fB, u4fS, u4fbB, u4fbS, u4rtB, u4rtS, u4cB, u4cS, u4wB, u4wS, u4eB, u4eS, u4oB, u4oS, u4dB, u4dS, u4mB, u4mS, u4scB, u4scS, u4lB, u4lS, u4clB, u4ptS)
+f_add(u1, u1acB, u1acS, u1rB, u1rS, u1sB, u1sS, u1odB, u1odS, u1fdB, u1fdS, u1aB, u1aS, u1fB, u1fS, u1fbB, u1fbS, u1rtB, u1rtS, u1cB, u1cS, u1wB, u1wS, u1eB, u1eS, u1oB, u1oS, u1dB, u1dS)
+f_add(u2, u2acB, u2acS, u2rB, u2rS, u2sB, u2sS, u2odB, u2odS, u2fdB, u2fdS, u2aB, u2aS, u2fB, u2fS, u2fbB, u2fbS, u2rtB, u2rtS, u2cB, u2cS, u2wB, u2wS, u2eB, u2eS, u2oB, u2oS, u2dB, u2dS)
+f_add(u3, u3acB, u3acS, u3rB, u3rS, u3sB, u3sS, u3odB, u3odS, u3fdB, u3fdS, u3aB, u3aS, u3fB, u3fS, u3fbB, u3fbS, u3rtB, u3rtS, u3cB, u3cS, u3wB, u3wS, u3eB, u3eS, u3oB, u3oS, u3dB, u3dS)
+f_add(u4, u4acB, u4acS, u4rB, u4rS, u4sB, u4sS, u4odB, u4odS, u4fdB, u4fdS, u4aB, u4aS, u4fB, u4fS, u4fbB, u4fbS, u4rtB, u4rtS, u4cB, u4cS, u4wB, u4wS, u4eB, u4eS, u4oB, u4oS, u4dB, u4dS)
 
-// ---------------------------- DASHBOARD TABLE (UNIFIED WITH HIDDEN ROWS) ----------------------------
 if barstate.islast
     tablePos = tablePosStr == "Middle Left" ? position.middle_left : tablePosStr == "Top Left" ? position.top_left : tablePosStr == "Bottom Left" ? position.bottom_left : tablePosStr == "Top Right" ? position.top_right : tablePosStr == "Bottom Right" ? position.bottom_right : position.middle_right
     txtSize  = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
 
-    // Lists
+    string r_acB = "", string r_acS = ""
+    string r_rB = "",  string r_rS = ""
+    string r_sB = "",  string r_sS = ""
+    string r_odB = "", string r_odS = ""
+    string r_fdB = "", string r_fdS = ""
+    string r_aB = "",  string r_aS = ""
+    string r_fB = "",  string r_fS = ""
+    string r_fbB = "", string r_fbS = ""
+    string r_rtB = "", string r_rtS = ""
+    string r_cB = "",  string r_cS = ""
     string r_wB = "", string r_wS = ""
     string r_eB = "", string r_eS = ""
     string r_oB = "", string r_oS = ""
     string r_dB = "", string r_dS = ""
-    string r_mB = "", string r_mS = ""
-    string r_scB = "", string r_scS = ""
-    string r_lB = "", string r_lS = ""
-    string r_clB = "", string r_ptS = ""
     
-    // Counts
+    int c_acB = 0, int c_acS = 0
+    int c_rB = 0,  int c_rS = 0
+    int c_sB = 0,  int c_sS = 0
+    int c_odB = 0, int c_odS = 0
+    int c_fdB = 0, int c_fdS = 0
+    int c_aB = 0,  int c_aS = 0
+    int c_fB = 0,  int c_fS = 0
+    int c_fbB = 0, int c_fbS = 0
+    int c_rtB = 0, int c_rtS = 0
+    int c_cB = 0,  int c_cS = 0
     int c_wB = 0, int c_wS = 0
     int c_eB = 0, int c_eS = 0
     int c_oB = 0, int c_oS = 0
     int c_dB = 0, int c_dS = 0
-    int c_mB = 0, int c_mS = 0
-    int c_scB = 0, int c_scS = 0
-    int c_lB = 0, int c_lS = 0
-    int c_clB = 0, int c_ptS = 0
-    
-    // Process Arrays
+
     for idx = 0 to array.size(symArr) - 1
         sym = array.get(symArr, idx)
         splitSym = str.split(sym, ":")
         cleanSym = array.size(splitSym) > 1 ? array.get(splitSym, 1) : sym
         
+        if array.get(bullRejArr, idx)
+            r_rB += (r_rB == "" ? "" : ", ") + cleanSym
+            c_rB += 1
+        if array.get(bearRejArr, idx)
+            r_rS += (r_rS == "" ? "" : ", ") + cleanSym
+            c_rS += 1
+        if array.get(bullSrdArr, idx)
+            r_sB += (r_sB == "" ? "" : ", ") + cleanSym
+            c_sB += 1
+        if array.get(bearSrdArr, idx)
+            r_sS += (r_sS == "" ? "" : ", ") + cleanSym
+            c_sS += 1
+        if array.get(bullAbsArr, idx)
+            r_aB += (r_aB == "" ? "" : ", ") + cleanSym
+            c_aB += 1
+        if array.get(bearAbsArr, idx)
+            r_aS += (r_aS == "" ? "" : ", ") + cleanSym
+            c_aS += 1
+        if array.get(bullFnlArr, idx)
+            r_fB += (r_fB == "" ? "" : ", ") + cleanSym
+            c_fB += 1
+        if array.get(bearFnhArr, idx)
+            r_fS += (r_fS == "" ? "" : ", ") + cleanSym
+            c_fS += 1
+        if array.get(bullOdArr, idx)
+            r_odB += (r_odB == "" ? "" : ", ") + cleanSym
+            c_odB += 1
+        if array.get(bearOdArr, idx)
+            r_odS += (r_odS == "" ? "" : ", ") + cleanSym
+            c_odS += 1
+        if array.get(bullFbArr, idx)
+            r_fbB += (r_fbB == "" ? "" : ", ") + cleanSym
+            c_fbB += 1
+        if array.get(bearFbArr, idx)
+            r_fbS += (r_fbS == "" ? "" : ", ") + cleanSym
+            c_fbS += 1
+        if array.get(bullRtArr, idx)
+            r_rtB += (r_rtB == "" ? "" : ", ") + cleanSym
+            c_rtB += 1
+        if array.get(bearRtArr, idx)
+            r_rtS += (r_rtS == "" ? "" : ", ") + cleanSym
+            c_rtS += 1
+        if array.get(bullFadeArr, idx)
+            r_fdB += (r_fdB == "" ? "" : ", ") + cleanSym
+            c_fdB += 1
+        if array.get(bearFadeArr, idx)
+            r_fdS += (r_fdS == "" ? "" : ", ") + cleanSym
+            c_fdS += 1
+        if array.get(bullAccArr, idx)
+            r_acB += (r_acB == "" ? "" : ", ") + cleanSym
+            c_acB += 1
+        if array.get(bearAccArr, idx)
+            r_acS += (r_acS == "" ? "" : ", ") + cleanSym
+            c_acS += 1
+        if array.get(bullContArr, idx)
+            r_cB += (r_cB == "" ? "" : ", ") + cleanSym
+            c_cB += 1
+        if array.get(bearContArr, idx)
+            r_cS += (r_cS == "" ? "" : ", ") + cleanSym
+            c_cS += 1
+            
+        // Reversals
         if array.get(wBArr, idx)
             r_wB += (r_wB == "" ? "" : ", ") + cleanSym
             c_wB += 1
         if array.get(wSArr, idx)
             r_wS += (r_wS == "" ? "" : ", ") + cleanSym
             c_wS += 1
-            
         if array.get(eBArr, idx)
             r_eB += (r_eB == "" ? "" : ", ") + cleanSym
             c_eB += 1
         if array.get(eSArr, idx)
             r_eS += (r_eS == "" ? "" : ", ") + cleanSym
             c_eS += 1
-            
         if array.get(oBArr, idx)
             r_oB += (r_oB == "" ? "" : ", ") + cleanSym
             c_oB += 1
         if array.get(oSArr, idx)
             r_oS += (r_oS == "" ? "" : ", ") + cleanSym
             c_oS += 1
-            
         if array.get(dBArr, idx)
             r_dB += (r_dB == "" ? "" : ", ") + cleanSym
             c_dB += 1
         if array.get(dSArr, idx)
             r_dS += (r_dS == "" ? "" : ", ") + cleanSym
             c_dS += 1
-            
-        if array.get(mBArr, idx)
-            r_mB += (r_mB == "" ? "" : ", ") + cleanSym
-            c_mB += 1
-        if array.get(mSArr, idx)
-            r_mS += (r_mS == "" ? "" : ", ") + cleanSym
-            c_mS += 1
-            
-        if array.get(scBArr, idx)
-            r_scB += (r_scB == "" ? "" : ", ") + cleanSym
-            c_scB += 1
-        if array.get(scSArr, idx)
-            r_scS += (r_scS == "" ? "" : ", ") + cleanSym
-            c_scS += 1
-            
-        if array.get(lBArr, idx)
-            r_lB += (r_lB == "" ? "" : ", ") + cleanSym
-            c_lB += 1
-        if array.get(lSArr, idx)
-            r_lS += (r_lS == "" ? "" : ", ") + cleanSym
-            c_lS += 1
-            
-        if array.get(clBArr, idx)
-            r_clB += (r_clB == "" ? "" : ", ") + cleanSym
-            c_clB += 1
-        if array.get(ptSArr, idx)
-            r_ptS += (r_ptS == "" ? "" : ", ") + cleanSym
-            c_ptS += 1
 
-    int activeRows = (c_mB > 0 or c_mS > 0 ? 1 : 0) + 
-                     (c_scB > 0 or c_scS > 0 ? 1 : 0) + 
-                     (c_lB > 0 or c_lS > 0 ? 1 : 0) + 
-                     (c_clB > 0 or c_ptS > 0 ? 1 : 0) + 
+    int activeRows = (c_rB > 0 or c_rS > 0 ? 1 : 0) + 
+                     (c_sB > 0 or c_sS > 0 ? 1 : 0) + 
+                     (c_aB > 0 or c_aS > 0 ? 1 : 0) + 
+                     (c_fB > 0 or c_fS > 0 ? 1 : 0) + 
+                     (c_odB > 0 or c_odS > 0 ? 1 : 0) + 
+                     (c_fbB > 0 or c_fbS > 0 ? 1 : 0) + 
+                     (c_rtB > 0 or c_rtS > 0 ? 1 : 0) + 
+                     (c_fdB > 0 or c_fdS > 0 ? 1 : 0) + 
+                     (c_acB > 0 or c_acS > 0 ? 1 : 0) + 
+                     (c_cB > 0 or c_cS > 0 ? 1 : 0) + 
                      (c_wB > 0 or c_wS > 0 ? 1 : 0) + 
                      (c_eB > 0 or c_eS > 0 ? 1 : 0) + 
                      (c_oB > 0 or c_oS > 0 ? 1 : 0) + 
@@ -503,58 +491,94 @@ if barstate.islast
 
     dash1 = table.new(tablePos, 3, math.max(1, activeRows) + 1, border_width=1, frame_width=1, frame_color=color.rgb(12, 246, 250))
     table.merge_cells(dash1, 0, 0, 2, 0)
-    table.cell(dash1, 0, 0, "TLCS SIGNALS & REVERSALS (4)", bgcolor=color.new(#116ac2, 0), text_color=color.rgb(12, 246, 250), text_size=txtSize)
+    table.cell(dash1, 0, 0, "TLCS BLUEPRINTS & REVERSALS (4)", bgcolor=color.new(#116ac2, 0), text_color=color.rgb(12, 246, 250), text_size=txtSize)
 
     int rIdx = 1
 
-    if c_mB > 0 or c_mS > 0
-        table.cell(dash1, 0, rIdx, "Missile", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
-        table.cell(dash1, 1, rIdx, c_mB > 0 ? "▲ " + str.tostring(c_mB) + "\n" + r_mB : "-", bgcolor=c_mB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_mB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
-        table.cell(dash1, 2, rIdx, c_mS > 0 ? "▼ " + str.tostring(c_mS) + "\n" + r_mS : "-", bgcolor=c_mS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_mS > 0 ? color.red : color.gray, text_size=txtSize)
+    if c_rB > 0 or c_rS > 0
+        table.cell(dash1, 0, rIdx, "Rejection Day", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 1, rIdx, c_rB > 0 ? "▲ " + str.tostring(c_rB) + "\n" + r_rB : "-", bgcolor=c_rB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_rB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rIdx, c_rS > 0 ? "▼ " + str.tostring(c_rS) + "\n" + r_rS : "-", bgcolor=c_rS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_rS > 0 ? color.red : color.gray, text_size=txtSize)
         rIdx += 1
 
-    if c_scB > 0 or c_scS > 0
-        table.cell(dash1, 0, rIdx, "Scalp", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
-        table.cell(dash1, 1, rIdx, c_scB > 0 ? "▲ " + str.tostring(c_scB) + "\n" + r_scB : "-", bgcolor=c_scB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_scB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
-        table.cell(dash1, 2, rIdx, c_scS > 0 ? "▼ " + str.tostring(c_scS) + "\n" + r_scS : "-", bgcolor=c_scS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_scS > 0 ? color.red : color.gray, text_size=txtSize)
+    if c_sB > 0 or c_sS > 0
+        table.cell(dash1, 0, rIdx, "Stop Run Day", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 1, rIdx, c_sB > 0 ? "▲ " + str.tostring(c_sB) + "\n" + r_sB : "-", bgcolor=c_sB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_sB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rIdx, c_sS > 0 ? "▼ " + str.tostring(c_sS) + "\n" + r_sS : "-", bgcolor=c_sS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_sS > 0 ? color.red : color.gray, text_size=txtSize)
         rIdx += 1
 
-    if c_lB > 0 or c_lS > 0
-        table.cell(dash1, 0, rIdx, "Lightning", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
-        table.cell(dash1, 1, rIdx, c_lB > 0 ? "▲ " + str.tostring(c_lB) + "\n" + r_lB : "-", bgcolor=c_lB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_lB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
-        table.cell(dash1, 2, rIdx, c_lS > 0 ? "▼ " + str.tostring(c_lS) + "\n" + r_lS : "-", bgcolor=c_lS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_lS > 0 ? color.red : color.gray, text_size=txtSize)
+    if c_aB > 0 or c_aS > 0
+        table.cell(dash1, 0, rIdx, "Absorption Day", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 1, rIdx, c_aB > 0 ? "▲ " + str.tostring(c_aB) + "\n" + r_aB : "-", bgcolor=c_aB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_aB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rIdx, c_aS > 0 ? "▼ " + str.tostring(c_aS) + "\n" + r_aS : "-", bgcolor=c_aS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_aS > 0 ? color.red : color.gray, text_size=txtSize)
+        rIdx += 1
+        
+    if c_fB > 0 or c_fS > 0
+        table.cell(dash1, 0, rIdx, "Failed New Low/High", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 1, rIdx, c_fB > 0 ? "▲ " + str.tostring(c_fB) + "\n" + r_fB : "-", bgcolor=c_fB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_fB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rIdx, c_fS > 0 ? "▼ " + str.tostring(c_fS) + "\n" + r_fS : "-", bgcolor=c_fS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_fS > 0 ? color.red : color.gray, text_size=txtSize)
         rIdx += 1
 
-    if c_clB > 0 or c_ptS > 0
-        table.cell(dash1, 0, rIdx, "Call / Put", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
-        table.cell(dash1, 1, rIdx, c_clB > 0 ? "▲ " + str.tostring(c_clB) + "\n" + r_clB : "-", bgcolor=c_clB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_clB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
-        table.cell(dash1, 2, rIdx, c_ptS > 0 ? "▼ " + str.tostring(c_ptS) + "\n" + r_ptS : "-", bgcolor=c_ptS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_ptS > 0 ? color.red : color.gray, text_size=txtSize)
+    if c_odB > 0 or c_odS > 0
+        table.cell(dash1, 0, rIdx, "Outside Day", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 1, rIdx, c_odB > 0 ? "▲ " + str.tostring(c_odB) + "\n" + r_odB : "-", bgcolor=c_odB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_odB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rIdx, c_odS > 0 ? "▼ " + str.tostring(c_odS) + "\n" + r_odS : "-", bgcolor=c_odS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_odS > 0 ? color.red : color.gray, text_size=txtSize)
+        rIdx += 1
+
+    if c_fbB > 0 or c_fbS > 0
+        table.cell(dash1, 0, rIdx, "Failed Breakout", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 1, rIdx, c_fbB > 0 ? "▲ " + str.tostring(c_fbB) + "\n" + r_fbB : "-", bgcolor=c_fbB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_fbB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rIdx, c_fbS > 0 ? "▼ " + str.tostring(c_fbS) + "\n" + r_fbS : "-", bgcolor=c_fbS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_fbS > 0 ? color.red : color.gray, text_size=txtSize)
+        rIdx += 1
+
+    if c_rtB > 0 or c_rtS > 0
+        table.cell(dash1, 0, rIdx, "Retest", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 1, rIdx, c_rtB > 0 ? "▲ " + str.tostring(c_rtB) + "\n" + r_rtB : "-", bgcolor=c_rtB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_rtB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rIdx, c_rtS > 0 ? "▼ " + str.tostring(c_rtS) + "\n" + r_rtS : "-", bgcolor=c_rtS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_rtS > 0 ? color.red : color.gray, text_size=txtSize)
+        rIdx += 1
+
+    if c_fdB > 0 or c_fdS > 0
+        table.cell(dash1, 0, rIdx, "Fade", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 1, rIdx, c_fdB > 0 ? "▲ " + str.tostring(c_fdB) + "\n" + r_fdB : "-", bgcolor=c_fdB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_fdB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rIdx, c_fdS > 0 ? "▼ " + str.tostring(c_fdS) + "\n" + r_fdS : "-", bgcolor=c_fdS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_fdS > 0 ? color.red : color.gray, text_size=txtSize)
+        rIdx += 1
+
+    if c_acB > 0 or c_acS > 0
+        table.cell(dash1, 0, rIdx, "Acc / Dist", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 1, rIdx, c_acB > 0 ? "▲ " + str.tostring(c_acB) + "\n" + r_acB : "-", bgcolor=c_acB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_acB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rIdx, c_acS > 0 ? "▼ " + str.tostring(c_acS) + "\n" + r_acS : "-", bgcolor=c_acS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_acS > 0 ? color.red : color.gray, text_size=txtSize)
+        rIdx += 1
+
+    if c_cB > 0 or c_cS > 0
+        table.cell(dash1, 0, rIdx, "Continuation", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 1, rIdx, c_cB > 0 ? "▲ " + str.tostring(c_cB) + "\n" + r_cB : "-", bgcolor=c_cB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_cB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
+        table.cell(dash1, 2, rIdx, c_cS > 0 ? "▼ " + str.tostring(c_cS) + "\n" + r_cS : "-", bgcolor=c_cS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_cS > 0 ? color.red : color.gray, text_size=txtSize)
         rIdx += 1
 
     if c_wB > 0 or c_wS > 0
-        table.cell(dash1, 0, rIdx, "Wick Reversal", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash1, 0, rIdx, "Wick Reversal", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
         table.cell(dash1, 1, rIdx, c_wB > 0 ? "▲ " + str.tostring(c_wB) + "\n" + r_wB : "-", bgcolor=c_wB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_wB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
         table.cell(dash1, 2, rIdx, c_wS > 0 ? "▼ " + str.tostring(c_wS) + "\n" + r_wS : "-", bgcolor=c_wS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_wS > 0 ? color.red : color.gray, text_size=txtSize)
         rIdx += 1
 
     if c_eB > 0 or c_eS > 0
-        table.cell(dash1, 0, rIdx, "Extreme Reversal", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash1, 0, rIdx, "Extreme Reversal", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
         table.cell(dash1, 1, rIdx, c_eB > 0 ? "▲ " + str.tostring(c_eB) + "\n" + r_eB : "-", bgcolor=c_eB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_eB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
         table.cell(dash1, 2, rIdx, c_eS > 0 ? "▼ " + str.tostring(c_eS) + "\n" + r_eS : "-", bgcolor=c_eS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_eS > 0 ? color.red : color.gray, text_size=txtSize)
         rIdx += 1
 
     if c_oB > 0 or c_oS > 0
-        table.cell(dash1, 0, rIdx, "Outside Reversal", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash1, 0, rIdx, "Outside Reversal", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
         table.cell(dash1, 1, rIdx, c_oB > 0 ? "▲ " + str.tostring(c_oB) + "\n" + r_oB : "-", bgcolor=c_oB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_oB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
         table.cell(dash1, 2, rIdx, c_oS > 0 ? "▼ " + str.tostring(c_oS) + "\n" + r_oS : "-", bgcolor=c_oS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_oS > 0 ? color.red : color.gray, text_size=txtSize)
         rIdx += 1
 
     if c_dB > 0 or c_dS > 0
-        table.cell(dash1, 0, rIdx, "Doji Reversal", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize)
+        table.cell(dash1, 0, rIdx, "Doji Reversal", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
         table.cell(dash1, 1, rIdx, c_dB > 0 ? "▲ " + str.tostring(c_dB) + "\n" + r_dB : "-", bgcolor=c_dB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_dB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
         table.cell(dash1, 2, rIdx, c_dS > 0 ? "▼ " + str.tostring(c_dS) + "\n" + r_dS : "-", bgcolor=c_dS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_dS > 0 ? color.red : color.gray, text_size=txtSize)
         rIdx += 1
 
     if activeRows == 0
         table.merge_cells(dash1, 0, 1, 2, 1)
-        table.cell(dash1, 0, 1, "No Active Signals Today", bgcolor=color.new(color.gray, 85), text_color=color.gray, text_size=txtSize)
+        table.cell(dash1, 0, 1, "No Active Blueprints Today", bgcolor=color.new(color.gray, 85), text_color=color.gray, text_size=txtSize)

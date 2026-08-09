@@ -1,3 +1,6 @@
+//# TLCS All Signal Alerts (Version 3.12)
+
+
 // © TheLionCapitalsolutions.com and market-store.online 
 
 //@version=6
@@ -153,8 +156,8 @@ tpo_array = array.new_float(21, 0)
 for i = 0 to 20
     array.set(tpo_array, i, f_frequency_of_range(tf_close, session_high - tpo_section_range * i, session_high - tpo_section_range * (i + 1), _safe_counter))
 
-f_get_tpo_count(_tpo_array, _value) =>
-    array.get(_tpo_array, int(_value))
+f_get_tpo_count(_value) =>
+    array.get(tpo_array, int(_value))
 
 
 tpo_sum              = 0.0
@@ -162,7 +165,7 @@ current_poc_position = 0.0
 current_poc_value    = 0.0
 
 for _i = 0 to 20 by 1
-    _get_tpo_value = f_get_tpo_count(tpo_array, _i)
+    _get_tpo_value = f_get_tpo_count(_i)
     tpo_sum := tpo_sum + _get_tpo_value
     if _get_tpo_value >= current_poc_value
         current_poc_position := _i
@@ -179,10 +182,10 @@ current_sum  = current_poc_value
 for _i = 0 to 20 by 1
     if current_sum < tpo_sum * percent_of_tpo
         vah_position := math.max(0,  vah_position - 1)
-        current_sum  := current_sum + f_get_tpo_count(tpo_array, math.round(vah_position))
+        current_sum  := current_sum + f_get_tpo_count(math.round(vah_position))
     if current_sum < tpo_sum * percent_of_tpo
         val_position := math.min(20, val_position + 1)
-        current_sum  := current_sum + f_get_tpo_count(tpo_array, math.round(val_position))
+        current_sum  := current_sum + f_get_tpo_count(math.round(val_position))
 
 vah_value = session_high - tpo_section_range *  vah_position
 val_value = session_high - tpo_section_range * (val_position + 1)
@@ -223,6 +226,7 @@ getPivots(_pivots, _p_labels, _close, _open, _low, _high, _open_curr, _pivot_typ
 
 
     if _pivot_type == 'Traditional'
+        _pivot_p := (_high + _low + _close) / 3
         _pivot_p := (_high + _low + _close) / 3
         _s1 := 2 * _pivot_p - _high
         _r1 := 2 * _pivot_p - _low
@@ -378,6 +382,7 @@ if timeframe.ismonthly
     //
 int x1 = math.max(period_start, time - windowsize1 * dt)
 int x2 = math.min(period_end, time + windowsize2 * dt)
+//
 //
 var float y1 = 0.0
 var float y2 = 0.0
@@ -901,6 +906,7 @@ Lo = low
 Cl = close
 
 //===========================================================================================================================================================
+//===========================================================================================================================================================
 
 mode = input.string(title = 'HTF Method', defval = 'Auto', options = ['Auto', 'User Defined'])
 HTFm = input.timeframe('D', title = 'Time Frame (if HTF Method=User Defined)')
@@ -1343,6 +1349,7 @@ line.delete(line99)
 line99 := line.new(bar_index[1] + 2, DBC, bar_index + 52, DBC, extend = extend.none, color = color.new(cprcolor2, 0))
 
 //========================================
+//========================================
 
 var line YH = na
 var line YL = na
@@ -1569,6 +1576,8 @@ bool emaCanBuy  = Greenzone or not Redzone
 bool emaCanSell = Redzone or not Greenzone
 
 // AST OPTIMIZATION: Extracting repeated string comparisons into single variables
+
+// ---> HERE ARE THE MISSING FUNCTION DEFINITIONS <---
 
 var table perfTablecX = table.new(position.top_right, columns, rows, border_width = 3)
 
@@ -2363,13 +2372,8 @@ var bool         cleanTrendBearish = false
 // ————— Inputs
 
 // 👉 Divergence Exit Settings
-
-ext_bullishDiv       = input.source(close, title="[OSC] Bullish Divergence")
-ext_bullishHiddenDiv = input.source(close, title="[OSC] Bullish Hidden Div")
-ext_bearishDiv       = input.source(close, title="[OSC] Bearish Divergence")
-ext_bearishHiddenDiv = input.source(close, title="[OSC] Bearish Hidden Div")
-
 bool  divExitActiveInput = input.bool(title = 'Enable Divergence Exit', defval = true, group = 'TRADES')
+float extDivSource       = input.source(defval = close, title = 'Oscillator Div Signal', group = 'TRADES')
 
 currentYear = year(timenow)
 currentMonth = month(timenow)
@@ -2481,6 +2485,7 @@ roundUp(number, decimals) =>
     factor = math.pow(10, decimals)
     math.ceil(number * factor) / factor
 
+// ✅ FIXED: Restored tradeDirection parameter. No more guessing from trailing stops!
 // ✅ FIXED: Restored tradeDirection parameter. No more guessing from trailing stops!
 riskToReward(float entryLevel, float slLevel, float tpLevel, string tradeDirection) =>
     bool isLong = str.contains(str.upper(tradeDirection), 'LONG')
@@ -2656,38 +2661,12 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
             profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, isLong_, trade.positionRemaining, false)
             trade.positionRemaining := 0
 
-    // Divergence Exit (V1.1: Hidden Div Disabled + Price Action Confirmation)
-    // ─────────────────────────────────────────────────────────────────────
-    // RULE 1 (OR): Regular Divergence fires NOW → exit immediately
-    //   Regular divergences (Price LL + Osc HL, or Price HH + Osc LH) are
-    //   high-conviction reversal signals. No confirmation delay needed.
-    //
-    // RULE 2 (OR): ANY divergence (incl. Hidden) fired 1 bar ago
-    //   → exit ONLY if the NEXT candle confirms the reversal direction.
-    //   This prevents temporary hidden divergences (like the USDCAD case)
-    //   from prematurely closing profitable trades that resume trending.
-    //
-    // Combined: exit = (Regular Div NOW) OR (Any Div [1] + price confirms)
-    // ─────────────────────────────────────────────────────────────────────
-
-      // Divergence Exit
+    // Divergence Exit
     if divExitActiveInput and not trade.isClosed and trade.hasHitEntry
-
-        // --- Filter 1: REGULAR Divergence fires NOW → immediate exit ---
-        bool regularBearishDivNow = (ext_bearishDiv == 1)
-        bool regularBullishDivNow = (ext_bullishDiv == 1)
-        bool isRegularDivExit = (isLong_ and regularBearishDivNow) or (not isLong_ and regularBullishDivNow)
-
-        // --- Filter 2: ANY divergence (incl. hidden) fired 1 bar ago ---
-        //     Exit ONLY if the current candle confirms the direction shift
-        //     Confirmation = candle closes against the trade AND below/above prior close
-        bool anyBearishDiv1Ago = (ext_bearishDiv[1] == 1) or (ext_bearishHiddenDiv[1] == 1)
-        bool anyBullishDiv1Ago = (ext_bullishDiv[1] == 1) or (ext_bullishHiddenDiv[1] == 1)
-        bool bearishPriceConfirm = anyBearishDiv1Ago and (close < open) and (close < close[1])
-        bool bullishPriceConfirm = anyBullishDiv1Ago and (close > open) and (close > close[1])
-        bool isConfirmedDivExit = (isLong_ and bearishPriceConfirm) or (not isLong_ and bullishPriceConfirm)
-
-        if isRegularDivExit or isConfirmedDivExit
+        bool isLongDivExit  = isLong_ and extDivSource == -1
+        bool isShortDivExit = not isLong_ and extDivSource == 1
+        
+        if isLongDivExit or isShortDivExit
             trade.isClosed          := true
             trade.divExitTriggered  := true 
             trade.closeLevel        := close
@@ -2761,7 +2740,9 @@ updateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
         
     // 2. DRAW ACTIVE TRADES 
     if not (trade.emaExitTriggered or isInvalidated) and trade.hasHitEntry
-
+        // ✅ Only generate the visuals the exact split-second the entry is touched!
+        if na(visuals.entryMarkerLine) and settings.showTPSL
+            generateTradeVisuals(settings, trade, visuals)
 
         label.set_xy(visuals.entryMarkerLabel,    int(math.min(bar_index, trade.startBarIndex) - 15), trade.entryLevel)
         string entryIcon = str.contains(trade.tradeDirection, 'LIGHTNING') ? '⚡ ' : '🔰 '
@@ -2925,17 +2906,9 @@ checkAnyBounceDown(r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r
 
 initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message) =>
     
-    // 🛑 FLAG SIDEWAYS DAYS (Bulletproof matching)
-    bool isSideways = (mX == 'INRANGEINVALUE') or 
-                      (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or 
-                      str.contains(mX, "TRADING RANGE") or 
-                      str.contains(mX, "SIDEWAYS") or 
-                      str.contains(mX, "TYPICAL DAY") or 
-                      (dX == 'IN RANGE \n IN VALUE')
-    // ── H4/L4 HARD GATE (defensive safety net) ──
-    // No new LONG trades at or above H4, no new SHORT trades at or below L4
-    bool _buy  = buyCond  and close < H4
-    bool _sell = sellCond and close > L4
+    // 🛑 FLAG SIDEWAYS DAYS (Using the mX string passed into this function)
+    bool isSideways = str.contains(mX, "TRADING RANGE") or str.contains(mX, "SIDEWAYS") or str.contains(mX, "TYPICAL DAY")
+
     // ✅ Tick-Spam Protection: Ensures only 1 trade per bar per category!
     bool alreadyOpenedThisBar = false
     if array.size(sessionsArr) > 0
@@ -2945,12 +2918,14 @@ initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string lo
 
     // 🛡️ BLOCK SIDEWAYS TRADES — Exception: Narrow CPR days bypass the sideways filter
     // NCPR = true when CPR width < 0.2% of pivot → compression day → expect breakout
+    bool _buy = buyCond and close < H4
+    bool _sell = sellCond and close > L4
     if (_buy or _sell) and not alreadyOpenedThisBar and (not isSideways or NCPR)
         TradeLogic newTrade = initializeTradeSession(settings, _buy ? longName : shortName)
         TradeVisuals newVis = TradeVisuals.new()
         sendAlert(settings, newTrade, dX, mX, z1, d1_message)
-        if settings.showTPSL
-            generateTradeVisuals(settings, newTrade, newVis)
+//        if settings.showTPSL
+//            generateTradeVisuals(settings, newTrade, newVis)
         array.push(sessionsArr, newTrade)
         array.push(visualsArr, newVis)
 
@@ -3026,8 +3001,8 @@ bool bearConds = (mX == 'BIG MOVE') or
 bool RisingUP    = bullConds
 bool FallingDOWN = bearConds
 
-bool RisingUp    = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and bullConds
-bool FallingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and bearConds
+bool RisingUp    = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) and bullConds
+bool FallingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) and bearConds
 
 bool R_up = RisingUp and close > open
 bool R_dn = FallingDown and close < open
@@ -3081,277 +3056,8 @@ StepDn = (cleanTrendBearish or RED1) and bouncedOffResMid
 bool ScalpBuy  = (emaCanBuy  and StepUp) 
 bool ScalpSell = (emaCanSell and StepDn)
 
-
-// ── SIDEWAYS DAY FILTER (script-level, matches initializeAndPushTrade logic) ──
-// Suppress signal booleans AND their plotshapes on sideways days
-// NCPR exception preserved: narrow CPR compression days still allow signals
-
-bool isSidewaysDay = (mX == 'INRANGEINVALUE') or 
-                     (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or 
-                     str.contains(mX, "TRADING RANGE") or 
-                     str.contains(mX, "SIDEWAYS") or 
-                     str.contains(mX, "TYPICAL DAY") or 
-                     (dX == 'IN RANGE \n IN VALUE')
-
-bool dayAllowed = not isSidewaysDay or NCPR
-
-bool longAllowed  = close < H4
-bool shortAllowed = close > L4
-
 // ── WEBHOOK ZONE STATUS (z1) ──────────────────────────────────
-
 string z1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? 'LONG ZONE' : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? 'SHORT ZONE' : ANYDAY and close > DBc and close < DTc ? 'WAIT FOR SIGNAL' : 'WAITING'
-
-// ====================================================================
-// ── LIGHTNING SIGNALS (COMBINED) ────────────────────────────────────
-// ====================================================================
-
-// 👉 Hidden Divergence Confirmation Flags (for chart label filtering)
-// Hidden div labels are ONLY drawn if the NEXT candle confirms the direction shift
-
-bool hiddenBullishConfirmed = (ext_bullishHiddenDiv[1] == 1) and (close > open) and (close > close[1])
-bool hiddenBearishConfirmed = (ext_bearishHiddenDiv[1] == 1) and (close < open) and (close < close[1])
-
-// 1. Convert external oscillator plots back into booleans (1 = true)
-bool hasBullishDiv = (ext_bullishDiv == 1) or (ext_bullishHiddenDiv == 1)
-bool hasBearishDiv = (ext_bearishDiv == 1) or (ext_bearishHiddenDiv == 1)
-
-// 2. Lightning fires if (Missile OR Scalp) fires natively... OR if there's a strict [1] bar Divergence + Power Signal
-bool LightningBuy  = ((CanBuy and ScalpBuy)   or (hasBullishDiv[1] and GrS)) and longAllowed and dayAllowed
-bool LightningSell = ((CanSell and ScalpSell) or (hasBearishDiv[1] and ReS)) and shortAllowed and dayAllowed
-
-// 3. Filter out individual trades so they don't fire when Lightning fires
-bool JustMissileBuy  = CanBuy and not LightningBuy and longAllowed and dayAllowed
-bool JustMissileSell = CanSell and not LightningSell and shortAllowed and dayAllowed
-
-bool JustScalpBuy  = ScalpBuy and not LightningBuy and longAllowed and dayAllowed
-bool JustScalpSell = ScalpSell and not LightningSell and shortAllowed and dayAllowed
-
-
-// ====================================================================
-// 7. DECLARE ARRAYS & INITIALIZE NEW TRADES 
-// ====================================================================
-var array<TradeLogic>   missileSessions   = array.new<TradeLogic>()
-var array<TradeVisuals> missileVisualsArr = array.new<TradeVisuals>()
-
-var array<TradeLogic>   scalpSessions     = array.new<TradeLogic>()
-var array<TradeVisuals> scalpVisualsArr   = array.new<TradeVisuals>()
-
-var array<TradeLogic>   currentSessions   = array.new<TradeLogic>()
-var array<TradeVisuals> currentVisualsArr = array.new<TradeVisuals>()
-
-initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message)
-initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message)
-initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message)
-
-// ====================================================================
-// 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS ELEGANTLY)
-// ====================================================================
-bool  triggerTrailingSL = false
-float rangeTrailingSL   = 0.0
-
-// This single powerful function handles ALL arrays perfectly, including deletions!
-processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool triggerTrailingSL, float rangeTrailingSL) =>
-    if array.size(sessionsArr) > 0
-        for i = array.size(sessionsArr) - 1 to 0
-            TradeLogic trade = array.get(sessionsArr, i)
-            TradeVisuals vis = array.get(visualsArr, i)
-            
-            bool isPastDay = timeframe.isintraday and (time - trade.entryTime) >= 86400000
-            if isPastDay
-                trade.isClosed    := true
-                trade.forceClosed := true
-
-            float prevSL = trade.slLevel
-            
-            // ✅ Evaluates TP, SL, and EMA Exit dynamically!
-            evaluateTradeProgress(settings, trade, triggerTrailingSL, rangeTrailingSL)
-
-            if session.islastbar_regular and timeframe.isintraday and not trade.isClosed
-                terminateTrade(settings, trade)
-            
-            if trade.slLevel != prevSL and trade.trailingSLActivated
-                sendTrailingSLAlert(settings, trade, z1, dX, mX, d1_message)
-                
-            if not trade.isClosed
-                updateTradeVisuals(settings, trade, vis)
-                signalLabelUpdate(settings, trade, vis)
-            else
-                // The split-second it mathematically closes, finalize and clean up!
-                string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
-                alert(closePayload, alert.freq_once_per_bar)
-                
-                // ✅ DELETES VISUALS INSTANTLY
-                deleteTradeVisuals(vis) 
-                
-                array.remove(sessionsArr, i)
-                array.remove(visualsArr, i)
-                0 
-
-// ✅ EXECUTE ALL 3 ARRAYS IN 3 CLEAN LINES
-processTradeArray(settings, missileSessions, missileVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, scalpSessions,   scalpVisualsArr,   z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, currentSessions, currentVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-
-
-// ✅ MISSILE PLOTS (Now perfectly synced with the engine)
-plotshape(JustMissileBuy and dayAllowed and longAllowed,  title = 'Long Signal',  style = shape.triangleup,   location = location.belowbar, color = color.green, size = size.small)
-plotshape(JustMissileSell and dayAllowed and shortAllowed, title = 'Short Signal', style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
-
-// ✅ SCALP PLOTS (Now perfectly synced with the engine)
-plotshape(JustScalpBuy and dayAllowed and longAllowed,  title = 'Long Scalp',  style = shape.diamond, location = location.belowbar, color = color.green,   size = size.small)
-plotshape(JustScalpSell and dayAllowed and shortAllowed, title = 'Short Scalp', style = shape.diamond, location = location.abovebar, color = color.red,  size = size.small)
-
-// ⚡ LIGHTNING & BOUNCE PLOTS
-plotshape(BounceUp and not LightningBuy and dayAllowed and longAllowed,    title = 'Long Call',  style = shape.arrowup  ,   location = location.belowbar, color = color.green,  size = size.large)
-plotshape(BounceDown and not LightningSell and dayAllowed and shortAllowed, title = 'Long Put', style = shape.arrowdown, location = location.abovebar, color = color.red,  size = size.large)
-
-plotchar(LightningBuy and dayAllowed and longAllowed,  title="Lightning Buy",  char='★', location=location.belowbar, color = color.teal,    size = size.normal)
-plotchar(LightningSell and dayAllowed and shortAllowed, title="Lightning Sell", char='★', location=location.abovebar, color = color.maroon, size = size.normal)
-
-plotchar(LightningBuy and dayAllowed and longAllowed,  title="Lightning Buy",  char='⚡', location=location.belowbar, color=color.lime, size=size.normal)
-plotchar(LightningSell and dayAllowed and shortAllowed, title="Lightning Sell", char='⚡', location=location.abovebar, color=color.lime, size=size.normal)
-
-// ====================================================================
-// SIGNAL FUNCTIONS 
-// ====================================================================
-LongSignalFunc() => CanBuy
-ShortSignalFunc() => CanSell
-MidSignalFunc() => ScalpBuy
-RejSignalFunc() => ScalpSell
-CanSignalFunc() => LightningBuy
-ERSignalFunc() => LightningSell
-
-// AST OPTIMIZATION: Call the booleans directly instead of triggering 6 wrapper functions
-SignalFunc() =>
-    [CanBuy, CanSell, ScalpBuy, ScalpSell, LightningBuy, LightningSell]
-    
-// ====================================================================
-// TICKER PROCESSING ENGINE & SUBSCRIBER INPUTS
-// ====================================================================
-ProcessTicker(triggeredLong, triggeredShort, triggeredMid, triggeredRej, triggeredCan, triggeredER, ticker, customName) =>
-    displayName = customName != "" ? customName : ticker
-    _scrLabelLong  = triggeredLong  and displayName != "" ? displayName + "\n" : ""
-    _scrLabelShort = triggeredShort and displayName != "" ? displayName + "\n" : ""
-    _scrLabelMid   = triggeredMid   and displayName != "" ? displayName + "\n" : ""
-    _scrLabelRej   = triggeredRej   and displayName != "" ? displayName + "\n" : ""
-    _scrLabelCan   = triggeredCan   and displayName != "" ? displayName + "\n" : ""
-    _scrLabelER    = triggeredER    and displayName != "" ? displayName + "\n" : ""
-    
-    [_scrLabelLong, _scrLabelShort, _scrLabelMid, _scrLabelRej, _scrLabelCan, _scrLabelER]
-
-scrLabelLong  = ""
-scrLabelShort = ""
-scrLabelMid   = ""
-scrLabelRej   = ""
-scrLabelCan   = ""
-scrLabelER    = ""
-
-// Ticker 1
-ticker1 = input.symbol(defval = "SI1!", title = "Ticker 1 Symbol")
-name1   = input.string(defval = "", title = "Ticker 1 Custom Display Name (Optional)")
-[triggered1Long, triggered1Short, triggered1Mid, triggered1Rej, triggered1Can, triggered1ER] = request.security(ticker1, timeframe.period, SignalFunc())
-[scrLabelLong1, scrLabelShort1, scrLabelMid1, scrLabelRej1, scrLabelCan1, scrLabelER1] = ProcessTicker(triggered1Long, triggered1Short, triggered1Mid, triggered1Rej, triggered1Can, triggered1ER, ticker1, name1)
-scrLabelLong  += scrLabelLong1
-scrLabelShort += scrLabelShort1
-scrLabelMid   += scrLabelMid1
-scrLabelRej   += scrLabelRej1
-scrLabelCan   += scrLabelCan1
-scrLabelER    += scrLabelER1
-
-// Ticker 2
-ticker2 = input.symbol(defval = "NIFTY", title = "Ticker 2 Symbol")
-name2   = input.string(defval = "", title = "Ticker 2 Custom Display Name (Optional)")
-[triggered2Long, triggered2Short, triggered2Mid, triggered2Rej, triggered2Can, triggered2ER] = request.security(ticker2, timeframe.period, SignalFunc())
-[scrLabelLong2, scrLabelShort2, scrLabelMid2, scrLabelRej2, scrLabelCan2, scrLabelER2] = ProcessTicker(triggered2Long, triggered2Short, triggered2Mid, triggered2Rej, triggered2Can, triggered2ER, ticker2, name2)
-scrLabelLong  += scrLabelLong2
-scrLabelShort += scrLabelShort2
-scrLabelMid   += scrLabelMid2
-scrLabelRej   += scrLabelRej2
-scrLabelCan   += scrLabelCan2
-scrLabelER    += scrLabelER2
-
-// Ticker 3
-ticker3 = input.symbol(defval = "GC1!", title = "Ticker 3 Symbol")
-name3   = input.string(defval = "", title = "Ticker 3 Custom Display Name (Optional)")
-[triggered3Long, triggered3Short, triggered3Mid, triggered3Rej, triggered3Can, triggered3ER] = request.security(ticker3, timeframe.period, SignalFunc())
-[scrLabelLong3, scrLabelShort3, scrLabelMid3, scrLabelRej3, scrLabelCan3, scrLabelER3] = ProcessTicker(triggered3Long, triggered3Short, triggered3Mid, triggered3Rej, triggered3Can, triggered3ER, ticker3, name3)
-scrLabelLong  += scrLabelLong3
-scrLabelShort += scrLabelShort3
-scrLabelMid   += scrLabelMid3
-scrLabelRej   += scrLabelRej3
-scrLabelCan   += scrLabelCan3
-scrLabelER    += scrLabelER3
-
-// Ticker 4
-ticker4 = input.symbol(defval = "CL1!", title = "Ticker 4 Symbol")
-name4   = input.string(defval = "", title = "Ticker 4 Custom Display Name (Optional)")
-[triggered4Long, triggered4Short, triggered4Mid, triggered4Rej, triggered4Can, triggered4ER] = request.security(ticker4, timeframe.period, SignalFunc())
-[scrLabelLong4, scrLabelShort4, scrLabelMid4, scrLabelRej4, scrLabelCan4, scrLabelER4] = ProcessTicker(triggered4Long, triggered4Short, triggered4Mid, triggered4Rej, triggered4Can, triggered4ER, ticker4, name4)
-scrLabelLong  += scrLabelLong4
-scrLabelShort += scrLabelShort4
-scrLabelMid   += scrLabelMid4
-scrLabelRej   += scrLabelRej4
-scrLabelCan   += scrLabelCan4
-scrLabelER    += scrLabelER4
-
-// Ticker 5
-ticker5 = input.symbol(defval = "NG1!", title = "Ticker 5 Symbol")
-name5   = input.string(defval = "", title = "Ticker 5 Custom Display Name (Optional)")
-[triggered5Long, triggered5Short, triggered5Mid, triggered5Rej, triggered5Can, triggered5ER] = request.security(ticker5, timeframe.period, SignalFunc())
-[scrLabelLong5, scrLabelShort5, scrLabelMid5, scrLabelRej5, scrLabelCan5, scrLabelER5] = ProcessTicker(triggered5Long, triggered5Short, triggered5Mid, triggered5Rej, triggered5Can, triggered5ER, ticker5, name5)
-scrLabelLong  += scrLabelLong5
-scrLabelShort += scrLabelShort5
-scrLabelMid   += scrLabelMid5
-scrLabelRej   += scrLabelRej5
-scrLabelCan   += scrLabelCan5
-scrLabelER    += scrLabelER5
-//========================================================
-
-
-dash_loc = input.string('Bottom Left', 'Dashboard Location', options = ['Top Right', 'Bottom Right', 'Top Left', 'Bottom Left'], group = 'Dashboard')
-
-text_size = input.string('Tiny', 'Dashboard Size', options = ['Tiny', 'Small', 'Normal', 'Large'], group = 'Dashboard')
-
-txt_col = input.color(#5a0ae4, 'Text/Frame Color', group = 'Dashboard')
-
-//----
-sPrice = close
-//condition = INSIDEDAY
-//Table
-var table_position = dash_loc == 'Top Left' ? position.top_left : dash_loc == 'Bottom Left' ? position.bottom_left : dash_loc == 'Top Right' ? position.top_right : position.top_left
-//var table_text_size = text_size == 'Tiny' ? size.tiny : text_size == 'Small' ? size.tiny : text_size == 'Normal' ? size.tiny : size.tiny
-var table_text_size = INSIDEDAY ? size.small : sPrice > DBCn and sPrice < DTCn ? size.small : size.tiny
-var table_text_size1 = INSIDEDAY ? size.large : sPrice > DBCn and sPrice < DTCn ? size.large : size.large
-//var table_text_size = INSIDEDAY ? size.normal : MAGNET_BULL ? size.normal : MAGNET_BEAR ? size.normal : (sPrice > DBCn and sPrice < DTCn) ? size.tiny : size.tiny
-
-//new_table = table.new(position.bottom_right, 8, 20, bgcolor = color.white, border_color=txt_col, border_width=1, frame_color=txt_col, frame_width=1)
-//new_table1 = table.new(position.top_center, 5, 10, bgcolor = color.new(color.white, 100), border_color = color.new(color.white, 100), border_width = 1, frame_color = color.new(color.white, 100), frame_width = 1)
-new_table2 = table.new(position.bottom_center, 8, 10, bgcolor = color.new(color.white, 100), border_color = color.new(color.white, 100), border_width = 1, frame_color = color.new(color.white, 100), frame_width = 1)
-
-if barstate.islast
-
-    table.cell(new_table2, 0, 4, text = str.tostring(scrLabelMid),  text_halign = text.align_center, text_color=color.new(#096c32,100), text_size = table_text_size, bgcolor = color.new(color.white, 100))
-    table.cell(new_table2, 0, 3, text = str.tostring(scrLabelRej),  text_halign = text.align_center, text_color=color.new(#d52525, 100), text_size = table_text_size, bgcolor = color.new(color.white, 100))
-    table.cell(new_table2, 0, 2, text = str.tostring(scrLabelMid),  text_halign = text.align_center, text_color=#096c32, text_size = table_text_size, bgcolor = color.new(color.white, 100))
-    table.cell(new_table2, 0, 1, text = str.tostring(scrLabelRej),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = table_text_size, bgcolor = color.new(color.white, 100))
-//    table.cell(new_table2, 0, 4, text = str.tostring(scrLabelCan),  text_halign = text.align_center, text_color=#096c32, text_size = size.large, bgcolor = color.new(color.white, 100))
-//    table.cell(new_table2, 0, 3, text = str.tostring(scrLabelER),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = size.large, bgcolor = color.new(color.white, 100))
-
-var table new_table3 = table.new(position.middle_center, 3, 3,  border_color = color.new(color.yellow, 90),  border_width = 2)
-
-if barstate.islast
-
-    table.cell(new_table3, 0, 2, text = str.tostring(scrLabelCan),  text_halign = text.align_center, text_color=#096c32, text_size = size.huge, bgcolor = color.new(color.white, 100))
-    table.cell(new_table3, 0, 1, text = str.tostring(scrLabelER),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = size.huge, bgcolor = color.new(color.white, 100))
-
-//========================================================
-//=======================================================================================================================================
-
-//VISHANT MESHRAM DIVERGENCE INDICATOR INSPIRED BY TRENDOSCOPE INDICATORS. BUILD WITH THE HELP OF AI ANTIGRAVITY AT MUMBAI ON 18-07-2020. TODAY IS GREAT DAY I handle_label_overlaps
-// TODAY I DEBUGGED MY WEBSITE AND MOBILE APPLICATIONS AND ALSO BUILT HBOM DASHBOARD AS MY WORK COMPANION
-//I RECEIVED MONEY FROM INDIRA SCHOOL FOR MANASVI AND PAID SONAM'S FEE AS MONEY GIVEN BY ASHISH WERE LOST IN TRADING
-//HENCEFORTH ONLY TRADING FOR WINNING. NO GREED OR FEAR. JUST BUILD THE ALGO TRADING TO TRADE MARKETS AND SPEND LIFE READING AND ON HOBBIES AND SOCIAL WORK.
 
 // =========================================================================
 // 1. INLINED 'OOTA' LIBRARY (Pruned for CustomSeries & MA)
@@ -3463,7 +3169,6 @@ method draw(Label this) =>
     else
         this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family)
     this.object
-
 
 // =========================================================================
 // 3. INLINED 'ZIGZAG' LIBRARY (Pruned OOP Version)
@@ -3664,7 +3369,7 @@ method calculate(Zigzag this, array<float> ohlc, matrix<float> indicators, array
         this.addnewpivot(newPivotObject, iCandle, indicatorNames)
         this.flags.newPivot := true
     this
-    
+
 // =========================================================================
 // 4. TLCS DIVERGENCE SCREENER CODE (Optimized for Main Chart Overlay)
 // =========================================================================
@@ -3681,10 +3386,10 @@ oscillator(simple string type = 'rsi', simple int length = 14, float source = cl
         => ta.rsi(source, length)
     oscillator
 
-oscillatorType = input.string('rsi', 'Oscillator', ['rsi', 'cci', 'cmo', 'cog', 'mfi', 'roc', 'stoch', 'wpr'], inline = 'osc', group = 'Oscillator', display = display.none)
-length = input.int(14, '', group = 'Oscillator', inline = 'osc', tooltip = 'Built in Oscillator Type and Length', display = display.none)
-useExternalOscillator = input.bool(false, 'Use External Oscillator', inline = 'eosc', group = 'Oscillator', display = display.none)
-externalOscillator = input.source(close, '', 'Use external oscillator instead of the built ins', inline = 'eosc', group = 'Oscillator', display = display.none)
+oscillatorType = input.string('rsi', 'Oscillator', ['rsi', 'cci', 'cmo', 'cog', 'mfi', 'roc', 'stoch', 'wpr'], inline = 'osc', group = 'Oscillator')
+length = input.int(14, '', group = 'Oscillator', inline = 'osc', tooltip = 'Built in Oscillator Type and Length')
+useExternalOscillator = input.bool(false, 'Use External Oscillator', inline = 'eosc', group = 'Oscillator')
+externalOscillator = input.source(close, '', 'Use external oscillator instead of the built ins', inline = 'eosc', group = 'Oscillator')
 
 safeExternalOscillator = externalOscillator > 1000 or externalOscillator < -1000 ? ta.rsi(close, 14) : externalOscillator
 oscillator = useExternalOscillator ? safeExternalOscillator : oscillator(oscillatorType, length)
@@ -3719,6 +3424,7 @@ enum DivergenceType
 type DivergenceObject
     Line priceLine
     Label priceLabel
+    Label xcrossLabel
     chart.point pricePoint
     DivergenceType divergenceType
     bool broken = false
@@ -3726,12 +3432,14 @@ type DivergenceObject
 method delete(DivergenceObject this)=>
     this.priceLine.delete()
     this.priceLabel.delete()
+    this.xcrossLabel.delete()
     this
 
 method draw(DivergenceObject this)=>
     this.delete()
     this.priceLine.draw()
     this.priceLabel.draw()
+    this.xcrossLabel.draw()
     this
 
 type ZigzagProperties
@@ -3747,8 +3455,8 @@ enum PivotDirection
 
 getDivergenceType(direction, divergence)=>
     direction > 0?
-         (divergence > 0 ? DivergenceType.BearishDivergence : (close < open and close < close[1] ? DivergenceType.BearishHiddenDivergence : DivergenceType.None)):
-         (divergence > 0 ? DivergenceType.BullishDivergence : (close > open and close > close[1] ? DivergenceType.BullishHiddenDivergence : DivergenceType.None))
+         (divergence > 0 ? DivergenceType.BearishDivergence : DivergenceType.BearishHiddenDivergence):
+         (divergence > 0 ? DivergenceType.BullishDivergence : DivergenceType.BullishHiddenDivergence)
 
 getPivotDirection(dir, ratio) =>
     dir > 0 ? (ratio > 1 ? PivotDirection.HH : PivotDirection.LH) : ratio > 1 ? PivotDirection.LL : PivotDirection.HL
@@ -3844,7 +3552,7 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         y2 = oscillatorPoint.price
                         oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
                         
-                        if priceAtBar * dir > priceDivergenceLine.get_price(bar) * dir or oscillatorAtBar * dir > oscTheoPrice * dir
+                        if priceAtBar * dir > priceDivergenceLine.get_price(bar) * dir
                             validDivergence := false
                             break
 
@@ -3856,15 +3564,28 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         priceDivergenceLabel = Label.new(pricePoint, priceLabelText, priceTooltipText, priceLabelPropertiesMap.get(divergenceType))
                         
                         if allowedDivergenceTypes.get(divergenceType)
-                            alert('Alert : ' + priceTooltipText, alert.freq_once_per_bar_close)
+                            string divTypeStr = str.tostring(divergenceType)
+                            string _divPay = '{' + str.format(
+                                 '"trigger":"Divergence","secret":"{0}","symbol":"{1}","type":"{2}","price":"{3}","oscillator":"{4}"',
+                                 webhook_secret, syminfo.ticker, divTypeStr, str.tostring(lastPrice, format.mintick), str.tostring(lastMa, '#.##')
+                                 ) + '}'
+                            alert(_divPay, alert.freq_once_per_bar_close)
                             
-                        divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, pricePoint, divergenceType)
+                        color xColor = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? color.green : color.red
+                        // Fix for TradingView stripping trailing whitespace: using Em Spaces (U+2003) for bearish labels
+                        string xcrossText = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? "\n\n✖" : "✖\n \n "
+                        string xStyle = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? label.style_label_up : label.style_label_down
+                        LabelProperties xcrossProps = LabelProperties.new(xloc.bar_time, yloc.price, color.new(color.white, 100), xStyle, xColor, size.normal, force_overlay = false)
+                        Label xcrossLabelObj = Label.new(pricePoint, xcrossText, "", xcrossProps)
+                        
+                        divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, xcrossLabelObj, pricePoint, divergenceType)
                         divergenceObject.delete()
                         divergenceObjects.push(divergenceObject.draw())
                         true
                     else
                         priceDivergenceLine.delete()
                         false
+
 
     divergenceType
     
@@ -3873,7 +3594,7 @@ oscillatorMap.put(bar_index, oscillator)
 indicators = matrix.new<float>()
 indicatorNames = array.from('Price', str.tostring(maType) +'-' +str.tostring(maLength), 'External Trend')
 
-indicators.add_row(0, array.from(close, close, close))
+indicators.add_row(0, array.from(high, close, low))
 indicators.add_row(1, array.from(ma, ma, ma))
 indicators.add_row(2, array.from(externalTrendSignal, externalTrendSignal, externalTrendSignal))
 
@@ -3890,64 +3611,107 @@ for divergence in divergenceObjects
 
 lastDivergence = divergenceObjects.size()==0 or divergenceObjects.last().broken? DivergenceType.None : divergenceObjects.last().divergenceType
 
-bool isBullishDiv = currentDivergence == DivergenceType.BullishDivergence
-bool isBullishHiddenDiv = currentDivergence == DivergenceType.BullishHiddenDivergence
-bool isBearishDiv = currentDivergence == DivergenceType.BearishDivergence
-bool isBearishHiddenDiv = currentDivergence == DivergenceType.BearishHiddenDivergence
+// ====================================================================
+// ── GATING LOGIC (H4/L4 & DAY ALLOWED) ──────────────────────────────
+// ====================================================================
+bool longAllowed = close < H4
+bool shortAllowed = close > L4
+bool dayallowed = true
+
+bool isBullishDiv = (currentDivergence == DivergenceType.BullishDivergence or currentDivergence == DivergenceType.BullishHiddenDivergence) and longAllowed and dayallowed
+bool isBearishDiv = (currentDivergence == DivergenceType.BearishDivergence or currentDivergence == DivergenceType.BearishHiddenDivergence) and shortAllowed and dayallowed
 plot(isBullishDiv ? 1 : isBearishDiv ? -1 : 0, title="Div Signal", display=display.none)
 
+// ====================================================================
+// ── LIGHTNING SIGNALS (COMBINED) ────────────────────────────────────
+// ====================================================================
+
+// 1. Convert external oscillator plots back into booleans (1 = true)
+bool hasBullishDiv = isBullishDiv
+bool hasBearishDiv = isBearishDiv
+
+// 2. Lightning fires if (Missile OR Scalp) fires natively... OR if there's a strict [1] bar Divergence + Power Signal
+bool LightningBuy  = ((CanBuy and ScalpBuy)   or (hasBullishDiv[1] and GrS)) and longAllowed and dayallowed
+bool LightningSell = ((CanSell and ScalpSell) or (hasBearishDiv[1] and ReS)) and shortAllowed and dayallowed
+
+// 3. Filter out individual trades so they don't fire when Lightning fires
+bool JustMissileBuy  = CanBuy and not LightningBuy and longAllowed and dayallowed
+bool JustMissileSell = CanSell and not LightningSell and shortAllowed and dayallowed
+
+bool JustScalpBuy  = ScalpBuy and not LightningBuy and longAllowed and dayallowed
+bool JustScalpSell = ScalpSell and not LightningSell and shortAllowed and dayallowed
 
 
 // ====================================================================
-// --- LIVE ON-CHART TICKER & STATUS MESSAGE PANEL ---
+// 7. DECLARE ARRAYS & INITIALIZE NEW TRADES 
 // ====================================================================
-showTickerPanel = input.bool(false, "Show On-Chart Live Ticker Panel", group = "Panel Settings")
-panelPosition   = input.string("Top Right", "Panel Position", options = ["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group = "Panel Settings")
-panelThemeColor = input.color(color.blue, "Panel Header Color", group = "Panel Settings")
+var array<TradeLogic>   missileSessions   = array.new<TradeLogic>()
+var array<TradeVisuals> missileVisualsArr = array.new<TradeVisuals>()
+
+var array<TradeLogic>   scalpSessions     = array.new<TradeLogic>()
+var array<TradeVisuals> scalpVisualsArr   = array.new<TradeVisuals>()
+
+var array<TradeLogic>   currentSessions   = array.new<TradeLogic>()
+var array<TradeVisuals> currentVisualsArr = array.new<TradeVisuals>()
+
+var array<TradeLogic>   divergenceSessions   = array.new<TradeLogic>()
+var array<TradeVisuals> divergenceVisualsArr = array.new<TradeVisuals>()
+
+initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, isBullishDiv, isBearishDiv, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message)
+
 
 // ====================================================================
-// --- NYMEX HELPER FUNCTION ---
+// 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS ELEGANTLY)
 // ====================================================================
-isNYMEXSymbol(sym) =>
-    string clean = str.replace_all(str.replace_all(sym, "1!", ""), "!", "")
-    clean == "CL" or clean == "GC" or clean == "HG" or clean == "HO" or clean == "NG" or clean == "PA" or clean == "PL" or clean == "RB" or clean == "SI"
+bool  triggerTrailingSL = false
+float rangeTrailingSL   = 0.0
 
-// ====================================================================
-// --- LIVE ON-CHART TICKER & STATUS MESSAGE PANEL ---
-// ====================================================================
+// This single powerful function handles ALL arrays perfectly, including deletions!
+processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool triggerTrailingSL, float rangeTrailingSL) =>
+    if array.size(sessionsArr) > 0
+        for i = array.size(sessionsArr) - 1 to 0
+            TradeLogic trade = array.get(sessionsArr, i)
+            TradeVisuals vis = array.get(visualsArr, i)
+            
+            bool isPastDay = timeframe.isintraday and (time - trade.entryTime) >= 86400000
+            if isPastDay
+                trade.isClosed    := true
+                trade.forceClosed := true
 
-getPanelPos(posStr) =>
-    posStr == "Top Left" ? position.top_left : posStr == "Bottom Right" ? position.bottom_right : posStr == "Bottom Left" ? position.bottom_left : position.top_right
+            float prevSL = trade.slLevel
+            
+            // ✅ Evaluates TP, SL, and EMA Exit dynamically!
+            evaluateTradeProgress(settings, trade, triggerTrailingSL, rangeTrailingSL)
 
-var table tickerPanel = table.new(getPanelPos(panelPosition), 2, 5, bgcolor = color.new(#0c1220, 15), border_width = 1, border_color = color.new(color.gray, 50))
+            if session.islastbar_regular and timeframe.isintraday and not trade.isClosed
+                terminateTrade(settings, trade)
+            
+            if trade.slLevel != prevSL and trade.trailingSLActivated
+                sendTrailingSLAlert(settings, trade, z1, dX, mX, d1_message)
+                
+            if not trade.isClosed
+                updateTradeVisuals(settings, trade, vis)
+                signalLabelUpdate(settings, trade, vis)
+            else
+                // The split-second it mathematically closes, finalize and clean up!
+                string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
+                alert(closePayload, alert.freq_once_per_bar)
+                
+                // ✅ DELETES VISUALS INSTANTLY
+                deleteTradeVisuals(vis) 
+                
+                array.remove(sessionsArr, i)
+                array.remove(visualsArr, i)
+                0 
 
-if showTickerPanel and barstate.islast
-    // 1. Symbol & Timeframe Line
-    string symInfoStr = syminfo.ticker + " (" + timeframe.period + ")"
-    table.cell(tickerPanel, 0, 0, "SYMBOL", bgcolor = panelThemeColor, text_color = color.white, text_size = size.small)
-    table.cell(tickerPanel, 1, 0, symInfoStr, bgcolor = color.new(#040810, 30), text_color = color.yellow, text_size = size.small)
-    
-    // 2. Opening Bias Message
-    string biasText = dX != "" ? dX : "NO BIAS DETECTED"
-    table.cell(tickerPanel, 0, 1, "BIAS", bgcolor = color.purple, text_color = color.white, text_size = size.small)
-    table.cell(tickerPanel, 1, 1, biasText, bgcolor = color.new(#040810, 30), text_color = color.white, text_size = size.small)
-    
-    // 3. Day Type Message
-    string dayTypeText = mX != "" ? mX : "NORMAL DAY"
-    table.cell(tickerPanel, 0, 2, "DAY TYPE", bgcolor = color.teal, text_color = color.white, text_size = size.small)
-    table.cell(tickerPanel, 1, 2, dayTypeText, bgcolor = color.new(#040810, 30), text_color = color.lime, text_size = size.small)
-    
-    // 4. Live Swing Direction
-    bool isBearSwing = (TopSwingZ[1] == true) or (BEARS[1] == true)
-    bool isBullSwing = (BottomSwingZ[1] == true) or (BULLS[1] == true)
-    string swingText = isBearSwing ? "BEARISH SWING" : isBullSwing ? "BULLISH SWING" : "SIDEWAYS"
-    color  swingColor = isBearSwing ? color.red : isBullSwing ? color.green : color.gray
-    table.cell(tickerPanel, 0, 3, "SWING", bgcolor = color.gray, text_color = color.white, text_size = size.small)
-    table.cell(tickerPanel, 1, 3, swingText, bgcolor = color.new(#040810, 30), text_color = swingColor, text_size = size.small)
+// ✅ EXECUTE ALL 4 ARRAYS IN 4 CLEAN LINES
+processTradeArray(settings, missileSessions, missileVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, scalpSessions,   scalpVisualsArr,   z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, currentSessions, currentVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, divergenceSessions, diverg
+<truncated 11179 bytes>
 
-    // 5. Custom Status / Telegram Alert Status
-    bool   isNymex     = isNYMEXSymbol(syminfo.ticker)
-    string statusMsg   = isNymex ? "⚡ NYMEX TELEGRAM ACTIVE" : "📊 WEB & MOBILE DISPATCH ONLY"
-    color  statusColor = isNymex ? color.lime : color.orange
-    table.cell(tickerPanel, 0, 4, "STATUS", bgcolor = color.navy, text_color = color.white, text_size = size.small)
-    table.cell(tickerPanel, 1, 4, statusMsg, bgcolor = color.new(#040810, 30), text_color = statusColor, text_size = size.small)
+NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.

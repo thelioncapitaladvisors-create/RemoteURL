@@ -1,8 +1,9 @@
+//@version=6
+indicator("TLCS Dashboards - 4 Commodities - Signals", overlay=true, max_labels_count=500)
+
 // © TheLionCapitalsolutions.com and market-store.online 
 
-//@version=6
 
-indicator('TLCS All Signal Alerts', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
 // ──── INPUTS ────────────────────────────────────────────────────────
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
@@ -285,8 +286,8 @@ handle_label_overlaps(_i, _labels, _range) =>
         _text1 = label.get_text(array.get(_labels, _i))
         _text2 = label.get_text(array.get(_labels, _i - 1))
         if math.abs(_y1 - _y2) < 0.05 * _range and _text1 != '' and _text2 != ''
-            label.set_text(array.get(_labels, _i - 1), '')
-            label.set_text(array.get(_labels, _i), _text1 + '/' + _text2)
+            0
+            0
 
 /// --- main ---
 
@@ -406,16 +407,12 @@ for i = 0 to MAXN - 1 by 1
         prclabtext := ''
         plt_col := color.blue
         plt_col
-    array.push(lines, line.new(x1, y1, x2, y2,
-     xloc  = xloc.bar_time,
-     color = plt_col,
-     width = lw,
-     style = get_linestyle(pv_linestyle)))
-    array.push(labels, label.new(x2 + 6, y2, labtext, xloc = xloc.bar_time, textcolor = colLabel, size = labelsize == 'Small' ? size.small : size.normal, style = label.style_none))
-    array.push(prclabels, label.new(x1 + 6, y2, prclabtext, xloc = xloc.bar_time, textcolor = colLabel, size = labelsize == 'Small' ? size.small : size.normal, style = label.style_none))
-    line.delete(array.shift(lines))
-    label.delete(array.shift(labels))
-    label.delete(array.shift(prclabels))
+    line(na)
+    label(na)
+    label(na)
+    0
+    0
+    0
     //
 for i = 0 to MAXN - 1 by 1
     handle_label_overlaps(i, labels, rangeHL)
@@ -488,7 +485,6 @@ var bool show_daily_pivot = true
 
 tcline = plot(show_cpr and show_daily_pivot and timeframe.isintraday ? daily_tc : show_cpr and show_daily_pivot  and timeframe.isintraday ? daily_tc  : show_cpr and show_daily_pivot and not timeframe.isintraday ? daily_tc : na, title = 'TC', color = color.new(floor_pivots_cpr_color,  show_cpr and timeframe.isintraday ? 98 : 100), linewidth = 1, style = plot.style_circles)
 bcline = plot(show_cpr and show_daily_pivot and timeframe.isintraday ? daily_bc : show_cpr and show_daily_pivot  and timeframe.isintraday ? daily_bc : show_cpr and show_daily_pivot and not timeframe.isintraday  ? daily_bc : na, title = 'BC', color = color.new(floor_pivots_cpr_color,  show_cpr and timeframe.isintraday ? 98 : 100), linewidth = 1, style = plot.style_circles)
-fill(tcline, bcline, color = color.new(floor_pivots_cpr_color, show_cpr and show_daily_pivot ? 98 : 100))
 
 //====================================
 
@@ -539,8 +535,6 @@ twilightr3= (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ?
 
 AdxCol2 = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.rgb(25, 139, 84) : (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.rgb(160, 47, 180) : color.new(#887c12, 0)
 
-plot(fMedEMA, title = 'PEMAMed', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
-plot(fShortEMA, title = 'PEMASlow', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
 
 
 //====================================
@@ -594,8 +588,6 @@ Wshortsig = REDZONE and bool(highleftempty) and L01 and Wshort and H - L >= WAve
 Wlongsignal = ta.rising(fPivotPDEMAS, 1) and Wlongsig
 Wshortsignal = ta.falling(fPivotPDEMAS, 1) and Wshortsig
 
-plotshape(Wlongsig, color = color.new(color.navy, 0), location = location.belowbar, style = shape.triangleup, size = size.small)
-plotshape(Wshortsig, color = color.new(color.navy, 0), location = location.abovebar, style = shape.triangledown, size = size.small)
 
 // Exteme Reversal System
 
@@ -615,8 +607,6 @@ Eshortsig = REDZONE and C[1] - O[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] 
 Elongsignal = ta.rising(fPivotPDEMAS, 1) and Elongsig
 Eshortsignal = ta.falling(fPivotPDEMAS, 1) and Eshortsig
 
-plotshape(Elongsig, color = color.new(color.fuchsia, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
-plotshape(Eshortsig, color = color.new(color.fuchsia, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
 
 // outside Reversal System
 
@@ -631,8 +621,6 @@ Oshortsig = REDZONE and H > H[1] and C < L[1] and H - L >= AverageCandle1 * BarM
 Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
 Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
 
-plotshape(Olongsig, color = color.new(color.orange, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
-plotshape(Oshortsig, color = color.new(color.orange, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
 
 // Doji Reversal System
 
@@ -658,8 +646,6 @@ Dshortsig = REDZONE and bool(highleftempty) and L04 and Dshort and H - L >= WAve
 Dlongsignal = ta.rising(fPivotPDEMAS, 1) and Dlongsig
 Dshortsignal = ta.falling(fPivotPDEMAS, 1) and Dshortsig
 
-plotshape(Dlongsig, color = color.new(color.blue, 0), location = location.belowbar, style = shape.cross, size = size.small)
-plotshape(Dshortsig, color = color.new(color.blue, 0), location = location.abovebar, style = shape.cross, size = size.small)
 
 //Candle = Dlongsignal or Dshortsignal or Olongsignal or Oshortsignal or Elongsignal or Eshortsignal or Wlongsignal or Wshortsignal
 
@@ -669,8 +655,6 @@ RedCandle = Wshortsig[1] or Oshortsig[1] or Eshortsig[1] or Dshortsig[1]
 
 //====================================================================================================================
 
-barcolor(open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? color.rgb(5, 220, 12, 31) :na :na : na : na : na)
-barcolor(close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? #ee282897 :na :na : na : na : na)
 
 bullpower = open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? 1 : na : na : na : na : na
 bearpower = close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? 1 : na : na : na : na : na
@@ -687,7 +671,6 @@ intraMidc = bool(bullpower) or bool(bearpower) ? 0 : 100
 
 midcolor = bool(bullpower) or bool(bearpower) ? 0 : 100
 
-plot(intraMid, title = 'Mid Point', color = color.new(color.white, midcolor), style = plot.style_circles, linewidth = 1)
 
 Top = ta.highest(bool(bearpower) ? intraMid : na, ta.barssince(k) + 100)
 Bottom = ta.lowest(bool(bullpower) ? intraMid : na, ta.barssince(k) + 100)
@@ -914,10 +897,10 @@ v = ta.valuewhen(session.isfirstbar_regular, bar_index, 0)
 new_session = timeframe.change('D')
 start_bar = ta.valuewhen(new_session, bar_index, 0)
 no_of_bars = start_bar - ta.valuewhen(new_session, bar_index, 1) - 1
-var lln = line.new(na, na, na, na, width = 0)
+var line lln = na
 if new_session
-    line.set_xy1(lln, bar_index, na)
-    line.set_xy2(lln, bar_index + no_of_bars, na)
+    0
+    0
 
 m = last_bar_index + no_of_bars
 V = ta.valuewhen(session.isfirstbar_regular, bar_index, 0)
@@ -984,14 +967,14 @@ move4i = (close < DPIV) ? color.new(color.maroon, pixeldn) : (close > DPIV) ? co
 
 // 2. OPTIMIZED LABEL FUNCTION
 f_draw_label(_x, _y, _text, _col, _tcol) =>
-    label.new(x = _x, y = _y, text = _text, color = _col, textcolor = _tcol, size = size.small, style = label.style_label_left, yloc = yloc.price)
+    label(na)
 
 // 3. OPTIMIZED ARRAY DELETION (BULLETPROOF)
 var exlabels = array.new_label(0)
 if showlabels
     if array.size(exlabels) > 0
         for lb in exlabels
-            label.delete(lb)
+            0
         array.clear(exlabels)
 
     array.push(exlabels, f_draw_label(bar_index + 9, L3, 'L3', color.new(move3i, pixeldn), color.new(color.white, pixeldn)))
@@ -1194,21 +1177,21 @@ var line WWPLine = na
 
 if barstate.islast
 
-    line.set_x2(WWH, bar_index)
-    line.set_x2(WWL, bar_index)
-    line.set_extend(WWH, extend.none)
-    line.set_extend(WWL, extend.none)
+    0
+    0
+    0
+    0
 
     // ✅ FIXED: Delete the line from the previous tick before assigning a new one
-    line.delete(WWH)
-    WWH := line.new(V, wPH_, math.min(m, bar_index + 500), wPH_, width = 1, color = color.new(WmoveVAH, Wmovetransp1), style = line.style_solid, extend = extend.none)
+    0
+    WWH := na
     
-    line.delete(WWL)
-    WWL := line.new(V, wPL_, math.min(m, bar_index + 500), wPL_, width = 1, color = color.new(WmoveVAL, Wmovetransp2), style = line.style_solid, extend = extend.none)
+    0
+    WWL := na
 
     if not na(WWPLine) and line.get_x2(WWPLine) != bar_index
-        line.set_x2(WWH, math.min(M, bar_index + 500))
-        line.set_x2(WWL, math.min(M, bar_index + 500))
+        0
+        0
 
 var line YH1 = na
 var line YL1 = na
@@ -1216,17 +1199,17 @@ var line YPLine = na
 
 if barstate.islast
 
-    line.set_x2(YH1, bar_index)
-    line.set_x2(YL1, bar_index)
-    line.set_extend(YH1, extend.none)
-    line.set_extend(YL1, extend.none)
+    0
+    0
+    0
+    0
 
     // ✅ FIXED: Delete the line from the previous tick before assigning a new one
-    line.delete(YH1)
-    YH1 := line.new(v, Ytf_High1, math.min(m, bar_index + 500), Ytf_High1, width = 1, color = color.new(moveVAH1, movetransp21), style = line.style_solid, extend = extend.none)
+    0
+    YH1 := na
     
-    line.delete(YL1)
-    YL1 := line.new(v, Ytf_Low1, math.min(m, bar_index + 500), Ytf_Low1, width = 1, color = color.new(moveVAL1, movetransp11), style = line.style_solid, extend = extend.none)
+    0
+    YL1 := na
 
 //==============================
 
@@ -1235,7 +1218,7 @@ var camLabels = array.new_label(0)
 if showlabels
     if array.size(camLabels) > 0
         for lb in camLabels
-            label.delete(lb)
+            0
         array.clear(camLabels)
 
     array.push(camLabels, f_draw_label(bar_index + 20, mPH_, 'PMH', color.new(color.olive, movetransp21), color.new(color.lime, movetransp21)))
@@ -1247,7 +1230,7 @@ var wLabels = array.new_label(0)
 if showlabels
     if array.size(wLabels) > 0
         for lb in wLabels
-            label.delete(lb)
+            0
         array.clear(wLabels)
 
     array.push(wLabels, f_draw_label(bar_index + 17, WYtf_highW, 'PWH', color.new(color.navy, Pixelup), color.new(color.yellow, Pixelup)))
@@ -1331,16 +1314,13 @@ valcol2 = INRANGEINVALUE ? color.black : INRANGEINVALUE and close < VAL ? color.
 //======================================================================================= //
 
 var line line100 = na
-line.delete(line100)
-line100 := line.new(bar_index[1] + 2, DP, bar_index + 52, DP, extend = extend.none, color = color.new(cprcolor, 0))
+line100 := na
 
 var line line101 = na
-line.delete(line101)
-line101 := line.new(bar_index[1] + 2, DTC, bar_index + 52, DTC, extend = extend.none, color = color.new(cprcolor1, 0))
+line101 := na
 
 var line line99 = na
-line.delete(line99)
-line99 := line.new(bar_index[1] + 2, DBC, bar_index + 52, DBC, extend = extend.none, color = color.new(cprcolor2, 0))
+line99 := na
 
 //========================================
 
@@ -1360,75 +1340,75 @@ var line DSLine = na
 
 if barstate.islast
 
-    line.set_x2(YH, bar_index)
-    line.set_x2(YL, bar_index)
-    line.set_x2(VAHx, bar_index)
-    line.set_x2(VALx, bar_index)
-    line.set_x2(DTcLine, bar_index)
-    line.set_x2(DPLine, bar_index)
-    line.set_x2(DBcLine, bar_index)
-    line.set_x2(Dh3Line, bar_index)
-    line.set_x2(Dl3Line, bar_index)
-    line.set_x2(Dh4Line, bar_index)
-    line.set_x2(Dl4Line, bar_index)
-    line.set_x2(DRLine, bar_index)
-    line.set_x2(DSLine, bar_index)
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
 
-    line.set_extend(YH, extend.none)
-    line.set_extend(YL, extend.none)
-    line.set_extend(VAHx, extend.none)
-    line.set_extend(VALx, extend.none)
-    line.set_extend(DTcLine, extend.none)
-    line.set_extend(DPLine, extend.none)
-    line.set_extend(DBcLine, extend.none)
-    line.set_extend(Dh3Line, extend.none)
-    line.set_extend(Dl3Line, extend.none)
-    line.set_extend(Dh4Line, extend.none)
-    line.set_extend(Dl4Line, extend.none)
-    line.set_extend(DRLine, extend.none)
-    line.set_extend(DSLine, extend.none)
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
 
-    YH := line.new(v, highhtf, m, highhtf, width = 1, color = color.new(movehl, pixeu), style = line.style_solid, extend = extend.none)
-    line.delete(YH[1])
-    YL := line.new(v, lowhtf, m, lowhtf, width = 1, color = color.new(movehl1, pixed), style = line.style_solid, extend = extend.none)
-    line.delete(YL[1])
-    VAHx := line.new(v, VAH, m, VAH, width = 1, color = color.new(valcol1, valtransp1), style = line.style_solid, extend = extend.none)
-    line.delete(VAHx[1])
-    VALx := line.new(v, VAL, m, VAL, width = 1, color = color.new(valcol2, valtransp2), style = line.style_solid, extend = extend.none)
-    line.delete(VALx[1])
-    DSLine := line.new(v, DS1, m, DS1, width = 2, color = color.new(Dscol, dscol), style = line.style_dotted, extend = extend.none)
-    line.delete(DSLine[1])
-    DRLine := line.new(v, DR1, m, DR1, width = 2, color = color.new(Drcol, drcol), style = line.style_dotted, extend = extend.none)
-    line.delete(DRLine[1])
-    DTcLine := line.new(v, DTc, m, DTc, width = 2, color = color.new(cprcolor1, Cprres1), style = line.style_dotted, extend = extend.none)
-    line.delete(DTcLine[1])
-    DPLine := line.new(v, DP, m, DP, width = 2, color = color.new(cprcolor, cprres), style = line.style_dotted, extend = extend.none)
-    line.delete(DPLine[1])
-    DBcLine := line.new(v, DBc, m, DBc, width = 2, color = color.new(cprcolor2, Cprres2), style = line.style_dotted, extend = extend.none)
-    line.delete(DBcLine[1])
-    Dh3Line := line.new(v, H3, m, H3, width = 1, color = color.new(moveH3, cmoveH3), style = line.style_solid, extend = extend.none)
-    line.delete(Dh3Line[1])
-    Dl3Line := line.new(v, L3, m, L3, width = 1, color = color.new(moveL3, cmoveL3), style = line.style_solid, extend = extend.none)
-    line.delete(Dl3Line[1])
-    Dh4Line := line.new(v, H4, m, H4, width = 2, color = color.new(moveH4, cmoveH4), style = line.style_dotted, extend = extend.none)
-    line.delete(Dh4Line[1])
-    Dl4Line := line.new(v, L4, m, L4, width = 2, color = color.new(moveL4, cmoveL4), style = line.style_dotted, extend = extend.none)
-    line.delete(Dl4Line[1])
+    YH := na
+    0
+    YL := na
+    0
+    VAHx := na
+    0
+    VALx := na
+    0
+    DSLine := na
+    0
+    DRLine := na
+    0
+    DTcLine := na
+    0
+    DPLine := na
+    0
+    DBcLine := na
+    0
+    Dh3Line := na
+    0
+    Dl3Line := na
+    0
+    Dh4Line := na
+    0
+    Dl4Line := na
+    0
 
 if not na(DPLine) and line.get_x2(DPLine) != bar_index
-    line.set_x2(YH, bar_index + 1)
-    line.set_x2(YL, bar_index + 1)
-    line.set_x2(VAHx, bar_index + 1)
-    line.set_x2(VALx, bar_index + 1)
-    line.set_x2(DTcLine, bar_index + 1)
-    line.set_x2(DPLine, bar_index + 1)
-    line.set_x2(DBcLine, bar_index + 1)
-    line.set_x2(Dh3Line, bar_index + 1)
-    line.set_x2(Dl3Line, bar_index + 1)
-    line.set_x2(Dh4Line, bar_index + 1)
-    line.set_x2(Dl4Line, bar_index + 1)
-    line.set_x2(DRLine, bar_index + 1)
-    line.set_x2(DSLine, bar_index + 1)
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1512,12 +1492,12 @@ var line _t_p = na
 var line _t_bc = na
 
 if tP[1] != tP
-    _t_tc := line.new(tom_start, tTC, tom_end, ttC, xloc.bar_time, width = 2, color = color.new(cprColor1, 0), style = line.style_dotted, extend = extend.none)
-    line.delete(_t_tc[1])
-    _t_p := line.new(tom_start, tP, tom_end, tP, xloc.bar_time, width = 2, color = color.new(cprColor, 0), style = line.style_dotted, extend = extend.none)
-    line.delete(_t_p[1])
-    _t_bc := line.new(tom_start, tBC, tom_end, tbC, xloc.bar_time, width = 2, color = color.new(cprColor1, 0), style = line.style_dotted, extend = extend.none)
-    line.delete(_t_bc[1])
+    _t_tc := na
+    0
+    _t_p := na
+    0
+    _t_bc := na
+    0
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1536,22 +1516,22 @@ var line DPLine2 = na
 var line DBCLine2 = na
 
 if dp1[1] != dp1
-    line.set_x2(DTCLine2, bar_index)
-    line.set_x2(DPLine2, bar_index)
-    line.set_x2(DBCLine2, bar_index)
+    0
+    0
+    0
 
-    line.set_extend(DPLine2, extend.none)
-    line.set_extend(DTCLine2, extend.none)
-    line.set_extend(DBCLine2, extend.none)
+    0
+    0
+    0
 
-    DTCLine2 := line.new(v, DTC1, math.min(m, bar_index + 500), DTC1, width = 2, color = color.new(PCPR, PCPRRES), style = line.style_solid, extend = extend.none)
-    DPLine2 := line.new(v, dp1, math.min(m, bar_index + 500), dp1, width = 2, color = color.new(PCPR, PCPRRES), style = line.style_solid, extend = extend.none)
-    DBCLine2 := line.new(v, DBC1, math.min(m, bar_index + 500), DBC1, width = 2, color = color.new(PCPR, PCPRRES), style = line.style_solid, extend = extend.none)
+    DTCLine2 := na
+    DPLine2 := na
+    DBCLine2 := na
 
 if not na(DPLine2) and line.get_x2(DPLine2) != bar_index
-    line.set_x2(DTCLine2, math.min(M, bar_index + 500))
-    line.set_x2(DPLine2, math.min(M, bar_index + 500))
-    line.set_x2(DBCLine2, math.min(M, bar_index + 500))
+    0
+    0
+    0
 
 //=====================================================================================================================
 
@@ -1691,13 +1671,13 @@ var line srLine = na
 
 if i_isSnR and falling and sProcessing
     if falling == falling[1]
-        line.delete(srLine[1])
-    srLine := line.new(xx1, yy, t2, yy, xloc.bar_time, extend.none, i_srLnColor, f_getStyle(i_srLnStyle), i_srLnWidth)
+        0
+    srLine := na
 
 if i_isSnR and rising and sProcessing
     if rising == rising[1]
-        line.delete(srLine[1])
-    srLine := line.new(xx1, yy, t2, yy, xloc.bar_time, extend.none, i_srLnColor, f_getStyle(i_srLnStyle), i_srLnWidth)
+        0
+    srLine := na
 
 var line volatileLine = na
 var line volatileLine1 = na
@@ -1708,41 +1688,39 @@ if i_hATRLn and highVolatility and sProcessing
     if bullCandle
         if i_haLnBullLevel == 'High'
             if highVolatility == highVolatility[1] and not bearCandle[1]
-                line.delete(volatileLine[1])
-            volatileLine := line.new(x1hV, high, t2, high, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+                0
+            volatileLine := na
         else if i_haLnBullLevel == 'Close'
             if highVolatility == highVolatility[1] and not bearCandle[1]
-                line.delete(volatileLine[1])
-            volatileLine := line.new(x1hV, close, t2, close, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+                0
+            volatileLine := na
         else 
             if highVolatility == highVolatility[1] and not bearCandle[1]
-                line.delete(volatileLine1[1])
-                line.delete(volatileLine2[1])
-                line.delete(volatileLine3[1])
-            volatileLine1 := line.new(x1hV, close, t2, close, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
-            volatileLine2 := line.new(x1hV, math.avg(high, close), t2, math.avg(high, close), xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle('Dotted'), i_hATRLnWidth - 1)
-            volatileLine3 := line.new(x1hV, high, t2, high, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+                0
+                0
+                0
+            volatileLine1 := na
+            volatileLine2 := na
+            volatileLine3 := na
 
     if bearCandle
         if i_haLnBearLevel == 'Low'
             if highVolatility == highVolatility[1] and not bullCandle[1]
-                line.delete(volatileLine[1])
-            volatileLine := line.new(x1hV, low, t2, low, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+                0
+            volatileLine := na
         else if i_haLnBearLevel == 'Close'
             if highVolatility == highVolatility[1] and not bullCandle[1]
-                line.delete(volatileLine[1])
-            volatileLine := line.new(x1hV, close, t2, close, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+                0
+            volatileLine := na
         else 
             if highVolatility == highVolatility[1] and not bullCandle[1]
-                line.delete(volatileLine1[1])
-                line.delete(volatileLine2[1])
-                line.delete(volatileLine3[1])
-            volatileLine1 := line.new(x1hV, low, t2, low, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
-            volatileLine2 := line.new(x1hV, math.avg(low, close), t2, math.avg(low, close), xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle('Dotted'), i_hATRLnWidth - 1)
-            volatileLine3 := line.new(x1hV, close, t2, close, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+                0
+                0
+                0
+            volatileLine1 := na
+            volatileLine2 := na
+            volatileLine3 := na
 
-plotchar(i_hATRLb and sProcessing and close < open ? highVolatility : false, 'High Volatile Bar', '⚡', location.abovebar, size = size.small)
-plotchar(i_hATRLb and sProcessing and close > open ? highVolatility : false, 'High Volatile Bar', '⚡', location.belowbar, size = size.small)
 
 //=======================================================================================================================================
 
@@ -1934,251 +1912,251 @@ lb = ln // Offset of pivot line
 // Find an unused resistance pivot level (p = Top)
 if not na(p)
     if na(res01)
-        l_res01 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res01 := na
         res01 := p
     else if na(res02)
-        l_res02 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res02 := na
         res02 := p
     else if na(res03)
-        l_res03 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res03 := na
         res03 := p
     else if na(res04)
-        l_res04 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res04 := na
         res04 := p
     else if na(res05)
-        l_res05 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res05 := na
         res05 := p
     else if na(res06)
-        l_res06 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res06 := na
         res06 := p
     else if na(res07)
-        l_res07 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res07 := na
         res07 := p
     else if na(res08)
-        l_res08 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res08 := na
         res08 := p
     else if na(res09)
-        l_res09 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res09 := na
         res09 := p
     else if na(res10)
-        l_res10 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res10 := na
         res10 := p
     else if na(res11)
-        l_res11 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res11 := na
         res11 := p
     else if na(res12)
-        l_res12 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res12 := na
         res12 := p
     else if na(res13)
-        l_res13 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res13 := na
         res13 := p
     else if na(res14)
-        l_res14 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res14 := na
         res14 := p
     else if na(res15)
-        l_res15 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        l_res15 := na
         res15 := p
 
 // Find an unused support pivot level (q = Bottom)
 if not na(q)
     if na(sup01)
-        l_sup01 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup01 := na
         sup01 := q
     else if na(sup02)
-        l_sup02 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup02 := na
         sup02 := q
     else if na(sup03)
-        l_sup03 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup03 := na
         sup03 := q
     else if na(sup04)
-        l_sup04 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup04 := na
         sup04 := q
     else if na(sup05)
-        l_sup05 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup05 := na
         sup05 := q
     else if na(sup06)
-        l_sup06 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup06 := na
         sup06 := q
     else if na(sup07)
-        l_sup07 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup07 := na
         sup07 := q
     else if na(sup08)
-        l_sup08 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup08 := na
         sup08 := q
     else if na(sup09)
-        l_sup09 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup09 := na
         sup09 := q
     else if na(sup10)
-        l_sup10 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup10 := na
         sup10 := q
     else if na(sup11)
-        l_sup11 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup11 := na
         sup11 := q
     else if na(sup12)
-        l_sup12 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup12 := na
         sup12 := q
     else if na(sup13)
-        l_sup13 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup13 := na
         sup13 := q
     else if na(sup14)
-        l_sup14 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup14 := na
         sup14 := q
     else if na(sup15)
-        l_sup15 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        l_sup15 := na
         sup15 := q
 
 // Break Counter & Invalidation (Resistance)
 if open < res01 and close > res01 or open > res01 and close < res01
     br_res01 := br_res01 + 1
 if br_res01 >= mb or math.abs(res01 - close) / close * 100 >= md
-    res01 := na, br_res01 := 0, line.delete(l_res01)
+    res01 := na
 
 if open < res02 and close > res02 or open > res02 and close < res02
     br_res02 := br_res02 + 1
 if br_res02 >= mb or math.abs(res02 - close) / close * 100 >= md
-    res02 := na, br_res02 := 0, line.delete(l_res02)
+    res02 := na
 
 if open < res03 and close > res03 or open > res03 and close < res03
     br_res03 := br_res03 + 1
 if br_res03 >= mb or math.abs(res03 - close) / close * 100 >= md
-    res03 := na, br_res03 := 0, line.delete(l_res03)
+    res03 := na
 
 if open < res04 and close > res04 or open > res04 and close < res04
     br_res04 := br_res04 + 1
 if br_res04 >= mb or math.abs(res04 - close) / close * 100 >= md
-    res04 := na, br_res04 := 0, line.delete(l_res04)
+    res04 := na
 
 if open < res05 and close > res05 or open > res05 and close < res05
     br_res05 := br_res05 + 1
 if br_res05 >= mb or math.abs(res05 - close) / close * 100 >= md
-    res05 := na, br_res05 := 0, line.delete(l_res05)
+    res05 := na
 
 if open < res06 and close > res06 or open > res06 and close < res06
     br_res06 := br_res06 + 1
 if br_res06 >= mb or math.abs(res06 - close) / close * 100 >= md
-    res06 := na, br_res06 := 0, line.delete(l_res06)
+    res06 := na
 
 if open < res07 and close > res07 or open > res07 and close < res07
     br_res07 := br_res07 + 1
 if br_res07 >= mb or math.abs(res07 - close) / close * 100 >= md
-    res07 := na, br_res07 := 0, line.delete(l_res07)
+    res07 := na
 
 if open < res08 and close > res08 or open > res08 and close < res08
     br_res08 := br_res08 + 1
 if br_res08 >= mb or math.abs(res08 - close) / close * 100 >= md
-    res08 := na, br_res08 := 0, line.delete(l_res08)
+    res08 := na
 
 if open < res09 and close > res09 or open > res09 and close < res09
     br_res09 := br_res09 + 1
 if br_res09 >= mb or math.abs(res09 - close) / close * 100 >= md
-    res09 := na, br_res09 := 0, line.delete(l_res09)
+    res09 := na
 
 if open < res10 and close > res10 or open > res10 and close < res10
     br_res10 := br_res10 + 1
 if br_res10 >= mb or math.abs(res10 - close) / close * 100 >= md
-    res10 := na, br_res10 := 0, line.delete(l_res10)
+    res10 := na
 
 if open < res11 and close > res11 or open > res11 and close < res11
     br_res11 := br_res11 + 1
 if br_res11 >= mb or math.abs(res11 - close) / close * 100 >= md
-    res11 := na, br_res11 := 0, line.delete(l_res11)
+    res11 := na
 
 if open < res12 and close > res12 or open > res12 and close < res12
     br_res12 := br_res12 + 1
 if br_res12 >= mb or math.abs(res12 - close) / close * 100 >= md
-    res12 := na, br_res12 := 0, line.delete(l_res12)
+    res12 := na
 
 if open < res13 and close > res13 or open > res13 and close < res13
     br_res13 := br_res13 + 1
 if br_res13 >= mb or math.abs(res13 - close) / close * 100 >= md
-    res13 := na, br_res13 := 0, line.delete(l_res13)
+    res13 := na
 
 if open < res14 and close > res14 or open > res14 and close < res14
     br_res14 := br_res14 + 1
 if br_res14 >= mb or math.abs(res14 - close) / close * 100 >= md
-    res14 := na, br_res14 := 0, line.delete(l_res14)
+    res14 := na
 
 if open < res15 and close > res15 or open > res15 and close < res15
     br_res15 := br_res15 + 1
 if br_res15 >= mb or math.abs(res15 - close) / close * 100 >= md
-    res15 := na, br_res15 := 0, line.delete(l_res15)
+    res15 := na
 
 
 // Break Counter & Invalidation (Support)
 if open < sup01 and close > sup01 or open > sup01 and close < sup01
     br_sup01 := br_sup01 + 1
 if br_sup01 >= mb or math.abs(sup01 - close) / close * 100 >= md
-    sup01 := na, br_sup01 := 0, line.delete(l_sup01)
+    sup01 := na
 
 if open < sup02 and close > sup02 or open > sup02 and close < sup02
     br_sup02 := br_sup02 + 1
 if br_sup02 >= mb or math.abs(sup02 - close) / close * 100 >= md
-    sup02 := na, br_sup02 := 0, line.delete(l_sup02)
+    sup02 := na
 
 if open < sup03 and close > sup03 or open > sup03 and close < sup03
     br_sup03 := br_sup03 + 1
 if br_sup03 >= mb or math.abs(sup03 - close) / close * 100 >= md
-    sup03 := na, br_sup03 := 0, line.delete(l_sup03)
+    sup03 := na
 
 if open < sup04 and close > sup04 or open > sup04 and close < sup04
     br_sup04 := br_sup04 + 1
 if br_sup04 >= mb or math.abs(sup04 - close) / close * 100 >= md
-    sup04 := na, br_sup04 := 0, line.delete(l_sup04)
+    sup04 := na
 
 if open < sup05 and close > sup05 or open > sup05 and close < sup05
     br_sup05 := br_sup05 + 1
 if br_sup05 >= mb or math.abs(sup05 - close) / close * 100 >= md
-    sup05 := na, br_sup05 := 0, line.delete(l_sup05)
+    sup05 := na
 
 if open < sup06 and close > sup06 or open > sup06 and close < sup06
     br_sup06 := br_sup06 + 1
 if br_sup06 >= mb or math.abs(sup06 - close) / close * 100 >= md
-    sup06 := na, br_sup06 := 0, line.delete(l_sup06)
+    sup06 := na
 
 if open < sup07 and close > sup07 or open > sup07 and close < sup07
     br_sup07 := br_sup07 + 1
 if br_sup07 >= mb or math.abs(sup07 - close) / close * 100 >= md
-    sup07 := na, br_sup07 := 0, line.delete(l_sup07)
+    sup07 := na
 
 if open < sup08 and close > sup08 or open > sup08 and close < sup08
     br_sup08 := br_sup08 + 1
 if br_sup08 >= mb or math.abs(sup08 - close) / close * 100 >= md
-    sup08 := na, br_sup08 := 0, line.delete(l_sup08)
+    sup08 := na
 
 if open < sup09 and close > sup09 or open > sup09 and close < sup09
     br_sup09 := br_sup09 + 1
 if br_sup09 >= mb or math.abs(sup09 - close) / close * 100 >= md
-    sup09 := na, br_sup09 := 0, line.delete(l_sup09)
+    sup09 := na
 
 if open < sup10 and close > sup10 or open > sup10 and close < sup10
     br_sup10 := br_sup10 + 1
 if br_sup10 >= mb or math.abs(sup10 - close) / close * 100 >= md
-    sup10 := na, br_sup10 := 0, line.delete(l_sup10)
+    sup10 := na
 
 if open < sup11 and close > sup11 or open > sup11 and close < sup11
     br_sup11 := br_sup11 + 1
 if br_sup11 >= mb or math.abs(sup11 - close) / close * 100 >= md
-    sup11 := na, br_sup11 := 0, line.delete(l_sup11)
+    sup11 := na
 
 if open < sup12 and close > sup12 or open > sup12 and close < sup12
     br_sup12 := br_sup12 + 1
 if br_sup12 >= mb or math.abs(sup12 - close) / close * 100 >= md
-    sup12 := na, br_sup12 := 0, line.delete(l_sup12)
+    sup12 := na
 
 if open < sup13 and close > sup13 or open > sup13 and close < sup13
     br_sup13 := br_sup13 + 1
 if br_sup13 >= mb or math.abs(sup13 - close) / close * 100 >= md
-    sup13 := na, br_sup13 := 0, line.delete(l_sup13)
+    sup13 := na
 
 if open < sup14 and close > sup14 or open > sup14 and close < sup14
     br_sup14 := br_sup14 + 1
 if br_sup14 >= mb or math.abs(sup14 - close) / close * 100 >= md
-    sup14 := na, br_sup14 := 0, line.delete(l_sup14)
+    sup14 := na
 
 if open < sup15 and close > sup15 or open > sup15 and close < sup15
     br_sup15 := br_sup15 + 1
 if br_sup15 >= mb or math.abs(sup15 - close) / close * 100 >= md
-    sup15 := na, br_sup15 := 0, line.delete(l_sup15)
+    sup15 := na
 
 //=============================================================================
 
@@ -2188,26 +2166,6 @@ ldc = (emaStep3w > emaStep4w) or (emaStep3 > emaStep4)
 GREEN1 = ((plus > minus) and (m0 > m10))
 RED1 = ((minus > plus) and (m0 < m10))
 
-barcolor(RED1  and (high > res01 and open < res01 and low < res01 and (close < res01 and close < open)) ? color.new(#d90b91, 15) : na)
-barcolor(GREEN1  and (low < sup01 and close > sup01 and high > sup01 and (close > sup01 and close > open)) ? color.new(#1eecd8, 11) : na)
-barcolor(RED1  and (high > res02 and open < res02 and low < res02 and (close < res02 and close < open)) ? color.new(#d90b91, 15)  : na)
-barcolor(GREEN1  and (low < sup02 and close > sup02 and high > sup02 and (close > sup02 and close > open)) ? color.new(color.teal,100)  : na)
-barcolor(RED1  and (high > res03 and open < res03 and low < res03 and (close < res03 and close < open)) ? color.new(#d90b91, 15) : na)
-barcolor(GREEN1  and (low < sup03 and close > sup03 and high > sup03 and (close > sup03 and close > open)) ? color.new(#1eecd8, 11)  : na)
-barcolor(RED1  and (high > res04 and open < res04 and low < res04 and (close < res04 and close < open)) ? color.new(#d90b91, 15) : na)
-barcolor(GREEN1  and (low < sup04 and close > sup04 and high > sup04 and (close > sup04 and close > open)) ? color.new(#1eecd8, 11): na)
-barcolor(RED1  and (high > res05 and open < res05 and low < res05 and (close < res05 and close < open)) ? color.new(#d90b91, 15)  : na)
-barcolor(GREEN1  and (low < sup05 and close > sup05 and high > sup05 and (close > sup05 and close > open)) ? color.new(#1eecd8, 11)  : na)
-barcolor(RED1  and (high > res06 and open < res06 and low < res06 and (close < res06 and close < open)) ? color.new(#d90b91, 15)  : na)
-barcolor(GREEN1  and (low < sup06 and close > sup06 and high > sup06 and (close > sup06 and close > open)) ? color.new(#1eecd8, 11)  : na)
-barcolor(RED1  and (high > res07 and open < res07 and low < res07 and (close < res07 and close < open)) ? color.new(#d90b91, 15) : na)
-barcolor(GREEN1  and (low < sup07 and close > sup07 and high > sup07 and (close> sup07 and close > open)) ? color.new(#1eecd8, 11)  : na)
-barcolor(RED1  and (high > res08 and open < res08 and low < res08 and (close < res08 and close < open)) ? color.new(#d90b91, 15)  : na)
-barcolor(GREEN1  and (low < sup08 and close > sup08 and high > sup08 and (close > sup08 and close > open)) ? color.new(#1eecd8, 11)  : na)
-barcolor(RED1  and (high > res09 and open < res09 and low < res09 and (close < res09 and close < open)) ? color.new(#d90b91, 15)  : na)
-barcolor(GREEN1  and (low < sup09 and close > sup09 and high > sup09 and (close > sup09 and close > open)) ? color.new(#1eecd8, 11) : na)
-barcolor(RED1  and (high > res10 and open < res10 and low < res10 and (close < res10 and close < open)) ? color.new(#d90b91, 15)  : na)
-barcolor(GREEN1  and (low < sup10 and close > sup10 and high > sup10 and (close> sup10 and close > open)) ? color.new(#1eecd8, 11)  : na)
 //barcolor(RED1  and (high > res11 and open < res11 and low < res11 and (close < res11 and close < open)) ? color.new(#d90b91, 15)  : na)
 //barcolor(GREEN1  and (low < sup11 and close > sup11 and high > sup11 and (close > sup11 and close > open)) ? color.new(#1eecd8, 11)  : na)
 //barcolor(RED1  and (high > res12 and open < res12 and low < res12 and (close < res12 and close < open)) ? color.new(#d90b91, 15)  : na)
@@ -2491,15 +2449,15 @@ riskToReward(float entryLevel, float slLevel, float tpLevel, string tradeDirecti
 updateLine(line id, int startBar, float level) =>
     if not na(id)
         if na(level)
-            line.set_x1(id, na)
-            line.set_y1(id, na)
-            line.set_x2(id, na)
-            line.set_y2(id, na)
+            0
+            0
+            0
+            0
         else
-            line.set_x1(id, startBar)
-            line.set_y1(id, level)
-            line.set_x2(id, bar_index)
-            line.set_y2(id, level)
+            0
+            0
+            0
+            0
 
 // ✅ FIXED: Removed the erroneous `* 100` fee multiplier that was destroying PNL
 calculateProfit(Settings settings, TradeLogic trade, float entry, float exit, float leverage, bool isLong, float positionRatio, bool isMaker = false) =>
@@ -2525,7 +2483,7 @@ sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string
          str.tostring(trade.entryLevel), str.tostring(trade.slLevel), str.tostring(trade.tp1Level), 
          z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
          ) + '}'
-    alert(_ePay, alert.freq_once_per_bar_close)
+    0
 
 sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
@@ -2537,7 +2495,7 @@ sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string 
          str.tostring(trade.entryLevel), str.tostring(trade.slLevel), str.tostring(trade.tp1Level), 
          z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
          ) + '}'
-    alert(_tPay, alert.freq_once_per_bar_close)
+    0
 
 
 evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, float trailRange) =>
@@ -2707,18 +2665,18 @@ terminateTrade(Settings settings, TradeLogic trade) =>
         trade.profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, str.contains(str.upper(trade.tradeDirection), 'LONG'), trade.positionRemaining)
 
 deleteTradeVisuals(TradeVisuals visuals) =>
-    line.delete(visuals.entryMarkerLine)
-    label.delete(visuals.entryMarkerLabel)
-    line.delete(visuals.stopLossMarkerLine)
-    label.delete(visuals.stopLossMarkerLabel)
-    line.delete(visuals.tp1Line)
-    label.delete(visuals.tp1Label)
-    line.delete(visuals.tp2Line)
-    label.delete(visuals.tp2Label)
-    line.delete(visuals.tp3Line)
-    label.delete(visuals.tp3Label)
-    line.delete(visuals.tp4Line)
-    label.delete(visuals.tp4Label)
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
+    0
 
 generateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
     int msPerDay = 86400000
@@ -2727,24 +2685,24 @@ generateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) 
     bool isRecentTrade  = ((currentMidnight - tradeMidnight) / msPerDay) <= showVisualsDaysInput
 
     if isRecentTrade
-        visuals.entryMarkerLine    := line.new(x1 = trade.startBarIndex, y1 = trade.entryLevel, x2 = bar_index - 1, y2 = trade.entryLevel, color = color.new(entrylevelColor, entryleveltransp), style = line.style_solid, width = 2)
-        visuals.entryMarkerLabel   := label.new(int(math.min(bar_index, trade.startBarIndex) - 10), trade.entryLevel, str.tostring(trade.entryLevel, format.mintick), style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.navy)
+        visuals.entryMarkerLine    := na
+        visuals.entryMarkerLabel   := na
         
-        visuals.stopLossMarkerLine  := line.new(x1 = trade.startBarIndex, y1 = trade.slLevel, x2 = bar_index - 1, y2 = trade.slLevel, color = color.red, style = line.style_dotted, width = 2)
-        visuals.stopLossMarkerLabel := label.new(int(math.min(bar_index, trade.startBarIndex) - 10), trade.slLevel, str.tostring(trade.slLevel, format.mintick), style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.red)
+        visuals.stopLossMarkerLine  := na
+        visuals.stopLossMarkerLabel := na
         
         float tpLevel = trade.tp1Level
-        visuals.tp1Line  := line.new(x1 = trade.startBarIndex, y1 = tpLevel, x2 = bar_index - 1, y2 = tpLevel, color = color.green, style = line.style_dotted, width = 2)
-        visuals.tp1Label := label.new(int(math.min(bar_index, trade.startBarIndex) - 10), tpLevel, '🎯 ' + str.tostring(tpLevel, format.mintick), style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.green)
+        visuals.tp1Line  := na
+        visuals.tp1Label := na
         
-        visuals.tp2Line  := line.new(na, na, na, na, color = color.green, style = line.style_dotted, width = 2)
-        visuals.tp2Label := label.new(x = na, y = na, text = "", style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.green)
+        visuals.tp2Line  := na
+        visuals.tp2Label := na
         
-        visuals.tp3Line  := line.new(na, na, na, na, color = color.green, style = line.style_dotted, width = 2)
-        visuals.tp3Label := label.new(x = na, y = na, text = "", style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.green)
+        visuals.tp3Line  := na
+        visuals.tp3Label := na
         
-        visuals.tp4Line  := line.new(na, na, na, na, color = color.green, style = line.style_dotted, width = 2)
-        visuals.tp4Label := label.new(x = na, y = na, text = "", style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.green)
+        visuals.tp4Line  := na
+        visuals.tp4Label := na
 
         linefill.new(visuals.entryMarkerLine, visuals.tp1Line, color = color.new(color.teal, 97))
         linefill.new(visuals.stopLossMarkerLine, visuals.entryMarkerLine, color = color.new(color.red, 97))
@@ -2763,58 +2721,58 @@ updateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
     if not (trade.emaExitTriggered or isInvalidated) and trade.hasHitEntry
 
 
-        label.set_xy(visuals.entryMarkerLabel,    int(math.min(bar_index, trade.startBarIndex) - 15), trade.entryLevel)
+        0
         string entryIcon = str.contains(trade.tradeDirection, 'LIGHTNING') ? '⚡ ' : '🔰 '
-        label.set_text(visuals.entryMarkerLabel, entryIcon + str.tostring(trade.entryLevel, format.mintick))
+        0
         updateLine(visuals.entryMarkerLine,      trade.startBarIndex, trade.entryLevel)
         
-        label.set_xy(visuals.stopLossMarkerLabel, int(math.min(bar_index, trade.startBarIndex) - 15), trade.slLevel)
-        label.set_text(visuals.stopLossMarkerLabel, '⛔ ' + str.tostring(trade.slLevel, format.mintick))
+        0
+        0
         updateLine(visuals.stopLossMarkerLine,   trade.startBarIndex, trade.slLevel)
         
         if trade.tp1Triggered
-            label.set_xy(visuals.tp1Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp1Level)
-            label.set_text(visuals.tp1Label, '✅ ' + str.tostring(trade.tp1Level, format.mintick))
+            0
+            0
             updateLine(visuals.tp1Line, trade.startBarIndex, na)
         else
-            label.set_xy(visuals.tp1Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp1Level)
-            label.set_text(visuals.tp1Label, '🎯 ' + str.tostring(trade.tp1Level, format.mintick))
+            0
+            0
             updateLine(visuals.tp1Line, trade.startBarIndex, trade.tp1Level)
             
         if trade.tp2Triggered
-            label.set_xy(visuals.tp2Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp2Level)
-            label.set_text(visuals.tp2Label, '✅ ' + str.tostring(trade.tp2Level, format.mintick))
+            0
+            0
             updateLine(visuals.tp2Line, trade.startBarIndex, na)
         else if trade.tp1Triggered
-            label.set_xy(visuals.tp2Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp2Level)
-            label.set_text(visuals.tp2Label, '🎯 ' + str.tostring(trade.tp2Level, format.mintick))
+            0
+            0
             updateLine(visuals.tp2Line, trade.startBarIndex, trade.tp2Level)
         else
-            label.set_xy(visuals.tp2Label, na, na)
+            0
             updateLine(visuals.tp2Line, trade.startBarIndex, na)
             
         if trade.tp3Triggered
-            label.set_xy(visuals.tp3Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp3Level)
-            label.set_text(visuals.tp3Label, '✅ ' + str.tostring(trade.tp3Level, format.mintick))
+            0
+            0
             updateLine(visuals.tp3Line, trade.startBarIndex, na)
         else if trade.tp2Triggered
-            label.set_xy(visuals.tp3Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp3Level)
-            label.set_text(visuals.tp3Label, '🎯 ' + str.tostring(trade.tp3Level, format.mintick))
+            0
+            0
             updateLine(visuals.tp3Line, trade.startBarIndex, trade.tp3Level)
         else
-            label.set_xy(visuals.tp3Label, na, na)
+            0
             updateLine(visuals.tp3Line, trade.startBarIndex, na)
             
         if trade.tp4Triggered
-            label.set_xy(visuals.tp4Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp4Level)
-            label.set_text(visuals.tp4Label, '✅ ' + str.tostring(trade.tp4Level, format.mintick))
+            0
+            0
             updateLine(visuals.tp4Line, trade.startBarIndex, na)
         else if trade.tp3Triggered
-            label.set_xy(visuals.tp4Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp4Level)
-            label.set_text(visuals.tp4Label, '🎯 ' + str.tostring(trade.tp4Level, format.mintick))
+            0
+            0
             updateLine(visuals.tp4Line, trade.startBarIndex, trade.tp4Level)
         else
-            label.set_xy(visuals.tp4Label, na, na)
+            0
             updateLine(visuals.tp4Line, trade.startBarIndex, na)
 
 signalLabelUpdate(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
@@ -2863,7 +2821,7 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
          entryDateStr, closeDateStr, tradeIdStr
          ) + '}'
          
-    alert(_oPay, alert.freq_once_per_bar_close)
+    0
     _oPay
 
 
@@ -3057,7 +3015,6 @@ bool BounceDown = (RangingDown and close < open) and ((high > VAH and open < VAH
      (high > CPR_Today and open < CPR_Today and low < CPR_Today and close < CPR_Today))
 
 // ✅ Draw the bar colors cleanly using only combined variables (GrS and ReS)
-barcolor(ReS ? color.new(#d90b91, 15) : GrS ? color.new(#1eecd8, 11) : na)
 
 // ====================================================================
 // 6. DECLARE & UPDATE TREND STATES (MISSILE ➔ SCALP ➔ LIGHTNING)
@@ -3179,7 +3136,7 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
             else
                 // The split-second it mathematically closes, finalize and clean up!
                 string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
-                alert(closePayload, alert.freq_once_per_bar)
+                0
                 
                 // ✅ DELETES VISUALS INSTANTLY
                 deleteTradeVisuals(vis) 
@@ -3195,22 +3152,12 @@ processTradeArray(settings, currentSessions, currentVisualsArr, z1, dX, mX, d1_m
 
 
 // ✅ MISSILE PLOTS (Now perfectly synced with the engine)
-plotshape(JustMissileBuy and dayAllowed and longAllowed,  title = 'Long Signal',  style = shape.triangleup,   location = location.belowbar, color = color.green, size = size.small)
-plotshape(JustMissileSell and dayAllowed and shortAllowed, title = 'Short Signal', style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
 
 // ✅ SCALP PLOTS (Now perfectly synced with the engine)
-plotshape(JustScalpBuy and dayAllowed and longAllowed,  title = 'Long Scalp',  style = shape.diamond, location = location.belowbar, color = color.green,   size = size.small)
-plotshape(JustScalpSell and dayAllowed and shortAllowed, title = 'Short Scalp', style = shape.diamond, location = location.abovebar, color = color.red,  size = size.small)
 
 // ⚡ LIGHTNING & BOUNCE PLOTS
-plotshape(BounceUp and not LightningBuy and dayAllowed and longAllowed,    title = 'Long Call',  style = shape.arrowup  ,   location = location.belowbar, color = color.green,  size = size.large)
-plotshape(BounceDown and not LightningSell and dayAllowed and shortAllowed, title = 'Long Put', style = shape.arrowdown, location = location.abovebar, color = color.red,  size = size.large)
 
-plotchar(LightningBuy and dayAllowed and longAllowed,  title="Lightning Buy",  char='★', location=location.belowbar, color = color.teal,    size = size.normal)
-plotchar(LightningSell and dayAllowed and shortAllowed, title="Lightning Sell", char='★', location=location.abovebar, color = color.maroon, size = size.normal)
 
-plotchar(LightningBuy and dayAllowed and longAllowed,  title="Lightning Buy",  char='⚡', location=location.belowbar, color=color.lime, size=size.normal)
-plotchar(LightningSell and dayAllowed and shortAllowed, title="Lightning Sell", char='⚡', location=location.abovebar, color=color.lime, size=size.normal)
 
 // ====================================================================
 // SIGNAL FUNCTIONS 
@@ -3437,7 +3384,7 @@ type Label
 	label object
 
 deleteObj(this) =>
-    this.object.delete()
+    0
     this
 
 method delete(Line this) =>
@@ -3447,21 +3394,21 @@ method delete(Label this) =>
     deleteObj(this)
 
 method draw(Line this) =>
-    this.object.delete()
+    0
     this.properties := na(this.properties) ? LineProperties.new() : this.properties
     if(this.properties.force_overlay)
-        this.object := line.new(this.properties.xloc == xloc.bar_index ? this.start.index : this.start.time, this.start.price, this.properties.xloc == xloc.bar_index ? this.end.index : this.end.time, this.end.price, this.properties.xloc, this.properties.extend, this.properties.color, this.properties.style, this.properties.width, true)
+        this.object := na
     else
-        this.object := line.new(this.properties.xloc == xloc.bar_index ? this.start.index : this.start.time, this.start.price, this.properties.xloc == xloc.bar_index ? this.end.index : this.end.time, this.end.price, this.properties.xloc, this.properties.extend, this.properties.color, this.properties.style, this.properties.width)
+        this.object := na
     this.object
 
 method draw(Label this) =>
-    this.object.delete()
+    0
     this.properties := na(this.properties) ? LabelProperties.new() : this.properties
     if(this.properties.force_overlay)
-        this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family, true)
+        this.object := na
     else
-        this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family)
+        this.object := na
     this.object
 
 
@@ -3724,12 +3671,12 @@ type DivergenceObject
     bool broken = false
 
 method delete(DivergenceObject this)=>
-    this.priceLine.delete()
-    this.priceLabel.delete()
+    0
+    0
     this
 
 method draw(DivergenceObject this)=>
-    this.delete()
+    0
     this.priceLine.draw()
     this.priceLabel.draw()
     this
@@ -3797,7 +3744,7 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                 divergenceEndBar = lastDivergence.priceLine.end.index
                 lastPivotBar = lastPivot.point.index
                 if llastPivotBar == divergenceStartBar and lastPivotBar > divergenceEndBar
-                    divergenceObjects.pop().delete()
+                    0
                 skip := llastPivotBar == divergenceStartBar and lastPivotBar == divergenceEndBar
                 skip
 
@@ -3856,14 +3803,14 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         priceDivergenceLabel = Label.new(pricePoint, priceLabelText, priceTooltipText, priceLabelPropertiesMap.get(divergenceType))
                         
                         if allowedDivergenceTypes.get(divergenceType)
-                            alert('Alert : ' + priceTooltipText, alert.freq_once_per_bar_close)
+                            0
                             
                         divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, pricePoint, divergenceType)
-                        divergenceObject.delete()
+                        0
                         divergenceObjects.push(divergenceObject.draw())
                         true
                     else
-                        priceDivergenceLine.delete()
+                        0
                         false
 
     divergenceType
@@ -3890,11 +3837,8 @@ for divergence in divergenceObjects
 
 lastDivergence = divergenceObjects.size()==0 or divergenceObjects.last().broken? DivergenceType.None : divergenceObjects.last().divergenceType
 
-bool isBullishDiv = currentDivergence == DivergenceType.BullishDivergence
-bool isBullishHiddenDiv = currentDivergence == DivergenceType.BullishHiddenDivergence
-bool isBearishDiv = currentDivergence == DivergenceType.BearishDivergence
-bool isBearishHiddenDiv = currentDivergence == DivergenceType.BearishHiddenDivergence
-plot(isBullishDiv ? 1 : isBearishDiv ? -1 : 0, title="Div Signal", display=display.none)
+bool isBullishDiv = currentDivergence == DivergenceType.BullishDivergence or currentDivergence == DivergenceType.BullishHiddenDivergence
+bool isBearishDiv = currentDivergence == DivergenceType.BearishDivergence or currentDivergence == DivergenceType.BearishHiddenDivergence
 
 
 
@@ -3951,3 +3895,143 @@ if showTickerPanel and barstate.islast
     color  statusColor = isNymex ? color.lime : color.orange
     table.cell(tickerPanel, 0, 4, "STATUS", bgcolor = color.navy, text_color = color.white, text_size = size.small)
     table.cell(tickerPanel, 1, 4, statusMsg, bgcolor = color.new(#040810, 30), text_color = statusColor, text_size = size.small)
+
+// ---------------------------- SYMBOL UNIVERSE ----------------------------
+gCommodities = "Commodities (NYMEX/COMEX)"
+u1 = input.symbol("NYMEX:CL1!", "Futures 1 (Crude)", group=gCommodities)
+u2 = input.symbol("NYMEX:NG1!", "Futures 2 (NatGas)", group=gCommodities)
+u3 = input.symbol("COMEX:GC1!", "Futures 3 (Gold)", group=gCommodities)
+u4 = input.symbol("COMEX:SI1!", "Futures 4 (Silver)", group=gCommodities)
+
+gDisplay = "Dashboard Display"
+tablePosStr  = input.string("Bottom Center", "Table Position", options=["Middle Right", "Middle Left", "Top Right", "Top Center", "Top Left", "Bottom Right", "Bottom Center", "Bottom Left"], group=gDisplay)
+tableTextSz  = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Normal"], group=gDisplay)
+
+// ---------------------------- 4 SECURITY CALLS ----------------------------
+[u1mB, u1mS, u1scB, u1scS, u1lB, u1lS, u1cB, u1cS, u1dB, u1dS] = request.security(u1, "D", [JustMissileBuy, JustMissileSell, JustScalpBuy, JustScalpSell, LightningBuy, LightningSell, CanBuy, CanSell, isBullishDiv, isBearishDiv])
+[u2mB, u2mS, u2scB, u2scS, u2lB, u2lS, u2cB, u2cS, u2dB, u2dS] = request.security(u2, "D", [JustMissileBuy, JustMissileSell, JustScalpBuy, JustScalpSell, LightningBuy, LightningSell, CanBuy, CanSell, isBullishDiv, isBearishDiv])
+[u3mB, u3mS, u3scB, u3scS, u3lB, u3lS, u3cB, u3cS, u3dB, u3dS] = request.security(u3, "D", [JustMissileBuy, JustMissileSell, JustScalpBuy, JustScalpSell, LightningBuy, LightningSell, CanBuy, CanSell, isBullishDiv, isBearishDiv])
+[u4mB, u4mS, u4scB, u4scS, u4lB, u4lS, u4cB, u4cS, u4dB, u4dS] = request.security(u4, "D", [JustMissileBuy, JustMissileSell, JustScalpBuy, JustScalpSell, LightningBuy, LightningSell, CanBuy, CanSell, isBullishDiv, isBearishDiv])
+
+symArr = array.new_string()
+mBArr = array.new_bool()
+mSArr = array.new_bool()
+scBArr = array.new_bool()
+scSArr = array.new_bool()
+lBArr = array.new_bool()
+lSArr = array.new_bool()
+cBArr = array.new_bool()
+cSArr = array.new_bool()
+dBArr = array.new_bool()
+dSArr = array.new_bool()
+
+f_add(sym, mB, mS, scB, scS, lB, lS, cB, cS, dB, dS) =>
+    if sym != ""
+        array.push(symArr, sym)
+        array.push(mBArr, mB)
+        array.push(mSArr, mS)
+        array.push(scBArr, scB)
+        array.push(scSArr, scS)
+        array.push(lBArr, lB)
+        array.push(lSArr, lS)
+        array.push(cBArr, cB)
+        array.push(cSArr, cS)
+        array.push(dBArr, dB)
+        array.push(dSArr, dS)
+
+if barstate.islast
+    f_add(u1, u1mB, u1mS, u1scB, u1scS, u1lB, u1lS, u1cB, u1cS, u1dB, u1dS)
+    f_add(u2, u2mB, u2mS, u2scB, u2scS, u2lB, u2lS, u2cB, u2cS, u2dB, u2dS)
+    f_add(u3, u3mB, u3mS, u3scB, u3scS, u3lB, u3lS, u3cB, u3cS, u3dB, u3dS)
+    f_add(u4, u4mB, u4mS, u4scB, u4scS, u4lB, u4lS, u4cB, u4cS, u4dB, u4dS)
+
+    tablePos = tablePosStr == "Bottom Right" ? position.bottom_right : 
+               tablePosStr == "Bottom Center" ? position.bottom_center : 
+               tablePosStr == "Bottom Left" ? position.bottom_left : 
+               tablePosStr == "Top Right" ? position.top_right : 
+               tablePosStr == "Top Center" ? position.top_center : 
+               tablePosStr == "Top Left" ? position.top_left : 
+               tablePosStr == "Middle Left" ? position.middle_left : position.middle_right
+               
+    txtSize  = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
+
+    string r_mB = "", string r_mS = ""
+    string r_scB = "", string r_scS = ""
+    string r_lB = "", string r_lS = ""
+    string r_cB = "", string r_cS = ""
+    string r_dB = "", string r_dS = ""
+    
+    int c_mB = 0, int c_mS = 0
+    int c_scB = 0, int c_scS = 0
+    int c_lB = 0, int c_lS = 0
+    int c_cB = 0, int c_cS = 0
+    int c_dB = 0, int c_dS = 0
+    
+    for idx = 0 to array.size(symArr) - 1
+        sym = array.get(symArr, idx)
+        splitSym = str.split(sym, ":")
+        cleanSym = array.size(splitSym) > 1 ? array.get(splitSym, 1) : sym
+        
+        if array.get(mBArr, idx)
+            r_mB += (r_mB == "" ? "" : "\n") + cleanSym
+            c_mB += 1
+        if array.get(mSArr, idx)
+            r_mS += (r_mS == "" ? "" : "\n") + cleanSym
+            c_mS += 1
+            
+        if array.get(scBArr, idx)
+            r_scB += (r_scB == "" ? "" : "\n") + cleanSym
+            c_scB += 1
+        if array.get(scSArr, idx)
+            r_scS += (r_scS == "" ? "" : "\n") + cleanSym
+            c_scS += 1
+            
+        if array.get(lBArr, idx)
+            r_lB += (r_lB == "" ? "" : "\n") + cleanSym
+            c_lB += 1
+        if array.get(lSArr, idx)
+            r_lS += (r_lS == "" ? "" : "\n") + cleanSym
+            c_lS += 1
+            
+        if array.get(cBArr, idx)
+            r_cB += (r_cB == "" ? "" : "\n") + cleanSym
+            c_cB += 1
+        if array.get(cSArr, idx)
+            r_cS += (r_cS == "" ? "" : "\n") + cleanSym
+            c_cS += 1
+
+        if array.get(dBArr, idx)
+            r_dB += (r_dB == "" ? "" : "\n") + cleanSym
+            c_dB += 1
+        if array.get(dSArr, idx)
+            r_dS += (r_dS == "" ? "" : "\n") + cleanSym
+            c_dS += 1
+
+    dash1 = table.new(tablePos, 3, 6, border_width=1, frame_width=1, frame_color=color.rgb(12, 246, 250))
+    table.merge_cells(dash1, 0, 0, 2, 0)
+    table.cell(dash1, 0, 0, "TLCS SIGNALS (4)", bgcolor=color.new(#116ac2, 0), text_color=color.rgb(12, 246, 250), text_size=txtSize)
+
+    // Row 1: Missile
+    table.cell(dash1, 0, 1, "Missile", bgcolor=color.new(#0c1220, 15), text_color=color.rgb(12, 246, 250), text_size=txtSize)
+    table.cell(dash1, 1, 1, c_mB > 0 ? "▲ " + str.tostring(c_mB) + "\n" + r_mB : "-", bgcolor=c_mB > 0 ? color.new(color.lime, 80) : color.new(#0c1220, 15), text_color=c_mB > 0 ? color.green : color.gray, text_size=txtSize)
+    table.cell(dash1, 2, 1, c_mS > 0 ? "▼ " + str.tostring(c_mS) + "\n" + r_mS : "-", bgcolor=c_mS > 0 ? color.new(color.red, 80) : color.new(#0c1220, 15), text_color=c_mS > 0 ? color.red : color.gray, text_size=txtSize)
+
+    // Row 2: Scalp
+    table.cell(dash1, 0, 2, "Scalp", bgcolor=color.new(#0c1220, 15), text_color=color.rgb(12, 246, 250), text_size=txtSize)
+    table.cell(dash1, 1, 2, c_scB > 0 ? "▲ " + str.tostring(c_scB) + "\n" + r_scB : "-", bgcolor=c_scB > 0 ? color.new(color.lime, 80) : color.new(#0c1220, 15), text_color=c_scB > 0 ? color.green : color.gray, text_size=txtSize)
+    table.cell(dash1, 2, 2, c_scS > 0 ? "▼ " + str.tostring(c_scS) + "\n" + r_scS : "-", bgcolor=c_scS > 0 ? color.new(color.red, 80) : color.new(#0c1220, 15), text_color=c_scS > 0 ? color.red : color.gray, text_size=txtSize)
+
+    // Row 3: Lightning
+    table.cell(dash1, 0, 3, "Lightning", bgcolor=color.new(#0c1220, 15), text_color=color.rgb(12, 246, 250), text_size=txtSize)
+    table.cell(dash1, 1, 3, c_lB > 0 ? "▲ " + str.tostring(c_lB) + "\n" + r_lB : "-", bgcolor=c_lB > 0 ? color.new(color.lime, 80) : color.new(#0c1220, 15), text_color=c_lB > 0 ? color.green : color.gray, text_size=txtSize)
+    table.cell(dash1, 2, 3, c_lS > 0 ? "▼ " + str.tostring(c_lS) + "\n" + r_lS : "-", bgcolor=c_lS > 0 ? color.new(color.red, 80) : color.new(#0c1220, 15), text_color=c_lS > 0 ? color.red : color.gray, text_size=txtSize)
+
+    // Row 4: Candlestick
+    table.cell(dash1, 0, 4, "Candlestick", bgcolor=color.new(#0c1220, 15), text_color=color.rgb(12, 246, 250), text_size=txtSize)
+    table.cell(dash1, 1, 4, c_cB > 0 ? "▲ " + str.tostring(c_cB) + "\n" + r_cB : "-", bgcolor=c_cB > 0 ? color.new(color.lime, 80) : color.new(#0c1220, 15), text_color=c_cB > 0 ? color.green : color.gray, text_size=txtSize)
+    table.cell(dash1, 2, 4, c_cS > 0 ? "▼ " + str.tostring(c_cS) + "\n" + r_cS : "-", bgcolor=c_cS > 0 ? color.new(color.red, 80) : color.new(#0c1220, 15), text_color=c_cS > 0 ? color.red : color.gray, text_size=txtSize)
+
+    // Row 5: Divergence
+    table.cell(dash1, 0, 5, "Divergence", bgcolor=color.new(#0c1220, 15), text_color=color.rgb(12, 246, 250), text_size=txtSize)
+    table.cell(dash1, 1, 5, c_dB > 0 ? "▲ " + str.tostring(c_dB) + "\n" + r_dB : "-", bgcolor=c_dB > 0 ? color.new(color.lime, 80) : color.new(#0c1220, 15), text_color=c_dB > 0 ? color.green : color.gray, text_size=txtSize)
+    table.cell(dash1, 2, 5, c_dS > 0 ? "▼ " + str.tostring(c_dS) + "\n" + r_dS : "-", bgcolor=c_dS > 0 ? color.new(color.red, 80) : color.new(#0c1220, 15), text_color=c_dS > 0 ? color.red : color.gray, text_size=txtSize)
