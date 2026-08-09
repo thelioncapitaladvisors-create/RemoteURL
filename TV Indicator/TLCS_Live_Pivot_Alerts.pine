@@ -3392,18 +3392,18 @@ externalOscillator = input.source(close, '', 'Use external oscillator instead of
 oscillator = useExternalOscillator ? externalOscillator : oscillator(oscillatorType, length)
 
 trendTypeTooltip = 'Method to identify trend. \n' + '\tZigzag - HH, HL on the starting pivot of divergence line is considered as uptrend and LL, LH on the starting pivot of divergence line is considered as downtrend\n' + '\tMA Difference - Difference between moving average of divergence line pivot will define the trend\n' + '\tExternal - Use External Oscillator Input'
-trendMethod = input.string('Zigzag', 'Trend Detection Method', ['Zigzag', 'MA Difference', 'External'], group = 'Trend', tooltip = trendTypeTooltip)
-maType = input.enum(CustomSeries.SMA, 'MA Filter', inline = 'ma', group = 'Trend')
-maLength = input.int(200, '', minval = 5, step = 50, inline = 'ma', group = 'Trend', tooltip = 'Moving Average to identify trend.')
-externalTrendSignal = input.source(close, 'External Trend Signal', 'Use External trend signal', group = 'Trend')
+trendMethod = input.string('Zigzag', 'Trend Detection Method', ['Zigzag', 'MA Difference', 'External'], group = 'Trend', display = display.none, tooltip = trendTypeTooltip)
+maType = input.enum(CustomSeries.SMA, 'MA Filter', inline = 'ma', group = 'Trend', display = display.none)
+maLength = input.int(200, '', minval = 5, step = 50, inline = 'ma', group = 'Trend', display = display.none, tooltip = 'Moving Average to identify trend.')
+externalTrendSignal = input.source(close, 'External Trend Signal', 'Use External trend signal', group = 'Trend', display = display.none)
 
-zigzagLength = input.int(13, 'Length', group = 'Zigzag', tooltip = 'Zigzag Length')
-repaint = input.bool(true, 'Repaint', 'If selected, divergence lines repaint as per the latest info.', group = 'Miscellaneous')
+zigzagLength = input.int(13, 'Length', group = 'Zigzag', tooltip = 'Zigzag Length', display = display.none)
+repaint = input.bool(true, 'Repaint', 'If selected, divergence lines repaint as per the latest info.', group = 'Miscellaneous', display = display.none)
 
 bullishDivergenceAlert = input.bool(true, 'Bullish Divergence', 'Alert on bullish divergence', group = 'Alerts', display = display.none)
-bullishHiddenDivergenceAlert = input.bool(true, 'Bullish Hidden Divergence', 'Alert on bullish hidden divergence', group = 'Alerts', display = display.none)
+bullishHiddenDivergenceAlert = input.bool(false, 'Bullish Hidden Divergence', 'Alert on bullish hidden divergence', group = 'Alerts', display = display.none)
 bearishDivergenceAlert = input.bool(true, 'Bearish Divergence', 'Alert on bearish divergence', group = 'Alerts', display = display.none)
-bearishHiddenDivergenceAlert = input.bool(true, 'Bearish Hidden Divergence', 'Alert on bearish hidden divergence', group = 'Alerts', display = display.none)
+bearishHiddenDivergenceAlert = input.bool(false, 'Bearish Hidden Divergence', 'Alert on bearish hidden divergence', group = 'Alerts', display = display.none)
 
 textColor = chart.bg_color
 trendMethodInt = trendMethod == 'Zigzag' ? 1 : trendMethod == 'External' ? 3 : 2
