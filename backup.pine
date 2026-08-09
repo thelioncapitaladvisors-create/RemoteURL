@@ -2,7 +2,7 @@
 
 //@version=6
 
-indicator('TLCS All Signal Alerts', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
+indicator('TLCS Live Pivot Alerts', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
 // ──── INPUTS ────────────────────────────────────────────────────────
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
@@ -2915,10 +2915,8 @@ initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string lo
 
     // 🛡️ BLOCK SIDEWAYS TRADES — Exception: Narrow CPR days bypass the sideways filter
     // NCPR = true when CPR width < 0.2% of pivot → compression day → expect breakout
-    bool _buy = buyCond and close < H4
-    bool _sell = sellCond and close > L4
-    if (_buy or _sell) and not alreadyOpenedThisBar and (not isSideways or NCPR)
-        TradeLogic newTrade = initializeTradeSession(settings, _buy ? longName : shortName)
+    if (buyCond or sellCond) and not alreadyOpenedThisBar and (not isSideways or NCPR)
+        TradeLogic newTrade = initializeTradeSession(settings, buyCond ? longName : shortName)
         TradeVisuals newVis = TradeVisuals.new()
         sendAlert(settings, newTrade, dX, mX, z1, d1_message)
 //        if settings.showTPSL
@@ -3057,6 +3055,497 @@ bool ScalpSell = (emaCanSell and StepDn)
 string z1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? 'LONG ZONE' : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? 'SHORT ZONE' : ANYDAY and close > DBc and close < DTc ? 'WAIT FOR SIGNAL' : 'WAITING'
 
 // =========================================================================
+// 4. TLCS DIVERGENCE SCREENER CODE (Optimized for Main Chart Overlay)
+// =========================================================================
+oscillator(simple string type = 'rsi', simple int length = 14, float source = close, float highSource = high, float lowSource = low) =>
+    oscillator = switch type
+        'cci' => ta.cci(source, length)
+        'cmo' => ta.cmo(source, length)
+        'cog' => ta.cog(source, length)
+        'mfi' => ta.mfi(source, length)
+        'roc' => ta.roc(source, length)
+        'rsi' => ta.rsi(source, length)
+        'stoch' => ta.stoch(source, highSource, lowSource, length)
+        'wpr' => ta.wpr(length)
+        => ta.rsi(source, length)
+    oscillator
+
+oscillatorType = input.string('rsi', 'Oscillator', ['rsi', 'cci', 'cmo', 'cog', 'mfi', 'roc', 'stoch', 'wpr'], inline = 'osc', group = 'Oscillator')
+length = input.int(14, '', group = 'Oscillator', inline = 'osc', tooltip = 'Built in Oscillator Type and Length')
+useExternalOscillator = input.bool(false, 'Use External Oscillator', inline = 'eosc', group = 'Oscillator')
+externalOscillator = input.source(close, '', 'Use external oscillator instead of the built ins', inline = 'eosc', group = 'Oscillator')
+
+
+oscillator = useExternalOscillator ? externalOscillator : oscillator(oscillatorType, length)
+
+trendTypeTooltip = 'Method to identify trend. \n' + '\tZigzag - HH, HL on the starting pivot of divergence line is considered as uptrend and LL, LH on the starting pivot of divergence line is considered as downtrend\n' + '\tMA Difference - Difference between moving average of divergence line pivot will define the trend\n' + '\tExternal - Use External Oscillator Input'
+trendMethod = input.string('Zigzag', 'Trend Detection Method', ['Zigzag', 'MA Difference', 'External'], group = 'Trend', display = display.none, tooltip = trendTypeTooltip)
+maType = input.enum(CustomSeries.SMA, 'MA Filter', inline = 'ma', group = 'Trend', display = display.none)
+maLength = input.int(200, '', minval = 5, step = 50, inline = 'ma', group = 'Trend', display = display.none, tooltip = 'Moving Average to identify trend.')
+externalTrendSignal = input.source(close, 'External Trend Signal', 'Use External trend signal', group = 'Trend', display = display.none)
+
+zigzagLength = input.int(13, 'Length', group = 'Zigzag', tooltip = 'Zigzag Length', display = display.none)
+repaint = input.bool(true, 'Repaint', 'If selected, divergence lines repaint as per the latest info.', group = 'Miscellaneous', display = display.none)
+
+bullishDivergenceAlert = input.bool(true, 'Bullish Divergence', 'Alert on bullish divergence', group = 'Alerts', display = display.none)
+bullishHiddenDivergenceAlert = input.bool(true, 'Bullish Hidden Divergence', 'Alert on bullish hidden divergence', group = 'Alerts', display = display.none)
+bearishDivergenceAlert = input.bool(true, 'Bearish Divergence', 'Alert on bearish divergence', group = 'Alerts', display = display.none)
+bearishHiddenDivergenceAlert = input.bool(true, 'Bearish Hidden Divergence', 'Alert on bearish hidden divergence', group = 'Alerts', display = display.none)
+
+textColor = chart.bg_color
+trendMethodInt = trendMethod == 'Zigzag' ? 1 : trendMethod == 'External' ? 3 : 2
+var map<int, float> priceMap = map.new<int, float>()
+var map<int, float> oscillatorMap = map.new<int, float>()
+priceMap.put(bar_index, close)
+
+enum DivergenceType
+    BullishDivergence = "Bullish Divergence"
+    BearishDivergence = "Bearish Divergence"
+    BullishHiddenDivergence = "Bullish Hidden Divergence"
+    BearishHiddenDivergence = "Bearish Hidden Divergence"
+    None = "None"
+
+type DivergenceObject
+    Line priceLine
+    Label priceLabel
+    chart.point pricePoint
+    DivergenceType divergenceType
+    bool broken = false
+
+method delete(DivergenceObject this)=>
+    this.priceLine.delete()
+    this.priceLabel.delete()
+    this
+
+method draw(DivergenceObject this)=>
+    this.delete()
+    this.priceLine.draw()
+    this.priceLabel.draw()
+    this
+
+type ZigzagProperties
+	color textColor = color.black
+	int trendMethod = 1
+	bool repaint = false
+
+enum PivotDirection
+    HH = "Higher High"
+    LH = "Lower High"
+    HL = "Higher Low"
+    LL = "Lower Low"
+
+getDivergenceType(direction, divergence)=>
+    direction > 0?
+         (divergence > 0 ? DivergenceType.BearishDivergence : DivergenceType.BearishHiddenDivergence):
+         (divergence > 0 ? DivergenceType.BullishDivergence : DivergenceType.BullishHiddenDivergence)
+
+getPivotDirection(dir, ratio) =>
+    dir > 0 ? (ratio > 1 ? PivotDirection.HH : PivotDirection.LH) : ratio > 1 ? PivotDirection.LL : PivotDirection.HL
+
+getLinePropertiesMap()=>
+    linePropertiesMap = map.new<DivergenceType, LineProperties>()
+    linePropertiesMap.put(DivergenceType.BullishDivergence, LineProperties.new(xloc.bar_time, extend.none, color.green, line.style_solid, 1, false))
+    linePropertiesMap.put(DivergenceType.BearishDivergence, LineProperties.new(xloc.bar_time, extend.none, color.red, line.style_solid, 1, false))
+    linePropertiesMap.put(DivergenceType.BullishHiddenDivergence, LineProperties.new(xloc.bar_time, extend.none, color.lime, line.style_solid, 1, false))
+    linePropertiesMap.put(DivergenceType.BearishHiddenDivergence, LineProperties.new(xloc.bar_time, extend.none, color.orange, line.style_solid, 1, false))
+    linePropertiesMap
+
+getLabelPropertiesMap()=>
+    labelPropertiesMap = map.new<DivergenceType, LabelProperties>()
+    labelPropertiesMap.put(DivergenceType.BullishDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.green, label.style_label_up, chart.bg_color, size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BearishDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.red, label.style_label_down, chart.bg_color, size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BullishHiddenDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.lime, label.style_label_up, chart.bg_color, size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BearishHiddenDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.orange, label.style_label_down, chart.bg_color, size.small, force_overlay = false))
+    labelPropertiesMap
+
+getAllowedDivergenceTypes()=>
+    allowedDivergenceTypes = map.new<DivergenceType, bool>()
+    allowedDivergenceTypes.put(DivergenceType.BullishDivergence, bullishDivergenceAlert)
+    allowedDivergenceTypes.put(DivergenceType.BullishHiddenDivergence, bullishHiddenDivergenceAlert)
+    allowedDivergenceTypes.put(DivergenceType.BearishDivergence, bearishDivergenceAlert)
+    allowedDivergenceTypes.put(DivergenceType.BearishHiddenDivergence, bearishHiddenDivergenceAlert)
+    allowedDivergenceTypes
+
+const map<DivergenceType, bool> allowedDivergenceTypes = getAllowedDivergenceTypes()
+const map<DivergenceType, LineProperties> priceLinePropertiesMap = getLinePropertiesMap()
+const map<DivergenceType, LabelProperties> priceLabelPropertiesMap = getLabelPropertiesMap()
+
+method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, ZigzagProperties properties) =>
+    startIndex = properties.repaint ? 0 : 1
+    DivergenceType divergenceType = DivergenceType.None
+    if this.zigzagPivots.size() > 2 + startIndex
+        lastPivot = this.zigzagPivots.get(startIndex)
+        llastPivot = this.zigzagPivots.get(startIndex + 2)
+        skip = false
+        if this.flags.updateLastPivot
+            if divergenceObjects.size() > 0
+                lastDivergence = divergenceObjects.last()
+                divergenceStartBar = lastDivergence.priceLine.start.index
+                llastPivotBar = llastPivot.point.index
+
+                divergenceEndBar = lastDivergence.priceLine.end.index
+                lastPivotBar = lastPivot.point.index
+                if llastPivotBar == divergenceStartBar and lastPivotBar > divergenceEndBar
+                    divergenceObjects.pop().delete()
+                skip := llastPivotBar == divergenceStartBar and lastPivotBar == divergenceEndBar
+                skip
+
+        if this.flags.newPivot and not skip
+            dir = math.sign(lastPivot.dir)
+            lastOsc = lastPivot.point.price
+            lastPrice = lastPivot.indicatorValues.get(0)
+            oscRatio = lastPivot.ratio
+            priceRatio = lastPivot.indicatorRatios.get(0)
+
+            priceDirection = getPivotDirection(lastPivot.dir, priceRatio)
+            oscillatorDirection = getPivotDirection(lastPivot.dir, oscRatio)
+
+            lastTrend = lastPivot.indicatorValues.get(2)
+            lastMa = lastPivot.indicatorValues.get(1)
+
+            pricePoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPrice)
+            oscillatorPoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPivot.point.price)
+
+            if priceDirection != oscillatorDirection and llastPivot.indicatorRatios.size() > 0
+                llastPrice = llastPivot.indicatorValues.get(0)
+                llastRatio = llastPivot.indicatorRatios.get(0)
+                llastMa = llastPivot.indicatorValues.get(1)
+                lastPricePoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPrice)
+                llastOscillatorPoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPivot.point.price)
+
+                sentiment = math.sign(oscRatio - priceRatio)
+                trend = properties.trendMethod == 3 ? math.sign(lastTrend) : properties.trendMethod == 1 ? math.sign(dir * (llastRatio - 1)) : math.sign(llastMa - lastMa)
+                divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
+                
+                if divergence != 0
+                    divergenceType := getDivergenceType(dir, divergence)
+                    
+                    priceDivergenceLine = Line.new(lastPricePoint, pricePoint, priceLinePropertiesMap.get(divergenceType))
+
+                    validDivergence = true
+                    for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
+                        priceAtBar = priceMap.get(bar)
+                        oscillatorAtBar = oscillatorMap.get(bar)
+                        
+                        x1 = llastOscillatorPoint.index
+                        y1 = llastOscillatorPoint.price
+                        x2 = oscillatorPoint.index
+                        y2 = oscillatorPoint.price
+                        oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
+                        
+                        if priceAtBar * dir > priceDivergenceLine.get_price(bar) * dir
+                            validDivergence := false
+                            break
+
+                    if validDivergence
+                        priceLabelText = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BearishDivergence ? 'D' : 'H'
+                        priceTooltipText = str.tostring(divergenceType) + '\nPrice : ' + str.tostring(lastPrice) + ' ( ' + str.tostring(priceRatio) + ' ) - ' +
+                                         str.tostring(priceDirection) + '\n' + 'Oscillator :' + str.tostring(lastMa) + ' ( ' + str.tostring(oscRatio) + ' ) - ' + str.tostring(oscillatorDirection)
+                        
+                        priceDivergenceLabel = Label.new(pricePoint, priceLabelText, priceTooltipText, priceLabelPropertiesMap.get(divergenceType))
+                        
+                        if allowedDivergenceTypes.get(divergenceType)
+                            string divTypeStr = str.tostring(divergenceType)
+                            string _divPay = '{' + str.format(
+                                 '"trigger":"Divergence","secret":"{0}","symbol":"{1}","type":"{2}","price":"{3}","oscillator":"{4}"',
+                                 webhook_secret, syminfo.ticker, divTypeStr, str.tostring(lastPrice, format.mintick), str.tostring(lastMa, '#.##')
+                                 ) + '}'
+                            alert(_divPay, alert.freq_once_per_bar_close)
+                            
+                        divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, pricePoint, divergenceType)
+                        divergenceObject.delete()
+                        divergenceObjects.push(divergenceObject.draw())
+                        true
+                    else
+                        priceDivergenceLine.delete()
+                        false
+
+
+    divergenceType
+    
+ma = maType.ma(maLength)
+oscillatorMap.put(bar_index, oscillator)
+indicators = matrix.new<float>()
+indicatorNames = array.from('Price', str.tostring(maType) +'-' +str.tostring(maLength), 'External Trend')
+
+indicators.add_row(0, array.from(high, close, low))
+indicators.add_row(1, array.from(ma, ma, ma))
+indicators.add_row(2, array.from(externalTrendSignal, externalTrendSignal, externalTrendSignal))
+
+var Zigzag zigzag = Zigzag.new(zigzagLength, 300, 0)
+var ZigzagProperties properties = ZigzagProperties.new(textColor, trendMethodInt, repaint)
+var divergenceObjects = array.new<DivergenceObject>()
+zigzag.calculate(array.from(oscillator), indicators, indicatorNames)
+currentDivergence = zigzag.divergence(divergenceObjects, properties)
+
+for divergence in divergenceObjects
+    direction = divergence.divergenceType == DivergenceType.BullishDivergence or divergence.divergenceType == DivergenceType.BullishHiddenDivergence ? 1 : -1
+    if(not divergence.broken and divergence.pricePoint.price*direction > close*direction)
+        divergence.broken := true
+
+lastDivergence = divergenceObjects.size()==0 or divergenceObjects.last().broken? DivergenceType.None : divergenceObjects.last().divergenceType
+
+bool isBullishDiv = currentDivergence == DivergenceType.BullishDivergence or currentDivergence == DivergenceType.BullishHiddenDivergence
+bool isBearishDiv = currentDivergence == DivergenceType.BearishDivergence or currentDivergence == DivergenceType.BearishHiddenDivergence
+plot(isBullishDiv ? 1 : isBearishDiv ? -1 : 0, title="Div Signal", display=display.none)
+
+// ====================================================================
+// ── LIGHTNING SIGNALS (COMBINED) ────────────────────────────────────
+// ====================================================================
+
+
+// 1. Convert external oscillator plots back into booleans (1 = true)
+bool hasBullishDiv = isBullishDiv
+bool hasBearishDiv = isBearishDiv
+
+// 2. Lightning fires if (Missile OR Scalp) fires natively... OR if there's a strict [1] bar Divergence + Power Signal
+bool LightningBuy  = (CanBuy and ScalpBuy)   or (hasBullishDiv[1] and GrS)
+bool LightningSell = (CanSell and ScalpSell) or (hasBearishDiv[1] and ReS)
+
+// 3. Filter out individual trades so they don't fire when Lightning fires
+bool JustMissileBuy  = CanBuy and not LightningBuy
+bool JustMissileSell = CanSell and not LightningSell
+
+bool JustScalpBuy  = ScalpBuy and not LightningBuy
+bool JustScalpSell = ScalpSell and not LightningSell
+
+
+// ====================================================================
+// 7. DECLARE ARRAYS & INITIALIZE NEW TRADES 
+// ====================================================================
+var array<TradeLogic>   missileSessions   = array.new<TradeLogic>()
+var array<TradeVisuals> missileVisualsArr = array.new<TradeVisuals>()
+
+var array<TradeLogic>   scalpSessions     = array.new<TradeLogic>()
+var array<TradeVisuals> scalpVisualsArr   = array.new<TradeVisuals>()
+
+var array<TradeLogic>   currentSessions   = array.new<TradeLogic>()
+var array<TradeVisuals> currentVisualsArr = array.new<TradeVisuals>()
+
+var array<TradeLogic>   divergenceSessions   = array.new<TradeLogic>()
+var array<TradeVisuals> divergenceVisualsArr = array.new<TradeVisuals>()
+
+initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, isBullishDiv, isBearishDiv, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message)
+
+
+// ====================================================================
+// 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS ELEGANTLY)
+// ====================================================================
+bool  triggerTrailingSL = false
+float rangeTrailingSL   = 0.0
+
+// This single powerful function handles ALL arrays perfectly, including deletions!
+processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool triggerTrailingSL, float rangeTrailingSL) =>
+    if array.size(sessionsArr) > 0
+        for i = array.size(sessionsArr) - 1 to 0
+            TradeLogic trade = array.get(sessionsArr, i)
+            TradeVisuals vis = array.get(visualsArr, i)
+            
+            bool isPastDay = timeframe.isintraday and (time - trade.entryTime) >= 86400000
+            if isPastDay
+                trade.isClosed    := true
+                trade.forceClosed := true
+
+            float prevSL = trade.slLevel
+            
+            // ✅ Evaluates TP, SL, and EMA Exit dynamically!
+            evaluateTradeProgress(settings, trade, triggerTrailingSL, rangeTrailingSL)
+
+            if session.islastbar_regular and timeframe.isintraday and not trade.isClosed
+                terminateTrade(settings, trade)
+            
+            if trade.slLevel != prevSL and trade.trailingSLActivated
+                sendTrailingSLAlert(settings, trade, z1, dX, mX, d1_message)
+                
+            if not trade.isClosed
+                updateTradeVisuals(settings, trade, vis)
+                signalLabelUpdate(settings, trade, vis)
+            else
+                // The split-second it mathematically closes, finalize and clean up!
+                string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
+                alert(closePayload, alert.freq_once_per_bar)
+                
+                // ✅ DELETES VISUALS INSTANTLY
+                deleteTradeVisuals(vis) 
+                
+                array.remove(sessionsArr, i)
+                array.remove(visualsArr, i)
+                0 
+
+// ✅ EXECUTE ALL 4 ARRAYS IN 4 CLEAN LINES
+processTradeArray(settings, missileSessions, missileVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, scalpSessions,   scalpVisualsArr,   z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, currentSessions, currentVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+
+
+// ✅ MISSILE PLOTS (Now perfectly synced with the engine)
+plotshape(JustMissileBuy,  title = 'Long Signal',  style = shape.triangleup,   location = location.belowbar, color = color.green, size = size.small)
+plotshape(JustMissileSell, title = 'Short Signal', style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
+
+// ✅ SCALP PLOTS (Now perfectly synced with the engine)
+plotshape(JustScalpBuy,  title = 'Long Scalp',  style = shape.diamond, location = location.belowbar, color = color.green,   size = size.small)
+plotshape(JustScalpSell, title = 'Short Scalp', style = shape.diamond, location = location.abovebar, color = color.red,  size = size.small)
+
+// ✅ DIVERGENCE PLOTS
+plotshape(isBullishDiv, title="Bullish Divergence", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(isBearishDiv, title="Bearish Divergence", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+
+// ⚡ LIGHTNING & BOUNCE PLOTS (Unchanged)
+plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup  ,   location = location.belowbar, color = color.green,  size = size.large)
+plotshape(BounceDown and not LightningSell, title = 'Long Put', style = shape.arrowdown, location = location.abovebar, color = color.red,  size = size.large)
+
+plotchar(LightningBuy,  title="Lightning Buy",  char='★', location=location.belowbar, color = color.teal,    size = size.normal)
+plotchar(LightningSell, title="Lightning Sell", char='★', location=location.abovebar, color = color.maroon, size = size.normal)
+
+plotchar(LightningBuy,  title="Lightning Buy",  char='⚡', location=location.belowbar, color=color.lime, size=size.normal)
+plotchar(LightningSell, title="Lightning Sell", char='⚡', location=location.abovebar, color=color.lime, size=size.normal)
+
+// ====================================================================
+// SIGNAL FUNCTIONS 
+// ====================================================================
+LongSignalFunc() => CanBuy
+ShortSignalFunc() => CanSell
+MidSignalFunc() => ScalpBuy
+RejSignalFunc() => ScalpSell
+CanSignalFunc() => LightningBuy
+ERSignalFunc() => LightningSell
+
+// AST OPTIMIZATION: Call the booleans directly instead of triggering 6 wrapper functions
+SignalFunc() =>
+    [CanBuy, CanSell, ScalpBuy, ScalpSell, LightningBuy, LightningSell]
+    
+// ====================================================================
+// TICKER PROCESSING ENGINE & SUBSCRIBER INPUTS
+// ====================================================================
+ProcessTicker(triggeredLong, triggeredShort, triggeredMid, triggeredRej, triggeredCan, triggeredER, ticker, customName) =>
+    displayName = customName != "" ? customName : ticker
+    _scrLabelLong  = triggeredLong  and displayName != "" ? displayName + "\n" : ""
+    _scrLabelShort = triggeredShort and displayName != "" ? displayName + "\n" : ""
+    _scrLabelMid   = triggeredMid   and displayName != "" ? displayName + "\n" : ""
+    _scrLabelRej   = triggeredRej   and displayName != "" ? displayName + "\n" : ""
+    _scrLabelCan   = triggeredCan   and displayName != "" ? displayName + "\n" : ""
+    _scrLabelER    = triggeredER    and displayName != "" ? displayName + "\n" : ""
+    
+    [_scrLabelLong, _scrLabelShort, _scrLabelMid, _scrLabelRej, _scrLabelCan, _scrLabelER]
+
+scrLabelLong  = ""
+scrLabelShort = ""
+scrLabelMid   = ""
+scrLabelRej   = ""
+scrLabelCan   = ""
+scrLabelER    = ""
+
+// Ticker 1
+ticker1 = input.symbol(defval = "SI1!", title = "Ticker 1 Symbol")
+name1   = input.string(defval = "", title = "Ticker 1 Custom Display Name (Optional)")
+[triggered1Long, triggered1Short, triggered1Mid, triggered1Rej, triggered1Can, triggered1ER] = request.security(ticker1, timeframe.period, SignalFunc())
+[scrLabelLong1, scrLabelShort1, scrLabelMid1, scrLabelRej1, scrLabelCan1, scrLabelER1] = ProcessTicker(triggered1Long, triggered1Short, triggered1Mid, triggered1Rej, triggered1Can, triggered1ER, ticker1, name1)
+scrLabelLong  += scrLabelLong1
+scrLabelShort += scrLabelShort1
+scrLabelMid   += scrLabelMid1
+scrLabelRej   += scrLabelRej1
+scrLabelCan   += scrLabelCan1
+scrLabelER    += scrLabelER1
+
+// Ticker 2
+ticker2 = input.symbol(defval = "NIFTY", title = "Ticker 2 Symbol")
+name2   = input.string(defval = "", title = "Ticker 2 Custom Display Name (Optional)")
+[triggered2Long, triggered2Short, triggered2Mid, triggered2Rej, triggered2Can, triggered2ER] = request.security(ticker2, timeframe.period, SignalFunc())
+[scrLabelLong2, scrLabelShort2, scrLabelMid2, scrLabelRej2, scrLabelCan2, scrLabelER2] = ProcessTicker(triggered2Long, triggered2Short, triggered2Mid, triggered2Rej, triggered2Can, triggered2ER, ticker2, name2)
+scrLabelLong  += scrLabelLong2
+scrLabelShort += scrLabelShort2
+scrLabelMid   += scrLabelMid2
+scrLabelRej   += scrLabelRej2
+scrLabelCan   += scrLabelCan2
+scrLabelER    += scrLabelER2
+
+// Ticker 3
+ticker3 = input.symbol(defval = "GC1!", title = "Ticker 3 Symbol")
+name3   = input.string(defval = "", title = "Ticker 3 Custom Display Name (Optional)")
+[triggered3Long, triggered3Short, triggered3Mid, triggered3Rej, triggered3Can, triggered3ER] = request.security(ticker3, timeframe.period, SignalFunc())
+[scrLabelLong3, scrLabelShort3, scrLabelMid3, scrLabelRej3, scrLabelCan3, scrLabelER3] = ProcessTicker(triggered3Long, triggered3Short, triggered3Mid, triggered3Rej, triggered3Can, triggered3ER, ticker3, name3)
+scrLabelLong  += scrLabelLong3
+scrLabelShort += scrLabelShort3
+scrLabelMid   += scrLabelMid3
+scrLabelRej   += scrLabelRej3
+scrLabelCan   += scrLabelCan3
+scrLabelER    += scrLabelER3
+
+// Ticker 4
+ticker4 = input.symbol(defval = "CL1!", title = "Ticker 4 Symbol")
+name4   = input.string(defval = "", title = "Ticker 4 Custom Display Name (Optional)")
+[triggered4Long, triggered4Short, triggered4Mid, triggered4Rej, triggered4Can, triggered4ER] = request.security(ticker4, timeframe.period, SignalFunc())
+[scrLabelLong4, scrLabelShort4, scrLabelMid4, scrLabelRej4, scrLabelCan4, scrLabelER4] = ProcessTicker(triggered4Long, triggered4Short, triggered4Mid, triggered4Rej, triggered4Can, triggered4ER, ticker4, name4)
+scrLabelLong  += scrLabelLong4
+scrLabelShort += scrLabelShort4
+scrLabelMid   += scrLabelMid4
+scrLabelRej   += scrLabelRej4
+scrLabelCan   += scrLabelCan4
+scrLabelER    += scrLabelER4
+
+// Ticker 5
+ticker5 = input.symbol(defval = "NG1!", title = "Ticker 5 Symbol")
+name5   = input.string(defval = "", title = "Ticker 5 Custom Display Name (Optional)")
+[triggered5Long, triggered5Short, triggered5Mid, triggered5Rej, triggered5Can, triggered5ER] = request.security(ticker5, timeframe.period, SignalFunc())
+[scrLabelLong5, scrLabelShort5, scrLabelMid5, scrLabelRej5, scrLabelCan5, scrLabelER5] = ProcessTicker(triggered5Long, triggered5Short, triggered5Mid, triggered5Rej, triggered5Can, triggered5ER, ticker5, name5)
+scrLabelLong  += scrLabelLong5
+scrLabelShort += scrLabelShort5
+scrLabelMid   += scrLabelMid5
+scrLabelRej   += scrLabelRej5
+scrLabelCan   += scrLabelCan5
+scrLabelER    += scrLabelER5
+//========================================================
+
+
+dash_loc = input.string('Bottom Left', 'Dashboard Location', options = ['Top Right', 'Bottom Right', 'Top Left', 'Bottom Left'], group = 'Dashboard')
+
+text_size = input.string('Tiny', 'Dashboard Size', options = ['Tiny', 'Small', 'Normal', 'Large'], group = 'Dashboard')
+
+txt_col = input.color(#5a0ae4, 'Text/Frame Color', group = 'Dashboard')
+
+//----
+sPrice = close
+//condition = INSIDEDAY
+//Table
+var table_position = dash_loc == 'Top Left' ? position.top_left : dash_loc == 'Bottom Left' ? position.bottom_left : dash_loc == 'Top Right' ? position.top_right : position.top_left
+//var table_text_size = text_size == 'Tiny' ? size.tiny : text_size == 'Small' ? size.tiny : text_size == 'Normal' ? size.tiny : size.tiny
+var table_text_size = INSIDEDAY ? size.small : sPrice > DBCn and sPrice < DTCn ? size.small : size.tiny
+var table_text_size1 = INSIDEDAY ? size.large : sPrice > DBCn and sPrice < DTCn ? size.large : size.large
+//var table_text_size = INSIDEDAY ? size.normal : MAGNET_BULL ? size.normal : MAGNET_BEAR ? size.normal : (sPrice > DBCn and sPrice < DTCn) ? size.tiny : size.tiny
+
+//new_table = table.new(position.bottom_right, 8, 20, bgcolor = color.white, border_color=txt_col, border_width=1, frame_color=txt_col, frame_width=1)
+//new_table1 = table.new(position.top_center, 5, 10, bgcolor = color.new(color.white, 100), border_color = color.new(color.white, 100), border_width = 1, frame_color = color.new(color.white, 100), frame_width = 1)
+new_table2 = table.new(position.bottom_center, 8, 10, bgcolor = color.new(color.white, 100), border_color = color.new(color.white, 100), border_width = 1, frame_color = color.new(color.white, 100), frame_width = 1)
+
+if barstate.islast
+
+    table.cell(new_table2, 0, 4, text = str.tostring(scrLabelMid),  text_halign = text.align_center, text_color=color.new(#096c32,100), text_size = table_text_size, bgcolor = color.new(color.white, 100))
+    table.cell(new_table2, 0, 3, text = str.tostring(scrLabelRej),  text_halign = text.align_center, text_color=color.new(#d52525, 100), text_size = table_text_size, bgcolor = color.new(color.white, 100))
+    table.cell(new_table2, 0, 2, text = str.tostring(scrLabelMid),  text_halign = text.align_center, text_color=#096c32, text_size = table_text_size, bgcolor = color.new(color.white, 100))
+    table.cell(new_table2, 0, 1, text = str.tostring(scrLabelRej),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = table_text_size, bgcolor = color.new(color.white, 100))
+//    table.cell(new_table2, 0, 4, text = str.tostring(scrLabelCan),  text_halign = text.align_center, text_color=#096c32, text_size = size.large, bgcolor = color.new(color.white, 100))
+//    table.cell(new_table2, 0, 3, text = str.tostring(scrLabelER),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = size.large, bgcolor = color.new(color.white, 100))
+
+var table new_table3 = table.new(position.middle_center, 3, 3,  border_color = color.new(color.yellow, 90),  border_width = 2)
+
+if barstate.islast
+
+    table.cell(new_table3, 0, 2, text = str.tostring(scrLabelCan),  text_halign = text.align_center, text_color=#096c32, text_size = size.huge, bgcolor = color.new(color.white, 100))
+    table.cell(new_table3, 0, 1, text = str.tostring(scrLabelER),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = size.huge, bgcolor = color.new(color.white, 100))
+
+//========================================================
+//=======================================================================================================================================
+
+//VISHANT MESHRAM DIVERGENCE INDICATOR INSPIRED BY TRENDOSCOPE INDICATORS. BUILD WITH THE HELP OF AI ANTIGRAVITY AT MUMBAI ON 18-07-2020. TODAY IS GREAT DAY I handle_label_overlaps
+// TODAY I DEBUGGED MY WEBSITE AND MOBILE APPLICATIONS AND ALSO BUILT HBOM DASHBOARD AS MY WORK COMPANION
+//I RECEIVED MONEY FROM INDIRA SCHOOL FOR MANASVI AND PAID SONAM'S FEE AS MONEY GIVEN BY ASHISH WERE LOST IN TRADING
+//HENCEFORTH ONLY TRADING FOR WINNING. NO GREED OR FEAR. JUST BUILD THE ALGO TRADING TO TRADE MARKETS AND SPEND LIFE READING AND ON HOBBIES AND SOCIAL WORK.
+
+// =========================================================================
 // 1. INLINED 'OOTA' LIBRARY (Pruned for CustomSeries & MA)
 // =========================================================================
 enum CustomSeries
@@ -3166,6 +3655,7 @@ method draw(Label this) =>
     else
         this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family)
     this.object
+
 
 // =========================================================================
 // 3. INLINED 'ZIGZAG' LIBRARY (Pruned OOP Version)
@@ -3366,507 +3856,4 @@ method calculate(Zigzag this, array<float> ohlc, matrix<float> indicators, array
         this.addnewpivot(newPivotObject, iCandle, indicatorNames)
         this.flags.newPivot := true
     this
-
-// =========================================================================
-// 4. TLCS DIVERGENCE SCREENER CODE (Optimized for Main Chart Overlay)
-// =========================================================================
-oscillator(simple string type = 'rsi', simple int length = 14, float source = close, float highSource = high, float lowSource = low) =>
-    oscillator = switch type
-        'cci' => ta.cci(source, length)
-        'cmo' => ta.cmo(source, length)
-        'cog' => ta.cog(source, length)
-        'mfi' => ta.mfi(source, length)
-        'roc' => ta.roc(source, length)
-        'rsi' => ta.rsi(source, length)
-        'stoch' => ta.stoch(source, highSource, lowSource, length)
-        'wpr' => ta.wpr(length)
-        => ta.rsi(source, length)
-    oscillator
-
-oscillatorType = input.string('rsi', 'Oscillator', ['rsi', 'cci', 'cmo', 'cog', 'mfi', 'roc', 'stoch', 'wpr'], inline = 'osc', group = 'Oscillator')
-length = input.int(14, '', group = 'Oscillator', inline = 'osc', tooltip = 'Built in Oscillator Type and Length')
-useExternalOscillator = input.bool(false, 'Use External Oscillator', inline = 'eosc', group = 'Oscillator')
-externalOscillator = input.source(close, '', 'Use external oscillator instead of the built ins', inline = 'eosc', group = 'Oscillator')
-
-
-oscillator = useExternalOscillator ? externalOscillator : oscillator(oscillatorType, length)
-
-trendTypeTooltip = 'Method to identify trend. \n' + '\tZigzag - HH, HL on the starting pivot of divergence line is considered as uptrend and LL, LH on the starting pivot of divergence line is considered as downtrend\n' + '\tMA Difference - Difference between moving average of divergence line pivot will define the trend\n' + '\tExternal - Use External Oscillator Input'
-trendMethod = input.string('Zigzag', 'Trend Detection Method', ['Zigzag', 'MA Difference', 'External'], group = 'Trend', display = display.none, tooltip = trendTypeTooltip)
-maType = input.enum(CustomSeries.SMA, 'MA Filter', inline = 'ma', group = 'Trend', display = display.none)
-maLength = input.int(200, '', minval = 5, step = 50, inline = 'ma', group = 'Trend', display = display.none, tooltip = 'Moving Average to identify trend.')
-externalTrendSignal = input.source(close, 'External Trend Signal', 'Use External trend signal', group = 'Trend', display = display.none)
-
-zigzagLength = input.int(13, 'Length', group = 'Zigzag', tooltip = 'Zigzag Length', display = display.none)
-repaint = input.bool(true, 'Repaint', 'If selected, divergence lines repaint as per the latest info.', group = 'Miscellaneous', display = display.none)
-
-bullishDivergenceAlert = input.bool(true, 'Bullish Divergence', 'Alert on bullish divergence', group = 'Alerts', display = display.none)
-bullishHiddenDivergenceAlert = input.bool(true, 'Bullish Hidden Divergence', 'Alert on bullish hidden divergence', group = 'Alerts', display = display.none)
-bearishDivergenceAlert = input.bool(true, 'Bearish Divergence', 'Alert on bearish divergence', group = 'Alerts', display = display.none)
-bearishHiddenDivergenceAlert = input.bool(true, 'Bearish Hidden Divergence', 'Alert on bearish hidden divergence', group = 'Alerts', display = display.none)
-
-textColor = chart.bg_color
-trendMethodInt = trendMethod == 'Zigzag' ? 1 : trendMethod == 'External' ? 3 : 2
-var map<int, float> priceMap = map.new<int, float>()
-var map<int, float> oscillatorMap = map.new<int, float>()
-priceMap.put(bar_index, close)
-
-enum DivergenceType
-    BullishDivergence = "Bullish Divergence"
-    BearishDivergence = "Bearish Divergence"
-    BullishHiddenDivergence = "Bullish Hidden Divergence"
-    BearishHiddenDivergence = "Bearish Hidden Divergence"
-    None = "None"
-
-type DivergenceObject
-    Line priceLine
-    Label priceLabel
-    Label xcrossLabel
-    chart.point pricePoint
-    DivergenceType divergenceType
-    bool broken = false
-
-method delete(DivergenceObject this)=>
-    this.priceLine.delete()
-    this.priceLabel.delete()
-    this.xcrossLabel.delete()
-    this
-
-method draw(DivergenceObject this)=>
-    this.delete()
-    this.priceLine.draw()
-    this.priceLabel.draw()
-    this.xcrossLabel.draw()
-    this
-
-type ZigzagProperties
-	color textColor = color.black
-	int trendMethod = 1
-	bool repaint = false
-
-enum PivotDirection
-    HH = "Higher High"
-    LH = "Lower High"
-    HL = "Higher Low"
-    LL = "Lower Low"
-
-getDivergenceType(direction, divergence)=>
-    direction > 0?
-         (divergence > 0 ? DivergenceType.BearishDivergence : DivergenceType.BearishHiddenDivergence):
-         (divergence > 0 ? DivergenceType.BullishDivergence : DivergenceType.BullishHiddenDivergence)
-
-getPivotDirection(dir, ratio) =>
-    dir > 0 ? (ratio > 1 ? PivotDirection.HH : PivotDirection.LH) : ratio > 1 ? PivotDirection.LL : PivotDirection.HL
-
-getLinePropertiesMap()=>
-    linePropertiesMap = map.new<DivergenceType, LineProperties>()
-    linePropertiesMap.put(DivergenceType.BullishDivergence, LineProperties.new(xloc.bar_time, extend.none, color.green, line.style_solid, 1, false))
-    linePropertiesMap.put(DivergenceType.BearishDivergence, LineProperties.new(xloc.bar_time, extend.none, color.red, line.style_solid, 1, false))
-    linePropertiesMap.put(DivergenceType.BullishHiddenDivergence, LineProperties.new(xloc.bar_time, extend.none, color.lime, line.style_solid, 1, false))
-    linePropertiesMap.put(DivergenceType.BearishHiddenDivergence, LineProperties.new(xloc.bar_time, extend.none, color.orange, line.style_solid, 1, false))
-    linePropertiesMap
-
-getLabelPropertiesMap()=>
-    labelPropertiesMap = map.new<DivergenceType, LabelProperties>()
-    labelPropertiesMap.put(DivergenceType.BullishDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.green, label.style_label_up, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BearishDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.red, label.style_label_down, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BullishHiddenDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.lime, label.style_label_up, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BearishHiddenDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.orange, label.style_label_down, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap
-
-getAllowedDivergenceTypes()=>
-    allowedDivergenceTypes = map.new<DivergenceType, bool>()
-    allowedDivergenceTypes.put(DivergenceType.BullishDivergence, bullishDivergenceAlert)
-    allowedDivergenceTypes.put(DivergenceType.BullishHiddenDivergence, bullishHiddenDivergenceAlert)
-    allowedDivergenceTypes.put(DivergenceType.BearishDivergence, bearishDivergenceAlert)
-    allowedDivergenceTypes.put(DivergenceType.BearishHiddenDivergence, bearishHiddenDivergenceAlert)
-    allowedDivergenceTypes
-
-const map<DivergenceType, bool> allowedDivergenceTypes = getAllowedDivergenceTypes()
-const map<DivergenceType, LineProperties> priceLinePropertiesMap = getLinePropertiesMap()
-const map<DivergenceType, LabelProperties> priceLabelPropertiesMap = getLabelPropertiesMap()
-
-method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, ZigzagProperties properties) =>
-    startIndex = properties.repaint ? 0 : 1
-    DivergenceType divergenceType = DivergenceType.None
-    if this.zigzagPivots.size() > 2 + startIndex
-        lastPivot = this.zigzagPivots.get(startIndex)
-        llastPivot = this.zigzagPivots.get(startIndex + 2)
-        skip = false
-        if this.flags.updateLastPivot
-            if divergenceObjects.size() > 0
-                lastDivergence = divergenceObjects.last()
-                divergenceStartBar = lastDivergence.priceLine.start.index
-                llastPivotBar = llastPivot.point.index
-
-                divergenceEndBar = lastDivergence.priceLine.end.index
-                lastPivotBar = lastPivot.point.index
-                if llastPivotBar == divergenceStartBar and lastPivotBar > divergenceEndBar
-                    divergenceObjects.pop().delete()
-                skip := llastPivotBar == divergenceStartBar and lastPivotBar == divergenceEndBar
-                skip
-
-        if this.flags.newPivot and not skip
-            dir = math.sign(lastPivot.dir)
-            lastOsc = lastPivot.point.price
-            lastPrice = lastPivot.indicatorValues.get(0)
-            oscRatio = lastPivot.ratio
-            priceRatio = lastPivot.indicatorRatios.get(0)
-
-            priceDirection = getPivotDirection(lastPivot.dir, priceRatio)
-            oscillatorDirection = getPivotDirection(lastPivot.dir, oscRatio)
-
-            lastTrend = lastPivot.indicatorValues.get(2)
-            lastMa = lastPivot.indicatorValues.get(1)
-
-            pricePoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPrice)
-            oscillatorPoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPivot.point.price)
-
-            if priceDirection != oscillatorDirection and llastPivot.indicatorRatios.size() > 0
-                llastPrice = llastPivot.indicatorValues.get(0)
-                llastRatio = llastPivot.indicatorRatios.get(0)
-                llastMa = llastPivot.indicatorValues.get(1)
-                lastPricePoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPrice)
-                llastOscillatorPoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPivot.point.price)
-
-                sentiment = math.sign(oscRatio - priceRatio)
-                trend = properties.trendMethod == 3 ? math.sign(lastTrend) : properties.trendMethod == 1 ? math.sign(dir * (llastRatio - 1)) : math.sign(llastMa - lastMa)
-                divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
-                
-                if divergence != 0
-                    divergenceType := getDivergenceType(dir, divergence)
-                    
-                    priceDivergenceLine = Line.new(lastPricePoint, pricePoint, priceLinePropertiesMap.get(divergenceType))
-
-                    validDivergence = true
-                    for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
-                        priceAtBar = priceMap.get(bar)
-                        oscillatorAtBar = oscillatorMap.get(bar)
-                        
-                        x1 = llastOscillatorPoint.index
-                        y1 = llastOscillatorPoint.price
-                        x2 = oscillatorPoint.index
-                        y2 = oscillatorPoint.price
-                        oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
-                        
-                        if priceAtBar * dir > priceDivergenceLine.get_price(bar) * dir
-                            validDivergence := false
-                            break
-
-                    if validDivergence
-                        priceLabelText = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BearishDivergence ? 'D' : 'H'
-                        priceTooltipText = str.tostring(divergenceType) + '\nPrice : ' + str.tostring(lastPrice) + ' ( ' + str.tostring(priceRatio) + ' ) - ' +
-                                         str.tostring(priceDirection) + '\n' + 'Oscillator :' + str.tostring(lastMa) + ' ( ' + str.tostring(oscRatio) + ' ) - ' + str.tostring(oscillatorDirection)
-                        
-                        priceDivergenceLabel = Label.new(pricePoint, priceLabelText, priceTooltipText, priceLabelPropertiesMap.get(divergenceType))
-                        
-                        if allowedDivergenceTypes.get(divergenceType)
-                            string divTypeStr = str.tostring(divergenceType)
-                            string _divPay = '{' + str.format(
-                                 '"trigger":"Divergence","secret":"{0}","symbol":"{1}","type":"{2}","price":"{3}","oscillator":"{4}"',
-                                 webhook_secret, syminfo.ticker, divTypeStr, str.tostring(lastPrice, format.mintick), str.tostring(lastMa, '#.##')
-                                 ) + '}'
-                            alert(_divPay, alert.freq_once_per_bar_close)
-                            
-                        color xColor = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? color.green : color.red
-                        string xYloc = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? yloc.belowbar : yloc.abovebar
-                        LabelProperties xcrossProps = LabelProperties.new(xloc.bar_time, xYloc, xColor, label.style_xcross, color.new(color.white, 100), size.small, force_overlay = false)
-                        Label xcrossLabelObj = Label.new(pricePoint, "", "", xcrossProps)
-                        divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, xcrossLabelObj, pricePoint, divergenceType)
-                        divergenceObject.delete()
-                        divergenceObjects.push(divergenceObject.draw())
-                        true
-                    else
-                        priceDivergenceLine.delete()
-                        false
-
-
-    divergenceType
     
-ma = maType.ma(maLength)
-oscillatorMap.put(bar_index, oscillator)
-indicators = matrix.new<float>()
-indicatorNames = array.from('Price', str.tostring(maType) +'-' +str.tostring(maLength), 'External Trend')
-
-indicators.add_row(0, array.from(high, close, low))
-indicators.add_row(1, array.from(ma, ma, ma))
-indicators.add_row(2, array.from(externalTrendSignal, externalTrendSignal, externalTrendSignal))
-
-var Zigzag zigzag = Zigzag.new(zigzagLength, 300, 0)
-var ZigzagProperties properties = ZigzagProperties.new(textColor, trendMethodInt, repaint)
-var divergenceObjects = array.new<DivergenceObject>()
-zigzag.calculate(array.from(oscillator), indicators, indicatorNames)
-currentDivergence = zigzag.divergence(divergenceObjects, properties)
-
-for divergence in divergenceObjects
-    direction = divergence.divergenceType == DivergenceType.BullishDivergence or divergence.divergenceType == DivergenceType.BullishHiddenDivergence ? 1 : -1
-    if(not divergence.broken and divergence.pricePoint.price*direction > close*direction)
-        divergence.broken := true
-
-lastDivergence = divergenceObjects.size()==0 or divergenceObjects.last().broken? DivergenceType.None : divergenceObjects.last().divergenceType
-
-bool isBullishDiv = currentDivergence == DivergenceType.BullishDivergence or currentDivergence == DivergenceType.BullishHiddenDivergence
-bool isBearishDiv = currentDivergence == DivergenceType.BearishDivergence or currentDivergence == DivergenceType.BearishHiddenDivergence
-plot(isBullishDiv ? 1 : isBearishDiv ? -1 : 0, title="Div Signal", display=display.none)
-
-// ====================================================================
-// ── LIGHTNING SIGNALS (COMBINED) ────────────────────────────────────
-// ====================================================================
-
-
-// 1. Convert external oscillator plots back into booleans (1 = true)
-bool hasBullishDiv = isBullishDiv
-bool hasBearishDiv = isBearishDiv
-
-// 2. Lightning fires if (Missile OR Scalp) fires natively... OR if there's a strict [1] bar Divergence + Power Signal
-// ====================================================================
-// ── GATING LOGIC (H4/L4 & DAY ALLOWED) ──────────────────────────────
-// ====================================================================
-bool longAllowed = close < H4
-bool shortAllowed = close > L4
-bool dayallowed = true
-
-bool LightningBuy  = ((CanBuy and ScalpBuy)   or (hasBullishDiv[1] and GrS)) and longAllowed and dayallowed
-bool LightningSell = ((CanSell and ScalpSell) or (hasBearishDiv[1] and ReS)) and shortAllowed and dayallowed
-
-// 3. Filter out individual trades so they don't fire when Lightning fires
-bool JustMissileBuy  = CanBuy and not LightningBuy and longAllowed and dayallowed
-bool JustMissileSell = CanSell and not LightningSell and shortAllowed and dayallowed
-
-bool JustScalpBuy  = ScalpBuy and not LightningBuy and longAllowed and dayallowed
-bool JustScalpSell = ScalpSell and not LightningSell and shortAllowed and dayallowed
-
-
-// ====================================================================
-// 7. DECLARE ARRAYS & INITIALIZE NEW TRADES 
-// ====================================================================
-var array<TradeLogic>   missileSessions   = array.new<TradeLogic>()
-var array<TradeVisuals> missileVisualsArr = array.new<TradeVisuals>()
-
-var array<TradeLogic>   scalpSessions     = array.new<TradeLogic>()
-var array<TradeVisuals> scalpVisualsArr   = array.new<TradeVisuals>()
-
-var array<TradeLogic>   currentSessions   = array.new<TradeLogic>()
-var array<TradeVisuals> currentVisualsArr = array.new<TradeVisuals>()
-
-var array<TradeLogic>   divergenceSessions   = array.new<TradeLogic>()
-var array<TradeVisuals> divergenceVisualsArr = array.new<TradeVisuals>()
-
-initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message)
-initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message)
-initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message)
-initializeAndPushTrade(settings, isBullishDiv, isBearishDiv, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message)
-
-
-// ====================================================================
-// 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS ELEGANTLY)
-// ====================================================================
-bool  triggerTrailingSL = false
-float rangeTrailingSL   = 0.0
-
-// This single powerful function handles ALL arrays perfectly, including deletions!
-processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool triggerTrailingSL, float rangeTrailingSL) =>
-    if array.size(sessionsArr) > 0
-        for i = array.size(sessionsArr) - 1 to 0
-            TradeLogic trade = array.get(sessionsArr, i)
-            TradeVisuals vis = array.get(visualsArr, i)
-            
-            bool isPastDay = timeframe.isintraday and (time - trade.entryTime) >= 86400000
-            if isPastDay
-                trade.isClosed    := true
-                trade.forceClosed := true
-
-            float prevSL = trade.slLevel
-            
-            // ✅ Evaluates TP, SL, and EMA Exit dynamically!
-            evaluateTradeProgress(settings, trade, triggerTrailingSL, rangeTrailingSL)
-
-            if session.islastbar_regular and timeframe.isintraday and not trade.isClosed
-                terminateTrade(settings, trade)
-            
-            if trade.slLevel != prevSL and trade.trailingSLActivated
-                sendTrailingSLAlert(settings, trade, z1, dX, mX, d1_message)
-                
-            if not trade.isClosed
-                updateTradeVisuals(settings, trade, vis)
-                signalLabelUpdate(settings, trade, vis)
-            else
-                // The split-second it mathematically closes, finalize and clean up!
-                string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
-                alert(closePayload, alert.freq_once_per_bar)
-                
-                // ✅ DELETES VISUALS INSTANTLY
-                deleteTradeVisuals(vis) 
-                
-                array.remove(sessionsArr, i)
-                array.remove(visualsArr, i)
-                0 
-
-// ✅ EXECUTE ALL 4 ARRAYS IN 4 CLEAN LINES
-processTradeArray(settings, missileSessions, missileVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, scalpSessions,   scalpVisualsArr,   z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, currentSessions, currentVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-
-
-// ✅ MISSILE PLOTS (Now perfectly synced with the engine)
-plotshape(JustMissileBuy,  title = 'Long Signal',  style = shape.triangleup,   location = location.belowbar, color = color.green, size = size.small)
-plotshape(JustMissileSell, title = 'Short Signal', style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
-
-// ✅ SCALP PLOTS (Now perfectly synced with the engine)
-plotshape(JustScalpBuy,  title = 'Long Scalp',  style = shape.diamond, location = location.belowbar, color = color.green,   size = size.small)
-plotshape(JustScalpSell, title = 'Short Scalp', style = shape.diamond, location = location.abovebar, color = color.red,  size = size.small)
-
-
-// ⚡ LIGHTNING & BOUNCE PLOTS (Unchanged)
-plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup  ,   location = location.belowbar, color = color.green,  size = size.large)
-plotshape(BounceDown and not LightningSell, title = 'Long Put', style = shape.arrowdown, location = location.abovebar, color = color.red,  size = size.large)
-
-plotchar(LightningBuy,  title="Lightning Buy",  char='★', location=location.belowbar, color = color.teal,    size = size.normal)
-plotchar(LightningSell, title="Lightning Sell", char='★', location=location.abovebar, color = color.maroon, size = size.normal)
-
-plotchar(LightningBuy,  title="Lightning Buy",  char='⚡', location=location.belowbar, color=color.lime, size=size.normal)
-plotchar(LightningSell, title="Lightning Sell", char='⚡', location=location.abovebar, color=color.lime, size=size.normal)
-
-//
-// ====================================================================
-// SIGNAL FUNCTIONS 
-// ====================================================================
-bool LightningBuyPure  = (CanBuy and ScalpBuy)
-bool LightningSellPure = (CanSell and ScalpSell)
-
-LongSignalFunc() => CanBuy
-ShortSignalFunc() => CanSell
-MidSignalFunc() => ScalpBuy
-RejSignalFunc() => ScalpSell
-CanSignalFunc() => LightningBuyPure
-ERSignalFunc() => LightningSellPure
-
-// AST OPTIMIZATION: Call the booleans directly instead of triggering 6 wrapper functions
-SignalFunc() =>
-    [CanBuy, CanSell, ScalpBuy, ScalpSell, LightningBuyPure, LightningSellPure]
-
-// ====================================================================
-ProcessTicker(triggeredLong, triggeredShort, triggeredMid, triggeredRej, triggeredCan, triggeredER, ticker, customName) =>
-    displayName = customName != "" ? customName : ticker
-    _scrLabelLong  = triggeredLong  and displayName != "" ? displayName + "\n" : ""
-    _scrLabelShort = triggeredShort and displayName != "" ? displayName + "\n" : ""
-    _scrLabelMid   = triggeredMid   and displayName != "" ? displayName + "\n" : ""
-    _scrLabelRej   = triggeredRej   and displayName != "" ? displayName + "\n" : ""
-    _scrLabelCan   = triggeredCan   and displayName != "" ? displayName + "\n" : ""
-    _scrLabelER    = triggeredER    and displayName != "" ? displayName + "\n" : ""
-    
-    [_scrLabelLong, _scrLabelShort, _scrLabelMid, _scrLabelRej, _scrLabelCan, _scrLabelER]
-
-scrLabelLong  = ""
-scrLabelShort = ""
-scrLabelMid   = ""
-scrLabelRej   = ""
-scrLabelCan   = ""
-scrLabelER    = ""
-
-// Ticker 1
-ticker1 = input.symbol(defval = "SI1!", title = "Ticker 1 Symbol")
-name1   = input.string(defval = "", title = "Ticker 1 Custom Display Name (Optional)")
-[triggered1Long, triggered1Short, triggered1Mid, triggered1Rej, triggered1Can, triggered1ER] = request.security(ticker1, timeframe.period, SignalFunc())
-[scrLabelLong1, scrLabelShort1, scrLabelMid1, scrLabelRej1, scrLabelCan1, scrLabelER1] = ProcessTicker(triggered1Long, triggered1Short, triggered1Mid, triggered1Rej, triggered1Can, triggered1ER, ticker1, name1)
-scrLabelLong  += scrLabelLong1
-scrLabelShort += scrLabelShort1
-scrLabelMid   += scrLabelMid1
-scrLabelRej   += scrLabelRej1
-scrLabelCan   += scrLabelCan1
-scrLabelER    += scrLabelER1
-
-// Ticker 2
-ticker2 = input.symbol(defval = "NIFTY", title = "Ticker 2 Symbol")
-name2   = input.string(defval = "", title = "Ticker 2 Custom Display Name (Optional)")
-[triggered2Long, triggered2Short, triggered2Mid, triggered2Rej, triggered2Can, triggered2ER] = request.security(ticker2, timeframe.period, SignalFunc())
-[scrLabelLong2, scrLabelShort2, scrLabelMid2, scrLabelRej2, scrLabelCan2, scrLabelER2] = ProcessTicker(triggered2Long, triggered2Short, triggered2Mid, triggered2Rej, triggered2Can, triggered2ER, ticker2, name2)
-scrLabelLong  += scrLabelLong2
-scrLabelShort += scrLabelShort2
-scrLabelMid   += scrLabelMid2
-scrLabelRej   += scrLabelRej2
-scrLabelCan   += scrLabelCan2
-scrLabelER    += scrLabelER2
-
-// Ticker 3
-ticker3 = input.symbol(defval = "GC1!", title = "Ticker 3 Symbol")
-name3   = input.string(defval = "", title = "Ticker 3 Custom Display Name (Optional)")
-[triggered3Long, triggered3Short, triggered3Mid, triggered3Rej, triggered3Can, triggered3ER] = request.security(ticker3, timeframe.period, SignalFunc())
-[scrLabelLong3, scrLabelShort3, scrLabelMid3, scrLabelRej3, scrLabelCan3, scrLabelER3] = ProcessTicker(triggered3Long, triggered3Short, triggered3Mid, triggered3Rej, triggered3Can, triggered3ER, ticker3, name3)
-scrLabelLong  += scrLabelLong3
-scrLabelShort += scrLabelShort3
-scrLabelMid   += scrLabelMid3
-scrLabelRej   += scrLabelRej3
-scrLabelCan   += scrLabelCan3
-scrLabelER    += scrLabelER3
-
-// Ticker 4
-ticker4 = input.symbol(defval = "CL1!", title = "Ticker 4 Symbol")
-name4   = input.string(defval = "", title = "Ticker 4 Custom Display Name (Optional)")
-[triggered4Long, triggered4Short, triggered4Mid, triggered4Rej, triggered4Can, triggered4ER] = request.security(ticker4, timeframe.period, SignalFunc())
-[scrLabelLong4, scrLabelShort4, scrLabelMid4, scrLabelRej4, scrLabelCan4, scrLabelER4] = ProcessTicker(triggered4Long, triggered4Short, triggered4Mid, triggered4Rej, triggered4Can, triggered4ER, ticker4, name4)
-scrLabelLong  += scrLabelLong4
-scrLabelShort += scrLabelShort4
-scrLabelMid   += scrLabelMid4
-scrLabelRej   += scrLabelRej4
-scrLabelCan   += scrLabelCan4
-scrLabelER    += scrLabelER4
-
-// Ticker 5
-ticker5 = input.symbol(defval = "NG1!", title = "Ticker 5 Symbol")
-name5   = input.string(defval = "", title = "Ticker 5 Custom Display Name (Optional)")
-[triggered5Long, triggered5Short, triggered5Mid, triggered5Rej, triggered5Can, triggered5ER] = request.security(ticker5, timeframe.period, SignalFunc())
-[scrLabelLong5, scrLabelShort5, scrLabelMid5, scrLabelRej5, scrLabelCan5, scrLabelER5] = ProcessTicker(triggered5Long, triggered5Short, triggered5Mid, triggered5Rej, triggered5Can, triggered5ER, ticker5, name5)
-scrLabelLong  += scrLabelLong5
-scrLabelShort += scrLabelShort5
-scrLabelMid   += scrLabelMid5
-scrLabelRej   += scrLabelRej5
-scrLabelCan   += scrLabelCan5
-scrLabelER    += scrLabelER5
-//========================================================
-
-
-dash_loc = input.string('Bottom Left', 'Dashboard Location', options = ['Top Right', 'Bottom Right', 'Top Left', 'Bottom Left'], group = 'Dashboard')
-
-text_size = input.string('Tiny', 'Dashboard Size', options = ['Tiny', 'Small', 'Normal', 'Large'], group = 'Dashboard')
-
-txt_col = input.color(#5a0ae4, 'Text/Frame Color', group = 'Dashboard')
-
-//----
-sPrice = close
-//condition = INSIDEDAY
-//Table
-var table_position = dash_loc == 'Top Left' ? position.top_left : dash_loc == 'Bottom Left' ? position.bottom_left : dash_loc == 'Top Right' ? position.top_right : position.top_left
-//var table_text_size = text_size == 'Tiny' ? size.tiny : text_size == 'Small' ? size.tiny : text_size == 'Normal' ? size.tiny : size.tiny
-var table_text_size = INSIDEDAY ? size.small : sPrice > DBCn and sPrice < DTCn ? size.small : size.tiny
-var table_text_size1 = INSIDEDAY ? size.large : sPrice > DBCn and sPrice < DTCn ? size.large : size.large
-//var table_text_size = INSIDEDAY ? size.normal : MAGNET_BULL ? size.normal : MAGNET_BEAR ? size.normal : (sPrice > DBCn and sPrice < DTCn) ? size.tiny : size.tiny
-
-//new_table = table.new(position.bottom_right, 8, 20, bgcolor = color.white, border_color=txt_col, border_width=1, frame_color=txt_col, frame_width=1)
-//new_table1 = table.new(position.top_center, 5, 10, bgcolor = color.new(color.white, 100), border_color = color.new(color.white, 100), border_width = 1, frame_color = color.new(color.white, 100), frame_width = 1)
-new_table2 = table.new(position.bottom_center, 8, 10, bgcolor = color.new(color.white, 100), border_color = color.new(color.white, 100), border_width = 1, frame_color = color.new(color.white, 100), frame_width = 1)
-
-if barstate.islast
-
-    table.cell(new_table2, 0, 4, text = str.tostring(scrLabelMid),  text_halign = text.align_center, text_color=color.new(#096c32,100), text_size = table_text_size, bgcolor = color.new(color.white, 100))
-    table.cell(new_table2, 0, 3, text = str.tostring(scrLabelRej),  text_halign = text.align_center, text_color=color.new(#d52525, 100), text_size = table_text_size, bgcolor = color.new(color.white, 100))
-    table.cell(new_table2, 0, 2, text = str.tostring(scrLabelMid),  text_halign = text.align_center, text_color=#096c32, text_size = table_text_size, bgcolor = color.new(color.white, 100))
-    table.cell(new_table2, 0, 1, text = str.tostring(scrLabelRej),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = table_text_size, bgcolor = color.new(color.white, 100))
-//    table.cell(new_table2, 0, 4, text = str.tostring(scrLabelCan),  text_halign = text.align_center, text_color=#096c32, text_size = size.large, bgcolor = color.new(color.white, 100))
-//    table.cell(new_table2, 0, 3, text = str.tostring(scrLabelER),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = size.large, bgcolor = color.new(color.white, 100))
-
-var table new_table3 = table.new(position.middle_center, 3, 3,  border_color = color.new(color.yellow, 90),  border_width = 2)
-
-if barstate.islast
-
-    table.cell(new_table3, 0, 2, text = str.tostring(scrLabelCan),  text_halign = text.align_center, text_color=#096c32, text_size = size.huge, bgcolor = color.new(color.white, 100))
-    table.cell(new_table3, 0, 1, text = str.tostring(scrLabelER),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = size.huge, bgcolor = color.new(color.white, 100))
-
-//========================================================
-//=======================================================================================================================================
-
-//VISHANT MESHRAM DIVERGENCE INDICATOR INSPIRED BY TRENDOSCOPE INDICATORS. BUILD WITH THE HELP OF AI ANTIGRAVITY AT MUMBAI ON 18-07-2020. TODAY IS GREAT DAY I handle_label_overlaps
-// TODAY I DEBUGGED MY WEBSITE AND MOBILE APPLICATIONS AND ALSO BUILT HBOM DASHBOARD AS MY WORK COMPANION
-//I RECEIVED MONEY FROM INDIRA SCHOOL FOR MANASVI AND PAID SONAM'S FEE AS MONEY GIVEN BY ASHISH WERE LOST IN TRADING
-//HENCEFORTH ONLY TRADING FOR WINNING. NO GREED OR FEAR. JUST BUILD THE ALGO TRADING TO TRADE MARKETS AND SPEND LIFE READING AND ON HOBBIES AND SOCIAL WORK.
