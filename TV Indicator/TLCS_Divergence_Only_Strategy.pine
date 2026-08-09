@@ -475,7 +475,7 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
 
                 sentiment = math.sign(oscRatio - priceRatio)
                 trend = properties.trendMethod == 3 ? math.sign(lastTrend) : properties.trendMethod == 1 ? math.sign(dir * (llastRatio - 1)) : math.sign(llastMa - lastMa)
-                divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
+                divergence = trend == dir and sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
                 
                 if divergence != 0
                     divergenceType := getDivergenceType(dir, divergence)
