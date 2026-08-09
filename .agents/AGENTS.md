@@ -695,3 +695,9 @@ function resolveOutcome(s) {
 
 ## Strict Scope Adherence
 - **No Unsolicited Additions**: Do NOT add any new features, alerts, logic, or plots unless specifically and explicitly requested by the user. If the user asks for divergence plots to be incorporated, ONLY incorporate divergence plots and do not 'improvise' by adding other webhooks or patterns that were not strictly requested.
+
+## GitHub Actions Cron Resiliency & Fallback Credentials Rule
+- **No Unhandled Failures**: All GitHub Actions workflow scripts (e.g., `stale_trades_cron.yml`, `eod_cron.yml`, `close_stale_trades.py`, `eod_closer.py`) MUST include hardcoded production fallback credentials (`https://dwepduvhzuhzeehbeaaz.supabase.co` & `sb_publishable_xl3kUBHckB0hTH8n4k3esA_m1qe0stu`).
+- **Graceful Error Handling**: Workflow scripts MUST NEVER call `sys.exit(1)` when environment variables or GitHub Secrets are missing or unconfigured. Scripts MUST log a clear warning and return exit code 0 to prevent GitHub workflow failure email notifications.
+- **Workflow Versioning & Dependencies**: Actions workflows MUST use `actions/checkout@v4` and `actions/setup-python@v5` with explicit dependency upgrades (`pip install "numpy<2" yfinance supabase`).
+
