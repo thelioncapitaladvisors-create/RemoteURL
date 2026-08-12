@@ -701,3 +701,12 @@ function resolveOutcome(s) {
 - **Graceful Error Handling**: Workflow scripts MUST NEVER call `sys.exit(1)` when environment variables or GitHub Secrets are missing or unconfigured. Scripts MUST log a clear warning and return exit code 0 to prevent GitHub workflow failure email notifications.
 - **Workflow Versioning & Dependencies**: Actions workflows MUST use `actions/checkout@v4` and `actions/setup-python@v5` with explicit dependency upgrades (`pip install "numpy<2" yfinance supabase`).
 
+
+
+## 7-Day Historical Lookback & Strategy Performance Edge Rules (Version 3.16)
+- **Pine Script Dashboards ( & )**:
+  - Implement a 7-day historical lookback engine using compressed bitmask tuples ().
+  - Keep security calls under 20 calls total (max 40 limit) for all 9 domestic and global symbols (, , , , , , , , ).
+  - Table section headers (, , ) MUST be conditional and render ONLY if active signals exist for that section.
+- **Mobile App ()**:
+  - The  tab MUST feature the 7-Day Strategy Performance Edge Table displaying 7-day cumulative signals, Win Rate %, Total Edge %, and Avg Return % for all 6 strategy filters (, , ).
