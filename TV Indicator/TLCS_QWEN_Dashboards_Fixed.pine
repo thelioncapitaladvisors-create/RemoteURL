@@ -2194,14 +2194,15 @@ f_add_sym_all(sym, s0, s1, s2, s3, s4, s5, s6, d0, d1, d2, d3, d4, d5, d6) =>
 
 f_render_matrix_row(t, r, labelText, bullMat, bearMat, tSize) =>
     hasAny = false
-    for d = 0 to lookback_days - 1
+        for colIdx = 1 to lookback_days
+            d = lookback_days - colIdx
         if matrix.get(bullMat, d, 0) != "" or matrix.get(bearMat, d, 0) != ""
             hasAny := true
 
     if hasAny
         table.cell(t, 0, r, labelText, bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=tSize, text_halign=text.align_right)
-        for d = 0 to lookback_days - 1
-            colIdx = d + 1
+        for colIdx = 1 to lookback_days
+            d = lookback_days - colIdx
             bTxt = matrix.get(bullMat, d, 0)
             brTxt = matrix.get(bearMat, d, 0)
             
@@ -2290,9 +2291,10 @@ if barstate.islast
 
     // Sub-header row for Column Headers: Filter Type | Today | 1d | 2d | 3d | 4d | 5d | 6d
     table.cell(dash1, 0, currentRow, "FILTER TYPE", bgcolor=color.rgb(17, 106, 194), text_color=color.white, text_size=txtSize, text_halign=text.align_right)
-    for d = 0 to lookback_days - 1
-        colName = d == 0 ? "Today" : str.tostring(d) + "d"
-        table.cell(dash1, d + 1, currentRow, colName, bgcolor=color.rgb(17, 106, 194), text_color=color.white, text_size=txtSize, text_halign=text.align_center)
+    for colIdx = 1 to lookback_days
+        dayOffset = lookback_days - colIdx
+        colName = dayOffset == 0 ? "1" : str.tostring(dayOffset + 1)
+        table.cell(dash1, colIdx, currentRow, colName, bgcolor=color.rgb(17, 106, 194), text_color=color.white, text_size=txtSize, text_halign=text.align_center)
     currentRow += 1
 
     if f_render_matrix_row(dash1, currentRow, "Missile", bullMissile, bearMissile, txtSize)
