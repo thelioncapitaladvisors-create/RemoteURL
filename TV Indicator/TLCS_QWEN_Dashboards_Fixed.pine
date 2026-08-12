@@ -2044,45 +2044,47 @@ f_get_7d_dt() =>
 [u9_d0, u9_d1, u9_d2, u9_d3, u9_d4, u9_d5, u9_d6] = request.security(u9, "D", f_get_7d_dt())
 
 var array<string> symArr = array.new_string()
-var array<string> bullMissileSyms = array.new_string()
-var array<string> bearMissileSyms = array.new_string()
-var array<string> bullScalpSyms = array.new_string()
-var array<string> bearScalpSyms = array.new_string()
-var array<string> bullLightningSyms = array.new_string()
-var array<string> bearLightningSyms = array.new_string()
-var array<string> bullWickSyms = array.new_string()
-var array<string> bearWickSyms = array.new_string()
-var array<string> bullExtremeSyms = array.new_string()
-var array<string> bearExtremeSyms = array.new_string()
-var array<string> bullOutsideSyms = array.new_string()
-var array<string> bearOutsideSyms = array.new_string()
-var array<string> bullDojiSyms = array.new_string()
-var array<string> bearDojiSyms = array.new_string()
-var array<string> bullDivSyms = array.new_string()
-var array<string> bearDivSyms = array.new_string()
-var array<string> bullHDivSyms = array.new_string()
-var array<string> bearHDivSyms = array.new_string()
 
-var array<string> bullAccSyms = array.new_string()
-var array<string> bearAccSyms = array.new_string()
-var array<string> bullRejSyms = array.new_string()
-var array<string> bearRejSyms = array.new_string()
-var array<string> bullSrdSyms = array.new_string()
-var array<string> bearSrdSyms = array.new_string()
-var array<string> bullOdSyms = array.new_string()
-var array<string> bearOdSyms = array.new_string()
-var array<string> bullFadeSyms = array.new_string()
-var array<string> bearFadeSyms = array.new_string()
-var array<string> bullAbsSyms = array.new_string()
-var array<string> bearAbsSyms = array.new_string()
-var array<string> bullFnlSyms = array.new_string()
-var array<string> bearFnhSyms = array.new_string()
-var array<string> bullFbSyms = array.new_string()
-var array<string> bearFbSyms = array.new_string()
-var array<string> bullRtSyms = array.new_string()
-var array<string> bearRtSyms = array.new_string()
-var array<string> bullContSyms = array.new_string()
-var array<string> bearContSyms = array.new_string()
+// 7-Day Matrix Arrays (Column 0 = Today, Column 1 = 1d, ... Column 6 = 6d)
+var bullMissile = matrix.new<string>(7, 0, "")
+var bearMissile = matrix.new<string>(7, 0, "")
+var bullScalp   = matrix.new<string>(7, 0, "")
+var bearScalp   = matrix.new<string>(7, 0, "")
+var bullLight   = matrix.new<string>(7, 0, "")
+var bearLight   = matrix.new<string>(7, 0, "")
+var bullWick    = matrix.new<string>(7, 0, "")
+var bearWick    = matrix.new<string>(7, 0, "")
+var bullExt     = matrix.new<string>(7, 0, "")
+var bearExt     = matrix.new<string>(7, 0, "")
+var bullOut     = matrix.new<string>(7, 0, "")
+var bearOut     = matrix.new<string>(7, 0, "")
+var bullDoji    = matrix.new<string>(7, 0, "")
+var bearDoji    = matrix.new<string>(7, 0, "")
+var bullDiv     = matrix.new<string>(7, 0, "")
+var bearDiv     = matrix.new<string>(7, 0, "")
+var bullHDiv    = matrix.new<string>(7, 0, "")
+var bearHDiv    = matrix.new<string>(7, 0, "")
+
+var bullAcc     = matrix.new<string>(7, 0, "")
+var bearAcc     = matrix.new<string>(7, 0, "")
+var bullRej     = matrix.new<string>(7, 0, "")
+var bearRej     = matrix.new<string>(7, 0, "")
+var bullSrd     = matrix.new<string>(7, 0, "")
+var bearSrd     = matrix.new<string>(7, 0, "")
+var bullOd      = matrix.new<string>(7, 0, "")
+var bearOd      = matrix.new<string>(7, 0, "")
+var bullFade    = matrix.new<string>(7, 0, "")
+var bearFade    = matrix.new<string>(7, 0, "")
+var bullAbs     = matrix.new<string>(7, 0, "")
+var bearAbs     = matrix.new<string>(7, 0, "")
+var bullFnl     = matrix.new<string>(7, 0, "")
+var bearFnh     = matrix.new<string>(7, 0, "")
+var bullFb      = matrix.new<string>(7, 0, "")
+var bearFb      = matrix.new<string>(7, 0, "")
+var bullRt      = matrix.new<string>(7, 0, "")
+var bearRt      = matrix.new<string>(7, 0, "")
+var bullCont    = matrix.new<string>(7, 0, "")
+var bearCont    = matrix.new<string>(7, 0, "")
 
 f_add(sym, s0, s1, s2, s3, s4, s5, s6, d0, d1, d2, d3, d4, d5, d6) =>
     if sym != ""
@@ -2183,159 +2185,251 @@ f_get_pos(posStr) =>
 
 tablePos = f_get_pos(tablePosStr)
 
+// Helper function to push item into matrix column
+f_mat_push(m, dayIdx, val) =>
+    // Matrix has 7 rows (0 to 6) representing days [0..6]
+    // To store dynamic string lists per day:
+    currentVal = matrix.get(m, dayIdx, 0)
+    newVal = currentVal == "" ? val : currentVal + "
+" + val
+    matrix.set(m, dayIdx, 0, newVal)
+
+f_add_day(sym, dayIdx, sigPack, dtPack) =>
+    cleanSym = str.replace(str.replace(sym, "NSE_DLY:", ""), "NSE:", "")
+    if unpackBit(sigPack, 1)
+        f_mat_push(bullMissile, dayIdx, cleanSym)
+    if unpackBit(sigPack, 2)
+        f_mat_push(bearMissile, dayIdx, cleanSym)
+    if unpackBit(sigPack, 4)
+        f_mat_push(bullScalp, dayIdx, cleanSym)
+    if unpackBit(sigPack, 8)
+        f_mat_push(bearScalp, dayIdx, cleanSym)
+    if unpackBit(sigPack, 16)
+        f_mat_push(bullLight, dayIdx, cleanSym)
+    if unpackBit(sigPack, 32)
+        f_mat_push(bearLight, dayIdx, cleanSym)
+    if unpackBit(sigPack, 64)
+        f_mat_push(bullWick, dayIdx, cleanSym)
+    if unpackBit(sigPack, 128)
+        f_mat_push(bearWick, dayIdx, cleanSym)
+    if unpackBit(sigPack, 256)
+        f_mat_push(bullExt, dayIdx, cleanSym)
+    if unpackBit(sigPack, 512)
+        f_mat_push(bearExt, dayIdx, cleanSym)
+    if unpackBit(sigPack, 1024)
+        f_mat_push(bullOut, dayIdx, cleanSym)
+    if unpackBit(sigPack, 2048)
+        f_mat_push(bearOut, dayIdx, cleanSym)
+    if unpackBit(sigPack, 4096)
+        f_mat_push(bullDoji, dayIdx, cleanSym)
+    if unpackBit(sigPack, 8192)
+        f_mat_push(bearDoji, dayIdx, cleanSym)
+    if unpackBit(sigPack, 16384)
+        f_mat_push(bullDiv, dayIdx, cleanSym)
+    if unpackBit(sigPack, 32768)
+        f_mat_push(bearDiv, dayIdx, cleanSym)
+    if unpackBit(sigPack, 65536)
+        f_mat_push(bullHDiv, dayIdx, cleanSym)
+    if unpackBit(sigPack, 131072)
+        f_mat_push(bearHDiv, dayIdx, cleanSym)
+
+    if unpackBit(dtPack, 1)
+        f_mat_push(bullAcc, dayIdx, cleanSym)
+    if unpackBit(dtPack, 2)
+        f_mat_push(bearAcc, dayIdx, cleanSym)
+    if unpackBit(dtPack, 4)
+        f_mat_push(bullRej, dayIdx, cleanSym)
+    if unpackBit(dtPack, 8)
+        f_mat_push(bearRej, dayIdx, cleanSym)
+    if unpackBit(dtPack, 16)
+        f_mat_push(bullSrd, dayIdx, cleanSym)
+    if unpackBit(dtPack, 32)
+        f_mat_push(bearSrd, dayIdx, cleanSym)
+    if unpackBit(dtPack, 64)
+        f_mat_push(bullOd, dayIdx, cleanSym)
+    if unpackBit(dtPack, 128)
+        f_mat_push(bearOd, dayIdx, cleanSym)
+    if unpackBit(dtPack, 256)
+        f_mat_push(bullFade, dayIdx, cleanSym)
+    if unpackBit(dtPack, 512)
+        f_mat_push(bearFade, dayIdx, cleanSym)
+    if unpackBit(dtPack, 1024)
+        f_mat_push(bullAbs, dayIdx, cleanSym)
+    if unpackBit(dtPack, 2048)
+        f_mat_push(bearAbs, dayIdx, cleanSym)
+    if unpackBit(dtPack, 4096)
+        f_mat_push(bullFnl, dayIdx, cleanSym)
+    if unpackBit(dtPack, 8192)
+        f_mat_push(bearFnh, dayIdx, cleanSym)
+    if unpackBit(dtPack, 16384)
+        f_mat_push(bullFb, dayIdx, cleanSym)
+    if unpackBit(dtPack, 32768)
+        f_mat_push(bearFb, dayIdx, cleanSym)
+    if unpackBit(dtPack, 65536)
+        f_mat_push(bullRt, dayIdx, cleanSym)
+    if unpackBit(dtPack, 131072)
+        f_mat_push(bearRt, dayIdx, cleanSym)
+    if unpackBit(dtPack, 262144)
+        f_mat_push(bullCont, dayIdx, cleanSym)
+    if unpackBit(dtPack, 524288)
+        f_mat_push(bearCont, dayIdx, cleanSym)
+
+f_add_sym_all(sym, s0, s1, s2, s3, s4, s5, s6, d0, d1, d2, d3, d4, d5, d6) =>
+    if sym != ""
+        for i = 0 to lookback_days - 1
+            sigPack = i == 0 ? s0 : i == 1 ? s1 : i == 2 ? s2 : i == 3 ? s3 : i == 4 ? s4 : i == 5 ? s5 : s6
+            dtPack  = i == 0 ? d0 : i == 1 ? d1 : i == 2 ? d2 : i == 3 ? d3 : i == 4 ? d4 : i == 5 ? d5 : d6
+            f_add_day(sym, i, sigPack, dtPack)
+
+f_render_matrix_row(t, r, labelText, bullMat, bearMat, tSize) =>
+    hasAny = false
+    for d = 0 to lookback_days - 1
+        if matrix.get(bullMat, d, 0) != "" or matrix.get(bearMat, d, 0) != ""
+            hasAny := true
+
+    if hasAny
+        table.cell(t, 0, r, labelText, bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=tSize, text_halign=text.align_right)
+        for d = 0 to lookback_days - 1
+            colIdx = d + 1
+            bTxt = matrix.get(bullMat, d, 0)
+            brTxt = matrix.get(bearMat, d, 0)
+            
+            cellTxt = ""
+            if bTxt != "" and brTxt != ""
+                cellTxt := "▲ " + bTxt + "
+▼ " + brTxt
+            else if bTxt != ""
+                cellTxt := "▲ " + bTxt
+            else if brTxt != ""
+                cellTxt := "▼ " + brTxt
+            else
+                cellTxt := "-"
+
+            cellBg = (bTxt != "" and brTxt != "") ? color.new(color.orange, 80) : bTxt != "" ? color.new(color.lime, 80) : brTxt != "" ? color.new(color.red, 80) : color.new(color.gray, 85)
+            cellFg = (bTxt != "" and brTxt != "") ? color.orange : bTxt != "" ? color.green : brTxt != "" ? color.red : color.gray
+
+            table.cell(t, colIdx, r, cellTxt, bgcolor=cellBg, text_color=cellFg, text_size=tSize, text_halign=text.align_center)
+        true
+    else
+        false
+
 var table dash1 = na
 if barstate.islast
-    array.clear(symArr)
-    array.clear(bullMissileSyms)
-    array.clear(bearMissileSyms)
-    array.clear(bullScalpSyms)
-    array.clear(bearScalpSyms)
-    array.clear(bullLightningSyms)
-    array.clear(bearLightningSyms)
-    array.clear(bullWickSyms)
-    array.clear(bearWickSyms)
-    array.clear(bullExtremeSyms)
-    array.clear(bearExtremeSyms)
-    array.clear(bullOutsideSyms)
-    array.clear(bearOutsideSyms)
-    array.clear(bullDojiSyms)
-    array.clear(bearDojiSyms)
-    array.clear(bullDivSyms)
-    array.clear(bearDivSyms)
-    array.clear(bullHDivSyms)
-    array.clear(bearHDivSyms)
-    array.clear(bullAccSyms)
-    array.clear(bearAccSyms)
-    array.clear(bullRejSyms)
-    array.clear(bearRejSyms)
-    array.clear(bullSrdSyms)
-    array.clear(bearSrdSyms)
-    array.clear(bullOdSyms)
-    array.clear(bearOdSyms)
-    array.clear(bullFadeSyms)
-    array.clear(bearFadeSyms)
-    array.clear(bullAbsSyms)
-    array.clear(bearAbsSyms)
-    array.clear(bullFnlSyms)
-    array.clear(bearFnhSyms)
-    array.clear(bullFbSyms)
-    array.clear(bearFbSyms)
-    array.clear(bullRtSyms)
-    array.clear(bearRtSyms)
-    array.clear(bullContSyms)
-    array.clear(bearContSyms)
+    // Clear 7-day matrices (7 rows, 1 col)
+    bullMissile := matrix.new<string>(7, 1, "")
+    bearMissile := matrix.new<string>(7, 1, "")
+    bullScalp   := matrix.new<string>(7, 1, "")
+    bearScalp   := matrix.new<string>(7, 1, "")
+    bullLight   := matrix.new<string>(7, 1, "")
+    bearLight   := matrix.new<string>(7, 1, "")
+    bullWick    := matrix.new<string>(7, 1, "")
+    bearWick    := matrix.new<string>(7, 1, "")
+    bullExt     := matrix.new<string>(7, 1, "")
+    bearExt     := matrix.new<string>(7, 1, "")
+    bullOut     := matrix.new<string>(7, 1, "")
+    bearOut     := matrix.new<string>(7, 1, "")
+    bullDoji    := matrix.new<string>(7, 1, "")
+    bearDoji    := matrix.new<string>(7, 1, "")
+    bullDiv     := matrix.new<string>(7, 1, "")
+    bearDiv     := matrix.new<string>(7, 1, "")
+    bullHDiv    := matrix.new<string>(7, 1, "")
+    bearHDiv    := matrix.new<string>(7, 1, "")
 
-    f_add(u1, u1_s0, u1_s1, u1_s2, u1_s3, u1_s4, u1_s5, u1_s6, u1_d0, u1_d1, u1_d2, u1_d3, u1_d4, u1_d5, u1_d6)
-    f_add(u2, u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6, u2_d0, u2_d1, u2_d2, u2_d3, u2_d4, u2_d5, u2_d6)
-    f_add(u3, u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6, u3_d0, u3_d1, u3_d2, u3_d3, u3_d4, u3_d5, u3_d6)
-    f_add(u4, u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6, u4_d0, u4_d1, u4_d2, u4_d3, u4_d4, u4_d5, u4_d6)
-    f_add(u5, u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6, u5_d0, u5_d1, u5_d2, u5_d3, u5_d4, u5_d5, u5_d6)
-    f_add(u6, u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6, u6_d0, u6_d1, u6_d2, u6_d3, u6_d4, u6_d5, u6_d6)
-    f_add(u7, u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6, u7_d0, u7_d1, u7_d2, u7_d3, u7_d4, u7_d5, u7_d6)
-    f_add(u8, u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6, u8_d0, u8_d1, u8_d2, u8_d3, u8_d4, u8_d5, u8_d6)
-    f_add(u9, u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6, u9_d0, u9_d1, u9_d2, u9_d3, u9_d4, u9_d5, u9_d6)
+    bullAcc     := matrix.new<string>(7, 1, "")
+    bearAcc     := matrix.new<string>(7, 1, "")
+    bullRej     := matrix.new<string>(7, 1, "")
+    bearRej     := matrix.new<string>(7, 1, "")
+    bullSrd     := matrix.new<string>(7, 1, "")
+    bearSrd     := matrix.new<string>(7, 1, "")
+    bullOd      := matrix.new<string>(7, 1, "")
+    bearOd      := matrix.new<string>(7, 1, "")
+    bullFade    := matrix.new<string>(7, 1, "")
+    bearFade    := matrix.new<string>(7, 1, "")
+    bullAbs     := matrix.new<string>(7, 1, "")
+    bearAbs     := matrix.new<string>(7, 1, "")
+    bullFnl     := matrix.new<string>(7, 1, "")
+    bearFnh     := matrix.new<string>(7, 1, "")
+    bullFb      := matrix.new<string>(7, 1, "")
+    bearFb      := matrix.new<string>(7, 1, "")
+    bullRt      := matrix.new<string>(7, 1, "")
+    bearRt      := matrix.new<string>(7, 1, "")
+    bullCont    := matrix.new<string>(7, 1, "")
+    bearCont    := matrix.new<string>(7, 1, "")
 
-    txtSize  = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
+    f_add_sym_all(u1, u1_s0, u1_s1, u1_s2, u1_s3, u1_s4, u1_s5, u1_s6, u1_d0, u1_d1, u1_d2, u1_d3, u1_d4, u1_d5, u1_d6)
+    f_add_sym_all(u2, u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6, u2_d0, u2_d1, u2_d2, u2_d3, u2_d4, u2_d5, u2_d6)
+    f_add_sym_all(u3, u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6, u3_d0, u3_d1, u3_d2, u3_d3, u3_d4, u3_d5, u3_d6)
+    f_add_sym_all(u4, u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6, u4_d0, u4_d1, u4_d2, u4_d3, u4_d4, u4_d5, u4_d6)
+    f_add_sym_all(u5, u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6, u5_d0, u5_d1, u5_d2, u5_d3, u5_d4, u5_d5, u5_d6)
+    f_add_sym_all(u6, u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6, u6_d0, u6_d1, u6_d2, u6_d3, u6_d4, u6_d5, u6_d6)
+    f_add_sym_all(u7, u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6, u7_d0, u7_d1, u7_d2, u7_d3, u7_d4, u7_d5, u7_d6)
+    f_add_sym_all(u8, u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6, u8_d0, u8_d1, u8_d2, u8_d3, u8_d4, u8_d5, u8_d6)
+    f_add_sym_all(u9, u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6, u9_d0, u9_d1, u9_d2, u9_d3, u9_d4, u9_d5, u9_d6)
 
-    dash1 := table.new(tablePos, 3, 21, border_width=1, frame_width=1, frame_color=color.rgb(12, 246, 250))
+    txtSize = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
+
+    // 1 Column for Label + lookback_days (Up to 7 day columns: Today, 1d, 2d, 3d, 4d, 5d, 6d)
+    dash1 := table.new(tablePos, lookback_days + 1, 25, border_width=1, frame_width=1, frame_color=color.rgb(12, 246, 250))
     
     int currentRow = 0
 
-    // Section 1: SIGNALS
-    int activeSignals = 0
-    if array.size(bullMissileSyms) > 0 or array.size(bearMissileSyms) > 0
-        activeSignals += 1
-    if array.size(bullScalpSyms) > 0 or array.size(bearScalpSyms) > 0
-        activeSignals += 1
-    if array.size(bullLightningSyms) > 0 or array.size(bearLightningSyms) > 0
-        activeSignals += 1
-    if array.size(bullWickSyms) > 0 or array.size(bearWickSyms) > 0
-        activeSignals += 1
-    if array.size(bullExtremeSyms) > 0 or array.size(bearExtremeSyms) > 0
-        activeSignals += 1
-    if array.size(bullOutsideSyms) > 0 or array.size(bearOutsideSyms) > 0
-        activeSignals += 1
-    if array.size(bullDojiSyms) > 0 or array.size(bearDojiSyms) > 0
-        activeSignals += 1
-    if array.size(bullDivSyms) > 0 or array.size(bearDivSyms) > 0
-        activeSignals += 1
-    if array.size(bullHDivSyms) > 0 or array.size(bearHDivSyms) > 0
-        activeSignals += 1
+    // Header 1: SIGNALS
+    table.merge_cells(dash1, 0, currentRow, lookback_days, currentRow)
+    table.cell(dash1, 0, currentRow, "TLCS SIGNALS", bgcolor=color.new(#116ac2, 0), text_color=color.rgb(12, 246, 250), text_size=txtSize, text_halign=text.align_center)
+    currentRow += 1
 
-    if activeSignals > 0
-        table.merge_cells(dash1, 0, currentRow, 2, currentRow)
-        table.cell(dash1, 0, currentRow, "TLCS SIGNALS", bgcolor=color.new(#116ac2, 0), text_color=color.rgb(12, 246, 250), text_size=txtSize, text_halign=text.align_right)
+    // Sub-header row for Column Headers: Filter Type | Today | 1d | 2d | 3d | 4d | 5d | 6d
+    table.cell(dash1, 0, currentRow, "FILTER TYPE", bgcolor=color.rgb(17, 106, 194), text_color=color.white, text_size=txtSize, text_halign=text.align_right)
+    for d = 0 to lookback_days - 1
+        colName = d == 0 ? "Today" : str.tostring(d) + "d"
+        table.cell(dash1, d + 1, currentRow, colName, bgcolor=color.rgb(17, 106, 194), text_color=color.white, text_size=txtSize, text_halign=text.align_center)
+    currentRow += 1
+
+    if f_render_matrix_row(dash1, currentRow, "Missile", bullMissile, bearMissile, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Scalp", bullScalp, bearScalp, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Lightning", bullLight, bearLight, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Wick Reversal", bullWick, bearWick, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Extreme Reversal", bullExt, bearExt, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Outside Reversal", bullOut, bearOut, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Doji Reversal", bullDoji, bearDoji, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Price Divergences", bullDiv, bearDiv, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Hidden Divergences", bullHDiv, bearHDiv, txtSize)
         currentRow += 1
 
-        if f_add_row(dash1, currentRow, "Missile", bullMissileSyms, bearMissileSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Scalp", bullScalpSyms, bearScalpSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Lightning", bullLightningSyms, bearLightningSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Wick Reversal", bullWickSyms, bearWickSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Extreme Reversal", bullExtremeSyms, bearExtremeSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Outside Reversal", bullOutsideSyms, bearOutsideSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Doji Reversal", bullDojiSyms, bearDojiSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Price Divergences", bullDivSyms, bearDivSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Hidden Divergences", bullHDivSyms, bearHDivSyms, txtSize)
-            currentRow += 1
+    // Header 2: BLUEPRINTS
+    table.merge_cells(dash1, 0, currentRow, lookback_days, currentRow)
+    table.cell(dash1, 0, currentRow, "DAY TYPE BLUEPRINTS", bgcolor=color.new(#116ac2, 0), text_color=color.rgb(12, 246, 250), text_size=txtSize, text_halign=text.align_center)
+    currentRow += 1
 
-    // Section 2: BLUEPRINTS
-    int activeBlueprints = 0
-    if array.size(bullRejSyms) > 0 or array.size(bearRejSyms) > 0
-        activeBlueprints += 1
-    if array.size(bullAbsSyms) > 0 or array.size(bearAbsSyms) > 0
-        activeBlueprints += 1
-    if array.size(bullFnlSyms) > 0 or array.size(bearFnhSyms) > 0
-        activeBlueprints += 1
-    if array.size(bullOdSyms) > 0 or array.size(bearOdSyms) > 0
-        activeBlueprints += 1
-    if array.size(bullSrdSyms) > 0 or array.size(bearSrdSyms) > 0
-        activeBlueprints += 1
-
-    if activeBlueprints > 0
-        table.merge_cells(dash1, 0, currentRow, 2, currentRow)
-        table.cell(dash1, 0, currentRow, "DAY TYPE BLUEPRINTS", bgcolor=color.new(#116ac2, 0), text_color=color.rgb(12, 246, 250), text_size=txtSize, text_halign=text.align_right)
+    if f_render_matrix_row(dash1, currentRow, "Rejection Blueprint", bullRej, bearRej, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Absorption Blueprint", bullAbs, bearAbs, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Failed New Low/High", bullFnl, bearFnh, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Outside Day", bullOd, bearOd, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Stop Run Day", bullSrd, bearSrd, txtSize)
         currentRow += 1
 
-        if f_add_row(dash1, currentRow, "Rejection Blueprint", bullRejSyms, bearRejSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Absorption Blueprint", bullAbsSyms, bearAbsSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Failed New Low/High", bullFnlSyms, bearFnhSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Outside Day", bullOdSyms, bearOdSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Stop Run Day", bullSrdSyms, bearSrdSyms, txtSize)
-            currentRow += 1
+    // Header 3: SEQUENCES
+    table.merge_cells(dash1, 0, currentRow, lookback_days, currentRow)
+    table.cell(dash1, 0, currentRow, "TRADE SEQUENCES", bgcolor=color.rgb(17, 106, 194), text_color=color.rgb(12, 246, 250), text_size=txtSize, text_halign=text.align_center)
+    currentRow += 1
 
-    // Section 3: SEQUENCES
-    int activeSequences = 0
-    if array.size(bullRejSyms) > 0 or array.size(bearRejSyms) > 0
-        activeSequences += 1
-    if array.size(bullSrdSyms) > 0 or array.size(bearSrdSyms) > 0
-        activeSequences += 1
-    if (array.size(bullFbSyms) + array.size(bullRtSyms) + array.size(bearFbSyms) + array.size(bearRtSyms)) > 0
-        activeSequences += 1
-    if array.size(bullAccSyms) > 0 or array.size(bearAccSyms) > 0
-        activeSequences += 1
-
-    if activeSequences > 0
-        table.merge_cells(dash1, 0, currentRow, 2, currentRow)
-        table.cell(dash1, 0, currentRow, "TRADE SEQUENCES", bgcolor=color.rgb(17, 106, 194), text_color=color.rgb(12, 246, 250), text_size=txtSize, text_halign=text.align_right)
+    if f_render_matrix_row(dash1, currentRow, "Rejection Sequence", bullRej, bearRej, txtSize)
         currentRow += 1
-
-        if f_add_row(dash1, currentRow, "Rejection Sequence", bullRejSyms, bearRejSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Stop Run Sequence", bullSrdSyms, bearSrdSyms, txtSize)
-            currentRow += 1
-        if f_add_seq_row(dash1, currentRow, "Failed Absorption Sequence", bullFbSyms, bullRtSyms, bearFbSyms, bearRtSyms, txtSize)
-            currentRow += 1
-        if f_add_row(dash1, currentRow, "Accumulation Sequence", bullAccSyms, bearAccSyms, txtSize)
-            currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Stop Run Sequence", bullSrd, bearSrd, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Failed Absorption Sequence", bullFb, bearFb, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Accumulation Sequence", bullAcc, bearAcc, txtSize)
+        currentRow += 1
