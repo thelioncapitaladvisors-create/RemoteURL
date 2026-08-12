@@ -2090,7 +2090,7 @@ f_add(sym, s0, s1, s2, s3, s4, s5, s6, d0, d1, d2, d3, d4, d5, d6) =>
         for i = 0 to lookback_days - 1
             sigPack = i == 0 ? s0 : i == 1 ? s1 : i == 2 ? s2 : i == 3 ? s3 : i == 4 ? s4 : i == 5 ? s5 : s6
             dtPack  = i == 0 ? d0 : i == 1 ? d1 : i == 2 ? d2 : i == 3 ? d3 : i == 4 ? d4 : i == 5 ? d5 : d6
-            sTag = i == 0 ? sym : sym + " [" + str.tostring(i) + "]"
+            sTag = sym
 
             if unpackBit(sigPack, 1) and array.includes(bullMissileSyms, sTag) == false
                 array.push(bullMissileSyms, sTag)
