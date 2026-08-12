@@ -2084,86 +2084,91 @@ var array<string> bearRtSyms = array.new_string()
 var array<string> bullContSyms = array.new_string()
 var array<string> bearContSyms = array.new_string()
 
-f_add(sym, sigPack, dtPack) =>
+f_add(sym, s0, s1, s2, s3, s4, s5, s6, d0, d1, d2, d3, d4, d5, d6) =>
     if sym != ""
         array.push(symArr, sym)
-        if unpackBit(sigPack, 1)
-            array.push(bullMissileSyms, sym)
-        if unpackBit(sigPack, 2)
-            array.push(bearMissileSyms, sym)
-        if unpackBit(sigPack, 4)
-            array.push(bullScalpSyms, sym)
-        if unpackBit(sigPack, 8)
-            array.push(bearScalpSyms, sym)
-        if unpackBit(sigPack, 16)
-            array.push(bullLightningSyms, sym)
-        if unpackBit(sigPack, 32)
-            array.push(bearLightningSyms, sym)
-        if unpackBit(sigPack, 64)
-            array.push(bullWickSyms, sym)
-        if unpackBit(sigPack, 128)
-            array.push(bearWickSyms, sym)
-        if unpackBit(sigPack, 256)
-            array.push(bullExtremeSyms, sym)
-        if unpackBit(sigPack, 512)
-            array.push(bearExtremeSyms, sym)
-        if unpackBit(sigPack, 1024)
-            array.push(bullOutsideSyms, sym)
-        if unpackBit(sigPack, 2048)
-            array.push(bearOutsideSyms, sym)
-        if unpackBit(sigPack, 4096)
-            array.push(bullDojiSyms, sym)
-        if unpackBit(sigPack, 8192)
-            array.push(bearDojiSyms, sym)
-        if unpackBit(sigPack, 16384)
-            array.push(bullDivSyms, sym)
-        if unpackBit(sigPack, 32768)
-            array.push(bearDivSyms, sym)
-        if unpackBit(sigPack, 65536)
-            array.push(bullHDivSyms, sym)
-        if unpackBit(sigPack, 131072)
-            array.push(bearHDivSyms, sym)
+        for i = 0 to lookback_days - 1
+            sigPack = i == 0 ? s0 : i == 1 ? s1 : i == 2 ? s2 : i == 3 ? s3 : i == 4 ? s4 : i == 5 ? s5 : s6
+            dtPack  = i == 0 ? d0 : i == 1 ? d1 : i == 2 ? d2 : i == 3 ? d3 : i == 4 ? d4 : i == 5 ? d5 : d6
+            sTag = i == 0 ? sym : sym + " (" + str.tostring(i) + "d ago)"
 
-        if unpackBit(dtPack, 1)
-            array.push(bullAccSyms, sym)
-        if unpackBit(dtPack, 2)
-            array.push(bearAccSyms, sym)
-        if unpackBit(dtPack, 4)
-            array.push(bullRejSyms, sym)
-        if unpackBit(dtPack, 8)
-            array.push(bearRejSyms, sym)
-        if unpackBit(dtPack, 16)
-            array.push(bullSrdSyms, sym)
-        if unpackBit(dtPack, 32)
-            array.push(bearSrdSyms, sym)
-        if unpackBit(dtPack, 64)
-            array.push(bullOdSyms, sym)
-        if unpackBit(dtPack, 128)
-            array.push(bearOdSyms, sym)
-        if unpackBit(dtPack, 256)
-            array.push(bullFadeSyms, sym)
-        if unpackBit(dtPack, 512)
-            array.push(bearFadeSyms, sym)
-        if unpackBit(dtPack, 1024)
-            array.push(bullAbsSyms, sym)
-        if unpackBit(dtPack, 2048)
-            array.push(bearAbsSyms, sym)
-        if unpackBit(dtPack, 4096)
-            array.push(bullFnlSyms, sym)
-        if unpackBit(dtPack, 8192)
-            array.push(bearFnhSyms, sym)
-        if unpackBit(dtPack, 16384)
-            array.push(bullFbSyms, sym)
-        if unpackBit(dtPack, 32768)
-            array.push(bearFbSyms, sym)
-        if unpackBit(dtPack, 65536)
-            array.push(bullRtSyms, sym)
-        if unpackBit(dtPack, 131072)
-            array.push(bearRtSyms, sym)
-        if unpackBit(dtPack, 262144)
-            array.push(bullContSyms, sym)
-        if unpackBit(dtPack, 524288)
-            array.push(bearContSyms, sym)
+            if unpackBit(sigPack, 1) and array.includes(bullMissileSyms, sTag) == false
+                array.push(bullMissileSyms, sTag)
+            if unpackBit(sigPack, 2) and array.includes(bearMissileSyms, sTag) == false
+                array.push(bearMissileSyms, sTag)
+            if unpackBit(sigPack, 4) and array.includes(bullScalpSyms, sTag) == false
+                array.push(bullScalpSyms, sTag)
+            if unpackBit(sigPack, 8) and array.includes(bearScalpSyms, sTag) == false
+                array.push(bearScalpSyms, sTag)
+            if unpackBit(sigPack, 16) and array.includes(bullLightningSyms, sTag) == false
+                array.push(bullLightningSyms, sTag)
+            if unpackBit(sigPack, 32) and array.includes(bearLightningSyms, sTag) == false
+                array.push(bearLightningSyms, sTag)
+            if unpackBit(sigPack, 64) and array.includes(bullWickSyms, sTag) == false
+                array.push(bullWickSyms, sTag)
+            if unpackBit(sigPack, 128) and array.includes(bearWickSyms, sTag) == false
+                array.push(bearWickSyms, sTag)
+            if unpackBit(sigPack, 256) and array.includes(bullExtremeSyms, sTag) == false
+                array.push(bullExtremeSyms, sTag)
+            if unpackBit(sigPack, 512) and array.includes(bearExtremeSyms, sTag) == false
+                array.push(bearExtremeSyms, sTag)
+            if unpackBit(sigPack, 1024) and array.includes(bullOutsideSyms, sTag) == false
+                array.push(bullOutsideSyms, sTag)
+            if unpackBit(sigPack, 2048) and array.includes(bearOutsideSyms, sTag) == false
+                array.push(bearOutsideSyms, sTag)
+            if unpackBit(sigPack, 4096) and array.includes(bullDojiSyms, sTag) == false
+                array.push(bullDojiSyms, sTag)
+            if unpackBit(sigPack, 8192) and array.includes(bearDojiSyms, sTag) == false
+                array.push(bearDojiSyms, sTag)
+            if unpackBit(sigPack, 16384) and array.includes(bullDivSyms, sTag) == false
+                array.push(bullDivSyms, sTag)
+            if unpackBit(sigPack, 32768) and array.includes(bearDivSyms, sTag) == false
+                array.push(bearDivSyms, sTag)
+            if unpackBit(sigPack, 65536) and array.includes(bullHDivSyms, sTag) == false
+                array.push(bullHDivSyms, sTag)
+            if unpackBit(sigPack, 131072) and array.includes(bearHDivSyms, sTag) == false
+                array.push(bearHDivSyms, sTag)
+
+            if unpackBit(dtPack, 1) and array.includes(bullAccSyms, sTag) == false
+                array.push(bullAccSyms, sTag)
+            if unpackBit(dtPack, 2) and array.includes(bearAccSyms, sTag) == false
+                array.push(bearAccSyms, sTag)
+            if unpackBit(dtPack, 4) and array.includes(bullRejSyms, sTag) == false
+                array.push(bullRejSyms, sTag)
+            if unpackBit(dtPack, 8) and array.includes(bearRejSyms, sTag) == false
+                array.push(bearRejSyms, sTag)
+            if unpackBit(dtPack, 16) and array.includes(bullSrdSyms, sTag) == false
+                array.push(bullSrdSyms, sTag)
+            if unpackBit(dtPack, 32) and array.includes(bearSrdSyms, sTag) == false
+                array.push(bearSrdSyms, sTag)
+            if unpackBit(dtPack, 64) and array.includes(bullOdSyms, sTag) == false
+                array.push(bullOdSyms, sTag)
+            if unpackBit(dtPack, 128) and array.includes(bearOdSyms, sTag) == false
+                array.push(bearOdSyms, sTag)
+            if unpackBit(dtPack, 256) and array.includes(bullFadeSyms, sTag) == false
+                array.push(bullFadeSyms, sTag)
+            if unpackBit(dtPack, 512) and array.includes(bearFadeSyms, sTag) == false
+                array.push(bearFadeSyms, sTag)
+            if unpackBit(dtPack, 1024) and array.includes(bullAbsSyms, sTag) == false
+                array.push(bullAbsSyms, sTag)
+            if unpackBit(dtPack, 2048) and array.includes(bearAbsSyms, sTag) == false
+                array.push(bearAbsSyms, sTag)
+            if unpackBit(dtPack, 4096) and array.includes(bullFnlSyms, sTag) == false
+                array.push(bullFnlSyms, sTag)
+            if unpackBit(dtPack, 8192) and array.includes(bearFnhSyms, sTag) == false
+                array.push(bearFnhSyms, sTag)
+            if unpackBit(dtPack, 16384) and array.includes(bullFbSyms, sTag) == false
+                array.push(bullFbSyms, sTag)
+            if unpackBit(dtPack, 32768) and array.includes(bearFbSyms, sTag) == false
+                array.push(bearFbSyms, sTag)
+            if unpackBit(dtPack, 65536) and array.includes(bullRtSyms, sTag) == false
+                array.push(bullRtSyms, sTag)
+            if unpackBit(dtPack, 131072) and array.includes(bearRtSyms, sTag) == false
+                array.push(bearRtSyms, sTag)
+            if unpackBit(dtPack, 262144) and array.includes(bullContSyms, sTag) == false
+                array.push(bullContSyms, sTag)
+            if unpackBit(dtPack, 524288) and array.includes(bearContSyms, sTag) == false
+                array.push(bearContSyms, sTag)
 
 f_get_pos(posStr) =>
     switch posStr
