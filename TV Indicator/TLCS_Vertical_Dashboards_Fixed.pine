@@ -2344,3 +2344,8 @@ if barstate.islast
         currentRow += 1
     if f_render_matrix_row(dash1, currentRow, "Accumulation Sequence", bullAcc, bearAcc, txtSize)
         currentRow += 1
+
+    // Universal Session Opening Matrix Alert Engine
+    if ta.change(time("D")) or barstate.islast
+        alertMsg = '{"ticker":"' + syminfo.ticker + '","trigger":"SessionOpenMatrix","signals":{"bullMissile":"' + matrix.get(bullMissile, 0, 0) + '","bearMissile":"' + matrix.get(bearMissile, 0, 0) + '","bullScalp":"' + matrix.get(bullScalp, 0, 0) + '","bearScalp":"' + matrix.get(bearScalp, 0, 0) + '","bullLight":"' + matrix.get(bullLight, 0, 0) + '","bearLight":"' + matrix.get(bearLight, 0, 0) + '","bullRej":"' + matrix.get(bullRej, 0, 0) + '","bearRej":"' + matrix.get(bearRej, 0, 0) + '","bullAbs":"' + matrix.get(bullAbs, 0, 0) + '","bearAbs":"' + matrix.get(bearAbs, 0, 0) + '","bullAcc":"' + matrix.get(bullAcc, 0, 0) + '","bearAcc":"' + matrix.get(bearAcc, 0, 0) + '"},"timestamp":"' + str.tostring(time) + '"}'
+        alert(alertMsg, alert.freq_once_per_bar_close)
