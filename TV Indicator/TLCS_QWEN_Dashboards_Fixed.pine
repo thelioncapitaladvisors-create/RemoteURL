@@ -2187,11 +2187,8 @@ tablePos = f_get_pos(tablePosStr)
 
 // Helper function to push item into matrix column
 f_mat_push(m, dayIdx, val) =>
-    // Matrix has 7 rows (0 to 6) representing days [0..6]
-    // To store dynamic string lists per day:
     currentVal = matrix.get(m, dayIdx, 0)
-    newVal = currentVal == "" ? val : currentVal + "
-" + val
+    newVal = currentVal == "" ? val : currentVal + "\n" + val
     matrix.set(m, dayIdx, 0, newVal)
 
 f_add_day(sym, dayIdx, sigPack, dtPack) =>
@@ -2296,8 +2293,7 @@ f_render_matrix_row(t, r, labelText, bullMat, bearMat, tSize) =>
             
             cellTxt = ""
             if bTxt != "" and brTxt != ""
-                cellTxt := "▲ " + bTxt + "
-▼ " + brTxt
+                cellTxt := "▲ " + bTxt + "\n▼ " + brTxt
             else if bTxt != ""
                 cellTxt := "▲ " + bTxt
             else if brTxt != ""
