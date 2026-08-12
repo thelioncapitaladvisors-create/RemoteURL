@@ -2194,8 +2194,7 @@ f_add_sym_all(sym, s0, s1, s2, s3, s4, s5, s6, d0, d1, d2, d3, d4, d5, d6) =>
 
 f_render_matrix_row(t, r, labelText, bullMat, bearMat, tSize) =>
     hasAny = false
-        for colIdx = 1 to lookback_days
-            d = lookback_days - colIdx
+    for d = 0 to lookback_days - 1
         if matrix.get(bullMat, d, 0) != "" or matrix.get(bearMat, d, 0) != ""
             hasAny := true
 
