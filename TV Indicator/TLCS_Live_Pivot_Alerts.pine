@@ -2539,6 +2539,18 @@ sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string 
          ) + '}'
     alert(_tPay, alert.freq_once_per_bar_close)
 
+sendFillAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
+    string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
+    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.entryTime) + "_" + trade.tradeDirection
+    
+    string _fPay = '{' + str.format(
+         '"trigger":"TradeFill","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
+         webhook_secret, syminfo.ticker, trade.tradeDirection, 'Trade Active', 
+         str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
+         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
+         ) + '}'
+    alert(_fPay, alert.freq_once_per_bar)
+
 
 evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, float trailRange) =>
     float profit    = 0.0
@@ -2573,6 +2585,7 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
             trade.breakEvenLevel   := trade.entryLevel
             if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
                 trade.slLevel := trade.breakEvenLevel
+                trade.trailingSLActivated := true
 
     tpLevel := trade.tp2Level
     if not trade.tp2Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel) and trade.hasHitEntry
@@ -2585,6 +2598,7 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
             trade.breakEvenLevel   := trade.tp1Level
             if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
                 trade.slLevel := trade.breakEvenLevel
+                trade.trailingSLActivated := true
 
     tpLevel := trade.tp3Level
     if not trade.tp3Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel) and trade.hasHitEntry
@@ -2597,6 +2611,7 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
             trade.breakEvenLevel   := trade.tp2Level
             if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
                 trade.slLevel := trade.breakEvenLevel
+                trade.trailingSLActivated := true
 
     tpLevel := trade.tp4Level
     if not trade.tp4Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel) and trade.hasHitEntry
@@ -2609,22 +2624,9 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
             trade.breakEvenLevel   := trade.tp3Level
             if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
                 trade.slLevel := trade.breakEvenLevel
+                trade.trailingSLActivated := true
 
-    // Standard Trailing SL
-    float trailLevel = 0.0
-    if (triggerTrail or trade.trailingSLActivated) and trade.hasHitEntry and not trade.isClosed and not justHitTP
-        if isLong_
-            trailLevel := high - trailRange
-        else
-            trailLevel := low + trailRange
-        if isLong_ and trailLevel > trade.slLevel
-            trade.slLevel             := math.round_to_mintick(trailLevel)
-            trade.trailingSLLevel     := math.round_to_mintick(trailLevel)
-            trade.trailingSLActivated := true
-        if not isLong_ and trailLevel < trade.slLevel
-            trade.slLevel             := math.round_to_mintick(trailLevel)
-            trade.trailingSLLevel     := math.round_to_mintick(trailLevel)
-            trade.trailingSLActivated := true
+    // Standard Trailing SL block has been permanently deleted from architecture
 
     // ✅ Stop Loss Check (Now beautifully accurate on the exact entry candle too!)
     if not trade.slTriggered and not trade.isClosed and trade.hasHitEntry
@@ -2643,10 +2645,11 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
     // EMA Trailing SL (Activates cleanly inside the engine!)
     if trade.tp4Triggered and not trade.isClosed
         if not na(fMed_EMA)
-            trade.slLevel         := isLong_ ? math.max(trade.tp3Level, fMed_EMA) : math.min(trade.tp3Level, fMed_EMA)
-            trade.trailingSLLevel := trade.slLevel
-        
-        trade.trailingSLActivated := false
+            float newEmaSL = isLong_ ? math.max(trade.tp3Level, fMed_EMA) : math.min(trade.tp3Level, fMed_EMA)
+            if trade.slLevel != newEmaSL
+                trade.slLevel := newEmaSL
+                trade.trailingSLLevel := trade.slLevel
+                trade.trailingSLActivated := true
 
         bool isEmaCross = isLong_ ? close < trade.slLevel : close > trade.slLevel
         if isEmaCross
@@ -2670,24 +2673,22 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
     // Combined: exit = (Regular Div NOW) OR (Any Div [1] + price confirms)
     // ─────────────────────────────────────────────────────────────────────
 
-      // Divergence Exit
+      // Divergence Exit (Requires 2 consecutive closed candles to confirm reversal)
     if divExitActiveInput and not trade.isClosed and trade.hasHitEntry
 
-        // --- Filter 1: REGULAR Divergence fires NOW → immediate exit ---
-        bool regularBearishDivNow = (ext_bearishDiv == 1)
-        bool regularBullishDivNow = (ext_bullishDiv == 1)
-        bool isRegularDivExit = (isLong_ and regularBearishDivNow) or (not isLong_ and regularBullishDivNow)
+        // --- 2-Candle Confirmed Divergence Exit ---
+        // Prevents premature exits from repainting or 1-bar unconfirmed flashes.
+        // Requires divergence signal on bar [1] or [2] PLUS 2 consecutive closed candles of reversal.
+        bool anyBearishDivActive = (ext_bearishDiv[1] == 1) or (ext_bearishHiddenDiv[1] == 1) or (ext_bearishDiv[2] == 1) or (ext_bearishHiddenDiv[2] == 1)
+        bool anyBullishDivActive = (ext_bullishDiv[1] == 1) or (ext_bullishHiddenDiv[1] == 1) or (ext_bullishDiv[2] == 1) or (ext_bullishHiddenDiv[2] == 1)
 
-        // --- Filter 2: ANY divergence (incl. hidden) fired 1 bar ago ---
-        //     Exit ONLY if the current candle confirms the direction shift
-        //     Confirmation = candle closes against the trade AND below/above prior close
-        bool anyBearishDiv1Ago = (ext_bearishDiv[1] == 1) or (ext_bearishHiddenDiv[1] == 1)
-        bool anyBullishDiv1Ago = (ext_bullishDiv[1] == 1) or (ext_bullishHiddenDiv[1] == 1)
-        bool bearishPriceConfirm = anyBearishDiv1Ago and (close < open) and (close < close[1])
-        bool bullishPriceConfirm = anyBullishDiv1Ago and (close > open) and (close > close[1])
-        bool isConfirmedDivExit = (isLong_ and bearishPriceConfirm) or (not isLong_ and bullishPriceConfirm)
+        // 2 consecutive closed candles confirming direction reversal
+        bool bearish2BarConfirm = anyBearishDivActive and (close < open) and (close[1] < open[1]) and (close < close[1])
+        bool bullish2BarConfirm = anyBullishDivActive and (close > open) and (close[1] > open[1]) and (close > close[1])
 
-        if isRegularDivExit or isConfirmedDivExit
+        bool isConfirmedDivExit = (isLong_ and bearish2BarConfirm) or (not isLong_ and bullish2BarConfirm)
+
+        if isConfirmedDivExit
             trade.isClosed          := true
             trade.divExitTriggered  := true 
             trade.closeLevel        := close
@@ -2825,7 +2826,16 @@ signalLabelUpdate(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
 finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
     string _outcome = 'Unknown'
     if trade.slTriggered
-        _outcome := trade.tp1Triggered ? 'Hit B/E' : 'Hit Initial SL'
+        if trade.tp4Triggered
+            _outcome := 'Hit EMA'
+        else if trade.tp3Triggered
+            _outcome := 'Hit TP2 Trailing'
+        else if trade.tp2Triggered
+            _outcome := 'Hit TP1 Trailing'
+        else if trade.tp1Triggered
+            _outcome := 'Hit B/E'
+        else
+            _outcome := 'Hit Initial SL'
     else if trade.divExitTriggered
         _outcome := 'Divergence Exit'
     else if trade.emaExitTriggered
@@ -3163,9 +3173,14 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
                 trade.forceClosed := true
 
             float prevSL = trade.slLevel
+            bool wasUnfilled = not trade.hasHitEntry
             
             // ✅ Evaluates TP, SL, and EMA Exit dynamically!
             evaluateTradeProgress(settings, trade, triggerTrailingSL, rangeTrailingSL)
+
+            // ✅ Send fill alert the instant a limit order fills
+            if trade.hasHitEntry and wasUnfilled and not trade.isClosed
+                sendFillAlert(settings, trade, z1, dX, mX, d1_message)
 
             if session.islastbar_regular and timeframe.isintraday and not trade.isClosed
                 terminateTrade(settings, trade)
