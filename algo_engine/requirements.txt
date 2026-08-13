@@ -1,5 +1,5 @@
-dhanhq==2.3.0rc1
 supabase==2.3.0
 python-dotenv==1.0.0
 vectorbt
 pandas
+websockets>=10.3,<11.0
