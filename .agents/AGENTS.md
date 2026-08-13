@@ -213,7 +213,7 @@ function resolveOutcome(s) {
 ## Universal Metric Sync & Mathematical Fallbacks (Web vs Mobile)
 - **Supabase Query Integrity**: The Web Dashboard (`dashboard.html`) and external scripts (`trade-metrics.js`) MUST always strictly include all mathematical boundaries (`target`, `tp2`, `tp3`, `tp4`, `trail_sl`) in their `.select()` queries. Failing to fetch these fields completely destroys the Profit Factor fallback engine for legacy trades or trailing exits.
 - **Universal Status Mapping**: Both the Mobile app (`page.tsx`) and the Web Dashboard (`dashboard.html`) must handle ambiguous statuses (e.g. `UNKNOWN`, `CANCEL`) perfectly identically. They must map to `CANCELLED` and be gracefully filtered out of closed trade metrics rather than breaking the state parser.
-- **UI Mathematical Fallback**: The UI must NEVER rigidly default to printing `---` just because the `exit_price` column in the database is strictly null (which occurs heavily on legacy webhooks). The UI layer MUST proactively use the underlying `getExactPct` mathematical engine logic to deduce the exit price (by pulling `trail_sl`, `stop`, or the appropriate `TP` target based on the status string) and dynamically inject that calculated value into the `EXITED AT` visual card.
+- **Strict Prohibition on UI Mathematical Fallbacks**: The UI must NEVER artificially deduce or invent an exit price (e.g. by pulling `trail_sl`, `stop`, or a `TP` target) if the `exit_price` column in the database is strictly null. The system must rely purely on empirical data recorded from the webhooks. If the exit price is missing, fail gracefully or leave it blank (e.g. `---`), but do NOT mathematically invent it.
 
 ## UI Persistent Market Rendering
 - Dashboards and Web Scanners must persistently display all defined market categories (NIFTY, MCX, NYMEX, Cryptocurrency, Global Forex, World Indices) by default. 
@@ -701,3 +701,20 @@ function resolveOutcome(s) {
 - **Graceful Error Handling**: Workflow scripts MUST NEVER call `sys.exit(1)` when environment variables or GitHub Secrets are missing or unconfigured. Scripts MUST log a clear warning and return exit code 0 to prevent GitHub workflow failure email notifications.
 - **Workflow Versioning & Dependencies**: Actions workflows MUST use `actions/checkout@v4` and `actions/setup-python@v5` with explicit dependency upgrades (`pip install "numpy<2" yfinance supabase`).
 
+
+
+## 7-Day Historical Lookback & Strategy Performance Edge Rules (Version 3.16)
+- **Pine Script Dashboards ( & )**:
+  - Implement a 7-day historical lookback engine using compressed bitmask tuples ().
+  - Keep security calls under 20 calls total (max 40 limit) for all 9 domestic and global symbols (, , , , , , , , ).
+  - Table section headers (, , ) MUST be conditional and render ONLY if active signals exist for that section.
+- **Mobile App ()**:
+  - The  tab MUST feature the 7-Day Strategy Performance Edge Table displaying 7-day cumulative signals, Win Rate %, Total Edge %, and Avg Return % for all 6 strategy filters (, , ).
+
+## Version 1.1: TradeFill Webhook Pipeline & Failproof Trade Identity Binding (V1.1)
+- **TradeFill Webhook Route**: A dedicated `TradeFill` route must exist in the backend (`process-webhook-background.js`) to capture the exact limit-order fill timestamp from Pine Script. Upon execution, the status must transition from `OPEN` to `Active` and store `metadata.real_entry_time`.
+- **Failproof Trade Identity Binding**: Every signal-updating webhook (`TradeFill`, `TradeClose`, `TrailingSLUpdate`, `TradeUpdate`) MUST use `trade_id` (`metadata->>trade_id`) as the primary query binder. All binders must be additive (AND conditions), never mutually exclusive.
+- **Bulk Update Prevention**: The backend must never perform bulk updates on active signals. If no unique identifier (`trade_id` or `entryTime`) is provided in the webhook payload, the update MUST be aborted.
+- **Duplicate Trade Prevention Guard**: The backend must query the database before inserting a new signal. If an active trade already exists for the same symbol with the exact same `trade_id` or `signal_ts` within ±5s, the insert must be skipped to prevent duplicates.
+- **Strict 2-Candle confirmed Divergence Exit**: The indicator strategy MUST NOT trigger divergence exits immediately on the live bar. To prevent unconfirmed repainting flashes, divergence exits MUST require the divergence signal to be at least 1 or 2 bars old (`[1]` or `[2]`) AND verified by two consecutive closed candles closing against the trade direction.
+- **Mobile Analytics Multi-Dashboard Matrix**: The mobile app's `ANALYTICS` tab MUST render both the `Daily Signal Dashboard Matrix` (7-day parameter table) and the `Weekly Signal Performance & Achievement Table` (day-wise targets, net edge, and average returns) directly below the Weekly Performance Edge table.
