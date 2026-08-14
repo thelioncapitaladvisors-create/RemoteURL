@@ -356,16 +356,16 @@ def run_returns_backtest():
         // Inject light mode CSS for tabs and table
         const style = document.createElement('style');
         style.innerHTML = `
-            .tab-container { background-color: transparent !important; border-bottom: 1px solid rgba(0,0,0,0.1) !important; }
-            .tab-btn { background-color: rgba(255,255,255,0.5) !important; color: #475569 !important; border: 1px solid rgba(0,0,0,0.05) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
-            .tab-btn:hover { background-color: rgba(255,255,255,0.8) !important; }
-            .tab-btn.active { background-color: #f1f5f9 !important; color: #0f172a !important; border-color: rgba(0,0,0,0.1) !important; font-weight: 800 !important; }
-            .stats-table { background-color: rgba(255,255,255,0.5) !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important; }
-            .stats-table th { background-color: rgba(241,245,249,0.8) !important; color: #334155 !important; border-bottom: 1px solid rgba(0,0,0,0.1) !important; }
-            .stats-table td { border-bottom: 1px solid rgba(0,0,0,0.05) !important; color: #475569 !important; }
-            .stats-table tr:hover td { background-color: rgba(255,255,255,0.9) !important; }
-            .stats-table thead th, .stats-table th:first-child, .stats-table td:first-child { background-color: rgba(241,245,249,0.95) !important; border-right: 1px solid rgba(0,0,0,0.1) !important; color: #334155 !important; }
-            .stats-table tr:hover td:first-child { background-color: rgba(226,232,240,0.95) !important; }
+            .tab-container {{ background-color: transparent !important; border-bottom: 1px solid rgba(0,0,0,0.1) !important; }}
+            .tab-btn {{ background-color: rgba(255,255,255,0.5) !important; color: #475569 !important; border: 1px solid rgba(0,0,0,0.05) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }}
+            .tab-btn:hover {{ background-color: rgba(255,255,255,0.8) !important; }}
+            .tab-btn.active {{ background-color: #f1f5f9 !important; color: #0f172a !important; border-color: rgba(0,0,0,0.1) !important; font-weight: 800 !important; }}
+            .stats-table {{ background-color: rgba(255,255,255,0.5) !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important; }}
+            .stats-table th {{ background-color: rgba(241,245,249,0.8) !important; color: #334155 !important; border-bottom: 1px solid rgba(0,0,0,0.1) !important; }}
+            .stats-table td {{ border-bottom: 1px solid rgba(0,0,0,0.05) !important; color: #475569 !important; }}
+            .stats-table tr:hover td {{ background-color: rgba(255,255,255,0.9) !important; }}
+            .stats-table thead th, .stats-table th:first-child, .stats-table td:first-child {{ background-color: rgba(241,245,249,0.95) !important; border-right: 1px solid rgba(0,0,0,0.1) !important; color: #334155 !important; }}
+            .stats-table tr:hover td:first-child {{ background-color: rgba(226,232,240,0.95) !important; }}
         `;
         document.head.appendChild(style);
 
