@@ -286,7 +286,9 @@ webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae
 
 trendMethodInt = trendMethod == 'Zigzag' ? 1 : trendMethod == 'External' ? 3 : 2
 var map<int, float> priceMap = map.new<int, float>()
+var map<int, float> oscillatorMap = map.new<int, float>()
 priceMap.put(bar_index, close)
+oscillatorMap.put(bar_index, oscillator)
 
 enum DivergenceType
     BullishDivergence = "Bullish Divergence"
@@ -424,6 +426,7 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                     validDivergence = true
                     for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
                         priceAtBar = priceMap.get(bar)
+                        oscillatorAtBar = oscillatorMap.get(bar)
                         
                         px1 = lastPricePoint.index
                         py1 = lastPricePoint.price
@@ -431,7 +434,13 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         py2 = pricePoint.price
                         priceTheoPrice = py1 + ((py2 - py1) / (px2 - px1)) * (bar - px1)
 
-                        if priceAtBar * dir > priceTheoPrice * dir
+                        x1 = llastOscillatorPoint.index
+                        y1 = llastOscillatorPoint.price
+                        x2 = oscillatorPoint.index
+                        y2 = oscillatorPoint.price
+                        oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
+
+                        if priceAtBar * dir > priceTheoPrice * dir or oscillatorAtBar * dir > oscTheoPrice * dir
                             validDivergence := false
                             break
 
@@ -443,10 +452,10 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         propLine = linePropertiesMap.get(divergenceType)
                         propLabel = labelPropertiesMap.get(divergenceType)
 
-                        pLine = line.new(lastPricePoint.time, lastPricePoint.price, pricePoint.time, pricePoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=2, force_overlay=true)
+                        line pLine = na
                         oLine = line.new(llastOscillatorPoint.time, llastOscillatorPoint.price, oscillatorPoint.time, oscillatorPoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=2, force_overlay=false)
 
-                        pLabel = label.new(pricePoint.time, pricePoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=true)
+                        label pLabel = na
                         oLabel = label.new(oscillatorPoint.time, oscillatorPoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=false)
                         
                         if allowedDivergenceTypes.get(divergenceType)

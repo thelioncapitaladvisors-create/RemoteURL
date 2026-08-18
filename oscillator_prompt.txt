@@ -832,8 +832,13 @@ else
 nzVolume = nz(volume)
 vAvg = ta.sma(nzVolume, xlength)
 
-B = nzVolume * (CL - LO) / (HI - LO)
-S = nzVolume * (HI - CL) / (HI - LO)
+rangeHL = (HI - LO) == 0 ? 1 : (HI - LO)
+B = nzVolume * (CL - LO) / rangeHL
+S = nzVolume * (HI - CL) / rangeHL
+
+totalVol = B + S
+bullPct = totalVol == 0 ? 0 : B / totalVol * 100
+bearPct = totalVol == 0 ? 0 : S / totalVol * 100
 
 indicator_2 = if addInDi == 'Price Divergence/Convergence'
     ((CL - math.avg(math.avg(ta.highest(HI, xlength), ta.lowest(LO, xlength)), ta.ema(CL, xlength))) / norm_atr) * 50
@@ -844,8 +849,8 @@ else
 
 [Diplus, Diminus, aDxValue] = ta.dmi(14, 14)
 
-Bb = nzVolume * (CL - LO) / (HI - LO)
-Ss = nzVolume * (HI - CL) / (HI - LO)
+Bb = B
+Ss = S
 
 // Label
 lbStat = histLabel > 0 ? '\n\ntimeframe : ' + 'D' + ', ' + str.tostring(histLabel) + ' bar(s) earlier historical value' : '\n\ntimeframe : ' + 'D' + ', current value'
@@ -859,7 +864,7 @@ DmiText = Diplus >= Diminus and aDxValue >= 25 ? ' Bullish' : Diplus < Diminus a
 
 dmiTextCol = diplus >= diminus and adxValue >= 25 ? color.green : diplus < diminus and adxValue >= 25 ? color.red : color.white
 
-volText = '\n\nVolume\n - Buying Volume %' + str.tostring(B / (B + S) * 100, '#.##') + '\n - Selling Volume %' + str.tostring(S / (B + S) * 100, '#.##') + '\n - Current/Average Volume ' + str.tostring(B + S, format.volume) + '/' + str.tostring(vAvg, format.volume)
+volText = '\n\nVolume\n - Buying Volume %' + str.tostring(bullPct, '#.##') + '\n - Selling Volume %' + str.tostring(bearPct, '#.##') + '\n - Current/Average Volume ' + str.tostring(B + S, format.volume) + '/' + str.tostring(vAvg, format.volume)
 
 // -Color ======================================================================================= //
 
@@ -877,8 +882,8 @@ textcolor = adxValue[histLabel] < 17 ? color.black : color.white
 
 var table t = table.new(position.middle_right, 5, 5, bgcolor = dmiColor[histLabel])
 
-table.cell(t, 0, 0, 'Bull % :' + str.tostring(B / (B + S) * 100, '#.##'), bgcolor = dmiColor, text_color = color.new(textcolor, 0), text_size = size.small, tooltip = '   ◁ how to read Box Colors:\n  green - bullish trend : \n red - bearish trend : \n gray - no trend : \n yellow - weak trend :\n* color density:\n  darker : adx growing\n  lighter : adx falling ')
-table.cell(t, 0, 1, 'Bear % :' + str.tostring(S / (B + S) * 100, '#.##'), bgcolor = dmiColor, text_color = color.new(textcolor, 0), text_size = size.small, tooltip = '  ◁ how to read Box Colors:\n  green - bullish trend : \n red - bearish trend : \n gray - no trend : \n yellow - weak trend :\n* color density:\n  darker : adx growing\n  lighter : adx falling ')
+table.cell(t, 0, 0, 'Bull % :' + str.tostring(bullPct, '#.##'), bgcolor = dmiColor, text_color = color.new(textcolor, 0), text_size = size.small, tooltip = '   ◁ how to read Box Colors:\n  green - bullish trend : \n red - bearish trend : \n gray - no trend : \n yellow - weak trend :\n* color density:\n  darker : adx growing\n  lighter : adx falling ')
+table.cell(t, 0, 1, 'Bear % :' + str.tostring(bearPct, '#.##'), bgcolor = dmiColor, text_color = color.new(textcolor, 0), text_size = size.small, tooltip = '  ◁ how to read Box Colors:\n  green - bullish trend : \n red - bearish trend : \n gray - no trend : \n yellow - weak trend :\n* color density:\n  darker : adx growing\n  lighter : adx falling ')
 table.cell(t, 0, 3, 'Vol : ' + str.tostring(Bb + Ss, format.volume) + '', bgcolor = dmiColor[histLabel], text_color = color.new(textcolor, 0), text_size = size.small, tooltip = '   ◁ how to read Box Colors:\n  green - bullish trend : \n red - bearish trend : \n gray - no trend : \n yellow - weak trend :\n* color density:\n  darker : adx growing\n  lighter : adx falling ')
 table.cell(t, 0, 2, 'Trend :\n' + str.tostring(DmiText), bgcolor = dmiColor, text_color = color.new(textcolor, 0), text_size = size.small, tooltip = '  ◁ how to read Box Colors:\n  green - bullish trend : \n red - bearish trend : \n gray - no trend : \n yellow - weak trend :\n* color density:\n  darker : adx growing\n  lighter : adx falling ')
 table.cell(t, 0, 4, 'Avg: ' + str.tostring(vAvg, format.volume), bgcolor = dmiColor[histLabel], text_color = color.new(textcolor, 0), text_size = size.small, tooltip = '  ◁ how to read Box Colors:\n  green - bullish trend : \n red - bearish trend : \n gray - no trend : \n yellow - weak trend :\n* color density:\n  darker : adx growing\n  lighter : adx falling ')
@@ -1560,16 +1565,16 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         propLine = linePropertiesMap.get(divergenceType)
                         propLabel = labelPropertiesMap.get(divergenceType)
 
-                        pLine = line.new(lastPricePoint.time, lastPricePoint.price, pricePoint.time, pricePoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=1, force_overlay=true)
+                        // pLine = line.new(lastPricePoint.time, lastPricePoint.price, pricePoint.time, pricePoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=1, force_overlay=true)
                         oLine = line.new(llastOscillatorPoint.time, llastOscillatorPoint.price, oscillatorPoint.time, oscillatorPoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=1, force_overlay=false)
 
-                        pLabel = label.new(pricePoint.time, pricePoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=true)
+                        // pLabel = label.new(pricePoint.time, pricePoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=true)
                         oLabel = label.new(oscillatorPoint.time, oscillatorPoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=false)
                         
                         if allowedDivergenceTypes.get(divergenceType)
                             alert('Alert : ' + priceTooltipText, alert.freq_once_per_bar_close)
                             
-                        divergenceObject = DivergenceObject.new(pLine, oLine, pLabel, oLabel, lastPricePoint.index, pricePoint.index, pricePoint, divergenceType)
+                        divergenceObject = DivergenceObject.new(na, oLine, na, oLabel, lastPricePoint.index, pricePoint.index, pricePoint, divergenceType)
                         divergenceObjects.push(divergenceObject)
                         true
                     else

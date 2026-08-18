@@ -3103,10 +3103,11 @@ bool isSidewaysDay = (mX == 'INRANGEINVALUE') or
                      str.contains(mX, "TYPICAL DAY") or 
                      (dX == 'IN RANGE \n IN VALUE')
 
-bool dayAllowed = not isSidewaysDay or NCPR
+bool inValueArea = close > VAL and close < VAH
+bool inCamarillaZone = close > l3 and close < h3
 
-bool longAllowed  = close < H4
-bool shortAllowed = close > L4
+bool longAllowed  = close < H4 and inValueArea and inCamarillaZone
+bool shortAllowed = close > L4 and inValueArea and inCamarillaZone
 
 // ── WEBHOOK ZONE STATUS (z1) ──────────────────────────────────
 
@@ -3745,8 +3746,9 @@ method delete(DivergenceObject this)=>
 
 method draw(DivergenceObject this)=>
     this.delete()
-    this.priceLine.draw()
-    this.priceLabel.draw()
+    // this.priceLine.draw()
+    if this.divergenceType == DivergenceType.BullishDivergence or this.divergenceType == DivergenceType.BearishDivergence
+        this.priceLabel.draw()
     this
 
 type ZigzagProperties
@@ -3778,10 +3780,10 @@ getLinePropertiesMap()=>
 
 getLabelPropertiesMap()=>
     labelPropertiesMap = map.new<DivergenceType, LabelProperties>()
-    labelPropertiesMap.put(DivergenceType.BullishDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.green, label.style_label_up, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BearishDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.red, label.style_label_down, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BullishHiddenDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.lime, label.style_label_up, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BearishHiddenDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.orange, label.style_label_down, chart.bg_color, size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BullishDivergence, LabelProperties.new(xloc = xloc.bar_time, yloc = yloc.price, color = color.green, style = label.style_label_up, textcolor = color.white, size = size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BearishDivergence, LabelProperties.new(xloc = xloc.bar_time, yloc = yloc.price, color = color.red, style = label.style_label_down, textcolor = color.white, size = size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BullishHiddenDivergence, LabelProperties.new(xloc = xloc.bar_time, yloc = yloc.price, color = color.lime, style = label.style_label_up, textcolor = color.white, size = size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BearishHiddenDivergence, LabelProperties.new(xloc = xloc.bar_time, yloc = yloc.price, color = color.orange, style = label.style_label_down, textcolor = color.white, size = size.small, force_overlay = false))
     labelPropertiesMap
 
 getAllowedDivergenceTypes()=>
