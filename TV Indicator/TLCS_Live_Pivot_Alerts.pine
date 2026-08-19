@@ -2,7 +2,7 @@
 
 //@version=6
 
-indicator('TLCS All Signal Alerts (Limits Fixed v10)', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
+indicator('TLCS All Signal Alerts (Limits Fixed v11)', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
 // ──── INPUTS ────────────────────────────────────────────────────────
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
@@ -2533,24 +2533,12 @@ sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string 
     string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
     
     string _tPay = '{' + str.format(
-         '"secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
+         '"trigger":"TrailingSLUpdate","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
          webhook_secret, syminfo.ticker, trade.tradeDirection, 'Trailing Stop', 
          str.tostring(trade.entryLevel), str.tostring(trade.slLevel), str.tostring(trade.tp1Level), 
          z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
          ) + '}'
     alert(_tPay, alert.freq_once_per_bar_close)
-
-sendFillAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
-    string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
-    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
-    
-    string _fPay = '{' + str.format(
-         '"trigger":"TradeFill","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
-         webhook_secret, syminfo.ticker, trade.tradeDirection, 'Trade Active', 
-         str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
-         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
-         ) + '}'
-    alert(_fPay, alert.freq_once_per_bar)
 
 
 evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, float trailRange) =>
@@ -3183,9 +3171,7 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
             // ✅ Evaluates TP, SL, and EMA Exit dynamically!
             evaluateTradeProgress(settings, trade, triggerTrailingSL, rangeTrailingSL)
 
-            // ✅ Send fill alert the instant a limit order fills
-            if trade.hasHitEntry and wasUnfilled and not trade.isClosed
-                sendFillAlert(settings, trade, z1, dX, mX, d1_message)
+
 
             if session.islastbar_regular and timeframe.isintraday and not trade.isClosed
                 terminateTrade(settings, trade)
