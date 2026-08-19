@@ -2,7 +2,7 @@
 
 //@version=6
 
-indicator('TLCS All Signal Alerts (Live Plottings)', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
+indicator('TLCS All Signal Alerts (Limits Fixed v10)', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
 // ──── INPUTS ────────────────────────────────────────────────────────
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
@@ -2755,12 +2755,15 @@ generateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) 
         linefill.new(visuals.tp3Line, visuals.tp4Line, color = color.new(color.teal, 97))
 
 updateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
-    // 1. PERMANENT DELETION 
-    if trade.isClosed
-        deleteTradeVisuals(visuals) 
-        
-    // 2. DRAW ACTIVE TRADES 
-    if not trade.isClosed and trade.hasHitEntry
+    bool isInvalidated = trade.isClosed and not trade.hasHitEntry
+
+    // 1. PERMANENT DELETION — only EMA exits and never-filled limits
+    if trade.emaExitTriggered or isInvalidated
+        deleteTradeVisuals(visuals)
+
+    // 2. DRAW FILLED TRADES ONLY
+    if not (trade.emaExitTriggered or isInvalidated) and trade.hasHitEntry
+        // ✅ Build the levels the split-second the limit fills
         if na(visuals.entryMarkerLine) and settings.showTPSL
             generateTradeVisuals(settings, trade, visuals)
 
@@ -2959,7 +2962,7 @@ initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string lo
     if (_buy or _sell) and not alreadyOpenedThisBar and (not isSideways or NCPR)
         TradeLogic newTrade = initializeTradeSession(settings, _buy ? longName : shortName)
         TradeVisuals newVis = TradeVisuals.new()
-        sendAlert(settings, newTrade, dX, mX, z1, d1_message)
+        sendAlert(settings, newTrade, z1, dX, mX, d1_message)
         array.push(sessionsArr, newTrade)
         array.push(visualsArr, newVis)
 
@@ -3194,14 +3197,12 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
                 updateTradeVisuals(settings, trade, vis)
                 signalLabelUpdate(settings, trade, vis)
             else
-                // Run a final update to snap lines/labels to the closing bar and handle invalidation
-                updateTradeVisuals(settings, trade, vis)
-                signalLabelUpdate(settings, trade, vis)
-                
                 // The split-second it mathematically closes, finalize and clean up!
                 string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
-                alert(closePayload, alert.freq_once_per_bar)
-                
+
+                // ✅ DELETES VISUALS INSTANTLY
+                deleteTradeVisuals(vis)
+
                 array.remove(sessionsArr, i)
                 array.remove(visualsArr, i)
                 0
