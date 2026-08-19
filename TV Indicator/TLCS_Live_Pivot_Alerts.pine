@@ -2755,13 +2755,17 @@ generateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) 
         linefill.new(visuals.tp3Line, visuals.tp4Line, color = color.new(color.teal, 97))
 
 updateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
+    bool isInvalidated = trade.isClosed and not trade.hasHitEntry
+    
     // 1. PERMANENT DELETION 
-    if trade.isClosed
+    if trade.emaExitTriggered or isInvalidated
         deleteTradeVisuals(visuals) 
         
     // 2. DRAW ACTIVE TRADES 
-    if not trade.isClosed
-
+    if not (trade.emaExitTriggered or isInvalidated) and trade.hasHitEntry
+        // ✅ Only generate the visuals the exact split-second the entry is touched!
+        if na(visuals.entryMarkerLine) and settings.showTPSL
+            generateTradeVisuals(settings, trade, visuals)
 
         label.set_xy(visuals.entryMarkerLabel,    int(math.min(bar_index, trade.startBarIndex) - 15), trade.entryLevel)
         string entryIcon = str.contains(trade.tradeDirection, 'LIGHTNING') ? '⚡ ' : '🔰 '
@@ -2818,7 +2822,7 @@ updateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
             updateLine(visuals.tp4Line, trade.startBarIndex, na)
 
 signalLabelUpdate(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
-    0 
+    0
     
 // AST OPTIMIZATION: Passed dX, mX, d1_message natively into finalizeTrade
 
@@ -3195,13 +3199,12 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
                 updateTradeVisuals(settings, trade, vis)
                 signalLabelUpdate(settings, trade, vis)
             else
-                // Run a final update to snap lines/labels to the closing bar and handle invalidation
-                updateTradeVisuals(settings, trade, vis)
-                signalLabelUpdate(settings, trade, vis)
-                
                 // The split-second it mathematically closes, finalize and clean up!
                 string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
                 alert(closePayload, alert.freq_once_per_bar)
+                
+                // ✅ DELETES VISUALS INSTANTLY
+                deleteTradeVisuals(vis) 
                 
                 array.remove(sessionsArr, i)
                 array.remove(visualsArr, i)
