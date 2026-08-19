@@ -129,8 +129,8 @@ u1 = input.symbol("NYMEX:CL1!", "Futures 1", group=gFutures)
 u2 = input.symbol("NYMEX:NG1!", "Futures 2", group=gFutures)
 u3 = input.symbol("NYMEX:HO1!", "Futures 3", group=gFutures)
 u4 = input.symbol("NYMEX:RB1!", "Futures 4", group=gFutures)
-u5 = input.symbol("NYMEX:PL1!", "Futures 5", group=gFutures)
-u6 = input.symbol("NYMEX:PA1!", "Futures 6", group=gFutures)
+u5 = input.symbol("COMEX:GC1!", "Futures 5", group=gFutures)
+u6 = input.symbol("COMEX:SI1!", "Futures 6", group=gFutures)
 
 // ---------------------------- SEQUENCE CALC ----------------------------
 f_calc() =>
