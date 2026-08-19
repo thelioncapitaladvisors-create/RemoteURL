@@ -2756,7 +2756,7 @@ generateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) 
 
 updateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
     // 1. PERMANENT DELETION 
-    if trade.isClosed or not trade.hasHitEntry
+    if trade.isClosed
         deleteTradeVisuals(visuals) 
         
     // 2. DRAW ACTIVE TRADES 
