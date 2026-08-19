@@ -2760,7 +2760,7 @@ updateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
         deleteTradeVisuals(visuals) 
         
     // 2. DRAW ACTIVE TRADES 
-    if not trade.isClosed and trade.hasHitEntry
+    if not trade.isClosed
 
 
         label.set_xy(visuals.entryMarkerLabel,    int(math.min(bar_index, trade.startBarIndex) - 15), trade.entryLevel)
