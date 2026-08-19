@@ -2324,6 +2324,7 @@ type TradeLogic
     bool    trailingSLActivated = false
     float   trailingSLLevel     = 0.0
     int     entryTime           = 0
+    int     originalEntryTime   = 0
     bool    emaExitTriggered    = false
     bool    divExitTriggered    = false
 
@@ -2516,7 +2517,7 @@ calculateProfit(Settings settings, TradeLogic trade, float entry, float exit, fl
 // ====================================================================
 sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
-    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.entryTime) + "_" + trade.tradeDirection
+    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
     
     // AST OPTIMIZATION: Concatenate outer braces to avoid Pine Script str.format escape bugs!
     string _ePay = '{' + str.format(
@@ -2529,7 +2530,7 @@ sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string
 
 sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
-    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.entryTime) + "_" + trade.tradeDirection
+    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
     
     string _tPay = '{' + str.format(
          '"secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
@@ -2541,7 +2542,7 @@ sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string 
 
 sendFillAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
-    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.entryTime) + "_" + trade.tradeDirection
+    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
     
     string _fPay = '{' + str.format(
          '"trigger":"TradeFill","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
@@ -2860,7 +2861,7 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
     // Format human-readable UTC datestamps for both entry and exit
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
     string closeDateStr = str.format_time(time, "yyyy-MM-dd HH:mm:ss", "UTC")
-    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.entryTime) + "_" + trade.tradeDirection
+    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
     
     // ✅ Includes "trigger":"TradeClose", entryDate, closeDate, trade_id & mintick price formatting
     string _oPay = '{' + str.format(
@@ -2883,6 +2884,7 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
 initializeTradeSession(Settings settings, string tradeDirection) =>
     TradeLogic trade = TradeLogic.new()
     trade.entryTime         := timenow
+    trade.originalEntryTime := timenow
     entryFeesRatio = settings.exchangeTakerFees * 100 * settings.leverage
     trade.profit -= entryFeesRatio
     settings.totalExchangeFees += entryFeesRatio * settings.initialCapital / 100
@@ -3103,6 +3105,8 @@ bool isSidewaysDay = (mX == 'INRANGEINVALUE') or
                      str.contains(mX, "TYPICAL DAY") or 
                      (dX == 'IN RANGE \n IN VALUE')
 
+bool dayAllowed = not isSidewaysDay or NCPR
+
 bool inValueArea = close > VAL and close < VAH
 bool inCamarillaZone = close > l3 and close < h3
 
@@ -3193,16 +3197,17 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
                 updateTradeVisuals(settings, trade, vis)
                 signalLabelUpdate(settings, trade, vis)
             else
+                // Run a final update to snap lines/labels to the closing bar and handle invalidation
+                updateTradeVisuals(settings, trade, vis)
+                signalLabelUpdate(settings, trade, vis)
+                
                 // The split-second it mathematically closes, finalize and clean up!
                 string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
                 alert(closePayload, alert.freq_once_per_bar)
                 
-                // ✅ DELETES VISUALS INSTANTLY
-                deleteTradeVisuals(vis) 
-                
                 array.remove(sessionsArr, i)
                 array.remove(visualsArr, i)
-                0 
+                0
 
 // ✅ EXECUTE ALL 3 ARRAYS IN 3 CLEAN LINES
 processTradeArray(settings, missileSessions, missileVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
@@ -3735,6 +3740,7 @@ enum DivergenceType
 type DivergenceObject
     Line priceLine
     Label priceLabel
+    Label xcrossLabel
     chart.point pricePoint
     DivergenceType divergenceType
     bool broken = false
@@ -3742,13 +3748,14 @@ type DivergenceObject
 method delete(DivergenceObject this)=>
     this.priceLine.delete()
     this.priceLabel.delete()
+    this.xcrossLabel.delete()
     this
 
 method draw(DivergenceObject this)=>
     this.delete()
-    // this.priceLine.draw()
-    if this.divergenceType == DivergenceType.BullishDivergence or this.divergenceType == DivergenceType.BearishDivergence
-        this.priceLabel.draw()
+    // this.priceLine.draw() // HIDDEN as per user request
+    this.priceLabel.draw()
+    this.xcrossLabel.draw()
     this
 
 type ZigzagProperties
@@ -3764,8 +3771,8 @@ enum PivotDirection
 
 getDivergenceType(direction, divergence)=>
     direction > 0?
-         (divergence > 0 ? DivergenceType.BearishDivergence : (close < open and close < close[1] ? DivergenceType.BearishHiddenDivergence : DivergenceType.None)):
-         (divergence > 0 ? DivergenceType.BullishDivergence : (close > open and close > close[1] ? DivergenceType.BullishHiddenDivergence : DivergenceType.None))
+         (divergence > 0 ? DivergenceType.BearishDivergence : DivergenceType.BearishHiddenDivergence):
+         (divergence > 0 ? DivergenceType.BullishDivergence : DivergenceType.BullishHiddenDivergence)
 
 getPivotDirection(dir, ratio) =>
     dir > 0 ? (ratio > 1 ? PivotDirection.HH : PivotDirection.LH) : ratio > 1 ? PivotDirection.LL : PivotDirection.HL
@@ -3780,10 +3787,10 @@ getLinePropertiesMap()=>
 
 getLabelPropertiesMap()=>
     labelPropertiesMap = map.new<DivergenceType, LabelProperties>()
-    labelPropertiesMap.put(DivergenceType.BullishDivergence, LabelProperties.new(xloc = xloc.bar_time, yloc = yloc.price, color = color.green, style = label.style_label_up, textcolor = color.white, size = size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BearishDivergence, LabelProperties.new(xloc = xloc.bar_time, yloc = yloc.price, color = color.red, style = label.style_label_down, textcolor = color.white, size = size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BullishHiddenDivergence, LabelProperties.new(xloc = xloc.bar_time, yloc = yloc.price, color = color.lime, style = label.style_label_up, textcolor = color.white, size = size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BearishHiddenDivergence, LabelProperties.new(xloc = xloc.bar_time, yloc = yloc.price, color = color.orange, style = label.style_label_down, textcolor = color.white, size = size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BullishDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.green, label.style_label_up, chart.bg_color, size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BearishDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.red, label.style_label_down, chart.bg_color, size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BullishHiddenDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.lime, label.style_label_up, chart.bg_color, size.small, force_overlay = false))
+    labelPropertiesMap.put(DivergenceType.BearishHiddenDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.orange, label.style_label_down, chart.bg_color, size.small, force_overlay = false))
     labelPropertiesMap
 
 getAllowedDivergenceTypes()=>
@@ -3861,7 +3868,7 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         y2 = oscillatorPoint.price
                         oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
                         
-                        if priceAtBar * dir > priceDivergenceLine.get_price(bar) * dir or oscillatorAtBar * dir > oscTheoPrice * dir
+                        if priceAtBar * dir > priceDivergenceLine.get_price(bar) * dir
                             validDivergence := false
                             break
 
@@ -3875,9 +3882,22 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         if allowedDivergenceTypes.get(divergenceType)
                             alert('Alert : ' + priceTooltipText, alert.freq_once_per_bar_close)
                             
-                        divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, pricePoint, divergenceType)
-                        divergenceObject.delete()
-                        divergenceObjects.push(divergenceObject.draw())
+                        color xColor = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? color.green : color.red
+                        string xcrossText = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? "\n\n✖" : "✖\n \n "
+                        string xStyle = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? label.style_label_up : label.style_label_down
+                        LabelProperties xcrossProps = LabelProperties.new(xloc.bar_time, yloc.price, color.new(color.white, 100), xStyle, xColor, size.normal, force_overlay = false)
+                        Label xcrossLabelObj = Label.new(pricePoint, xcrossText, "", xcrossProps)
+                        
+                        isDuplicate = false
+                        if divergenceObjects.size() > 0
+                            lastObj = divergenceObjects.last()
+                            if lastObj.pricePoint.index == pricePoint.index and lastObj.divergenceType == divergenceType
+                                isDuplicate := true
+                        
+                        if not isDuplicate
+                            divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, xcrossLabelObj, pricePoint, divergenceType)
+                            divergenceObject.delete()
+                            divergenceObjects.push(divergenceObject.draw())
                         true
                     else
                         priceDivergenceLine.delete()
