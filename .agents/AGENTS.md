@@ -723,3 +723,7 @@ function resolveOutcome(s) {
 - **Strict Limit Order Protection**: Limit orders MUST NOT be instantly invalidated by the wick of the exact candle that generated the signal.
 - In Pine Script, any invalidation check (`isInvalidated = low <= slLevel` or similar) MUST be strictly gated by `and bar_index > trade.startBarIndex` so that the trade survives the signal candle and has a chance to be sent to the backend as an `OPEN` order. 
 - Without this guard, the wick of the signal candle itself can artificially trigger the invalidation condition, causing the limit order to be created and cancelled instantaneously, and subsequently deleted by the backend.
+
+## Late Alert Creation & TradeFill Fallback
+- **Problem**: If the user creates a TradingView alert *after* a signal has already generated on the chart, the initial `OPEN` webhook (limit order placement) will never be sent to the backend.
+- **Solution**: The `TradeFill` block in `process-webhook-background.js` MUST NOT abort if it fails to find an open signal. Instead, it must gracefully insert the missing trade as a brand new active signal using the comprehensive payload data provided by the `TradeFill` webhook. This ensures late alerts are dynamically caught when price hits the limit entry.
