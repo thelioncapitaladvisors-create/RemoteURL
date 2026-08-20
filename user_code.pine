@@ -1986,8 +1986,9 @@ trade.startBarIndex := bar_index
 trade.hasHitEntry := true
 trade.entryTime := time // <--- MUST BE PRESENT
 // 1. INVALIDATION CHECK
-if not trade.hasHitEntry and not trade.isClosed
-bool isInvalidated = isLong_ ? low <= trade.slLevel : high >= trade.slLevel
+// ✅ Added bar_index guard to prevent instant invalidation on the signal candle
+if not trade.hasHitEntry and not trade.isClosed and bar_index > trade.startBarIndex
+        bool isInvalidated = isLong_ ? low <= trade.slLevel : high >= trade.slLevel
 if isInvalidated
 trade.isClosed := true
 trade.forceClosed := true

@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '/Users/vishant/Documents/Project/TLCS_Website_Deploy/.env' });
+require('dotenv').config({ path: '/Users/vishant/Documents/Project/algo_engine/.env' });
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY);
