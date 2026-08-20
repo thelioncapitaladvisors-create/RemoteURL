@@ -718,3 +718,8 @@ function resolveOutcome(s) {
 - **Duplicate Trade Prevention Guard**: The backend must query the database before inserting a new signal. If an active trade already exists for the same symbol with the exact same `trade_id` or `signal_ts` within ±5s, the insert must be skipped to prevent duplicates.
 - **Strict 2-Candle confirmed Divergence Exit**: The indicator strategy MUST NOT trigger divergence exits immediately on the live bar. To prevent unconfirmed repainting flashes, divergence exits MUST require the divergence signal to be at least 1 or 2 bars old (`[1]` or `[2]`) AND verified by two consecutive closed candles closing against the trade direction.
 - **Mobile Analytics Multi-Dashboard Matrix**: The mobile app's `ANALYTICS` tab MUST render both the `Daily Signal Dashboard Matrix` (7-day parameter table) and the `Weekly Signal Performance & Achievement Table` (day-wise targets, net edge, and average returns) directly below the Weekly Performance Edge table.
+
+## Limit Order Signal Candle Invalidation Guard
+- **Strict Limit Order Protection**: Limit orders MUST NOT be instantly invalidated by the wick of the exact candle that generated the signal.
+- In Pine Script, any invalidation check (`isInvalidated = low <= slLevel` or similar) MUST be strictly gated by `and bar_index > trade.startBarIndex` so that the trade survives the signal candle and has a chance to be sent to the backend as an `OPEN` order. 
+- Without this guard, the wick of the signal candle itself can artificially trigger the invalidation condition, causing the limit order to be created and cancelled instantaneously, and subsequently deleted by the backend.
