@@ -41,7 +41,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          echo "--- requirements.txt as checked out ---"
+          cat algo_engine/requirements.txt
           pip install -r algo_engine/requirements.txt
+          echo "--- installed versions ---"
+          python -m pip show httpx gotrue supabase | grep -E "^(Name|Version):"
+          python -c "import httpx, inspect; print('httpx.Client accepts proxy:', 'proxy' in inspect.signature(httpx.Client.__init__).parameters)"
           
       - name: Generate Tearsheet
         env:
