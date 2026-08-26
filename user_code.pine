@@ -1769,6 +1769,7 @@ type TradeLogic
 string tradeDirection = ""
 float entryLevel = 0.0
 bool hasHitEntry = false
+int signalTime = 0
 float positionRemaining = 100.0
 bool isClosed = false
 bool forceClosed = false
@@ -1953,21 +1954,21 @@ profit
 // UPDATED ALERT & FINALIZE FUNCTIONS
 // ====================================================================
 sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
-string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
-string tradeIdStr = syminfo.ticker + "_" + str.tostring(trade.entryTime) + "_" + trade.tradeDirection
+string entryDateStr = str.format_time(trade.signalTime, "yyyy-MM-dd HH:mm:ss", "UTC")
+string tradeIdStr = syminfo.ticker + "_" + str.tostring(trade.signalTime) + "_" + trade.tradeDirection
 // AST OPTIMIZATION: Concatenate outer braces to avoid Pine Script str.format escape bugs!
 string _ePay = '{' + str.format(
-'"secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
+'"secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
 webhook_secret, syminfo.ticker, trade.tradeDirection, 'OPEN',
 str.tostring(trade.entryLevel), str.tostring(trade.slLevel), str.tostring(trade.tp1Level),
 z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
 ) + '}'
 alert(_ePay, alert.freq_once_per_bar_close)
 sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
-string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
-string tradeIdStr = syminfo.ticker + "_" + str.tostring(trade.entryTime) + "_" + trade.tradeDirection
+string entryDateStr = str.format_time(trade.signalTime, "yyyy-MM-dd HH:mm:ss", "UTC")
+string tradeIdStr = syminfo.ticker + "_" + str.tostring(trade.signalTime) + "_" + trade.tradeDirection
 string _tPay = '{' + str.format(
-'"secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
+'"secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
 webhook_secret, syminfo.ticker, trade.tradeDirection, 'Trailing Stop',
 str.tostring(trade.entryLevel), str.tostring(trade.slLevel), str.tostring(trade.tp1Level),
 z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
@@ -2239,12 +2240,12 @@ bool isShort = str.contains(str.upper(trade.tradeDirection), 'SHORT')
 float exact_pct = isShort ? ((trade.entryLevel - trade.closeLevel) / trade.entryLevel) * 100 : ((trade.closeLevel - trade.entryLevel) / trade.entryLevel) * 100
 float rMult = riskToReward(trade.entryLevel, trade.slLevel, trade.closeLevel, trade.tradeDirection)
 // Format human-readable UTC datestamps for both entry and exit
-string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
+string entryDateStr = str.format_time(trade.signalTime, "yyyy-MM-dd HH:mm:ss", "UTC")
 string closeDateStr = str.format_time(time, "yyyy-MM-dd HH:mm:ss", "UTC")
-string tradeIdStr = syminfo.ticker + "_" + str.tostring(trade.entryTime) + "_" + trade.tradeDirection
+string tradeIdStr = syminfo.ticker + "_" + str.tostring(trade.signalTime) + "_" + trade.tradeDirection
 // ✅ Includes "trigger":"TradeClose", entryDate, closeDate, trade_id & mintick price formatting
 string _oPay = '{' + str.format(
-'"trigger":"TradeClose","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","closePrice":"{5}","slLevel":"{6}","tpLevel":"{7}","pnlAmount":"{8}","pnlPercent":"{9}","rMultiple":"{10}","zone":"{11}","dayType":"{12}","marketType":"{13}","tradeMessage":"{14}","entryTime":"{15}","closeTime":"{16}","rawText":"{17}","entryDate":"{18}","closeDate":"{19}","trade_id":"{20}"',
+'"trigger":"TradeClose","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","closePrice":"{5}","slLevel":"{6}","tpLevel":"{7}","pnlAmount":"{8}","pnlPercent":"{9}","rMultiple":"{10}","zone":"{11}","opening_bias":"{12}","day_type":"{13}","tradeMessage":"{14}","entryTime":"{15}","closeTime":"{16}","rawText":"{17}","entryDate":"{18}","closeDate":"{19}","trade_id":"{20}"',
 webhook_secret, syminfo.ticker, trade.tradeDirection, _outcome,
 str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.closeLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick),
 str.tostring(trade.profit, '#.##'), str.tostring(exact_pct, '#.##'), str.tostring(rMult, '#.##'),
@@ -2259,7 +2260,8 @@ _oPay
 // =========================================================================
 initializeTradeSession(Settings settings, string tradeDirection) =>
 TradeLogic trade = TradeLogic.new()
-trade.entryTime := timenow
+trade.entryTime := time
+trade.signalTime := time
 entryFeesRatio = settings.exchangeTakerFees * 100 * settings.leverage
 trade.profit -= entryFeesRatio
 settings.totalExchangeFees += entryFeesRatio * settings.initialCapital / 100
@@ -2296,20 +2298,17 @@ checkAnyBounceDown(r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r
 // --- ARRAY HELPER FUNCTIONS TO REDUCE MAIN SCRIPT SIZE ---
 // ====================================================================
 initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message) =>
-// 🛑 FLAG SIDEWAYS DAYS (Using the mX string passed into this function)
-bool isSideways = str.contains(mX, "TRADING RANGE") or str.contains(mX, "SIDEWAYS") or str.contains(mX, "TYPICAL DAY")
 // ✅ Tick-Spam Protection: Ensures only 1 trade per bar per category!
 bool alreadyOpenedThisBar = false
 if array.size(sessionsArr) > 0
 TradeLogic lastTrade = array.get(sessionsArr, array.size(sessionsArr) - 1)
 if lastTrade.startBarIndex == bar_index
 alreadyOpenedThisBar := true
-// 🛡️ BLOCK SIDEWAYS TRADES — Exception: Narrow CPR days bypass the sideways filter
-// NCPR = true when CPR width < 0.2% of pivot → compression day → expect breakout
-if (buyCond or sellCond) and not alreadyOpenedThisBar and (not isSideways or NCPR)
+// allowTrade is already enforced in the plots/signals natively
+if (buyCond or sellCond) and not alreadyOpenedThisBar
 TradeLogic newTrade = initializeTradeSession(settings, buyCond ? longName : shortName)
 TradeVisuals newVis = TradeVisuals.new()
-sendAlert(settings, newTrade, dX, mX, z1, d1_message)
+sendAlert(settings, newTrade, z1, dX, mX, d1_message)
 // if settings.showTPSL
 // generateTradeVisuals(settings, newTrade, newVis)
 array.push(sessionsArr, newTrade)
@@ -2362,13 +2361,13 @@ bool bullConds = (mX == 'BIG MOVE') or
 (dX == 'OUT OF RANGE \n OUT OF VALUE') or
 (c1 == 'CONFIRMED BULLISH') or
 (c1 == 'REJECTED BEARISH') or
-(c1 == 'WATCH')
+(c1 == 'WATCH') or NCPR
 bool bearConds = (mX == 'BIG MOVE') or
 (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or
 (dX == 'OUT OF RANGE \n OUT OF VALUE') or
 (c1 == 'CONFIRMED BEARISH') or
 (c1 == 'REJECTED BULLISH') or
-(c1 == 'WATCH')
+(c1 == 'WATCH') or NCPR
 bool RisingUP = bullConds
 bool FallingDOWN = bearConds
 bool RisingUp = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) and bullConds
@@ -2426,10 +2425,16 @@ bool hasBearishDiv = (ext_bearishDiv == 1) or (ext_bearishHiddenDiv == 1)
 bool LightningBuy = (CanBuy and ScalpBuy) or (hasBullishDiv[1] and GrS)
 bool LightningSell = (CanSell and ScalpSell) or (hasBearishDiv[1] and ReS)
 // 3. Filter out individual trades so they don't fire when Lightning fires
-bool JustMissileBuy = CanBuy and not LightningBuy
-bool JustMissileSell = CanSell and not LightningSell
-bool JustScalpBuy = ScalpBuy and not LightningBuy
-bool JustScalpSell = ScalpSell and not LightningSell
+bool isSidewaysGlobal = str.contains(mX, "TRADING RANGE") or str.contains(mX, "SIDEWAYS") or str.contains(mX, "TYPICAL DAY")
+bool allowTrade = (not isSidewaysGlobal or NCPR)
+
+bool JustMissileBuy = CanBuy and not LightningBuy and allowTrade
+bool JustMissileSell = CanSell and not LightningSell and allowTrade
+bool JustScalpBuy = ScalpBuy and not LightningBuy and allowTrade
+bool JustScalpSell = ScalpSell and not LightningSell and allowTrade
+
+LightningBuy := LightningBuy and allowTrade
+LightningSell := LightningSell and allowTrade
 // ====================================================================
 // 7. DECLARE ARRAYS & INITIALIZE NEW TRADES
 // ====================================================================
