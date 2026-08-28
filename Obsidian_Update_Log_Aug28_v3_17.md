@@ -29,6 +29,7 @@ Version 3.17 hardens the end-of-day (EOD) and stale trade closer cron jobs again
 
 ### 5. Symbol Normalization & Ticker Mapping
 - **US Nasdaq Index (`NDQ` / `NDQ1!`):** Added explicit mappings to the Nasdaq 100 index (`^IXIC`) in both `close_stale_trades.py` and `eod_closer.py`. This prevents Nasdaq trades from defaulting to Indian stocks (`.NS`) and skipping price updates.
+- **Spot Index Mappings (`NIFTY`, `BANKNIFTY`, `FINNIFTY`):** Explicitly mapped these spot index symbols (without the `1!` continuous contract suffix) in the `SYMBOL_MAP` of both cron closer scripts, ensuring that stale trades on indices are resolved and closed properly.
 - **Continuous Contract Suffix Stripping:** Updated `eod_closer.py` to strip the continuous contract suffix (`1!`) from symbol strings so contracts like `GOLD1!` map correctly to their MCX database category.
 - **Domestic Equities Memory:** Integrated the canonical list of 50 `NIFTY` stock symbols to ensure equity signals (like `ULTRACEMCO`) map correctly to the `IN` market group.
 
