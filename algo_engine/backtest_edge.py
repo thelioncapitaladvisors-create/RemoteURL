@@ -12,14 +12,17 @@ try:
 except ImportError:
     from backports.zoneinfo import ZoneInfo
 
+# Disable vectorbt caching to prevent Numba cache corruption issues across Python environments
+vbt.settings.caching['enabled'] = False
+
 # Load environment variables
 load_dotenv()
 
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+SUPABASE_URL = os.getenv('SUPABASE_URL') or os.getenv('NEXT_PUBLIC_SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY') or os.getenv('SUPABASE_SERVICE_ROLE_KEY')
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    print('Error: Missing Supabase credentials in .env file.')
+    print('Error: Missing Supabase credentials in .env file or environment.')
     exit(1)
 
 # Initialize Supabase
