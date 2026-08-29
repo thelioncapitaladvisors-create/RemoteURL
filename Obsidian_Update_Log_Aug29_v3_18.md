@@ -20,7 +20,13 @@ Version 3.18 resolves an intraday session boundary and weekend rollover issue wh
 - **Unified Session Resolution:** Updated `activeAlertLogs` in `Tv-Alert-Mobile/src/app/page.tsx` from raw calendar-day boundary matching (`getSignalTime >= startOfToday`) to the canonical `isSignalActiveForMarket(s, now)` dynamic session evaluator.
 - **Consistency Across Hub and Logs:** Ensures that both the **HUB** (Dashboard) and **LOGS** (Alerts) tabs adhere to the exact same market session life cycle and clear closed session trades in lockstep.
 
-### 3. Active Limit Order Threshold Alignment
+### 3. Real Weekly Calmar Ratio Metric Integration
+- **Chronological Equity & Drawdown Engine**: Implemented empirical Weekly Calmar Ratio calculation ($\text{Weekly Cumulative Return \%} / \text{Weekly Max Drawdown \%}$) sorted chronologically with tie-breaker timestamps (`exit_at` / `created_at`).
+- **Mobile 5-Column Grid Alignment**: Upgraded Row 2 on the **HUB** tab to a 5-column grid layout matching Row 1.
+- **Space Optimization**: Renamed `WEEKLY PROFIT FACTOR` to `WEEKLY PR` and `WEEKLY EXPECTANCY` to `WEEKLY EXP` so all 5 metric cards render with balanced spacing.
+- **Universal Synchronization**: Added `WEEKLY CALMAR` to the Web Dashboard (`dashboard.html`) performance pills grid.
+
+### 4. Active Limit Order Threshold Alignment
 - **Limit Expiry Boundary:** Aligned `isActiveLimit` across both Web and Mobile suites to recognize pending limit orders up to `4.0` hours (04:00 IST) for NYMEX, Forex, and World markets.
 
 ---
