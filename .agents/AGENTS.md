@@ -809,10 +809,15 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Release Version**: `v1.0.0` / `v1.0` (Deployed across `thelioncapitalsolutions.com` and `market-store.online`).
 - **Permanent Trade Accumulation**: As of August 30, 2026, all historical data reset operations are permanently concluded. Henceforth from today onward, all incoming trade signals, limit orders, fills, closures, and performance metrics are preserved in perpetuity ("till forever") across Supabase tables (`signals`, `weekly_performance_logs`, `strategy_performance`).
 - **Virtual Paper Portfolio & Lot-Size Simulator**:
-  - Live in the Mobile App HUB tab (`Tv-Alert-Mobile`).
+  - Live in the Mobile App **SCREENER Tab** (`Tv-Alert-Mobile` / `market-store.online`).
   - **Fixed Order Sizing**: Strictly 1 lot / position.
   - **Asset Quantities**: `NIFTY1!` Futures = 65 Qty, Indian Equities / Stocks = 100 Shares/Qty, MCX Crude/Gold = 100 Qty, NYMEX = 1000 Qty, Crypto = 1 Unit, Forex = 10,000 Units, World Indices = 1 Contract.
   - **Analytics**: Real-time computation of Paper Expectancy (Currency & R-multiple) and Calmar Ratio (with peak-to-trough Max Drawdown %).
+- **Screener Matrix Horizontal Scrolling**:
+  - Tables utilize `.table-scroll-container` and `.custom-horizontal-scrollbar` with visible tracks, `overscroll-behavior-x: contain`, and 1-tap `◀ Past Days` / `Today / Recent ▶` quick jump buttons.
+- **Top-Level Constant Hoisting (TDZ Safety)**:
+  - Global lookup dictionaries (`MARKET_SYMBOLS`, `EXCHANGE_TAB`) must always reside at the very top of `page.tsx` before all utility functions (`formatPrice`, `getMarket`, `getDecimals`) to prevent Temporal Dead Zone (TDZ) `ReferenceError` during React client bundle initialization.
+
 
 
 

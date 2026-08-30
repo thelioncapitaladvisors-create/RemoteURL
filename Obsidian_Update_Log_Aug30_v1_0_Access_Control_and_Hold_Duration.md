@@ -94,8 +94,12 @@ When a trade exits and the exit level/price is not registered in the webhook pay
 - **Official Production Version:** `v1.0.0` / `v1.0`
 - **Permanent Trade Accumulation:** All historical database resets are permanently concluded as of August 30, 2026. Henceforth from today onward, all past and future trade signals are permanently retained and accumulated across Supabase tables (`signals`, `weekly_performance_logs`, `strategy_performance`) in perpetuity ("till forever").
 - **Virtual Paper Portfolio & Lot-Size Simulator:**
-  - Integrated into the **HUB (`DASHBOARD`) Tab** of the Mobile Application (`Tv-Alert-Mobile`).
+  - Integrated into the **SCREENER Tab** of the Mobile Application (`Tv-Alert-Mobile`).
   - **Fixed 1-Lot Execution:** Order sizing locked to strictly 1 lot per trade.
   - **Asset-Specific Multipliers:** `NIFTY1!` Futures = 65 Qty, Indian Equities / Stocks = 100 Shares/Qty, MCX Crude/Gold = 100 Qty, NYMEX = 1000 Qty, Crypto = 1 Unit, Forex = 10,000 Units, World Indices = 1 Contract.
   - **Advanced Edge Analytics:** Real-time calculation of **Paper Expectancy** (monetary gain/trade & R-multiple) and **Calmar Ratio** (with peak-to-trough Max Drawdown %).
-  - **Direct Horizontal Scrolling:** Completely removed nested scroll traps and enabled direct touch horizontal scrolling across 7-Day Screener tables and market chips.
+- **7-Day Screener Table Horizontal Scrolling:**
+  - Enforced `.table-scroll-container` and `.custom-horizontal-scrollbar` with visible tracks, `touchAction: 'pan-x pan-y'`, and 1-tap `◀ Past Days` / `Today / Recent ▶` quick jump buttons.
+- **Top-Level Constant Hoisting (TDZ Safety):**
+  - Moved `MARKET_SYMBOLS` and `EXCHANGE_TAB` constant dictionaries to the top of `page.tsx` before all utility functions (`formatPrice`, `getMarket`, `getDecimals`) to prevent Temporal Dead Zone (TDZ) `ReferenceError` during React client bundle initialization.
+
