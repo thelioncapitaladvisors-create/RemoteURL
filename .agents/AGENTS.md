@@ -731,5 +731,33 @@ function resolveOutcome(s) {
 ## Version 1.2: Webhook Robustness & Scanner Payload Optimization
 - **VAPT Payload Size Limits**: The Netlify `process-webhook-background.js` server MUST maintain a minimum payload size limit of **500KB (512,000 bytes)** (`if (rawBody.length > 512000)`). Do NOT restrict it to 10KB. Bulk PivotBoss Scanner payloads (`scan_data`) easily exceed 10KB across multiple markets, which triggers `413 Payload Too Large` rejections and causes TradingView to permanently halt the alerts.
 - **TradeFill Missing Signal Robustness**: Webhooks triggered by `TradeFill` MUST NEVER silently abort (`if (!fillSignal) return;`) if a pre-existing limit order is not found. They must gracefully insert a new trade row as a fallback. 
-- **TradeFill Timestamp Injection**: When the webhook gracefully inserts a missing `TradeFill` signal, it MUST manually inject `updated_at: new Date().toISOString()` into the payload. If `updated_at` is missing on creation, the Mobile App and Web Dashboards will incorrectly parse the executed trade as a pending `Active Limit` order.
 - **Accumulation Sequence Shorthand**: The TradingView Pine Script outputs the shorthand `Acc/Dist Seq` for the Accumulation / Distribution Sequence. Both the Web Dashboard (`blog.html` / `dashboard.html`) and Mobile App (`page.tsx`) must strictly map this by checking `dt.includes('ACCUMULATION') || dt.includes('ACC/DIST')`. Do not overwrite or alter the Pine Script name, handle the shorthand natively on the frontend.
+
+## Standby Status Text Standard
+- The canonical standby/fallback status label for Day Type Scanners and Pivot scanners across both Web and Mobile is strictly **"Awaiting Market Close"** (e.g. `let lastUpdated = 'Awaiting Market Close'`). Do NOT use "Awaiting Market Open".
+
+## Mobile Navigation Tab Sequence
+- The canonical sequence of bottom navigation tabs in the mobile application (`page.tsx`) is strictly:
+  1. `HUB` (`id: 'DASHBOARD'`)
+  2. `LOGS` (`id: 'ALERTS'`)
+  3. `SCREENER` (`id: 'SCREENER'`)
+  4. `INSIGHTS` (`id: 'INSIGHTS'`)
+  5. `MARKETS` (`id: 'ANALYSIS'`)
+  6. `ANALYTICS` (`id: 'ANALYTICS'`)
+
+## Screener Nomenclature Standards
+- The canonical header titles on the Screener matrix (`page.tsx`) are strictly:
+  - `TLCS SIGNALS`
+  - `DAY TYPE BLUEPRINTS`
+  - `TRADE SEQUENCES`
+- Do NOT append suffixes such as `(DAILY 1D)` or `(Daily Close)` to section headers or column headers.
+
+## Weekly Performance Table Signal Count Rule
+- In the `Weekly Signal Performance & Achievement` table on the mobile app (`page.tsx`) and web (`blog.html`), the `SIGS` column count must strictly equal the total number of closed trades: **`wins + losses`** (rendered as `${wins + losses} (${wins}W/${losses}L)`). Never display raw `daySigs.length` which includes unclosed or unexecuted limit signals.
+
+## Multi-Theme Statistics & Tearsheet Skinning
+- The statistics tearsheet (`strategy_tearsheet.html`) and generator scripts (`generate_tearsheet.py`, `backtest_edge.py`) MUST dynamically adapt their background, borders, text, and Plotly templates according to the active theme skin:
+  - `theme-gray` / `gray` / `slate`: Slate background (`#F1F5F9`), slate headers (`#CBD5E1`), dark slate text (`#0F172A`), `plotly_white`.
+  - `theme-light` / `light`: White background (`#FFFFFF`), light gray headers (`#F1F5F9`), black text (`#000000`), `plotly_white`.
+  - `theme-lion` / `lion`: Deep black/gold background (`#0a0a0c`), dark headers (`#1a1a1e`), gold accents (`#f2c64b`), `plotly_dark`.
+  - `theme-dark` / `dark`: Obsidian background (`#0A0F14`), dark slate headers (`#1A1F26`), amber accents (`#F6AD55`), `plotly_dark`.
