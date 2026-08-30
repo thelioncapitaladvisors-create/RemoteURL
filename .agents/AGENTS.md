@@ -761,3 +761,24 @@ function resolveOutcome(s) {
   - `theme-light` / `light`: White background (`#FFFFFF`), light gray headers (`#F1F5F9`), black text (`#000000`), `plotly_white`.
   - `theme-lion` / `lion`: Deep black/gold background (`#0a0a0c`), dark headers (`#1a1a1e`), gold accents (`#f2c64b`), `plotly_dark`.
   - `theme-dark` / `dark`: Obsidian background (`#0A0F14`), dark slate headers (`#1A1F26`), amber accents (`#F6AD55`), `plotly_dark`.
+
+## Version 1.0: Strict 3-Tier Access Control & Zero-Data Leakage Architecture
+- **Tier 1 — Visitor (Public)**: Full access to Homepage (`/`), Products & Pricing (`products.html`), Blogs & FAQs (`blog.html`), and Dashboard (`dashboard.html`).
+- **Tier 2 — Normal User (Registered Free)**: Full access to all Visitor pages + profile/account management.
+- **Tier 3 — Paid Subscriber / Owner (`owner@tlcs.com`)**: Full access to all Visitor pages PLUS **Research** (`metrics.html`), **Screener Matrix** (`screener.html`), **Performance Scanner** (`scanner.html`), and **TLCS Terminal** (`market-store.online`).
+- **Zero-Data Leakage & Network Gate**:
+  - Gated pages (`metrics.html`, `scanner.html`, `screener.html`) MUST wrap all terminal chrome, tables, and metrics inside hidden containers (`style="display:none;"`) until `window.verifyPageAccess()` confirms active subscriber or owner credentials.
+  - Data fetching scripts (`trade-metrics.js`, `scanner.js`, `screener.js`, `loadAnalysisSignals()`) MUST NOT dispatch Supabase queries or subscribe to realtime channels if `verifyPageAccess` fails or `window.isSubscriberVerified` is false.
+  - Eliminate duplicate legacy auth gates (e.g. `#scanner-auth-gate`) to prevent stacked lock screens.
+
+## Subscriber Mobile Terminal Isolation (`market-store.online`)
+- **Subscriber-Only Surface**: `market-store.online` is reserved exclusively for paid subscribers and owner/admins. All public marketing links ("Download App", "Launch App", "Mobile App") are removed from public marketing pages and footers. The `📲 TLCS Terminal` launch button is surfaced strictly inside the logged-in navbar pill when `isSubscriber === true`.
+- **AuthGuard Lock**: `AuthGuard.tsx` in `Tv-Alert-Mobile` blocks unauthenticated visitors and free users with an informative "Active Subscription Required" paywall linking to `products.html`.
+- **Noindex Protection**: `public/robots.txt` (`Disallow: /`) and `<meta name="robots" content="noindex, nofollow" />` are strictly enforced to prevent search engine indexing of the terminal domain.
+- **Unified Nomenclature**: The subscriber application is officially branded **TLCS Terminal**.
+
+## Live Hold Duration & Unentered Trade Suppression Rules
+- **Live Active Trades**: Hold duration is dynamically computed from the exact moment the trade entered/filled (`metadata.real_entry_time` or entry timestamp) to the current moment (`Date.now() - liveEntryTs`), reflecting the live accumulating duration (e.g. `<1m`, `15m`, `1h 20m`).
+- **Unentered / Skipped / Cancelled / Expired Trades**: Hold duration is strictly suppressed and renders `--`. Limit orders that have not filled (`ACTIVE LIMIT`) must never display hold duration.
+- **Active Trade Exit Timestamps**: The `EXIT` timestamp for live active trades must strictly render `--` (never intermediate webhook update timestamps).
+
