@@ -528,119 +528,78 @@ def run_returns_backtest():
         document.body.classList.add('mode-stats');
     }}
 
-    document.body.style.backgroundColor = 'transparent';
-
-    const statsTable = document.querySelector('.stats-table');
     const isGray = rawTheme.includes('gray') || rawTheme.includes('slate');
     const isLight = rawTheme.includes('light');
     const isLion = rawTheme.includes('lion');
 
+    const dynamicStyle = document.createElement('style');
     if (isGray) {{
-        document.body.style.color = '#0F172A';
-        if (statsTable) {{
-            statsTable.style.backgroundColor = '#F1F5F9';
-            statsTable.style.border = '1px solid #CBD5E1';
-            document.querySelectorAll('.stats-table th').forEach(th => {{
-                th.style.backgroundColor = '#CBD5E1';
-                th.style.color = '#0F172A';
-                th.style.borderBottom = '2px solid #94A3B8';
-                th.style.fontWeight = '800';
-            }});
-            document.querySelectorAll('.stats-table td').forEach(td => {{
-                td.style.borderBottom = '1px solid #E2E8F0';
-                td.style.color = '#1E293B';
-            }});
-            document.querySelectorAll('.stats-table th:first-child').forEach(th => {{
-                th.style.backgroundColor = '#CBD5E1';
-                th.style.borderRight = '1px solid #94A3B8';
-            }});
-            document.querySelectorAll('.stats-table td:first-child').forEach(td => {{
-                td.style.backgroundColor = '#E2E8F0';
-                td.style.color = '#0F172A';
-                td.style.borderRight = '1px solid #CBD5E1';
-                td.style.fontWeight = 'bold';
-            }});
-        }}
+        dynamicStyle.innerHTML = `
+            body {{ background-color: transparent !important; color: #0F172A !important; }}
+            .tab-container {{ background-color: rgba(203, 213, 225, 0.4) !important; border-bottom: 1px solid rgba(15, 23, 42, 0.15) !important; }}
+            .tab-btn {{ background-color: rgba(255, 255, 255, 0.6) !important; color: #334155 !important; }}
+            .tab-btn.active {{ background-color: #0F172A !important; color: #FFFFFF !important; }}
+            .stats-container {{ background-color: transparent !important; }}
+            .stats-table {{ background-color: transparent !important; border: 1px solid rgba(15, 23, 42, 0.15) !important; border-radius: 12px; overflow: hidden; }}
+            .stats-table th {{ background-color: rgba(203, 213, 225, 0.65) !important; color: #0F172A !important; border-bottom: 1px solid rgba(15, 23, 42, 0.15) !important; font-weight: 800 !important; }}
+            .stats-table td {{ background-color: transparent !important; color: #1E293B !important; border-bottom: 1px solid rgba(15, 23, 42, 0.08) !important; }}
+            .stats-table thead th {{ background-color: rgba(203, 213, 225, 0.85) !important; }}
+            .stats-table th:first-child {{ background-color: rgba(203, 213, 225, 0.85) !important; color: #0F172A !important; border-right: 1px solid rgba(15, 23, 42, 0.15) !important; font-weight: 800 !important; }}
+            .stats-table td:first-child {{ background-color: rgba(226, 232, 240, 0.75) !important; color: #0F172A !important; border-right: 1px solid rgba(15, 23, 42, 0.15) !important; font-weight: 700 !important; }}
+            .stats-table tr:hover td {{ background-color: rgba(203, 213, 225, 0.35) !important; }}
+            .stats-table tr:hover td:first-child {{ background-color: rgba(203, 213, 225, 0.85) !important; }}
+        `;
     }} else if (isLight) {{
-        document.body.style.color = '#000000';
-        if (statsTable) {{
-            statsTable.style.backgroundColor = '#FFFFFF';
-            statsTable.style.border = '1px solid #E2E8F0';
-            document.querySelectorAll('.stats-table th').forEach(th => {{
-                th.style.backgroundColor = '#F1F5F9';
-                th.style.color = '#334155';
-                th.style.borderBottom = '2px solid #CBD5E1';
-                th.style.fontWeight = '800';
-            }});
-            document.querySelectorAll('.stats-table td').forEach(td => {{
-                td.style.borderBottom = '1px solid #F8FAFC';
-                td.style.color = '#1E293B';
-            }});
-            document.querySelectorAll('.stats-table th:first-child').forEach(th => {{
-                th.style.backgroundColor = '#F1F5F9';
-                th.style.borderRight = '1px solid #E2E8F0';
-            }});
-            document.querySelectorAll('.stats-table td:first-child').forEach(td => {{
-                td.style.backgroundColor = '#F8FAFC';
-                td.style.color = '#000000';
-                td.style.borderRight = '1px solid #E2E8F0';
-                td.style.fontWeight = 'bold';
-            }});
-        }}
+        dynamicStyle.innerHTML = `
+            body {{ background-color: transparent !important; color: #000000 !important; }}
+            .tab-container {{ background-color: rgba(241, 245, 249, 0.6) !important; border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important; }}
+            .tab-btn {{ background-color: rgba(255, 255, 255, 0.8) !important; color: #334155 !important; }}
+            .tab-btn.active {{ background-color: #0284c7 !important; color: #FFFFFF !important; }}
+            .stats-container {{ background-color: transparent !important; }}
+            .stats-table {{ background-color: transparent !important; border: 1px solid rgba(0, 0, 0, 0.1) !important; border-radius: 12px; overflow: hidden; }}
+            .stats-table th {{ background-color: rgba(241, 245, 249, 0.75) !important; color: #000000 !important; border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important; font-weight: 800 !important; }}
+            .stats-table td {{ background-color: transparent !important; color: #1E293B !important; border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important; }}
+            .stats-table thead th {{ background-color: rgba(241, 245, 249, 0.9) !important; }}
+            .stats-table th:first-child {{ background-color: rgba(241, 245, 249, 0.9) !important; color: #000000 !important; border-right: 1px solid rgba(0, 0, 0, 0.1) !important; font-weight: 800 !important; }}
+            .stats-table td:first-child {{ background-color: rgba(248, 250, 252, 0.8) !important; color: #000000 !important; border-right: 1px solid rgba(0, 0, 0, 0.1) !important; font-weight: 700 !important; }}
+            .stats-table tr:hover td {{ background-color: rgba(241, 245, 249, 0.5) !important; }}
+            .stats-table tr:hover td:first-child {{ background-color: rgba(241, 245, 249, 0.95) !important; }}
+        `;
     }} else if (isLion) {{
-        document.body.style.color = '#FFFFFF';
-        if (statsTable) {{
-            statsTable.style.backgroundColor = '#0a0a0c';
-            statsTable.style.border = '1px solid rgba(255, 255, 255, 0.12)';
-            document.querySelectorAll('.stats-table th').forEach(th => {{
-                th.style.backgroundColor = '#1a1a1e';
-                th.style.color = '#f2c64b';
-                th.style.borderBottom = '1px solid rgba(242, 198, 75, 0.3)';
-                th.style.fontWeight = '800';
-            }});
-            document.querySelectorAll('.stats-table td').forEach(td => {{
-                td.style.borderBottom = '1px solid rgba(255, 255, 255, 0.06)';
-                td.style.color = '#c0c0cf';
-            }});
-            document.querySelectorAll('.stats-table th:first-child').forEach(th => {{
-                th.style.backgroundColor = '#1a1a1e';
-                th.style.borderRight = '1px solid rgba(255, 255, 255, 0.12)';
-            }});
-            document.querySelectorAll('.stats-table td:first-child').forEach(td => {{
-                td.style.backgroundColor = '#0f0f13';
-                td.style.color = '#f2c64b';
-                td.style.borderRight = '1px solid rgba(255, 255, 255, 0.12)';
-                td.style.fontWeight = 'bold';
-            }});
-        }}
+        dynamicStyle.innerHTML = `
+            body {{ background-color: transparent !important; color: #FFFFFF !important; }}
+            .tab-container {{ background-color: rgba(10, 10, 12, 0.6) !important; border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important; }}
+            .tab-btn {{ background-color: rgba(26, 26, 30, 0.8) !important; color: #c0c0cf !important; }}
+            .tab-btn.active {{ background-color: #f2c64b !important; color: #000000 !important; font-weight: 800 !important; }}
+            .stats-container {{ background-color: transparent !important; }}
+            .stats-table {{ background-color: transparent !important; border: 1px solid rgba(255, 255, 255, 0.12) !important; border-radius: 12px; overflow: hidden; }}
+            .stats-table th {{ background-color: rgba(26, 26, 30, 0.75) !important; color: #f2c64b !important; border-bottom: 1px solid rgba(242, 198, 75, 0.25) !important; font-weight: 800 !important; }}
+            .stats-table td {{ background-color: transparent !important; color: #c0c0cf !important; border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important; }}
+            .stats-table thead th {{ background-color: rgba(26, 26, 30, 0.9) !important; }}
+            .stats-table th:first-child {{ background-color: rgba(26, 26, 30, 0.9) !important; color: #f2c64b !important; border-right: 1px solid rgba(255, 255, 255, 0.12) !important; font-weight: 800 !important; }}
+            .stats-table td:first-child {{ background-color: rgba(15, 15, 19, 0.75) !important; color: #f2c64b !important; border-right: 1px solid rgba(255, 255, 255, 0.12) !important; font-weight: 700 !important; }}
+            .stats-table tr:hover td {{ background-color: rgba(242, 198, 75, 0.08) !important; }}
+            .stats-table tr:hover td:first-child {{ background-color: rgba(26, 26, 30, 0.95) !important; }}
+        `;
     }} else {{
         // Dark / Obsidian
-        document.body.style.color = '#FFFFFF';
-        if (statsTable) {{
-            statsTable.style.backgroundColor = '#0A0F14';
-            statsTable.style.border = '1px solid rgba(255, 255, 255, 0.1)';
-            document.querySelectorAll('.stats-table th').forEach(th => {{
-                th.style.backgroundColor = '#1A1F26';
-                th.style.color = '#F6AD55';
-                th.style.borderBottom = '1px solid rgba(255, 255, 255, 0.15)';
-                th.style.fontWeight = '800';
-            }});
-            document.querySelectorAll('.stats-table td').forEach(td => {{
-                td.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
-                td.style.color = '#CBD5E0';
-            }});
-            document.querySelectorAll('.stats-table th:first-child').forEach(th => {{
-                th.style.backgroundColor = '#1A1F26';
-                th.style.borderRight = '1px solid rgba(255, 255, 255, 0.1)';
-            }});
-            document.querySelectorAll('.stats-table td:first-child').forEach(td => {{
-                td.style.backgroundColor = '#0A0F14';
-                td.style.color = '#FFFFFF';
-                td.style.borderRight = '1px solid rgba(255, 255, 255, 0.1)';
-                td.style.fontWeight = 'bold';
-            }});
-        }}
+        dynamicStyle.innerHTML = `
+            body {{ background-color: transparent !important; color: #FFFFFF !important; }}
+            .tab-container {{ background-color: rgba(10, 15, 20, 0.6) !important; border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important; }}
+            .tab-btn {{ background-color: rgba(26, 31, 38, 0.8) !important; color: #9ca3af !important; }}
+            .tab-btn.active {{ background-color: #3b82f6 !important; color: #FFFFFF !important; font-weight: 800 !important; }}
+            .stats-container {{ background-color: transparent !important; }}
+            .stats-table {{ background-color: transparent !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 12px; overflow: hidden; }}
+            .stats-table th {{ background-color: rgba(26, 31, 38, 0.75) !important; color: #F6AD55 !important; border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important; font-weight: 800 !important; }}
+            .stats-table td {{ background-color: transparent !important; color: #CBD5E0 !important; border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important; }}
+            .stats-table thead th {{ background-color: rgba(26, 31, 38, 0.9) !important; }}
+            .stats-table th:first-child {{ background-color: rgba(26, 31, 38, 0.9) !important; color: #F6AD55 !important; border-right: 1px solid rgba(255, 255, 255, 0.1) !important; font-weight: 800 !important; }}
+            .stats-table td:first-child {{ background-color: rgba(10, 15, 20, 0.75) !important; color: #FFFFFF !important; border-right: 1px solid rgba(255, 255, 255, 0.1) !important; font-weight: 700 !important; }}
+            .stats-table tr:hover td {{ background-color: rgba(255, 255, 255, 0.06) !important; }}
+            .stats-table tr:hover td:first-child {{ background-color: rgba(26, 31, 38, 0.95) !important; }}
+        `;
     }}
+    document.head.appendChild(dynamicStyle);
 
     const updateCharts = () => {{
         let allUpdated = true;
