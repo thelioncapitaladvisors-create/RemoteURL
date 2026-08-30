@@ -147,9 +147,107 @@ def fetch_all_closed_trades():
                         'return': pct_return
                     })
                 except ValueError:
+    sync_weekly_performance_logs(data)
+    return closed_trades, now_ist
+
+def sync_weekly_performance_logs(signals_data):
+    try:
+        weeks = {}
+        for s in signals_data:
+            outcome = resolve_outcome(s)
+            if outcome in ['OPEN', 'CANCELLED']:
+                continue
+            
+            market = get_market(s.get('symbol', 'UNKNOWN')).lower()
+            if market == 'unknown':
+                continue
+                
+            ts_str = s.get('created_at') or s.get('exit_at')
+            if not ts_str:
+                continue
+            try:
+                dt = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+                ist = dt.astimezone(timezone(timedelta(hours=5, minutes=30)))
+                mon = (ist.date() - timedelta(days=ist.weekday())).strftime('%Y-%m-%d')
+            except:
+                continue
+                
+            meta = s.get('metadata', {})
+            if isinstance(meta, str):
+                try: meta = json.loads(meta)
+                except: meta = {}
+            
+            pct = 0.0
+            if meta and 'exact_pct' in meta and meta['exact_pct'] is not None:
+                try: pct = float(meta['exact_pct'])
+                except: pct = 0.0
+                
+            if mon not in weeks:
+                weeks[mon] = {}
+            if market not in weeks[mon]:
+                weeks[mon][market] = []
+            weeks[mon][market].append((outcome, pct))
+            
+        logs_to_insert = []
+        for mon, mkts in weeks.items():
+            for mkt, trades in mkts.items():
+                wins = sum(1 for o, r in trades if o == 'WIN')
+                losses = sum(1 for o, r in trades if o == 'LOSS')
+                bes = sum(1 for o, r in trades if o == 'BREAKEVEN')
+                total = wins + losses + bes
+                if total == 0:
                     continue
                     
-    return closed_trades, now_ist
+                net_r = sum(r for o, r in trades)
+                gross_profit = sum(r for o, r in trades if r > 0)
+                gross_loss = sum(abs(r) for o, r in trades if r < 0)
+                best_trade = max((r for o, r in trades), default=0.0)
+                
+                win_rate = (wins / total) * 100.0
+                avg_r = net_r / total
+                
+                pf = 0.0
+                if gross_loss > 0:
+                    pf = gross_profit / gross_loss
+                elif gross_profit > 0:
+                    pf = 99.99
+                    
+                avg_win = (gross_profit / wins) if wins > 0 else 0.0
+                avg_loss = (gross_loss / losses) if losses > 0 else 1.0
+                realized_rr = (avg_win / avg_loss) if avg_loss > 0 else (999 if avg_win > 0 else 0)
+                
+                win_loss_count = wins + losses
+                kw_dec = wins / win_loss_count if win_loss_count > 0 else 0.0
+                kl_dec = losses / win_loss_count if win_loss_count > 0 else 0.0
+                
+                kelly = 0.0
+                if realized_rr > 0 and realized_rr != 999:
+                    kelly = ((kw_dec - (kl_dec / realized_rr)) * 100.0) * 0.5
+                elif realized_rr == 999:
+                    kelly = (kw_dec * 100.0) * 0.5
+                if kelly < 0:
+                    kelly = 0.0
+                    
+                logs_to_insert.append({
+                    'market_type': mkt,
+                    'week_start_date': mon,
+                    'win_rate': round(win_rate, 2),
+                    'total_trades': total,
+                    'profit_factor': round(pf, 2),
+                    'avg_exact_pct': round(avg_r, 2),
+                    'net_exact_pct': round(net_r, 2),
+                    'best_trade': round(best_trade, 2),
+                    'kelly_pct': round(kelly, 2),
+                    'wins': wins,
+                    'losses': losses,
+                    'breakevens': bes
+                })
+                
+        if logs_to_insert:
+            supabase.table('weekly_performance_logs').upsert(logs_to_insert, on_conflict='market_type, week_start_date').execute()
+            print(f"Synchronized {len(logs_to_insert)} weekly performance log entries in Supabase.")
+    except Exception as e:
+        print(f"Note: Weekly performance log sync encountered: {e}")
 
 def run_returns_backtest():
     trades, now_ist = fetch_all_closed_trades()
