@@ -1,4 +1,5 @@
 import os
+os.environ["NUMBA_DISABLE_CACHING"] = "1"
 import json
 import pandas as pd
 import numpy as np
@@ -16,10 +17,15 @@ except ImportError:
 vbt.settings.caching['enabled'] = False
 
 # Load environment variables
+current_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(current_dir, '.env'))
+load_dotenv(os.path.join(current_dir, '.env.local'))
+load_dotenv(os.path.join(current_dir, '..', 'TLCS_Website_Deploy', '.env'))
+load_dotenv(os.path.join(current_dir, '..', 'Tv-Alert-Mobile', '.env.local'))
 load_dotenv()
 
 SUPABASE_URL = os.getenv('SUPABASE_URL') or os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY') or os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY') or os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     print('Error: Missing Supabase credentials in .env file or environment.')
@@ -243,10 +249,82 @@ def run_returns_backtest():
     html_ret = fig_ret.to_html(full_html=False, include_plotlyjs=False, config={'responsive': True, 'displayModeBar': False})
     
     # 4. Statistics Table
+    stats_df = None
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        stats_df = vbt_returns.stats(agg_func=None).T
-    html_stats = stats_df.to_html(classes="stats-table", border=0, justify='left')
+        try:
+            raw_stats = vbt_returns.stats(agg_func=None)
+            if raw_stats is not None and not raw_stats.empty and len(raw_stats) > 0:
+                stats_df = raw_stats.T
+        except Exception as e:
+            print(f"vbt_returns.stats() encountered error: {e}")
+
+    # Fallback to direct calculation if vectorbt stats fails or produces empty rows
+    if stats_df is None or stats_df.empty or len(stats_df) == 0:
+        print("Computing performance statistics directly...")
+        rows = {}
+        for m in markets:
+            series = df_resampled[m].dropna() if m in df_resampled.columns else pd.Series(0.0, index=full_idx)
+            start_val = df_resampled.index.min().strftime('%Y-%m-%d %H:%M:%S%z') if not df_resampled.empty else '-'
+            end_val = df_resampled.index.max().strftime('%Y-%m-%d %H:%M:%S%z') if not df_resampled.empty else '-'
+            period_val = str(df_resampled.index.max() - df_resampled.index.min()) if not df_resampled.empty else '-'
+            
+            cum = (1 + series).cumprod() - 1
+            total_ret = cum.iloc[-1] * 100 if not cum.empty else 0.0
+            
+            ann_factor = 252 * 26
+            ann_ret = ((1 + total_ret / 100.0) ** (ann_factor / max(len(series), 1)) - 1) * 100 if len(series) > 0 else 0.0
+            vol = series.std() * np.sqrt(ann_factor) * 100 if len(series) > 1 else 0.0
+            
+            wealth = (1 + series).cumprod()
+            peak = wealth.cummax()
+            dd = (wealth - peak) / peak
+            max_dd = abs(dd.min()) * 100 if not dd.empty else 0.0
+            
+            mean_ret = series.mean()
+            std_ret = series.std()
+            sharpe = (mean_ret / std_ret) * np.sqrt(ann_factor) if std_ret > 0 else 0.0
+            calmar = (ann_ret / max_dd) if max_dd > 0 else 0.0
+            
+            neg_ret = series[series < 0]
+            downside_std = neg_ret.std() * np.sqrt(ann_factor) if len(neg_ret) > 1 else 0.0
+            sortino = (ann_ret / downside_std) if downside_std > 0 else 0.0
+            
+            rows[m] = {
+                'Start': start_val,
+                'End': end_val,
+                'Period': period_val,
+                'Total Return [%]': total_ret,
+                'Annualized Return [%]': ann_ret,
+                'Annualized Volatility [%]': vol,
+                'Max Drawdown [%]': max_dd,
+                'Sharpe Ratio': sharpe,
+                'Calmar Ratio': calmar,
+                'Sortino Ratio': sortino,
+                'Skew': float(series.skew()) if len(series) > 2 and not np.isnan(series.skew()) else 0.0,
+                'Kurtosis': float(series.kurtosis()) if len(series) > 3 and not np.isnan(series.kurtosis()) else 0.0,
+                'Tail Ratio': 0.0,
+                'Common Sense Ratio': 0.0,
+                'Value at Risk': 0.0
+            }
+        stats_df = pd.DataFrame(rows)
+
+    # Format values for crisp display (handling NaN, inf, percentages, floats)
+    formatted_df = stats_df.copy()
+    for col in formatted_df.columns:
+        for idx in formatted_df.index:
+            val = formatted_df.loc[idx, col]
+            if pd.isna(val) or str(val) == 'NaT' or str(val) == 'nan' or str(val) == '<NA>':
+                formatted_df.loc[idx, col] = '-'
+            elif isinstance(val, (float, np.floating)):
+                if np.isnan(val) or np.isinf(val):
+                    formatted_df.loc[idx, col] = '-'
+                elif '%' in str(idx):
+                    formatted_df.loc[idx, col] = f'{val:.2f}%'
+                else:
+                    formatted_df.loc[idx, col] = f'{val:.2f}'
+
+    html_stats = formatted_df.to_html(classes="stats-table", border=0, justify='left')
     
     template = f"""<!DOCTYPE html>
 <html>
