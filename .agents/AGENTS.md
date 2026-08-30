@@ -815,8 +815,9 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - **Analytics**: Real-time computation of Paper Expectancy (Currency & R-multiple) and Calmar Ratio (with peak-to-trough Max Drawdown %).
 - **Screener Matrix Horizontal Scrolling**:
   - Tables utilize `.table-scroll-container` and `.custom-horizontal-scrollbar` with visible tracks, `overscroll-behavior-x: contain`, and 1-tap `◀ Past Days` / `Today / Recent ▶` quick jump buttons.
-- **Top-Level Constant Hoisting (TDZ Safety)**:
-  - Global lookup dictionaries (`MARKET_SYMBOLS`, `EXCHANGE_TAB`) must always reside at the very top of `page.tsx` before all utility functions (`formatPrice`, `getMarket`, `getDecimals`) to prevent Temporal Dead Zone (TDZ) `ReferenceError` during React client bundle initialization.
+- **Top-Level Constant & Function Hoisting (TDZ Safety)**:
+  - Global lookup dictionaries (`MARKET_SYMBOLS`, `EXCHANGE_TAB`) and core calculation functions (`resolveOutcome`, `getExactPct`, `isRealTrade`, `formatPrice`, `getMarket`, `getDecimals`) MUST always reside at the very top of `page.tsx` outside all components. This prevents JavaScript `ReferenceError: Cannot access before initialization` (Temporal Dead Zone) when hooks and initial state memos evaluate on mount.
+
 
 
 

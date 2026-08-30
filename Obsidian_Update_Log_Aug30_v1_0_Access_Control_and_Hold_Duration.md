@@ -100,6 +100,7 @@ When a trade exits and the exit level/price is not registered in the webhook pay
   - **Advanced Edge Analytics:** Real-time calculation of **Paper Expectancy** (monetary gain/trade & R-multiple) and **Calmar Ratio** (with peak-to-trough Max Drawdown %).
 - **7-Day Screener Table Horizontal Scrolling:**
   - Enforced `.table-scroll-container` and `.custom-horizontal-scrollbar` with visible tracks, `touchAction: 'pan-x pan-y'`, and 1-tap `◀ Past Days` / `Today / Recent ▶` quick jump buttons.
-- **Top-Level Constant Hoisting (TDZ Safety):**
-  - Moved `MARKET_SYMBOLS` and `EXCHANGE_TAB` constant dictionaries to the top of `page.tsx` before all utility functions (`formatPrice`, `getMarket`, `getDecimals`) to prevent Temporal Dead Zone (TDZ) `ReferenceError` during React client bundle initialization.
+- **Top-Level Constant & Function Hoisting (TDZ Safety):**
+  - Moved `MARKET_SYMBOLS`, `EXCHANGE_TAB`, `resolveOutcome`, `getExactPct`, and `isRealTrade` to the module top-level of `page.tsx` outside all components to eliminate Temporal Dead Zone (TDZ) `ReferenceError` on component initialization and mount.
+
 
