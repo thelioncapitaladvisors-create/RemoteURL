@@ -7,7 +7,7 @@ import vectorbt as vbt
 from dotenv import load_dotenv
 from supabase import create_client, Client
 import warnings
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 try:
     from zoneinfo import ZoneInfo
 except ImportError:
