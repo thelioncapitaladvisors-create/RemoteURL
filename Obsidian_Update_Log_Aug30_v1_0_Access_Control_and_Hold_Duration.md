@@ -78,3 +78,12 @@ This release implements the definitive **TLCS Application Anomaly Correction Pla
   - `Tv-Alert-Mobile` → `v1.0.0`
   - `RemoteURL` → `v1.0.0`
   - Root `Project` → `v1.0.0`
+
+---
+
+## 5. Reverse-Engineering Exit Level & Price Resolution Protocol
+When a trade exits and the exit level/price is not registered in the webhook payload, the system applies a 4-tier reverse engineering resolution strategy:
+1. **Pine Script Status Keyword Direct Binding**: Automatically binds `exit_price` to `target`, `tp2`, `tp3`, `tp4`, `entry`, `stop`, or `trail_sl` based on definitive status terminology (`Hit TP1-4`, `Hit Initial SL`, `Hit B/E`, `Trailing Stop`).
+2. **Exact Percentage Mathematical Inversion**: Inverts `metadata.exact_pct` against `entry` price ($\text{exit} = \text{entry} \times (1 \pm \text{pct}/100)$) and tests for proximity alignment against stored trade levels ($\pm 0.2\%$).
+3. **Yahoo Finance Intraday 1m/5m Quote Resolution**: Queries Yahoo Finance for intraday candle data at `exit_at` / `updated_at` timestamps, applying scale-correlated percentage normalization for cross-currency futures.
+4. **Automated Supabase Reconciliation**: Automatically writes back resolved exit prices and outcomes to Supabase to keep all performance tearsheets and win/loss analytics 100% synchronized.

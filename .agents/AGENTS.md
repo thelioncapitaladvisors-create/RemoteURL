@@ -782,3 +782,27 @@ function resolveOutcome(s) {
 - **Unentered / Skipped / Cancelled / Expired Trades**: Hold duration is strictly suppressed and renders `--`. Limit orders that have not filled (`ACTIVE LIMIT`) must never display hold duration.
 - **Active Trade Exit Timestamps**: The `EXIT` timestamp for live active trades must strictly render `--` (never intermediate webhook update timestamps).
 
+## Reverse-Engineering Exit Level & Price Resolution Protocol
+When a trade exits but its `exit_price` or canonical exit level was not registered in the incoming webhook payload, the system applies a strict 4-tier reverse-engineering hierarchy:
+1. **Tier 1 — Pine Script Status Keyword Direct Binding**:
+   - If the status string contains definitive exit terminology (`"Hit TP1"`, `"Hit TP2"`, `"Hit TP3"`, `"Hit TP4"`, `"Hit Initial SL"`, `"Hit B/E"`, `"Trailing Stop"`), directly bind `exit_price` to the corresponding stored database level:
+     - `TP1` → `s.target`
+     - `TP2` → `s.tp2`
+     - `TP3` → `s.tp3`
+     - `TP4` → `s.tp4`
+     - `B/E` → `s.entry`
+     - `SL` → `s.stop`
+     - `TRAIL` → `s.trail_sl`
+2. **Tier 2 — Exact Percentage Mathematical Inversion**:
+   - If `metadata.exact_pct` is recorded on the trade:
+     - For Longs: $\text{exit\_price} = \text{entry} \times (1 + \text{exact\_pct} / 100)$
+     - For Shorts: $\text{exit\_price} = \text{entry} \times (1 - \text{exact\_pct} / 100)$
+   - Proximity Match: Test `exit_price` against canonical levels (`stop`, `entry`, `target`, `tp2`, `tp3`, `tp4`, `trail_sl`) within a $\pm 0.2\%$ tolerance window. If matched, assign the definitive level label (`SL`, `B/E`, `TP1`, `TP2`, `TP3`, `TP4`, `TRAIL`).
+3. **Tier 3 — Intraday Yahoo Finance Historical Quote at `exit_at` Timestamp**:
+   - Query Yahoo Finance via `fetch_yahoo_price_at_time(ticker, exit_time)` targeting 1-minute / 5-minute intraday bars at the exact exit timestamp (`exit_at` or `updated_at`).
+   - If the asset currency/scale matches (within 15% of entry), use the intraday bar close.
+   - For currency-mismatched futures (e.g. INR vs USD), calculate the percentage return $\Delta\%$ on Yahoo between `real_entry_time` and `exit_at`, and project it onto the local entry: $\text{exit\_price} = \text{entry} \times (1 + \Delta\%)$.
+4. **Tier 4 — Database Healing & Self-Correction**:
+   - Automated scripts (`yahoo_helper.py`, `cron-heal-outcomes.js`) write back the resolved `exit_price`, `metadata.exact_pct`, and canonical outcome to Supabase to prevent unclosed trade anomalies and maintain database integrity.
+
+
