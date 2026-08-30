@@ -805,4 +805,14 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 4. **Tier 4 — Database Healing & Self-Correction**:
    - Automated scripts (`yahoo_helper.py`, `cron-heal-outcomes.js`) write back the resolved `exit_price`, `metadata.exact_pct`, and canonical outcome to Supabase to prevent unclosed trade anomalies and maintain database integrity.
 
+## Version 1.0 Production Milestone & Permanent Trade History Accumulation
+- **Release Version**: `v1.0.0` / `v1.0` (Deployed across `thelioncapitalsolutions.com` and `market-store.online`).
+- **Permanent Trade Accumulation**: As of August 30, 2026, all historical data reset operations are permanently concluded. Henceforth from today onward, all incoming trade signals, limit orders, fills, closures, and performance metrics are preserved in perpetuity ("till forever") across Supabase tables (`signals`, `weekly_performance_logs`, `strategy_performance`).
+- **Virtual Paper Portfolio & Lot-Size Simulator**:
+  - Live in the Mobile App HUB tab (`Tv-Alert-Mobile`).
+  - **Fixed Order Sizing**: Strictly 1 lot / position.
+  - **Asset Quantities**: `NIFTY1!` Futures = 65 Qty, Indian Equities / Stocks = 100 Shares/Qty, MCX Crude/Gold = 100 Qty, NYMEX = 1000 Qty, Crypto = 1 Unit, Forex = 10,000 Units, World Indices = 1 Contract.
+  - **Analytics**: Real-time computation of Paper Expectancy (Currency & R-multiple) and Calmar Ratio (with peak-to-trough Max Drawdown %).
+
+
 

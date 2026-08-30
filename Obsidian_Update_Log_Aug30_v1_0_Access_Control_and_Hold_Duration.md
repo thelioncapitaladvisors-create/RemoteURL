@@ -87,3 +87,15 @@ When a trade exits and the exit level/price is not registered in the webhook pay
 2. **Exact Percentage Mathematical Inversion**: Inverts `metadata.exact_pct` against `entry` price ($\text{exit} = \text{entry} \times (1 \pm \text{pct}/100)$) and tests for proximity alignment against stored trade levels ($\pm 0.2\%$).
 3. **Yahoo Finance Intraday 1m/5m Quote Resolution**: Queries Yahoo Finance for intraday candle data at `exit_at` / `updated_at` timestamps, applying scale-correlated percentage normalization for cross-currency futures.
 4. **Automated Supabase Reconciliation**: Automatically writes back resolved exit prices and outcomes to Supabase to keep all performance tearsheets and win/loss analytics 100% synchronized.
+
+---
+
+## 6. Version 1.0 Production Milestone & Permanent Trade History Accumulation
+- **Official Production Version:** `v1.0.0` / `v1.0`
+- **Permanent Trade Accumulation:** All historical database resets are permanently concluded as of August 30, 2026. Henceforth from today onward, all past and future trade signals are permanently retained and accumulated across Supabase tables (`signals`, `weekly_performance_logs`, `strategy_performance`) in perpetuity ("till forever").
+- **Virtual Paper Portfolio & Lot-Size Simulator:**
+  - Integrated into the **HUB (`DASHBOARD`) Tab** of the Mobile Application (`Tv-Alert-Mobile`).
+  - **Fixed 1-Lot Execution:** Order sizing locked to strictly 1 lot per trade.
+  - **Asset-Specific Multipliers:** `NIFTY1!` Futures = 65 Qty, Indian Equities / Stocks = 100 Shares/Qty, MCX Crude/Gold = 100 Qty, NYMEX = 1000 Qty, Crypto = 1 Unit, Forex = 10,000 Units, World Indices = 1 Contract.
+  - **Advanced Edge Analytics:** Real-time calculation of **Paper Expectancy** (monetary gain/trade & R-multiple) and **Calmar Ratio** (with peak-to-trough Max Drawdown %).
+  - **Direct Horizontal Scrolling:** Completely removed nested scroll traps and enabled direct touch horizontal scrolling across 7-Day Screener tables and market chips.
