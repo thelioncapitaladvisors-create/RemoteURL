@@ -518,66 +518,158 @@ def run_returns_backtest():
         window.dispatchEvent(new Event('resize'));
     }}
     
-    // Check mode
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
+    const rawTheme = (urlParams.get('theme') || 'dark').toLowerCase();
+
     if (mode === 'charts') {{
         document.body.classList.add('mode-charts');
     }} else if (mode === 'stats') {{
         document.body.classList.add('mode-stats');
     }}
-    
-    // Check theme
-    if (urlParams.get('theme') === 'theme-gray' || urlParams.get('theme') === 'theme-light') {{
-        document.body.style.backgroundColor = 'transparent';
-        document.body.style.color = '#334155';
-        
-        // Inject light mode CSS for tabs and table
-        const style = document.createElement('style');
-        style.innerHTML = `
-            .tab-container {{ background-color: transparent !important; border-bottom: 1px solid rgba(0,0,0,0.1) !important; }}
-            .tab-btn {{ background-color: rgba(255,255,255,0.5) !important; color: #475569 !important; border: 1px solid rgba(0,0,0,0.05) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }}
-            .tab-btn:hover {{ background-color: rgba(255,255,255,0.8) !important; }}
-            .tab-btn.active {{ background-color: #f1f5f9 !important; color: #0f172a !important; border-color: rgba(0,0,0,0.1) !important; font-weight: 800 !important; }}
-            .stats-table {{ background-color: rgba(255,255,255,0.5) !important; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important; }}
-            .stats-table th {{ background-color: rgba(241,245,249,0.8) !important; color: #334155 !important; border-bottom: 1px solid rgba(0,0,0,0.1) !important; }}
-            .stats-table td {{ border-bottom: 1px solid rgba(0,0,0,0.05) !important; color: #475569 !important; }}
-            .stats-table tr:hover td {{ background-color: rgba(255,255,255,0.9) !important; }}
-            .stats-table thead th, .stats-table th:first-child, .stats-table td:first-child {{ background-color: rgba(241,245,249,0.95) !important; border-right: 1px solid rgba(0,0,0,0.1) !important; color: #334155 !important; }}
-            .stats-table tr:hover td:first-child {{ background-color: rgba(226,232,240,0.95) !important; }}
-        `;
-        document.head.appendChild(style);
 
-        // Update Plotly charts iteratively when they load
-        const updateCharts = () => {{
-            const chartDivs = document.querySelectorAll('.plotly-graph-div');
-            let allUpdated = chartDivs.length > 0;
-            
-            chartDivs.forEach(div => {{
-                if(div.data) {{
-                    Plotly.relayout(div, {{
-                        'paper_bgcolor': 'transparent',
-                        'plot_bgcolor': 'transparent',
-                        'font.color': '#334155',
-                        'xaxis.gridcolor': 'rgba(0,0,0,0.05)',
-                        'yaxis.gridcolor': 'rgba(0,0,0,0.05)',
-                        'xaxis.zerolinecolor': 'rgba(0,0,0,0.1)',
-                        'yaxis.zerolinecolor': 'rgba(0,0,0,0.1)',
-                        'xaxis.linecolor': 'rgba(0,0,0,0.1)',
-                        'yaxis.linecolor': 'rgba(0,0,0,0.1)'
-                    }});
-                }} else {{
-                    allUpdated = false;
-                }}
+    document.body.style.backgroundColor = 'transparent';
+
+    const statsTable = document.querySelector('.stats-table');
+    const isGray = rawTheme.includes('gray') || rawTheme.includes('slate');
+    const isLight = rawTheme.includes('light');
+    const isLion = rawTheme.includes('lion');
+
+    if (isGray) {{
+        document.body.style.color = '#0F172A';
+        if (statsTable) {{
+            statsTable.style.backgroundColor = '#F1F5F9';
+            statsTable.style.border = '1px solid #CBD5E1';
+            document.querySelectorAll('.stats-table th').forEach(th => {{
+                th.style.backgroundColor = '#CBD5E1';
+                th.style.color = '#0F172A';
+                th.style.borderBottom = '2px solid #94A3B8';
+                th.style.fontWeight = '800';
             }});
-            
-            if (!allUpdated) {{
-                setTimeout(updateCharts, 100);
-            }}
-        }};
-        
-        setTimeout(updateCharts, 100);
+            document.querySelectorAll('.stats-table td').forEach(td => {{
+                td.style.borderBottom = '1px solid #E2E8F0';
+                td.style.color = '#1E293B';
+            }});
+            document.querySelectorAll('.stats-table th:first-child').forEach(th => {{
+                th.style.backgroundColor = '#CBD5E1';
+                th.style.borderRight = '1px solid #94A3B8';
+            }});
+            document.querySelectorAll('.stats-table td:first-child').forEach(td => {{
+                td.style.backgroundColor = '#E2E8F0';
+                td.style.color = '#0F172A';
+                td.style.borderRight = '1px solid #CBD5E1';
+                td.style.fontWeight = 'bold';
+            }});
+        }}
+    }} else if (isLight) {{
+        document.body.style.color = '#000000';
+        if (statsTable) {{
+            statsTable.style.backgroundColor = '#FFFFFF';
+            statsTable.style.border = '1px solid #E2E8F0';
+            document.querySelectorAll('.stats-table th').forEach(th => {{
+                th.style.backgroundColor = '#F1F5F9';
+                th.style.color = '#334155';
+                th.style.borderBottom = '2px solid #CBD5E1';
+                th.style.fontWeight = '800';
+            }});
+            document.querySelectorAll('.stats-table td').forEach(td => {{
+                td.style.borderBottom = '1px solid #F8FAFC';
+                td.style.color = '#1E293B';
+            }});
+            document.querySelectorAll('.stats-table th:first-child').forEach(th => {{
+                th.style.backgroundColor = '#F1F5F9';
+                th.style.borderRight = '1px solid #E2E8F0';
+            }});
+            document.querySelectorAll('.stats-table td:first-child').forEach(td => {{
+                td.style.backgroundColor = '#F8FAFC';
+                td.style.color = '#000000';
+                td.style.borderRight = '1px solid #E2E8F0';
+                td.style.fontWeight = 'bold';
+            }});
+        }}
+    }} else if (isLion) {{
+        document.body.style.color = '#FFFFFF';
+        if (statsTable) {{
+            statsTable.style.backgroundColor = '#0a0a0c';
+            statsTable.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+            document.querySelectorAll('.stats-table th').forEach(th => {{
+                th.style.backgroundColor = '#1a1a1e';
+                th.style.color = '#f2c64b';
+                th.style.borderBottom = '1px solid rgba(242, 198, 75, 0.3)';
+                th.style.fontWeight = '800';
+            }});
+            document.querySelectorAll('.stats-table td').forEach(td => {{
+                td.style.borderBottom = '1px solid rgba(255, 255, 255, 0.06)';
+                td.style.color = '#c0c0cf';
+            }});
+            document.querySelectorAll('.stats-table th:first-child').forEach(th => {{
+                th.style.backgroundColor = '#1a1a1e';
+                th.style.borderRight = '1px solid rgba(255, 255, 255, 0.12)';
+            }});
+            document.querySelectorAll('.stats-table td:first-child').forEach(td => {{
+                td.style.backgroundColor = '#0f0f13';
+                td.style.color = '#f2c64b';
+                td.style.borderRight = '1px solid rgba(255, 255, 255, 0.12)';
+                td.style.fontWeight = 'bold';
+            }});
+        }}
+    }} else {{
+        // Dark / Obsidian
+        document.body.style.color = '#FFFFFF';
+        if (statsTable) {{
+            statsTable.style.backgroundColor = '#0A0F14';
+            statsTable.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+            document.querySelectorAll('.stats-table th').forEach(th => {{
+                th.style.backgroundColor = '#1A1F26';
+                th.style.color = '#F6AD55';
+                th.style.borderBottom = '1px solid rgba(255, 255, 255, 0.15)';
+                th.style.fontWeight = '800';
+            }});
+            document.querySelectorAll('.stats-table td').forEach(td => {{
+                td.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
+                td.style.color = '#CBD5E0';
+            }});
+            document.querySelectorAll('.stats-table th:first-child').forEach(th => {{
+                th.style.backgroundColor = '#1A1F26';
+                th.style.borderRight = '1px solid rgba(255, 255, 255, 0.1)';
+            }});
+            document.querySelectorAll('.stats-table td:first-child').forEach(td => {{
+                td.style.backgroundColor = '#0A0F14';
+                td.style.color = '#FFFFFF';
+                td.style.borderRight = '1px solid rgba(255, 255, 255, 0.1)';
+                td.style.fontWeight = 'bold';
+            }});
+        }}
     }}
+
+    const updateCharts = () => {{
+        let allUpdated = true;
+        document.querySelectorAll('.plotly-graph-div').forEach(div => {{
+            if (div && div.layout) {{
+                const isLightOrGray = isGray || isLight;
+                Plotly.relayout(div, {{
+                    'template': isLightOrGray ? 'plotly_white' : 'plotly_dark',
+                    'paper_bgcolor': 'transparent',
+                    'plot_bgcolor': 'transparent',
+                    'font.color': isGray ? '#0F172A' : isLight ? '#000000' : '#FFFFFF',
+                    'xaxis.gridcolor': isLightOrGray ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)',
+                    'yaxis.gridcolor': isLightOrGray ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)',
+                    'xaxis.zerolinecolor': isLightOrGray ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
+                    'yaxis.zerolinecolor': isLightOrGray ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
+                    'xaxis.linecolor': isLightOrGray ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
+                    'yaxis.linecolor': isLightOrGray ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'
+                }});
+            }} else {{
+                allUpdated = false;
+            }}
+        }});
+        
+        if (!allUpdated) {{
+            setTimeout(updateCharts, 100);
+        }}
+    }};
+    
+    setTimeout(updateCharts, 100);
 </script>
 </body>
 </html>
