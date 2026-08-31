@@ -818,6 +818,17 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Top-Level Constant & Function Hoisting (TDZ Safety)**:
   - Global lookup dictionaries (`MARKET_SYMBOLS`, `EXCHANGE_TAB`) and core calculation functions (`resolveOutcome`, `getExactPct`, `isRealTrade`, `formatPrice`, `getMarket`, `getDecimals`) MUST always reside at the very top of `page.tsx` outside all components. This prevents JavaScript `ReferenceError: Cannot access before initialization` (Temporal Dead Zone) when hooks and initial state memos evaluate on mount.
 
+## Deterministic Trade Lifecycle & Ghost Limit Elimination Rules
+- **Deterministic Pine Script `trade_id`**: In Pine Script, `initializeTradeSession` MUST initialize `trade.signalTime`, `trade.entryTime`, and `trade.originalEntryTime` using `time` (bar open timestamp), NEVER `timenow` (realtime millisecond clock). Using `time` ensures that `trade_id` (`syminfo.ticker + "_" + str.tostring(trade.signalTime) + "_" + trade.tradeDirection`) remains 100% deterministic and identical between the pending limit order alert, the fill alert, trailing stop updates, and the exit close alert.
+- **Two-Tier TradeFill Fallback Matching**: When a `TradeFill` webhook arrives at `process-webhook-background.js`, it first attempts matching by exact `metadata->>trade_id`. If not found, it MUST execute **Attempt 2 Fallback Matching** by querying open records for the same symbol in the last 24 hours (`status IN ('OPEN', 'ACTIVE LIMIT', 'Active Limit', 'Open', 'Active')`) matching the trade direction. Upon finding an open record, it updates the existing pending limit to `Active` rather than inserting a duplicate trade row.
+- **Automatic Orphan Cleanup on TradeClose**: When `TradeClose` executes, the backend automatically issues a cleanup query updating any lingering `OPEN` limit rows for that symbol created on the same calendar day to `status = 'CANCELLED'`.
+- **Automatic Weekly Performance Logs Synchronization**: `cron-heal-outcomes.js` runs every 30 minutes and automatically aggregates all closed trades into `weekly_performance_logs` across all markets (`nifty`, `mcx`, `nymex`, `crypto`, `forex`, `world`), ensuring the Mobile App **ANALYTICS** tab and Weekly Performance Edge matrix remain synchronized in real-time.
+- **Pine Script Bar Replay Memory Optimization**:
+  - **No Global `max_bars_back = 2000`**: Indicator declaration must be `indicator('TLCS All Signal Alerts', overlay = true, max_lines_count = 500, max_labels_count = 500)` without `max_bars_back = 2000` to prevent allocating 2,000-element history buffers for every intermediate AST node.
+  - **Gate Chart Drawing Loops to `barstate.islast`**: Standard pivot visualization loops (`getPivots`, lines, labels) must be enclosed in `if barstate.islast` so they execute once on the final bar instead of allocating hundreds of thousands of drawing objects across historical bars during bar replay scrubbing.
+  - **Zigzag Depth**: Capped to 20 pivots (`Zigzag.new(..., 20, 0)`), reducing User Defined Type (UDT) heap memory by >90%.
+
+
 
 
 

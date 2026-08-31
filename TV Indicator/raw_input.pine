@@ -5,7 +5,7 @@
 
 //@version=6
 
-indicator('TLCS All Signal Alerts', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
+indicator('TLCS All Signal Alerts', overlay = true, max_lines_count = 500, max_labels_count = 500)
 // ──── INPUTS ────────────────────────────────────────────────────────
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
@@ -395,36 +395,38 @@ var array<line> lines = array.new_line(MAXN)
 var array<label> labels = array.new_label(MAXN)
 var array<label> prclabels = array.new_label(MAXN)
 //
-for i = 0 to MAXN - 1 by 1
-    if isWithinRange(array.get(pivots, i), rangeHL)
-        y1 := array.get(pivots, i)
-        y2 := array.get(pivots, i)
-        labtext := array.get(p_labels, i)
-        prclabtext := showprc ? str.tostring(trnc(y2, 2)) : ''
-        tflab = array.get(str.split(array.get(p_labels, i), ''), 1)
-        plt_col := get_colors_from_tf(tflab, colM, colW, colD)
-        plt_col
-    else
-        y1 := na
-        y2 := na
-        labtext := ''
-        prclabtext := ''
-        plt_col := color.blue
-        plt_col
-    array.push(lines, line.new(x1, y1, x2, y2,
-     xloc  = xloc.bar_time,
-     color = plt_col,
-     width = lw,
-     style = get_linestyle(pv_linestyle)))
-    array.push(labels, label.new(x2 + 6, y2, labtext, xloc = xloc.bar_time, textcolor = colLabel, size = labelsize == 'Small' ? size.small : size.normal, style = label.style_none))
-    array.push(prclabels, label.new(x1 + 6, y2, prclabtext, xloc = xloc.bar_time, textcolor = colLabel, size = labelsize == 'Small' ? size.small : size.normal, style = label.style_none))
-    line.delete(array.shift(lines))
-    label.delete(array.shift(labels))
-    label.delete(array.shift(prclabels))
-    //
-for i = 0 to MAXN - 1 by 1
-    handle_label_overlaps(i, labels, rangeHL)
-    handle_label_overlaps(i, prclabels, rangeHL)
+// ✅ MEMORY OPTIMIZATION: Only render pivot lines/labels on the last bar
+if barstate.islast
+    for i = 0 to MAXN - 1 by 1
+        if isWithinRange(array.get(pivots, i), rangeHL)
+            y1 := array.get(pivots, i)
+            y2 := array.get(pivots, i)
+            labtext := array.get(p_labels, i)
+            prclabtext := showprc ? str.tostring(trnc(y2, 2)) : ''
+            tflab = array.get(str.split(array.get(p_labels, i), ''), 1)
+            plt_col := get_colors_from_tf(tflab, colM, colW, colD)
+            plt_col
+        else
+            y1 := na
+            y2 := na
+            labtext := ''
+            prclabtext := ''
+            plt_col := color.blue
+            plt_col
+        array.push(lines, line.new(x1, y1, x2, y2,
+         xloc  = xloc.bar_time,
+         color = plt_col,
+         width = lw,
+         style = get_linestyle(pv_linestyle)))
+        array.push(labels, label.new(x2 + 6, y2, labtext, xloc = xloc.bar_time, textcolor = colLabel, size = labelsize == 'Small' ? size.small : size.normal, style = label.style_none))
+        array.push(prclabels, label.new(x1 + 6, y2, prclabtext, xloc = xloc.bar_time, textcolor = colLabel, size = labelsize == 'Small' ? size.small : size.normal, style = label.style_none))
+        line.delete(array.shift(lines))
+        label.delete(array.shift(labels))
+        label.delete(array.shift(prclabels))
+        //
+    for i = 0 to MAXN - 1 by 1
+        handle_label_overlaps(i, labels, rangeHL)
+        handle_label_overlaps(i, prclabels, rangeHL)
 
 
 //=====================================================
@@ -2854,7 +2856,9 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
 // =========================================================================
 initializeTradeSession(Settings settings, string tradeDirection) =>
     TradeLogic trade = TradeLogic.new()
-    trade.entryTime         := timenow
+    trade.entryTime         := time
+    trade.signalTime        := time
+    trade.originalEntryTime := time
     entryFeesRatio = settings.exchangeTakerFees * 100 * settings.leverage
     trade.profit -= entryFeesRatio
     settings.totalExchangeFees += entryFeesRatio * settings.initialCapital / 100
