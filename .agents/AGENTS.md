@@ -4,6 +4,8 @@
 - ALWAYS use the exact percentage method: `((Exit - Entry) / Entry) * 100`. This exact math is automatically injected by the backend webhook into the Supabase JSONB column at `metadata.exact_pct` upon trade closure.
 - The entire web dashboard (`index.html`, `scanner.js`, `commodity-scanner.js`) and the mobile app (`page.tsx`) rely strictly on this `exact_pct`.
 - When calculating Profit Factor, Expectancy, Win Rate, Best Trade, and Max Drawdown, base ALL metrics strictly off the Exact Percentage values, regardless of whether the user is in "Novice Mode" or "Pro Mode".
+- **CANONICAL WIN RATE & SUCCESS RATE FORMULA**: Win Rate / Success Rate across ALL tabs (`HUB`, `MARKETS`, `ANALYTICS`, `Research`, `Dashboard`) MUST ALWAYS use total realized closed trades (`wins.length / totalClosed.length * 100`) in the denominator. Breakeven trades MUST NOT be omitted from the closed trades denominator. `(Wins + Losses)` denominator is strictly prohibited.
+- **WEB PARAMETER MATRIX & TIME BOUNDARIES**: All daily parameter performance matrices on web and mobile MUST use the strict 0 Hrs local day boundary (`new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()`). Never use UTC ISO string splitting (`toISOString().split('T')[0]`) which misaligns timezone shifts. Web matrix loaders MUST implement client-readiness retry loops to prevent race conditions during initial page load.
 
 ## Strict Netlify Hosting & Single Infrastructure Rule
 - **NETLIFY ONLY**: The entire system infrastructure (Web Dashboard, Mobile App backend endpoints, Netlify background workers, and Telegram dispatchers) is hosted **EXCLUSIVELY on Netlify** (`thelioncapitalsolutions.com`).

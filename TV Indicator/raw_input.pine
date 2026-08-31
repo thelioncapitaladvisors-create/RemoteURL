@@ -3713,10 +3713,7 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
                 0 
 
 // ✅ EXECUTE ALL 4 ARRAYS IN 4 CLEAN LINES
-processTradeArray(settings, missileSessions, missileVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, scalpSessions,   scalpVisualsArr,   z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, currentSessions, currentVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, divergenceSessions, diverg
-<truncated 11179 bytes>
-
-NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.
+processTradeArray(settings, missileSessions,    missileVisualsArr,    z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, scalpSessions,      scalpVisualsArr,      z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, currentSessions,    currentVisualsArr,    z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
