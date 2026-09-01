@@ -63,3 +63,12 @@
     - Compact glassmorphic buttons for strategies (`LONG/SHORT MISSILE`, `SCALP`, `LIGHTNING`, `DIVERGENCE`).
     - Harmonized Market and Strategy performance tables to compact form factor.
   - **Vertical Spacing Reduction**: Reduced bottom container and section spacing to `pb-28 space-y-3` across all tabs for consistent screen density.
+
+---
+
+## 5. Virtual Paper Portfolio Sleek Compact Density Polish
+- **Problem**: Large vertical white spaces between input boxes, preset chips, and KPI tiles in the paper trading simulator occupied too much screen real estate on mobile devices.
+- **Architectural Fix**:
+  - **Sleek Input Panel**: Scaled down input fields (`py-1 px-2.5 rounded-lg text-[11px]`), quick capital presets, and fixed-lot badges.
+  - **Compact KPI Grid**: Standardized all 6 performance metric tiles to `p-2 rounded-xl` with optimized font sizes and tight margins.
+  - **Streamlined Simulated Log Feed**: Reduced empty states and log container spacing to `space-y-1.5 mt-2`.

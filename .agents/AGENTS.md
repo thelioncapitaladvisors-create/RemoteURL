@@ -849,6 +849,18 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - **START AFRESH**: Resets the active matrix market filter back to `'ALL'` (`ALL MARKETS`) and displays an instant confirmation banner.
   - **COLLAPSE / EXPAND**: Toggles `isScreenerExpanded` to minimize or expand the 7-day multi-section matrix table and market chips on mobile.
 
+## Unified Compact Glassmorphic Design System & Multi-Theme Harmonization
+- **Unified Compact Glassmorphic Table Pattern**: All tables across the Mobile App (`INSIGHTS`, `ANALYTICS`, `SCREENER`) MUST adhere strictly to the frosted glassmorphic styling:
+  - **Glass Container**: `bg-white/70 dark:bg-slate-900/60 theme-gray:bg-slate-200/60 backdrop-blur-md border border-black/10 dark:border-white/10 theme-gray:border-slate-400/30 rounded-2xl overflow-hidden`.
+  - **Frosted Headers**: `bg-slate-100/90 dark:bg-slate-800/90 theme-gray:bg-slate-300/90 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 font-mono font-black text-[9px] sm:text-[10px] uppercase tracking-wider`.
+  - **Compact Row Heights**: `py-1.5 px-2.5 sm:px-3` with subtle cell dividers (`divide-black/5 dark:divide-white/5`).
+  - **Win / Loss Contrast**: High contrast colors across Light, Dark, and Slate themes (`text-emerald-600 dark:text-emerald-400` / `text-rose-600 dark:text-rose-400`).
+- **Analytics Market Filter 3-Row Layout**: In the **ANALYTICS** Tab, market filter chips use the symmetric 6-column / 3-row glassmorphic layout matching the Screener Matrix.
+- **Virtual Paper Portfolio Compact Styling**:
+  - **3-Row 2-Column Responsive Grid**: Displays all 6 market buttons in a 2-column grid (`grid grid-cols-2 gap-1.5 w-full`) without horizontal overflow.
+  - **Compact KPI & Input Tiles**: `py-1 px-2.5 rounded-lg` input controls and `p-2 rounded-xl` metric cards to minimize vertical whitespace.
+- **Standardized Vertical Spacing**: Main tab scrollable containers MUST use compact `space-y-3` and a uniform `pb-28` bottom cushion to ensure sleek visual density and eliminate excess blank gaps above the navigation bar.
+
 
 
 
