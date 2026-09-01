@@ -46,3 +46,20 @@
     - **Row 3** (`col-span-2` each): `₿ CRYPTO TOP 25` (`BTC / ETH`) | `💱 FOREX PAIRS` (`Major & Minor`) | `🌍 WORLD INDICES` (`Global Futures`)
   - **START AFRESH Button**: Resets the active screener matrix market filter back to `ALL` with an instantaneous status banner notification.
   - **COLLAPSE / EXPAND Button**: Minimizes or expands the entire 7-day screener table and market filters with a single tap.
+
+---
+
+## 4. Unified Compact Glassmorphic Tables & Vertical Spacing Harmonization
+- **Problem**: Disparate table designs across tabs (pitch-black vs gray vs white), excess vertical padding, oversized table cells, and horizontal chip overflow in the Analytics tab created visual clutter and readability issues on different color themes.
+- **Architectural Fix**:
+  - **Unified Compact Glassmorphic Table Container**:
+    - Consistent translucent frosted glass container: `bg-white/70 dark:bg-slate-900/60 theme-gray:bg-slate-200/60 backdrop-blur-md border border-black/10 dark:border-white/10 theme-gray:border-slate-400/30`.
+    - Frosted high-contrast headers: `bg-slate-100/90 dark:bg-slate-800/90 theme-gray:bg-slate-300/90 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 font-mono font-black text-[9px] sm:text-[10px] uppercase tracking-wider`.
+    - Compact row padding: `py-1.5 px-2.5 sm:px-3` with subtle cell divider borders (`divide-black/5 dark:divide-white/5`).
+  - **Analytics Tab 3-Row Glassmorphic Grid**:
+    - Converted single-row market scrolling list into a balanced 3-row 6-column glassmorphic grid matching the Screener Matrix.
+    - Updated `Weekly Performance Edge`, `Daily Signal Dashboard`, and `Weekly Signal Performance & Achievement` to the unified compact glassmorphic table pattern.
+  - **Insights Tab Strategy Buttons & Performance Tables**:
+    - Compact glassmorphic buttons for strategies (`LONG/SHORT MISSILE`, `SCALP`, `LIGHTNING`, `DIVERGENCE`).
+    - Harmonized Market and Strategy performance tables to compact form factor.
+  - **Vertical Spacing Reduction**: Reduced bottom container and section spacing to `pb-28 space-y-3` across all tabs for consistent screen density.
