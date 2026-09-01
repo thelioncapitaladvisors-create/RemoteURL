@@ -830,8 +830,22 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - **Gate Chart Drawing Loops to `barstate.islast`**: Standard pivot visualization loops (`getPivots`, lines, labels) must be enclosed in `if barstate.islast` so they execute once on the final bar instead of allocating hundreds of thousands of drawing objects across historical bars during bar replay scrubbing.
   - **Zigzag Depth**: Capped to 20 pivots (`Zigzag.new(..., 20, 0)`), reducing User Defined Type (UDT) heap memory by >90%.
 
+## Trailing SL Webhook Payload Key Architecture
+- **Canonical Pine Script Trailing Stop Key (`slLevel`)**: Pine Script's `sendTrailingSLAlert` transmits the trailed stop loss under the JSON key `"slLevel"` (and the message under `"tradeMessage"`).
+- **Backend Multi-Key Resolution**: All webhook handlers (`process-webhook-background.js` and `Tv-Alert-Mobile/src/app/api/webhook/route.ts`) MUST resolve trailing stop loss levels defensively across all key variations:
+  ```javascript
+  const trailLevel = body.slLevel || body.stop || body.trail_sl || body.trailing_stop || body.sl || null;
+  const trailMsg = body.tradeMessage || body.analysis || (trailLevel ? `Trailing SL moved to ${trailLevel}` : null);
+  ```
+- **Database & Close Persistence**: Both `TrailingSLUpdate` and `TradeClose` webhook handlers MUST persist `trail_sl` to the Supabase database row.
+- **Telegram & Push Dispatch**: Trailing SL notifications MUST use the resolved `trailLevel` and `trailMsg` to ensure alerts fire reliably for Telegram and Web Push.
 
-
+## Virtual Paper Portfolio 3-Row Glassmorphic Layout Architecture
+- **3-Row 2-Column Responsive Grid**: In the Mobile App **SCREENER Tab** (`Virtual Paper Portfolio`), market selector buttons MUST be laid out in a 2-column grid (`grid grid-cols-2 gap-2 w-full`), displaying all 6 markets across exactly 3 balanced rows (Row 1: NIFTY 50, NYMEX & COMEX | Row 2: CRYPTO TOP 25, FOREX PAIRS | Row 3: WORLD INDICES, ALL MARKETS) to eliminate horizontal scrolling cutoffs.
+- **Glassmorphic Theme & High-Contrast Typography**:
+  - All market buttons and timeframe pills utilize translucent frosted glass backgrounds (`backdrop-blur-md`, `border-white/10` to `border-slate-300/70`).
+  - Active buttons feature vivid translucent colored glass with deep high-contrast text (`text-emerald-950 dark:text-emerald-200`, `text-amber-950 dark:text-amber-200`, etc.) and active glow indicators.
+  - Inactive buttons feature crisp frosted glass (`bg-white/60 dark:bg-slate-900/50`) with high-contrast text (`text-slate-700 dark:text-slate-300`) to guarantee 100% legibility in both Light and Dark modes.
 
 
 
