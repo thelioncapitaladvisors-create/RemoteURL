@@ -1,8 +1,8 @@
-# Version 1.0 Production Update: Live USD/INR Pair Price Benchmark, Multi-Asset Rupee Consolidation, Automated Active Trade Breach Fallback Scanner & Metric Pill Containment
+# Version 1.0 Production Update: Live USD/INR Pair Price Benchmark, Multi-Asset Rupee Consolidation, Automated Active Trade Breach Fallback Scanner, Metric Pill Containment & Automated Strategy Tearsheet Sync
 
 **Release Date:** September 2, 2026  
 **Milestone Version:** `v1.0.0` (Production)  
-**System Components Affected:** `Tv-Alert-Mobile (page.tsx)`, `TLCS_Website_Deploy (dashboard.html, yahoo_helper.py)`, `Netlify Functions (cron-heal-outcomes.js)`
+**System Components Affected:** `Tv-Alert-Mobile (page.tsx)`, `TLCS_Website_Deploy (dashboard.html, generate_tearsheet.py, strategy_tearsheet.html, .github/workflows/generate_tearsheet_cron.yml)`, `Netlify Functions (cron-weekly-logs.js, cron-heal-outcomes.js)`
 
 ---
 
@@ -43,7 +43,27 @@
 
 ---
 
-## 4. Automated Live Active Trade Breach Fallback Scanner
+## 4. Analytics Tab Table Proportional Layout & Zero Horizontal Blowout
+- **Problem**: Tables in the **ANALYTICS** Tab (`Weekly Performance Edge`, `Daily Signal Dashboard`, `Weekly Signal Performance & Achievement`) were wrapped in `min-w-[550px]` containers, forcing horizontal scrollbars and cutting off right-hand columns (such as `PF`, `Kelly`, `Net`, and `Avg`).
+- **Architectural Fix**:
+  - **Proportional `table-fixed w-full` Layout**: Removed all arbitrary min-widths and established edge-to-edge column percentages matching the mobile viewport perfectly.
+  - **Weekly Performance Edge**: `Wk` (10%), `Date` (26%), `Win Rate` (20%), `Net Edge` (22%), `PF` (11%), `Kelly` (11%).
+  - **Daily Signal Dashboard**: `Filter` (30%), `Today` (70%).
+  - **Weekly Signal Performance & Achievement**: `Day` (21%), `Sigs` (19%), `WR` (16%), `Targets` (20%), `Net` (12%), `Avg` (12%).
+
+---
+
+## 5. Automated Strategy Tearsheet Generation on Market Closure
+- **Problem**: The VectorBT strategy tearsheet iframe in the Analytics tab remained on August 31st data instead of automatically progressing through September 1st and September 2nd data upon market closure.
+- **Architectural Fix**:
+  - **Automated Market Close Schedule**: GitHub Actions workflow (`.github/workflows/generate_tearsheet_cron.yml`) scheduled across all market close boundaries (NSE 16:00 IST, MCX 00:00 IST, NYMEX 22:30 UTC, Global 00:30 UTC).
+  - **CI/CD Token & Permissions**: Added `token: ${{ secrets.GITHUB_TOKEN }}` and `permissions: contents: write` to ensure the automated bot commits and pushes the generated `strategy_tearsheet.html` back to `TLCS_Website`.
+  - **Zero-Failure Credential Fallback**: Added robust default Supabase fallbacks inside `generate_tearsheet.py` so CI runs never fail due to missing environment variables.
+  - **Immediate Regenerated Tearsheet**: Re-ran the engine over all 54 closed trades and pushed live to production through September 2, 2026.
+
+---
+
+## 6. Automated Live Active Trade Breach Fallback Scanner
 - **Problem**: Intermittent webhook timeouts from TradingView (e.g., `"Webhook delivery failed — request took too long and timed out"`) left exited trades in `Active` status without exit prices or P&L outcomes.
 - **Architectural Fix**:
   - **Active Breach Scanner (`cross_check_active_trades`)**: Built into `yahoo_helper.py` to query 1-minute and 5-minute intraday market history for all open/active signals since entry.
@@ -53,4 +73,3 @@
     - Short trades breaching `stop` → auto-exited as `Hit Initial SL`, `outcome = 'LOSS'`, `exit_price = stop`.
     - Short trades breaching `target` → auto-exited as `Completed TP1`, `outcome = 'WIN'`, `exit_price = target`.
   - **EOD Session Auto-Close**: Closed market trades (e.g. NSE at 15:30 IST) auto-resolved to `EOD Exit (TP1)` or `EOD Exit (SL)` based on exact session closing prices.
-  - **Weekly Logs Synchronization**: Self-healing reconciliations automatically re-aggregate `weekly_performance_logs` across all markets.
