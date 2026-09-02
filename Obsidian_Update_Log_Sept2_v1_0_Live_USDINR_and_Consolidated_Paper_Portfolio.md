@@ -1,8 +1,8 @@
-# Version 1.0 Production Update: Live USD/INR Pair Price Benchmark, Multi-Asset Rupee Consolidation & Automated Active Trade Breach Fallback Scanner
+# Version 1.0 Production Update: Live USD/INR Pair Price Benchmark, Multi-Asset Rupee Consolidation, Automated Active Trade Breach Fallback Scanner & Metric Pill Containment
 
 **Release Date:** September 2, 2026  
 **Milestone Version:** `v1.0.0` (Production)  
-**System Components Affected:** `Tv-Alert-Mobile (page.tsx)`, `TLCS_Website_Deploy (yahoo_helper.py)`, `Netlify Functions (cron-heal-outcomes.js)`
+**System Components Affected:** `Tv-Alert-Mobile (page.tsx)`, `TLCS_Website_Deploy (dashboard.html, yahoo_helper.py)`, `Netlify Functions (cron-heal-outcomes.js)`
 
 ---
 
@@ -30,7 +30,20 @@
 
 ---
 
-## 3. Automated Live Active Trade Breach Fallback Scanner
+## 3. Metric Pill Border Containment & Dynamic Text-Scaling
+- **Problem**: In the 10-pill KPI metrics grid (`ACTIVE LIMITS`, `LIVE TRADES`, `CLOSED TRADES`, `TODAY'S SUCCESS`, `TODAY'S PROFIT FACTOR`, `WEEKLY TRADES`, `WEEKLY SUCCESS`, `WEEKLY PROFIT FACTOR`, `WEEKLY EXPECTANCY`, `WEEKLY CALMAR`), bold italic characters and percentages (such as `+0.14%`, `100.0%`, `22%`) were overflowing their pill card containers and bleeding into adjacent pills.
+- **Architectural Fix**:
+  - **Strict Container Isolation**: Every pill card applies `overflow-hidden w-full max-w-full` and structured padding `py-2.5 px-0.5 sm:px-1.5`.
+  - **Dynamic Length-Based Value Scaling (`getPillValueSize`)**: Automatically scales typography depending on the rendered character length:
+    - $\le 2$ chars (`0`, `2`, `10`, `50`): `text-base sm:text-lg md:text-xl`
+    - 3–4 chars (`20%`, `1.09`, `1.02`, `0.06`): `text-sm sm:text-base md:text-lg`
+    - 5–6 chars (`+0.14%`, `-1.25%`, `100%`): `text-xs sm:text-sm md:text-base`
+    - $> 6$ chars: `text-[10px] sm:text-xs md:text-sm`
+  - **Single-Line Truncation Guard**: `truncate max-w-full px-0.5` ensures numbers and `%` signs never break onto a second line or poke past pill edges.
+
+---
+
+## 4. Automated Live Active Trade Breach Fallback Scanner
 - **Problem**: Intermittent webhook timeouts from TradingView (e.g., `"Webhook delivery failed — request took too long and timed out"`) left exited trades in `Active` status without exit prices or P&L outcomes.
 - **Architectural Fix**:
   - **Active Breach Scanner (`cross_check_active_trades`)**: Built into `yahoo_helper.py` to query 1-minute and 5-minute intraday market history for all open/active signals since entry.
