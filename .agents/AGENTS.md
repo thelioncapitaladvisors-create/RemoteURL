@@ -846,7 +846,7 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - **Row 2** (`col-span-3` each): `⛽ MCX COMMODITIES` (`Crude / Gold / Silver`) | `🛢️ NYMEX & COMEX` (`US Energy & Metals`)
   - **Row 3** (`col-span-2` each): `₿ CRYPTO TOP 25` (`BTC / ETH`) | `💱 FOREX PAIRS` (`Major & Minor`) | `🌍 WORLD INDICES` (`Global Futures`)
 - **Header Controls**:
-  - **START AFRESH**: Resets the active matrix market filter back to `'ALL'` (`ALL MARKETS`) and displays an instant confirmation banner.
+  - **START AFRESH**: Resets the active matrix market filter back to `'ALL'` (`ALL MARKETS`), expands the matrix if collapsed, smoothly resets the 7-day table horizontal scroll back to the initial day view, triggers an immediate data refetch (`fetchStateRef.current()`) with a spinning indicator, and displays an animated confirmation toast.
   - **COLLAPSE / EXPAND**: Toggles `isScreenerExpanded` to minimize or expand the 7-day multi-section matrix table and market chips on mobile.
 
 ## Unified Compact Glassmorphic Design System & Multi-Theme Harmonization
