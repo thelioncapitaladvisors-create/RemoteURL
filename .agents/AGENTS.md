@@ -880,11 +880,10 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - For SHORT trades: If the session high breaches `stop`, exit as `status = 'Hit Initial SL'`, `outcome = 'LOSS'`, `exit_price = stop`. If low breaches `target`, exit as `status = 'Completed TP1'`, `outcome = 'WIN'`, `exit_price = target`.
 - **EOD Session Auto-Close**: Positions remaining open after market session close (NSE 15:30 IST, MCX 23:30 IST, NYMEX 21:00 UTC) must be resolved to `EOD Exit (TP1)` or `EOD Exit (SL)` based on exact session closing prices.
 
-## Metric Pill Containment & Dynamic Text-Scaling Rules
-- **Strict Border Containment (`overflow-hidden`)**: All KPI metric pill cards in grids across mobile (`page.tsx`) and web (`dashboard.html`) MUST strictly apply `overflow-hidden` and `w-full max-w-full`. Text or signs (like `%`, `+`, `-`) must NEVER bleed or poke out beyond pill card boundaries or overlap adjacent pills.
-- **Length-Based Dynamic Value Scaling (`getPillValueSize`)**:
-  - Text length $\le 2$ (e.g. `0`, `2`, `10`, `50`): `text-base sm:text-lg md:text-xl`
-  - Text length 3–4 (e.g. `20%`, `1.09`, `1.02`, `0.06`): `text-sm sm:text-base md:text-lg`
-  - Text length 5–6 (e.g. `+0.14%`, `-1.25%`, `100%`): `text-xs sm:text-sm md:text-base`
-  - Text length $> 6$: `text-[10px] sm:text-xs md:text-sm`
-- **Text Truncation**: Value containers must enforce `truncate max-w-full px-0.5` to prevent horizontal line wrapping and overflow on small viewport widths.
+## Analytics Tab Table Proportional Layout & Viewport Fitting
+- **Zero Horizontal Blowout (`table-fixed w-full`)**: Tables in the **ANALYTICS** Tab (`Weekly Performance Edge`, `Daily Signal Dashboard`, `Weekly Signal Performance & Achievement`) MUST use `w-full table-fixed` layouts without arbitrary `min-w-[550px]` wrappers.
+- **Proportional Column Allocations**:
+  - **Weekly Performance Edge**: `Wk` (10%), `Date` (26%), `Win Rate` (20%), `Net Edge` (22%), `PF` (11%), `Kelly` (11%).
+  - **Daily Signal Dashboard**: `Filter` (30%), `Today` (70%).
+  - **Weekly Signal Performance & Achievement**: `Day` (21%), `Sigs` (19%), `WR` (16%), `Targets` (20%), `Net` (12%), `Avg` (12%).
+- **Text Truncation & Compact Badges**: Cells must enforce `truncate` and compact fonts (`text-[9px] sm:text-[11px]`) so all 6 columns fit edge-to-edge on standard mobile viewports with no cutoffs or horizontal scrolling.
