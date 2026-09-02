@@ -859,8 +859,23 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Virtual Paper Portfolio Compact Styling**:
   - **3-Row 2-Column Responsive Grid**: Displays all 6 market buttons in a 2-column grid (`grid grid-cols-2 gap-1.5 w-full`) without horizontal overflow.
   - **Compact KPI & Input Tiles**: `py-1 px-2.5 rounded-lg` input controls and `p-2 rounded-xl` metric cards to minimize vertical whitespace.
-- **Standardized Vertical Spacing**: Main tab scrollable containers MUST use compact `space-y-3` and a uniform `pb-28` bottom cushion to ensure sleek visual density and eliminate excess blank gaps above the navigation bar.
+## Live USD/INR Pair Price Benchmark for Multi-Asset Paper Trading
+- **Universal Rupee (`₹`) Consolidation**: The Paper Portfolio Simulator across all markets (`nifty`, `mcx`, `nymex`, `crypto`, `forex`, `world`, and `ALL`) MUST strictly denominate all metrics, virtual balance, P&L, and trade feeds in **Rupees (`₹`)**.
+- **Dynamic USD/INR Daily Price**: Never rely on a static/hardcoded USD to INR exchange rate. The frontend (`page.tsx`) and backend utilities (`yahoo_helper.py`) MUST dynamically fetch the live `USD/INR` pair price of the day (querying live daily FX feeds or Yahoo Finance `USDINR=X`, checking local active signals first, and falling back safely).
+- **USD-to-INR Conversion Formula**: For all USD-denominated instruments (NYMEX, Crypto, Forex, and World Indices), the P&L in USD is computed with appropriate standard contract units and converted to INR:
+  `tradePnL = isUSDAsset ? (rawPnL * usdInrRate) : rawPnL`
+- **Standard Lot Sizing Multipliers**:
+  - `NIFTY 50`: 65 Qty (NIFTY1!) / 15 Qty (BANKNIFTY) / 100 Shares (Equities)
+  - `MCX`: 100 Qty (Crude/Gold), 30 Qty (Silver), 1250 Qty (Natural Gas)
+  - `NYMEX`: 100 bbl (CL), 2500 mmBtu (NG), 10 oz (GC), 1000 oz (SI)
+  - `Crypto`: 0.1 BTC, 1 ETH, 10 SOL, 10,000 Units (low-priced tokens like DOGE, ADA, XRP)
+  - `Forex`: 10,000 Units (0.1 Mini Lot)
+  - `World Indices`: 1 Contract ($1/pt)
+- **Unified Capital Presets**: Presets must universally offer Rupee tranches: **`1L` (₹1 Lakh)**, **`5L` (₹5 Lakhs)**, **`10L` (₹10 Lakhs)**, and **`25L` (₹25 Lakhs)**.
 
-
-
-
+## Automated Live Active Trade Breach Fallback Scanner
+- **Market Data Cross-Check**: When TradingView webhook signals fail or time out, open positions must be cross-checked against live/intraday 1m/5m candle data via `yahoo_helper.py` or fallback routines.
+- **SL / TP Level Breach Detection**:
+  - For LONG trades: If the session low breaches `stop`, exit as `status = 'Hit Initial SL'`, `outcome = 'LOSS'`, `exit_price = stop`. If high breaches `target`, exit as `status = 'Completed TP1'`, `outcome = 'WIN'`, `exit_price = target`.
+  - For SHORT trades: If the session high breaches `stop`, exit as `status = 'Hit Initial SL'`, `outcome = 'LOSS'`, `exit_price = stop`. If low breaches `target`, exit as `status = 'Completed TP1'`, `outcome = 'WIN'`, `exit_price = target`.
+- **EOD Session Auto-Close**: Positions remaining open after market session close (NSE 15:30 IST, MCX 23:30 IST, NYMEX 21:00 UTC) must be resolved to `EOD Exit (TP1)` or `EOD Exit (SL)` based on exact session closing prices.
