@@ -1,0 +1,94 @@
+# Version 1.0 Production Update: Co-Existence of Opposing Trades (Long & Short Independence) & Mandatory Webhook Triple-Binding
+
+**Release Date:** September 3, 2026  
+**Milestone Version:** `v1.0.0` (Production)  
+**System Components Affected:** `Netlify Functions (process-webhook-background.js)`, `Tv-Alert-Mobile (route.ts, page.tsx)`, `TLCS_Website_Deploy (trade-metrics.js, screener.js)`
+
+---
+
+## 1. Co-Existence of Opposing Trades for the Same Symbol
+
+### Context & Trading Realities
+In extended-hours markets (MCX Commodities trading 09:00–23:55 IST, NYMEX, Global Forex, and Crypto), market structure and sentiment frequently shift over the course of a 14-hour session. Multiple strategy engines (such as Morning Breakout `MISSILE`, Range Reversal `LIGHTNING`, or Intraday `SCALP`) can legitimately identify valid setups in opposite directions on the same trading day:
+- **Morning Session (10:30 IST)**: `CRUDEOIL1!` `SHORT MISSILE` at `8,548.00` (SL `8,572.00`, Target `8,469.00`).
+- **Evening Session (21:45 IST)**: `CRUDEOIL1!` `LONG LIGHTNING` (`LONG @ SUPPORT`) at `8,624.00` (SL `8,587.00`, Targets `8,651`–`8,744`).
+
+Both positions represent completely independent trade lifecycles with their own risk parameters, timestamps, and profit objectives.
+
+---
+
+## 2. Root Cause Analysis: The "Frankenstein" Trade Defect
+
+### The Symptom
+On the mobile app and dashboard, the `CRUDEOIL1!` card displayed an impossible combination:
+- **Symbol**: `CRUDEOIL1!`
+- **Type**: `SHORT MISSILE`
+- **Limit Signal Time**: `10:30 IST` (Morning)
+- **Entry Price**: `8,548.00`
+- **Exited/Fill Time**: `21:45 IST` (Night)
+- **Alive Duration**: `3m`
+
+### The Defect in `process-webhook-background.js`
+When the `LONG LIGHTNING` fill webhook arrived at `21:45 IST`, Attempt 1 (`eq('metadata->>trade_id', body.trade_id)`) found no pre-existing limit record. Attempt 2 executed a loose fallback:
+1. **Broken Direction Matching**: Evaluated `if (actionU === 'LONG')` with strict equality. Because TradingView sent `body.type = "LONG LIGHTNING"`, `actionU === 'LONG'` was `false`, causing direction filtering to be completely bypassed.
+2. **Missing Price Matching**: Attempt 2 performed no validation on `entryPrice`, allowing an `8,624.00` trade to match an `8,548.00` order.
+3. **Overly Broad Time Window**: Used `gte('created_at', now - 24 hours)`, reaching 11 hours into the past to grab the morning `SHORT MISSILE` and grafting the night `LONG LIGHTNING`'s execution data onto it.
+
+---
+
+## 3. The Permanent Architecture: Mandatory Triple-Binding
+
+All webhook handlers (`TradeFill`, `TradeClose`, `TrailingSLUpdate`, and `TradeUpdate`) in both Netlify functions (`process-webhook-background.js`) and Next.js routes (`route.ts`) now enforce **Strict Triple-Binding**:
+
+```javascript
+// ── ATTEMPT 2: Fallback with Strict Direction + Price + Time Binding ──
+if (!fillSignal) {
+  const actionU = (body.action || body.type || '').toUpperCase();
+  const isLong = actionU.includes('LONG') || actionU.includes('BUY');
+  const isShort = actionU.includes('SHORT') || actionU.includes('SELL');
+
+  // STRICT RULE 1: Direction Binding (MANDATORY)
+  if (isLong || isShort) {
+    const isLongStr = isLong ? 'LONG' : 'SHORT';
+    let fallbackQuery = supabase
+      .from('signals')
+      .select('id, metadata, entry, type')
+      .eq('symbol', resolved.symbol)
+      .in('status', ['ACTIVE LIMIT', 'Active Limit', 'Active', 'OPEN', 'Open'])
+      .ilike('type', `${isLongStr}%`);
+
+    // STRICT RULE 2: Entry Price Binding (MANDATORY)
+    const rawEntry = body.entryPrice || body.entry || body.entry_price;
+    if (rawEntry != null) {
+      const entryNum = Number(rawEntry);
+      if (!isNaN(entryNum) && entryNum > 0) {
+        const minEntry = entryNum * 0.998;
+        const maxEntry = entryNum * 1.002;
+        fallbackQuery = fallbackQuery.gte('entry', minEntry).lte('entry', maxEntry);
+      }
+    }
+
+    // STRICT RULE 3: Time-Window Binding (MANDATORY)
+    fallbackQuery = fallbackQuery.gte('created_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString());
+
+    const { data: fallbackData } = await fallbackQuery
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (fallbackData) {
+      fillSignal = fallbackData;
+    }
+  }
+}
+```
+
+### Safe Fall-Through to Clean INSERT
+If no open record satisfies all three bindings (**Direction + Price + Time**), the backend **never mutates or overwrites an unrelated trade**. It falls through to the insert block and records the trade cleanly as a new independent position.
+
+---
+
+## 4. Verification & Database Restoration
+- Patched corrupted Supabase record (`778ac23e-518a-485e-a67c-6ac621ec3dbe`) via Service Role Key, restoring its genuine morning fill time (`10:30:14 IST`) and identifier (`CRUDEOIL1!_1788412214121_SHORT MISSILE`).
+- Deployed strict triple-binding to Netlify production functions (`TLCS_Website` commit `474b736`).
+- Synchronized architecture rules in `.agents/AGENTS.md`.
