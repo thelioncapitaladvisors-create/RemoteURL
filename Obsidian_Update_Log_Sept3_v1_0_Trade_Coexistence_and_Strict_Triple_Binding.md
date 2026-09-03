@@ -92,3 +92,10 @@ If no open record satisfies all three bindings (**Direction + Price + Time**), t
 - Patched corrupted Supabase record (`778ac23e-518a-485e-a67c-6ac621ec3dbe`) via Service Role Key, restoring its genuine morning fill time (`10:30:14 IST`) and identifier (`CRUDEOIL1!_1788412214121_SHORT MISSILE`).
 - Deployed strict triple-binding to Netlify production functions (`TLCS_Website` commit `474b736`).
 - Synchronized architecture rules in `.agents/AGENTS.md`.
+
+---
+
+## 5. Automatic & Immediate Deletion of Invalidated/Expired Limit Orders
+- **Zero-Ghost Policy**: Whenever an unexecuted limit order is invalidated or expired in Pine Script (`status` or `trigger` contains `INVALID`, `CANCEL`, or `EXPIRE`), the webhook backend immediately and permanently deletes the record from Supabase via `.delete().eq('id', activeSignal.id)`.
+- **Complete Removal from Future Consideration**: An invalidated or expired limit order represents an unfilled setup that no longer exists in the market. It is completely expunged from the database so it can NEVER linger, pollute active signals, or be mistakenly matched or mutated by any subsequent trades (such as a later session trade on the same symbol).
+- **No Orphaned Open Limits**: Unexecuted limit orders that do not fill within their market session never survive across sessions to collide with subsequent trade fills.
