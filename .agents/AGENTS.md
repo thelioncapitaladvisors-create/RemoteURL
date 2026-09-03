@@ -919,10 +919,10 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Pure Touch-Based Execution Model**: Entry, Take Profit, and Stop Loss executions MUST remain strictly based on the user's original touch-based price levels (high/low price action). Do NOT alter stop distances or force bar-close delays.
 - **Zero Backend Interference**: The backend webhook processors, Netlify functions, mobile application, and web dashboards must strictly record, reflect, and faithfully execute the exact empirical levels and alert payloads transmitted by the user's indicator without modification.
 
-## NCPR Override: Invalidation of Sideways Day Type Logic on Narrow CPR Days
-- **Compression Precedes Expansion**: On days characterized by a Narrow Central Pivot Range (NCPR), the market is in volatility compression. According to core auction market principles, compression invariably resolves into explosive directional expansion or trending breakouts.
-- **Day Type Irrelevance on NCPR**: Any static or preliminary day-type classification (such as `TYPICAL DAY`, `TRADING RANGE`, `SIDEWAYS`, `IN RANGE IN VALUE`) becomes **completely irrelevant and invalid** on NCPR days. 
-- **Unconditional Signal Allowance**: Sideways day-type suppression filters must NEVER be permitted to block, suppress, or silence strategy signals (`MISSILE`, `SCALP`, `LIGHTNING`) on NCPR days. The presence of NCPR unconditionally supersedes and invalidates sideways day-type restrictions (`dayAllowed = true`).
+## NCPR Trade Consideration: Unconditional Signal Allowance on Narrow CPR Days
+- **Validity of Day Type Classification**: Classifying the session into Day Types (`TYPICAL DAY`, `TRADING RANGE`, `EXPANDED TYPICAL DAY`, etc.) is legitimate and vital for market context and structural analysis. Session classification is not flawed.
+- **Flaw of Ignoring Trades on NCPR**: The actual flaw is failing to consider or discarding trades when a Narrow Central Pivot Range (NCPR) is available.
+- **NCPR Overrides Trade Suppression**: Because NCPR indicates volatility compression that typically resolves into breakout expansion, trades MUST ALWAYS be considered and allowed when NCPR is present, regardless of early sideways session classifications. The presence of NCPR ensures signals (`MISSILE`, `SCALP`, `LIGHTNING`) are fully considered and never suppressed.
 
 ## Strict Prohibition on Proposing Logic Alterations (Inviolability of User's Trading System)
 - **Zero Counter-Proposals to User Trading Logics**: The assistant must **NEVER** suggest, recommend, or propose modifications, buffers, wider stops, swing-level shifts, or logic redesigns that run contrary to or modify the user's established trading systems and Pine Script rules.
