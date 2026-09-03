@@ -99,3 +99,10 @@ If no open record satisfies all three bindings (**Direction + Price + Time**), t
 - **Zero-Ghost Policy**: Whenever an unexecuted limit order is invalidated or expired in Pine Script (`status` or `trigger` contains `INVALID`, `CANCEL`, or `EXPIRE`), the webhook backend immediately and permanently deletes the record from Supabase via `.delete().eq('id', activeSignal.id)`.
 - **Complete Removal from Future Consideration**: An invalidated or expired limit order represents an unfilled setup that no longer exists in the market. It is completely expunged from the database so it can NEVER linger, pollute active signals, or be mistakenly matched or mutated by any subsequent trades (such as a later session trade on the same symbol).
 - **No Orphaned Open Limits**: Unexecuted limit orders that do not fill within their market session never survive across sessions to collide with subsequent trade fills.
+
+---
+
+## 6. Original Trading Logic Inviolability (Zero Modifications to Entry, Exit, or SL)
+- **Absolute Preservation of Original Logics**: Under NO circumstances should any modifications, overrides, artificial buffers (e.g. ATR cushions), bar-close requirements (`barstate.isconfirmed`), or mathematical adjustments be introduced to the user's original Pine Script indicator formulas for **Entry**, **Exits**, or **Stop Loss (SL)** levels.
+- **Pure Touch-Based Execution Model**: Entry, Take Profit, and Stop Loss executions MUST remain strictly based on the user's original touch-based price levels (high/low price action). Stop distances will not be artificially widened and bar-close delays will not be imposed.
+- **Zero Backend Interference**: The backend webhook processors, Netlify functions, mobile application, and web dashboards must strictly record, reflect, and faithfully execute the exact empirical levels and alert payloads transmitted by the user's indicator without modification.
