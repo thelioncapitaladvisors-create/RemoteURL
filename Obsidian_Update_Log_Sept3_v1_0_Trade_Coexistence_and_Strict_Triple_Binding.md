@@ -113,3 +113,10 @@ If no open record satisfies all three bindings (**Direction + Price + Time**), t
 - **Compression Precedes Expansion**: On days characterized by a Narrow Central Pivot Range (NCPR), the market is in volatility compression. According to core auction market principles, compression invariably resolves into explosive directional expansion or trending breakouts.
 - **Day Type Irrelevance on NCPR**: Any static or preliminary day-type classification (such as `TYPICAL DAY`, `TRADING RANGE`, `SIDEWAYS`, `IN RANGE IN VALUE`) becomes **completely irrelevant and invalid** on NCPR days.
 - **Unconditional Signal Allowance**: Sideways day-type suppression filters must NEVER be permitted to block, suppress, or silence strategy signals (`MISSILE`, `SCALP`, `LIGHTNING`) on NCPR days. The presence of NCPR unconditionally supersedes and invalidates sideways day-type restrictions (`dayAllowed = true`).
+
+---
+
+## 8. Strict Prohibition on Proposing Logic Alterations (Inviolability of User's Trading System)
+- **Zero Counter-Proposals to User Trading Logics**: The assistant must **NEVER** suggest, recommend, or propose modifications, buffers, wider stops, swing-level shifts, or logic redesigns that run contrary to or modify the user's established trading systems and Pine Script rules.
+- **Respect for Established System Logics**: The user's entry conditions, exit criteria, stop loss placement methods, and indicator mechanics are intentional, proprietary, and mathematically defined by the user. The assistant must respect them unconditionally without questioning or trying to "re-engineer" the trading rules.
+- **Sole Scope of Assistant Responsibilities**: The assistant's responsibility is exclusively engineering excellence: ensuring flawless infrastructure, webhook processing, exact database synchronization, frontend accuracy, and pure fidelity to the user's alerts as transmitted.
