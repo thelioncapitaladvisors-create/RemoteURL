@@ -106,3 +106,10 @@ If no open record satisfies all three bindings (**Direction + Price + Time**), t
 - **Absolute Preservation of Original Logics**: Under NO circumstances should any modifications, overrides, artificial buffers (e.g. ATR cushions), bar-close requirements (`barstate.isconfirmed`), or mathematical adjustments be introduced to the user's original Pine Script indicator formulas for **Entry**, **Exits**, or **Stop Loss (SL)** levels.
 - **Pure Touch-Based Execution Model**: Entry, Take Profit, and Stop Loss executions MUST remain strictly based on the user's original touch-based price levels (high/low price action). Stop distances will not be artificially widened and bar-close delays will not be imposed.
 - **Zero Backend Interference**: The backend webhook processors, Netlify functions, mobile application, and web dashboards must strictly record, reflect, and faithfully execute the exact empirical levels and alert payloads transmitted by the user's indicator without modification.
+
+---
+
+## 7. NCPR Override: Invalidation of Sideways Day Type Logic on Narrow CPR Days
+- **Compression Precedes Expansion**: On days characterized by a Narrow Central Pivot Range (NCPR), the market is in volatility compression. According to core auction market principles, compression invariably resolves into explosive directional expansion or trending breakouts.
+- **Day Type Irrelevance on NCPR**: Any static or preliminary day-type classification (such as `TYPICAL DAY`, `TRADING RANGE`, `SIDEWAYS`, `IN RANGE IN VALUE`) becomes **completely irrelevant and invalid** on NCPR days.
+- **Unconditional Signal Allowance**: Sideways day-type suppression filters must NEVER be permitted to block, suppress, or silence strategy signals (`MISSILE`, `SCALP`, `LIGHTNING`) on NCPR days. The presence of NCPR unconditionally supersedes and invalidates sideways day-type restrictions (`dayAllowed = true`).
