@@ -68,9 +68,6 @@ if (!fillSignal) {
       }
     }
 
-    // STRICT RULE 3: Time-Window Binding (MANDATORY)
-    fallbackQuery = fallbackQuery.gte('created_at', new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString());
-
     const { data: fallbackData } = await fallbackQuery
       .order('created_at', { ascending: false })
       .limit(1)
@@ -84,7 +81,10 @@ if (!fillSignal) {
 ```
 
 ### Safe Fall-Through to Clean INSERT
-If no open record satisfies all three bindings (**Direction + Price + Time**), the backend **never mutates or overwrites an unrelated trade**. It falls through to the insert block and records the trade cleanly as a new independent position.
+If no open record satisfies the bindings (**Direction + Entry Price**), the backend **never mutates or overwrites an unrelated trade**. It falls through to the insert block and records the trade cleanly as a new independent position.
+
+### Preservation of Natural Trade Lifespan
+Trades naturally run for their full lifecycle (5–6 hours, full day, or until EOD exit). The backend enforces NO artificial time cutoffs on trade lifecycles. All trades remain active and valid until closed by their explicit exit conditions.
 
 ---
 
