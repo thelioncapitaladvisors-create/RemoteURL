@@ -120,3 +120,16 @@ Trades naturally run for their full lifecycle (5–6 hours, full day, or until E
 - **Zero Counter-Proposals to User Trading Logics**: The assistant must **NEVER** suggest, recommend, or propose modifications, buffers, wider stops, swing-level shifts, or logic redesigns that run contrary to or modify the user's established trading systems and Pine Script rules.
 - **Respect for Established System Logics**: The user's entry conditions, exit criteria, stop loss placement methods, and indicator mechanics are intentional, proprietary, and mathematically defined by the user. The assistant must respect them unconditionally without questioning or trying to "re-engineer" the trading rules.
 - **Sole Scope of Assistant Responsibilities**: The assistant's responsibility is exclusively engineering excellence: ensuring flawless infrastructure, webhook processing, exact database synchronization, frontend accuracy, and pure fidelity to the user's alerts as transmitted.
+
+---
+
+## 9. Indicator & Transmitted Alert JSONs as the Sole Definitive Source of Truth
+- **All Trading Logics Pre-Hardcoded**: All strategy mechanics, regime filters, entry rules, take profits, stop losses, and dynamic trailing logic are permanently pre-hardcoded inside the Pine Script indicator and transmitted via its alert JSON payloads.
+- **Strict Backend & Frontend Fidelity**: The backend webhook engine, Netlify background workers, database queries, and client dashboards are strictly dedicated to engineering fidelity—ensuring zero artificial/fictitious mutations, zero loose guesswork, and 100% faithful execution of the exact alert payloads dispatched by the indicator.
+
+| Component | Responsibility & Operational Guarantee |
+| :--- | :--- |
+| **Pine Script Indicator** | Generates setups, calculates empirical levels, enforces touch-based SL/TP, evaluates NCPR, and transmits structured JSON alerts. |
+| **Netlify Webhook Engine** | Receives alerts, enforces immediate deletion on invalidation (`Zero-Ghost Policy`), matches fills on strict direction and price, and calculates exact closed percentage math. Imposes zero artificial time cutoffs. |
+| **Supabase Database** | Stores active and realized trades with canonical mathematical outcomes (`metadata.exact_pct`). Free of dead or unexecuted ghost limits. |
+| **Web & Mobile Dashboards** | Renders trades, charts, and metrics with pure empirical fidelity, using canonical `resolveOutcome` validation. Never guesses or invents fallback data. |
