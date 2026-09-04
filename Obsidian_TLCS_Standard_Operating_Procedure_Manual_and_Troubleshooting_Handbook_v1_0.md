@@ -362,18 +362,59 @@ WHERE exit_price IS NOT NULL
   AND outcome IN ('WIN', 'LOSS', 'BREAKEVEN', 'OPEN');
 ```
 
-### Query 3: Auto-Expire Trades Older Than 24 Hours
+### Query 3A: Cleanly Cancel Stale Unexecuted Limit Orders (Zero Metric Pollution)
+*Unexecuted limit orders that never filled must NEVER be marked as closed trades or breakeven; they must be marked `CANCELLED` so they are excluded from the closed trade win rate denominator:*
 ```sql
 UPDATE signals
 SET 
-  status = 'EOD Exit',
-  outcome = 'BREAKEVEN',
-  exit_price = entry,
+  status = 'CANCELLED',
+  outcome = 'CANCELLED',
+  updated_at = NOW(),
+  metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{exit_reason}', '"EXPIRED_LIMIT_MANUAL"'::jsonb)
+WHERE exit_price IS NULL
+  AND (status ILIKE '%limit%' OR (metadata->>'real_entry_time' IS NULL AND updated_at IS NULL))
+  AND created_at < (NOW() - INTERVAL '14 HOURS');
+```
+
+### Query 3B: Auto-Close Stale Executed Trades with Real Mathematical P&L (No Fake Breakeven)
+*For positions that actually filled, compute the true exact percentage and assign `WIN`, `LOSS`, or `BREAKEVEN` based on actual price movement rather than wiping out returns:*
+```sql
+WITH executed_stale AS (
+  SELECT 
+    id,
+    entry,
+    COALESCE(current_price, stop, entry) AS final_exit,
+    CASE 
+      WHEN type ILIKE '%short%' OR type ILIKE '%sell%' 
+        THEN ROUND(((entry - COALESCE(current_price, stop, entry)) / entry * 100)::numeric, 2)
+      ELSE ROUND(((COALESCE(current_price, stop, entry) - entry) / entry * 100)::numeric, 2)
+    END AS calculated_pct
+  FROM signals
+  WHERE (outcome IS NULL OR outcome = 'OPEN' OR status ILIKE '%active%')
+    AND exit_price IS NULL
+    AND created_at < (NOW() - INTERVAL '14 HOURS')
+)
+UPDATE signals s
+SET 
+  exit_price = es.final_exit,
   exit_at = NOW(),
   updated_at = NOW(),
-  metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{exit_reason}', '"STALE_MANUAL_SWEEP"'::jsonb)
-WHERE (outcome IS NULL OR outcome = 'OPEN' OR status ILIKE '%active%')
-  AND created_at < (NOW() - INTERVAL '24 HOURS');
+  outcome = CASE 
+    WHEN es.calculated_pct > 0.05 THEN 'WIN'
+    WHEN es.calculated_pct < -0.05 THEN 'LOSS'
+    ELSE 'BREAKEVEN'
+  END,
+  status = CASE 
+    WHEN es.calculated_pct > 0.05 THEN 'EOD Exit (TP1)'
+    WHEN es.calculated_pct < -0.05 THEN 'EOD Exit (SL)'
+    ELSE 'EOD Exit'
+  END,
+  metadata = jsonb_set(
+    jsonb_set(COALESCE(s.metadata, '{}'::jsonb), '{exact_pct}', to_jsonb(es.calculated_pct)),
+    '{exit_reason}', '"EOD_STALE_SWEEP"'::jsonb
+  )
+FROM executed_stale es
+WHERE s.id = es.id;
 ```
 
 ---
