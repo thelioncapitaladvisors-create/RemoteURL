@@ -207,10 +207,22 @@ function resolveOutcome(s) {
 - **Active Trade Targets**: When a trade is `ACTIVE`/`OPEN` and has no exit price, the UI MUST NOT display a blank or `---` "EXITED AT" box. Instead, dynamically flip the box to display the upcoming Take Profit level (labeled "TARGET" in amber styling). It should only flip to a green "EXITED AT" box upon trade closure.
 - **Risk to Reward Formatting**: The Risk:Reward ratio must always be suffixed with `R` (e.g., `2.00R`) across all UI elements, web dashboards, and mobile views. Never append a percentage `%` to a multiplier ratio.
 
-## Strict Webhook Time-Binding and Zero-Guesswork DB Updates
-- **No Artificial Backend Searching**: The backend must NEVER attempt to artificially guess or locate an open trade using ambiguous fuzzy matching (e.g., `.eq('symbol', symbol).in('status', ['OPEN', 'Active'])` alone). 
-- **Time-Binders are Mandatory**: All webhook update queries (`TradeClose`, `TrailingSLUpdate`) MUST definitively uniquely target the active trade by binding it to the time explicitly provided in the JSON payload (e.g., `entryTime`, mapped to `.eq('signal_ts', payload.entryTime)` or via `activeSignal.id`). 
-- **Exact Payload Math**: No "backend support" or artificial lookup logic is permitted to mathematically determine metrics if the JSON payload strictly provides the necessary values (e.g., `entryPrice`, `closePrice`). The pure entry/exit math is performed definitively using these values, and the `update` query MUST directly target the time-bound ID to avoid inadvertently overwriting multiple open positions for the same symbol.
+## Strict Triple-Binding Protocol (`trade_id` + `entryTime` + `direction`) & Co-Existence
+- **No Ambiguous Fuzzy Matching**: The backend must NEVER attempt to match or mutate an active trade using loose lookups (e.g. `.eq('symbol', symbol).in('status', ['OPEN', 'Active'])` alone). In multi-session, extended-hours markets (MCX, NYMEX, Forex, Crypto), market structure flips intraday. Opposite setups (`SHORT MISSILE` in morning, `LONG LIGHTNING` in evening) are completely independent and MUST co-exist without mutual interference.
+- **Two-Attempt Lookup Pattern**:
+  - **Attempt 1 (Exact Identity Anchor)**: Query `metadata->>trade_id = body.trade_id` (where `trade_id = {symbol}_{timestamp}_{type}`). Guarantees 100% deterministic 1:1 match.
+  - **Attempt 2 (Strict Direction + Price + Time Anchor)**: If Attempt 1 yields nothing, query `symbol = resolved.symbol` AND `type ILIKE isLongStr%` (MANDATORY DIRECTION LOCK) AND `entry` within $\pm 0.2\%$ AND `signal_ts` temporal window.
+- **Safe Fall-Through (Zero Overwriting Rule)**: If both attempts fail to find an open limit, the backend **NEVER mutates or overwrites an unrelated trade**. It cleanly falls through to INSERT a brand-new, independent trade row.
+- **Immediate Hard-Deletion of Cancelled Limits**: Whenever an unexecuted limit order is invalidated or cancelled by Pine Script (`trigger: 'LimitCancel'` or `status: 'Invalidated'`), the backend immediately deletes the row (`.delete().eq('id', activeSignal.id)`). 0 ghost records are permitted to linger.
+
+## Non-Destructive EOD & Stale Trade Sweep Rule (Strict Prohibition on Blanket Breakeven)
+- **NEVER Mark Blanket Breakeven**: Setting `status = 'EOD Exit', outcome = 'BREAKEVEN', exit_price = entry` across stale or expired trades is STRICTLY PROHIBITED. Blanket breakeven erases genuine profits into 0.00%, erases genuine losses into 0.00%, and dilutes the total closed trades denominator (`wins.length / totalClosed.length`), corrupting Win Rate and Profit Factor.
+- **Unexecuted Limits**: MUST be marked `status: 'CANCELLED', outcome: 'CANCELLED'` (or deleted). Because they never filled, they MUST NEVER enter the closed trade denominator.
+- **Executed Active Positions**: The sweeper (`cron-eod-close.js`) and any manual cleanup SQL MUST compute the true mathematical percentage using the actual exit price (or `current_price` / trailing stop / market close):
+  $$\text{exact\_pct} = \frac{\text{Exit} - \text{Entry}}{\text{Entry}} \times 100 \quad (\text{or } \frac{\text{Entry} - \text{Exit}}{\text{Entry}} \times 100 \text{ for SHORT})$$
+  - If `exact_pct > 0.05%` $\rightarrow$ `outcome = 'WIN'` and `status = 'EOD Exit (TP1)'`
+  - If `exact_pct < -0.05%` $\rightarrow$ `outcome = 'LOSS'` and `status = 'EOD Exit (SL)'`
+  - Only if strictly near $0.00\%$ $\rightarrow$ `outcome = 'BREAKEVEN'` and `status = 'EOD Exit'`
 
 ## Universal Metric Sync & Mathematical Fallbacks (Web vs Mobile)
 - **Supabase Query Integrity**: The Web Dashboard (`dashboard.html`) and external scripts (`trade-metrics.js`) MUST always strictly include all mathematical boundaries (`target`, `tp2`, `tp3`, `tp4`, `trail_sl`) in their `.select()` queries. Failing to fetch these fields completely destroys the Profit Factor fallback engine for legacy trades or trailing exits.
