@@ -24,12 +24,8 @@ load_dotenv(os.path.join(current_dir, '..', 'TLCS_Website_Deploy', '.env'))
 load_dotenv(os.path.join(current_dir, '..', 'Tv-Alert-Mobile', '.env.local'))
 load_dotenv()
 
-SUPABASE_URL = os.getenv('SUPABASE_URL') or os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY') or os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
-
-if not SUPABASE_URL or not SUPABASE_KEY:
-    print('Error: Missing Supabase credentials in .env file or environment.')
-    exit(1)
+SUPABASE_URL = os.getenv('SUPABASE_URL') or os.getenv('NEXT_PUBLIC_SUPABASE_URL') or 'https://dwepduvhzuhzeehbeaaz.supabase.co'
+SUPABASE_KEY = os.getenv('SUPABASE_KEY') or os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('NEXT_PUBLIC_SUPABASE_ANON_KEY') or 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3ZXBkdXZoenVoemVlaGJlYWF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzMwMDY3NSwiZXhwIjoyMDkyODc2Njc1fQ.4gnT-NbFvQp_8PwkCHqzMvt1KGXwyZXH6kpSqwC70qg'
 
 # Initialize Supabase
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -147,6 +143,7 @@ def fetch_all_closed_trades():
                         'return': pct_return
                     })
                 except ValueError:
+                    continue
     sync_weekly_performance_logs(data)
     return closed_trades, now_ist
 
@@ -633,10 +630,15 @@ def run_returns_backtest():
 </body>
 </html>
 """
-    with open(output_path, "w") as f:
+    local_path = os.path.join(os.path.dirname(__file__), 'strategy_tearsheet.html')
+    with open(local_path, "w") as f:
         f.write(template)
+    print(f'Local tear sheet saved to {local_path}')
     
-    print(f'\nMulti-market tear sheet saved to {output_path}')
+    if os.path.exists(os.path.dirname(output_path)):
+        with open(output_path, "w") as f:
+            f.write(template)
+        print(f'Multi-market tear sheet saved to {output_path}')
 
 if __name__ == '__main__':
     run_returns_backtest()

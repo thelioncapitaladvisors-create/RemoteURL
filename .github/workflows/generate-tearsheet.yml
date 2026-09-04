@@ -31,7 +31,7 @@ jobs:
         with:
           repository: 'thelioncapitaladvisors-create/TLCS_Website'
           path: 'TLCS_Website_Deploy'
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -62,5 +62,5 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add strategy_tearsheet.html
-          git commit -m "Auto-generate strategy tearsheet [skip ci]" || echo "No changes to commit"
+          git commit -m "chore(tearsheet): auto-generate strategy tearsheet" || echo "No changes to commit"
           git push

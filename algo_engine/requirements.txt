@@ -1,5 +1,6 @@
 supabase==2.15.1
 httpx==0.27.2
 python-dotenv==1.0.0
+numpy<2
 vectorbt
 pandas
