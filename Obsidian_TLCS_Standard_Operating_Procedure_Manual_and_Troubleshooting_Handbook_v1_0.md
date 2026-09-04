@@ -232,6 +232,12 @@ else if (cleanS === 'NI225' || cleanS === 'JP225') {
 }
 ```
 
+### USD/INR Rate Dynamic Resolution:
+The USD to INR conversion rate (`usdInrRate`) is dynamically resolved using the **last closed price of the USDINR pair**:
+1. **First Priority**: Looks for the most recent closed `USDINR` trade in Supabase `signals` (`s.exit_price` where `s.symbol` includes `USDINR`).
+2. **Second Priority**: Server-side API endpoint `/api/usdinr` fetches the official market last close (`USDINR=X`) via Yahoo Finance / Open Exchange Rates (server-side execution avoids browser CORS blocks).
+3. **Never rely on hardcoded static approximations**: The baseline fallback is aligned with the official market close rather than arbitrary static numbers.
+
 ---
 
 ## Guide 4: Day Type Blueprints / Screener Matrices Show "No active in last 7 days"
