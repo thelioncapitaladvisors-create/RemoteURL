@@ -259,7 +259,48 @@ The USD to INR conversion rate (`usdInrRate`) is dynamically resolved using the 
 
 ---
 
-## Guide 5: Deploying Changes to Production Manually
+## Guide 5: The Strict Triple-Binding Protocol (Trade ID + Entry Time + Direction)
+
+### Why Triple-Binding is the Definitive Architectural Solution:
+Before Triple-Binding, trading terminal webhooks relied on naive fuzzy lookups (such as searching Supabase for `.eq('symbol', 'CRUDEOIL1!').in('status', ['ACTIVE', 'OPEN'])`). In multi-session, extended-hours markets (MCX, NYMEX, Forex, Crypto), this caused severe operational defects:
+1. **"Frankenstein" Trades**: A morning `SHORT MISSILE` limit order that never filled was later matched by an evening `LONG LIGHTNING` fill webhook. The backend grafted the night execution onto the morning trade, creating an impossible hybrid (e.g. SHORT with a LONG entry price and corrupted duration).
+2. **Cross-Trade Premature Closures**: A close signal intended for a fast intraday scalp prematurely closed a swing position open on the same symbol.
+3. **Session Spillover / Lingering Stale Limits**: Orders from previous days remained open and were accidentally hijacked by new signals days later.
+
+### The Three Invariant Pillars of Triple-Binding:
+
+| Binding Anchor | Parameter Key | Purpose & Absolute Guarantee |
+| :--- | :--- | :--- |
+| **1. Identity Anchor (`trade_id`)** | `body.trade_id` (`{symbol}_{timestamp}_{type}`) | **Exact Instance Isolation**: Pine Script generates a millisecond-precision fingerprint at the moment of signal generation. Attempt 1 always queries `metadata->>trade_id = body.trade_id`. |
+| **2. Direction Anchor (`direction`)** | `body.action` / `body.type` (`LONG` vs `SHORT`) | **Polarity Isolation**: A `LONG` signal will NEVER match, mutate, or close a `SHORT` position under any circumstance. Even in fallback queries, `ilike('type', 'LONG%')` is mandatory. |
+| **3. Temporal & Price Anchor (`entryTime` & `entryPrice`)** | `body.entryTime` & `body.entryPrice` | **Session & Level Isolation**: Fallbacks strictly constrain `entry` to within $\pm 0.2\%$ of the execution price and bind to the specific bar timestamp, guaranteeing that trades from previous days or different price levels are never merged. |
+
+### The Two-Attempt Lookup & Safe Fall-Through Pattern:
+When any `TradeFill`, `TradeClose`, or `TrailingSLUpdate` webhook arrives:
+```
+1. ATTEMPT 1: Exact trade_id lookup in metadata
+   └── If found: Execute update on activeSignal.id. DONE.
+   └── If NOT found: Proceed to Attempt 2.
+
+2. ATTEMPT 2: Strict Triple-Binding Fallback
+   └── Query: symbol = resolved.symbol
+   └── AND status IN ('ACTIVE LIMIT', 'OPEN', 'Active')
+   └── AND type ILIKE isLongStr% (STRICT DIRECTION)
+   └── AND entry BETWEEN entryNum * 0.998 AND entryNum * 1.002 (STRICT PRICE)
+   └── If found: Execute update on fallbackData.id. DONE.
+
+3. SAFE FALL-THROUGH (Zero-Overwriting Rule):
+   └── If both attempts fail, the backend NEVER mutates an unrelated record.
+   └── It cleanly falls through to INSERT a brand-new, independent trade row.
+```
+
+### Auto-Deletion of Invalidated / Expired Limit Orders:
+- Unexecuted limit orders that are canceled or expired by Pine Script (`trigger: 'LimitCancel'` or `status: 'Invalidated'`) are immediately **HARD-DELETED** from Supabase (`.delete().eq('id', activeSignal.id)`).
+- This ensures 0 ghost records remain in the database, preventing any future webhook or screener query from ever encountering an expired order.
+
+---
+
+## Guide 6: Deploying Changes to Production Manually
 
 Whenever you make any manual changes to the codebase, follow this exact sequence to deploy without AI:
 
