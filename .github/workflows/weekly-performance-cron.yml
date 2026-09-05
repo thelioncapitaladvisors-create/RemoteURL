@@ -1,0 +1,39 @@
+name: Weekly Performance Edge Auto-Sync & Session Closure
+
+on:
+  schedule:
+    # Sunday 18:30 UTC = Sunday 23:59:59 IST / Monday 00:00:00 IST (End of Trading Week)
+    - cron: '30 18 * * 0'
+    # Friday 22:00 UTC = Saturday 03:30 IST (Weekly Close for Traditional Markets & Commodities)
+    - cron: '0 22 * * 5'
+  
+  # Allow manual 1-click execution from GitHub Actions console
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync-weekly-performance:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install supabase==2.15.1 httpx==0.27.2
+          
+      - name: Sweep Closed Markets & Synchronize Weekly Performance Logs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY }}
+        run: |
+          python algo_engine/sync_weekly_performance.py
