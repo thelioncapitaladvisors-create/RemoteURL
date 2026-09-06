@@ -961,3 +961,15 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - Matrix data cells (columns 1 to 7) MUST uniformly share the left-side label cell background (`cellBg = c_label_bg`), eliminating harsh black background boxes.
   - High-contrast text colors MUST be enforced on cream/light backgrounds: bold dark emerald green (`color.rgb(0, 130, 0)`) for `▲`, bold crimson red (`color.rgb(204, 0, 0)`) for `▼`, bold dark amber (`color.rgb(190, 85, 0)`) for `▲▼`, and clean slate gray (`color.rgb(120, 120, 120)`) for empty cells (`-`).
 
+## Version 1.0 Mobile Terminal: Analytics Hierarchy & Market Filters Standards
+- **Analytics Tab Scroll Hierarchy (`activeTab === 'ANALYTICS'`)**:
+  1. **Daily Signal Dashboard Matrix (Apex Position)**: Today's active parameter signals (`MISSILE`, `SCALP`, `LIGHTNING`, Day Type Blueprints, Trade Sequences) across active symbols MUST be positioned at the very top of the scrollable Analytics view (`space-y-3`) for immediate visibility without scrolling.
+  2. **Market Filters Header**: An institutional section header directly precedes the 7 market selection buttons:
+     - **Title**: `MARKET FILTERS` (rendered in signature `#d5a342` gold tracking: `text-xs sm:text-sm font-black uppercase tracking-widest text-[#d5a342]`).
+     - **Subtitle**: `Filter active signals, win rates & performance metrics across markets.` (`text-[10px] sm:text-[11px] font-mono text-dim leading-tight`).
+  3. **Market Filter Grid**: 3-row glassmorphic buttons for market segment filtering (`SYSTEM-WIDE`, `NIFTY 50`, `MCX COMMODITIES`, `NYMEX & COMEX`, `CRYPTO TOP 25`, `FOREX PAIRS`, `WORLD INDICES`).
+  4. **Summary Stats Bar**: Realized performance KPI cards (Win Rate, Expectancy, Profit Factor, Calmar, Half-Kelly, Total Trades, W/L/BE).
+  5. **This Week's Signal Performance & Achievement**: 7-day day-wise TP1-TP4 achievement metrics & returns.
+  6. **Weekly Performance Edge**: Historical weekly performance edge logs.
+  7. **Strategy Tearsheet**: Automated VectorBT performance equity curves and metrics iframe.
+
