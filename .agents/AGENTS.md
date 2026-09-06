@@ -941,3 +941,23 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Zero Counter-Proposals to User Trading Logics**: The assistant must **NEVER** suggest, recommend, or propose modifications, buffers, wider stops, swing-level shifts, or logic redesigns that run contrary to or modify the user's established trading systems and Pine Script rules.
 - **Respect for Established System Logics**: The user's entry conditions, exit criteria, stop loss placement methods, and indicator mechanics are intentional, proprietary, and mathematically defined by the user. The assistant must respect them unconditionally without questioning or trying to "re-engineer" the trading rules.
 - **Sole Scope of Assistant Responsibilities**: The assistant's responsibility is exclusively engineering excellence: ensuring flawless infrastructure, webhook processing, exact database synchronization, frontend accuracy, and pure fidelity to the user's alerts as transmitted.
+
+## Version 1.5: Indicator Architecture, Zigzag Divergence Engine & Matrix Synchronization Rules
+- **1:1 Dashboard Engine Parity**: `TLCS_Main_Dashboard_7Day_Matrix.pine` and `TLCS_Debug_Dashboard.pine` MUST maintain 100% mathematical, functional, and structural parity. When a signal (Missile, Reversals, Blueprints, Sequences, Divergences) triggers on any symbol, both dashboards MUST produce the exact same output.
+- **Authentic Zigzag Divergence Engine**:
+  - The indicator incorporates the authentic multi-swing Zigzag Divergence Engine supporting 8 selectable oscillator types (`rsi`, `cci`, `cmo`, `cog`, `mfi`, `roc`, `stoch`, `wpr`) with `ZigzagProperties` and `divZigzagLen = 13`.
+  - Both **Regular Price Divergences** (`BullishDivergence`, `BearishDivergence`) and **Hidden Divergences** (`BullishHiddenDivergence`, `BearishHiddenDivergence`) are categorized and bitmask-packed into dedicated dashboard rows (`Price Divergences` and `Hidden Divergences`).
+  - **4-Stage Filtering Pipeline**:
+    1. Zigzag pivot anchor detection (minimum 3 swing pivots).
+    2. Opposing slopes disagreement (`priceDirection != oscillatorDirection`).
+    3. Sentiment and relative slope magnitude check (`sentiment = math.sign(oscRatio - priceRatio)`).
+    4. Strict geometric trendline penetration filter (`for bar = startBar + 1 to endBar - 1`, disqualifying candidate if any intermediate close pierces the theoretical chord: `priceAtBar * dir > priceTheo * dir`).
+- **Pine Script Variable Declaration Order**:
+  - In `method divergenceSignal`, anchor variables `startBar = llastPivot.point.index`, `endBar = lastPivot.point.index`, `startPrice = llastPrice`, and `endPrice = lastPrice` MUST ALWAYS be declared BEFORE evaluating `if divergence != 0 and endBar > startBar` to avoid the fatal TradingView compiler error `Undeclared identifier 'endBar' (CE10272)`.
+- **Per-Symbol Security Isolation (No Cross-Contamination)**:
+  - In Pine Script v6, calling a single shared function containing series functions (`ta.ema`, `ta.sma`, `ta.highestbars`) or mutable state types (`SeqState`) across multiple `request.security()` calls causes cross-symbol state bleeding.
+  - Dashboards MUST isolate each monitored symbol into its own dedicated calculation pipeline (`f_calc_sigs_1..9` and `f_calc_dt_1..9`) to ensure 100% independent series histories and state machines.
+- **Uniform Matrix Row Background Aesthetics**:
+  - Matrix data cells (columns 1 to 7) MUST uniformly share the left-side label cell background (`cellBg = c_label_bg`), eliminating harsh black background boxes.
+  - High-contrast text colors MUST be enforced on cream/light backgrounds: bold dark emerald green (`color.rgb(0, 130, 0)`) for `▲`, bold crimson red (`color.rgb(204, 0, 0)`) for `▼`, bold dark amber (`color.rgb(190, 85, 0)`) for `▲▼`, and clean slate gray (`color.rgb(120, 120, 120)`) for empty cells (`-`).
+
