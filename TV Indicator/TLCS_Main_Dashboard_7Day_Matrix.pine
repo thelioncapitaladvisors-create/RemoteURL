@@ -421,7 +421,6 @@ gDisplay = "Dashboard Display"
 tableTheme   = input.string("Original TLCS", "Color Theme", options=["Original TLCS", "Light Theme", "Dark Theme"], group=gDisplay)
 tablePosStr  = input.string("Bottom Right", "Table Position", options=["Middle Right", "Middle Left", "Top Right", "Top Center", "Top Left", "Bottom Right", "Bottom Center", "Bottom Left"], group=gDisplay)
 tableTextSz  = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Normal"], group=gDisplay)
-showAllRows  = input.bool(true, "Always Show All Rows (Even if 0 signals)", group=gDisplay)
 
 // Lookback Input (Look back up to 7 daily bars)
 lookback_days = input.int(7, "Lookback Period (Days)", minval=1, maxval=7, group=gDisplay)
@@ -650,7 +649,7 @@ f_render_matrix_row(t, r, labelText, bullMat, bearMat, tSize) =>
         if matrix.get(bullMat, d, 0) != "" or matrix.get(bearMat, d, 0) != ""
             hasAny := true
 
-    if hasAny or showAllRows
+    if hasAny
         table.cell(t, 0, r, labelText, bgcolor=c_label_bg, text_color=c_label_fg, text_size=tSize, text_halign=text.align_right)
         for colIdx = 1 to lookback_days
             d = lookback_days - colIdx
