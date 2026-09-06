@@ -973,3 +973,26 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   6. **Weekly Performance Edge**: Historical weekly performance edge logs.
   7. **Strategy Tearsheet**: Automated VectorBT performance equity curves and metrics iframe.
 
+## Version 1.0: TLCS Screener Matrix START AFRESH & Intraday Signal Removal Protocol
+- **START AFRESH Behavior**: Tapping **START AFRESH** on the TLCS Screener Matrix (`activeTab === 'SCREENER'`) MUST immediately and cleanly remove all TLCS Intraday Signals for the current week (`MISSILE`, `PRICE_DIV`, `SCALP`, `LIGHTNING`), allowing traders to start afresh from the current session.
+- **Persistent Reset Timestamp (`screenerSignalsResetTs`)**:
+  - The reset timestamp is recorded as `nowTs = Date.now()` and persisted to `localStorage` under `'tlcs_screener_signals_reset_ts'`.
+  - In Section 1 (**TLCS SIGNALS 7-DAY MATRIX**), both `pivotBossScans` and incoming `daySigs` prior to `screenerSignalsResetTs` are filtered out.
+  - When no new signals exist post-reset, Section 1 renders: `"No active Intraday Signals in the last 7 days."`.
+- **Strict Preservation of Blueprints & Sequences**: Section 2 (**DAY TYPE BLUEPRINTS**) and Section 3 (**TRADE SEQUENCES**) are closed daily candle scans and MUST remain strictly preserved and unaffected by the Intraday Signal reset.
+- **Bidirectional RESTORE Capability**:
+  - Whenever `screenerSignalsResetTs` is active, an amber **`[RESTORE]`** button MUST be displayed in the matrix header and notification banner.
+  - Tapping `[RESTORE]` purges the reset timestamp from state and `localStorage`, immediately restoring all historical intraday signals.
+- **View Reset & Auto-Scroll**: Tapping **START AFRESH** automatically resets the market filter back to `ALL MARKETS`, expands the matrix if collapsed, triggers a background data refetch (`fetchStateRef.current()`), and smoothly scrolls horizontally to the `Today / Recent` view (`el.scrollWidth`).
+
+## Version 1.0: Virtual Paper Portfolio Simulator Single 10 Lacs (₹10,00,000) Baseline
+- **Single Standardized Preset Option**: The Virtual Capital selection panel MUST provide exclusively **`[10L]`** as the single preset button. All variant presets (`1L`, `5L`, `25L`) are permanently deprecated.
+- **Uniform Market Baseline**: All market configurations in `DEFAULT_LOT_CONFIG` (`NIFTY 50`, `MCX COMMODITIES`, `NYMEX & COMEX`, `CRYPTO TOP 25`, `FOREX PAIRS`, `WORLD INDICES`, and `ALL MARKETS`) MUST initialize with `defaultCapital: 1000000` (₹10,00,000).
+- **Paper Portfolio Reset Baseline**: When the user taps **START AFRESH** in the Virtual Paper Portfolio, the simulated account balance MUST cleanly reset to **₹10,00,000**.
+
+## Version 1.0: Sequential Metrics Sorting Parity & Disaster Recovery Backups
+- **Canonical Sequential Sorting Anchor**: All chronological metric calculations across web (`dashboard.html`, `trade-metrics.js`) and mobile (`page.tsx`)—including **Consecutive Losses** and **Maximum Drawdown**—MUST sort closed trades using the canonical signal entry timestamp (`getSignalTime`), with `created_at` as the mandatory fallback tie-breaker.
+- **System-Wide Metric Parity**: Enforces identical performance metrics across both platforms (**2 Consecutive Losses**, **-0.56% Max Drawdown**).
+- **Disaster Recovery Repository Backups**: Complete uncompressed mirror trees and standalone `.zip` archives (excluding disposable dependencies and build caches) are permanently archived in `Project/Backups/` and mirrored to `Documents/Backups/`.
+
+
