@@ -418,9 +418,10 @@ u3 = input.symbol("COMEX:GC1!", "Futures 3 (Gold)", group=gNymex)
 u4 = input.symbol("COMEX:SI1!", "Futures 4 (Silver)", group=gNymex)
 
 gDisplay = "Dashboard Display"
-tableTheme   = input.string("Light Theme", "Color Theme", options=["Light Theme", "Dark Theme"], group=gDisplay)
+tableTheme   = input.string("Original TLCS", "Color Theme", options=["Original TLCS", "Light Theme", "Dark Theme"], group=gDisplay)
 tablePosStr  = input.string("Bottom Right", "Table Position", options=["Middle Right", "Middle Left", "Top Right", "Top Center", "Top Left", "Bottom Right", "Bottom Center", "Bottom Left"], group=gDisplay)
 tableTextSz  = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Normal"], group=gDisplay)
+showAllRows  = input.bool(true, "Always Show All Rows (Even if 0 signals)", group=gDisplay)
 
 // Lookback Input (Look back up to 7 daily bars)
 lookback_days = input.int(7, "Lookback Period (Days)", minval=1, maxval=7, group=gDisplay)
@@ -615,32 +616,33 @@ f_add_sym_all(sym, s0, s1, s2, s3, s4, s5, s6, d0, d1, d2, d3, d4, d5, d6) =>
             dtPack  = i == 0 ? d0 : i == 1 ? d1 : i == 2 ? d2 : i == 3 ? d3 : i == 4 ? d4 : i == 5 ? d5 : d6
             f_add_day(sym, i, sigPack, dtPack)
 
-// ---- HIGH CONTRAST THEME COLOR DEFINITIONS -----------------------------
-isDark = tableTheme == "Dark Theme"
+// ---- THEME COLOR DEFINITIONS -------------------------------------------
+isOriginal = tableTheme == "Original TLCS"
+isDark     = tableTheme == "Dark Theme"
 
-c_frame     = isDark ? color.rgb(51, 65, 85) : color.rgb(203, 213, 225)
-c_border    = isDark ? color.rgb(51, 65, 85) : color.rgb(226, 232, 240)
+c_frame     = isOriginal ? color.rgb(12, 246, 250) : isDark ? color.rgb(51, 65, 85) : color.rgb(203, 213, 225)
+c_border    = isOriginal ? color.rgb(12, 246, 250) : isDark ? color.rgb(51, 65, 85) : color.rgb(226, 232, 240)
 
-c_header_bg = isDark ? color.rgb(15, 23, 42) : color.rgb(30, 58, 138)
-c_header_fg = isDark ? color.rgb(56, 189, 248) : color.white
+c_header_bg = isOriginal ? color.new(#116ac2, 0) : isDark ? color.rgb(15, 23, 42) : color.rgb(30, 58, 138)
+c_header_fg = isOriginal ? color.rgb(12, 246, 250) : isDark ? color.rgb(56, 189, 248) : color.white
 
-c_colhdr_bg = isDark ? color.rgb(30, 41, 59) : color.rgb(241, 245, 249)
-c_colhdr_fg = isDark ? color.white : color.rgb(15, 23, 42)
+c_colhdr_bg = isOriginal ? color.rgb(17, 106, 194) : isDark ? color.rgb(30, 41, 59) : color.rgb(241, 245, 249)
+c_colhdr_fg = isOriginal ? color.white : isDark ? color.white : color.rgb(15, 23, 42)
 
-c_label_bg  = isDark ? color.rgb(30, 41, 59) : color.rgb(248, 250, 252)
-c_label_fg  = isDark ? color.rgb(226, 232, 240) : color.rgb(15, 23, 42)
+c_label_bg  = isOriginal ? color.rgb(249, 226, 23, 87) : isDark ? color.rgb(30, 41, 59) : color.rgb(248, 250, 252)
+c_label_fg  = isOriginal ? color.rgb(10, 65, 230) : isDark ? color.rgb(226, 232, 240) : color.rgb(15, 23, 42)
 
-c_bull_bg   = isDark ? color.rgb(6, 78, 59, 40) : color.rgb(220, 252, 231)
-c_bull_fg   = isDark ? color.rgb(74, 222, 128) : color.rgb(22, 101, 52)
+c_bull_bg   = isOriginal ? color.new(color.lime, 80) : isDark ? color.rgb(6, 78, 59, 40) : color.rgb(220, 252, 231)
+c_bull_fg   = isOriginal ? color.green : isDark ? color.rgb(74, 222, 128) : color.rgb(22, 101, 52)
 
-c_bear_bg   = isDark ? color.rgb(127, 29, 29, 40) : color.rgb(254, 226, 226)
-c_bear_fg   = isDark ? color.rgb(248, 113, 113) : color.rgb(153, 27, 27)
+c_bear_bg   = isOriginal ? color.new(color.red, 80) : isDark ? color.rgb(127, 29, 29, 40) : color.rgb(254, 226, 226)
+c_bear_fg   = isOriginal ? color.red : isDark ? color.rgb(248, 113, 113) : color.rgb(153, 27, 27)
 
-c_mixed_bg  = isDark ? color.rgb(120, 53, 15, 40) : color.rgb(254, 243, 199)
-c_mixed_fg  = isDark ? color.rgb(251, 191, 36) : color.rgb(180, 83, 9)
+c_mixed_bg  = isOriginal ? color.new(color.orange, 80) : isDark ? color.rgb(120, 53, 15, 40) : color.rgb(254, 243, 199)
+c_mixed_fg  = isOriginal ? color.orange : isDark ? color.rgb(251, 191, 36) : color.rgb(180, 83, 9)
 
-c_empty_bg  = isDark ? color.rgb(15, 23, 42, 60) : color.rgb(255, 255, 255)
-c_empty_fg  = isDark ? color.rgb(100, 116, 139) : color.rgb(203, 213, 225)
+c_empty_bg  = isOriginal ? color.new(color.gray, 85) : isDark ? color.rgb(15, 23, 42, 60) : color.rgb(255, 255, 255)
+c_empty_fg  = isOriginal ? color.gray : isDark ? color.rgb(100, 116, 139) : color.rgb(203, 213, 225)
 
 f_render_matrix_row(t, r, labelText, bullMat, bearMat, tSize) =>
     hasAny = false
@@ -648,7 +650,7 @@ f_render_matrix_row(t, r, labelText, bullMat, bearMat, tSize) =>
         if matrix.get(bullMat, d, 0) != "" or matrix.get(bearMat, d, 0) != ""
             hasAny := true
 
-    if hasAny
+    if hasAny or showAllRows
         table.cell(t, 0, r, labelText, bgcolor=c_label_bg, text_color=c_label_fg, text_size=tSize, text_halign=text.align_right)
         for colIdx = 1 to lookback_days
             d = lookback_days - colIdx
@@ -728,7 +730,7 @@ if barstate.islast
 
     txtSize = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
 
-    dash1 := table.new(tablePos, lookback_days + 1, 25, border_width=1, frame_width=1, frame_color=c_frame, border_color=c_border)
+    dash1 := table.new(tablePos, lookback_days + 1, 26, border_width=1, frame_width=1, frame_color=c_frame, border_color=c_border)
     
     int currentRow = 0
 
