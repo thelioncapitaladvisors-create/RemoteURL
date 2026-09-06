@@ -999,3 +999,19 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Strict Theme Subheading Uniformity**: All subheadings throughout the application must uniformly use `text-dim` (`var(--text-dim)`), providing clean, readable contrast (`#475569` on Light/Gray, `#888899` / `#a0aec0` on Lion/Dark).
 - **Sunday 00:00:00 IST Weekly Cron Execution**: Scheduled aggregation in `TLCS_Website_Deploy/netlify/functions/cron-weekly-logs.js` and `.github/workflows/weekly-performance-cron.yml` is anchored to **`30 18 * * 6`** (Saturday 18:30:00 UTC = Sunday 00:00:00 IST), automatically publishing the completed week's performance edge to `weekly_performance_logs` every Sunday at 00:00 IST without fail.
 - **Disaster Recovery Repository Backups**: Complete uncompressed mirror trees and standalone `.zip` archives (excluding disposable dependencies and build caches) are permanently archived in `Project/Backups/` and mirrored to `Documents/Backups/`.
+
+## Version 1.0: Institutional Trade Distribution Section (Web & Mobile Parity)
+- **Apex Positioning**: Positioned prominently at the apex of the Website Knowledge Base (`blog.html`) directly above the live parameter tables, and inside the mobile app (`page.tsx`).
+- **Bold Main Heading & Dynamic Theme Background**:
+  - The header **`TRADE DISTRIBUTION`** is rendered as a prominent, bold main title (`font-size: 2.2rem; font-weight: 900; font-style: italic; uppercase; color: var(--text-primary, var(--text-main, #ffffff))`).
+  - The card background strictly binds to theme CSS variables (`background: var(--card-bg, rgba(15, 20, 30, 0.9)); border: 1px solid var(--card-border, rgba(255, 255, 255, 0.12));`). The background dynamically morphs across all user-selected theme skins (`THE LION`, `DARK`, `LIGHT`, `GRAY`), strictly avoiding rigid static black or white backgrounds.
+- **Interactive Multi-Timeframe & Multi-Unit Controls**:
+  - Timeframe toggles: **`TODAY`**, **`WEEK`**, **`MONTH`**, **`QUARTER`**, **`YEAR`**.
+  - Metric Unit toggles: **`₹`** (Rupee P&L based on market lot multipliers and USD/INR exchange rate `87.5`) and **`%`** (Exact Percentage Return from `metadata.exact_pct`).
+- **Zero-Line Layout & Micro-Tooltips**:
+  - Central dashed zero line divides positive winners (extending upwards) from negative losses (extending downwards).
+  - Hovering over any trade column reveals a rich tooltip displaying symbol name, outcome type, realized rupee amount, and percentage return.
+- **KPI Callouts & Footnote**:
+  - Real-time trade count summary badge: `X trades (YL / ZW / BE)`.
+  - Largest winning trade callout: `↑ largest +₹... / +X.XX%`.
+  - Institutional trend-following signature footer: *"Many small losses, a few large winners — the trend-following signature"*.
