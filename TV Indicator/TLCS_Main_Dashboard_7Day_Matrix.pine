@@ -38,171 +38,152 @@ unpackBit(pack, bit) => (math.floor(pack / bit) % 2) != 0
 // ---- INPUTS --------------------------------------------------------
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
 enable_alerts = input.bool(true, 'Enable Automated Webhook Alerts')
-daily_cpr = input.int(title = ' Logic for Daily CPR ', defval = 7, minval = 0)
-
-new_bar(res) => ta.change(time(res)) != 0
-new_period(condition, src) =>
-    result = 0.0
-    result := condition ? src : result[1]
-    result
-
-OO = open
-CL = close
-[DH, DL, CC] = request.security(syminfo.tickerid, 'D', [high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
-one_day = 1000 * 60 * 60 * 24
-new_day = daily_cpr > 0 and timenow - time < one_day * daily_cpr and new_bar('D')
-dDH_ = new_period(new_day, DH)
-dDL_ = new_period(new_day, DL)
-OO_ = new_period(new_day, OO)
-CL_ = new_period(new_day, CC)
-Pi = (dDH_ + dDL_ + CL_) / 3.0
-Bcy = (dDH_ + dDL_) / 2
-Tcy = Pi - Bcy + Pi
-DP = new_period(new_day, Pi)
-DTC = math.max(Tcy, Bcy)
-DBC = math.min(Tcy, Bcy)
-DTc1 = math.max(Tcy, Bcy)
-DBc1 = math.min(Tcy, Bcy)
-Ttf_high = new_period(new_day, DH)
-Ttf_low = new_period(new_day, DL)
-Ptf_high1 = new_period(new_day, DH[1])
-Ptf_low1 = new_period(new_day, DL[1])
-Ptf_close1 = new_period(new_day, CC[1])
-RY = Ptf_high1 - Ptf_low1
-YP = (Ptf_high1 + Ptf_low1 + Ptf_close1) / 3.0
-BcY = (Ptf_high1 + Ptf_low1) / 2
-TcY = YP - BcY + YP
-YTC = math.max(TcY, BcY)
-YBC = math.min(TcY, BcY)
-INSIDEDAY = DTC < YTC and DBC > YBC
-YH3 = Ptf_close1 + RY * 1.1 / 4.0
-YL3 = Ptf_close1 - RY * 1.1 / 4.0
-YH4 = Ptf_close1 + RY * 1.1 / 2.0
-YL4 = Ptf_close1 - RY * 1.1 / 2.0
-R = DH - DL
-DP1 = (DH + DL + CC) / 3.0
-DPI = new_period(new_day, DP1)
-UpPrice = close > DPI ? 1 : 0
-DownPrice = close < DPI ? 1 : 0
-Price = close > DPI ? close < DPI ? 1 : 0 : 0
-Priceg = close > DPI ? 0 : 100
-Pricer = close < DPI ? 0 : 100
-DPi = (DH + DL + CC) / 3.0
-DPIV = new_period(new_day, DP1)
-DBCn = (DH + DL) / 2
-DTCn = DPI - DBCn + DPI
-DTcf = math.max(DTCn, DBCn)
-DBcf = math.min(DTCn, DBCn)
-
-session_timeframe = input.string(title = 'Value Area Resolution (Weekly/Monthly)', defval = 'W', options = ['W', 'M'])
-showVALines  = input.bool(true, 'Show Value Area Lines', group = 'Value Area')
+// ---- SUPPORT & RESISTANCE INPUTS -------------------------------------------
 srMaxBreaks  = input.int(3, 'S&R Max Breaks', minval = 2, group = 'Support & Resistance')
 srMaxDistPct = input.float(2.0, 'S&R Max Distance %', minval = 0.1, group = 'Support & Resistance')
 srLookback   = input.int(100, 'Reversal-Candle Lookback (bars)', minval = 20, group = 'Support & Resistance')
-srUpColor    = input.color(color.new(color.lime, 20), 'Support Line Color', group = 'Support & Resistance')
-srDnColor    = input.color(color.new(color.red, 20), 'Resistance Line Color', group = 'Support & Resistance')
-srLineWidth  = input.int(1, 'S&R Line Width', minval = 1, maxval = 4, group = 'Support & Resistance')
+
+// ---- REVERSAL SYSTEM INPUTS (AUTHENTIC MASTER RULES) -----------------------
+pivotlbar       = input.int(10, 'Length to Highest/Lowest (Reversals)', group='Reversal Systems')
+wick_multiplier = input.float(3.25, 'Wick Multiplier', step=0.5, maxval=20, group='Reversal Systems')
+body_percentage = input.float(0.35, 'Body Percentage', step=0.1, maxval=1, group='Reversal Systems')
+WBarMultiplier  = input.float(1.1, 'Body & Candle Range Multiplier', step=0.1, maxval=5, group='Reversal Systems')
+Wbarsback       = input.int(50, 'Average Candle and Body Lookback', group='Reversal Systems')
+ext_bodysize    = input.float(0.75, 'Extreme Reversal Body Size Ratio', step=0.05, maxval=1, group='Reversal Systems')
+ext_bodymult    = input.float(2.0, 'Extreme Reversal Candle Multiplier', step=0.25, maxval=5, group='Reversal Systems')
+out_barmult     = input.float(1.25, 'Outside Reversal Multiplier', step=0.05, maxval=3.5, group='Reversal Systems')
+doji_barmult    = input.float(0.65, 'Doji Reversal Multiplier', step=0.05, maxval=3.5, group='Reversal Systems')
+doji_pct        = input.float(0.10, 'Doji Body Percentage', step=0.05, minval=0.05, group='Reversal Systems')
 
 f_calc_sigs() =>
-    fPivot_ = (high + low + close) / 3
-    fFastEMA1_ = 5
-    fSlowEMA1_ = 13
-    fPivotEMAF1_ = ta.ema(fPivot_, fFastEMA1_)
-    fPivotEMAF2_ = ta.ema(fPivotEMAF1_, fFastEMA1_)
-    fPivotEMAS1_ = ta.ema(fPivot_, fSlowEMA1_)
-    fPivotEMAS2_ = ta.ema(fPivotEMAS1_, fSlowEMA1_)
-    PDEMAF_ = fPivotEMAF1_ * 2 - fPivotEMAF2_
-    PDEMAS_ = fPivotEMAS1_ * 2 - fPivotEMAS2_
-    fPivotPDEMAF_ = ta.ema(PDEMAF_, fFastEMA1_)
-    fPivotPDEMAS_ = ta.ema(PDEMAS_, fSlowEMA1_)
-    fShortEMA_ = ta.ema(fPivot_, 13)
-    fMedEMA_ = ta.ema(fPivot_, 32)
-    upper_ = ta.highest(92)
-    lower_ = ta.lowest(92)
-    out_ = 100 * (close - upper_) / (upper_ - lower_)
-    m0_ = ta.ema(out_, 21)
-    m10_ = ta.sma(out_, 96)
-    len14_ = 14
-    up14_ = ta.change(high)
-    down14_ = -ta.change(low)
-    plusDM_ = na(up14_) ? na : (up14_ > down14_ and up14_ > 0 ? up14_ : 0)
-    minusDM_ = na(down14_) ? na : (down14_ > up14_ and down14_ > 0 ? down14_ : 0)
-    trur_ = ta.rma(ta.tr, len14_)
-    plus_ = fixnan(100 * ta.rma(plusDM_, len14_) / trur_)
-    minus_ = fixnan(100 * ta.rma(minusDM_, len14_) / trur_)
+    fPivot = (high + low + close) / 3
+    fFastEMA1 = 5
+    fSlowEMA1 = 13
+    fPivotEMAF1 = ta.ema(fPivot, fFastEMA1)
+    fPivotEMAF2 = ta.ema(fPivotEMAF1, fFastEMA1)
+    fPivotEMAS1 = ta.ema(fPivot, fSlowEMA1)
+    fPivotEMAS2 = ta.ema(fPivotEMAS1, fSlowEMA1)
+    PDEMAF = fPivotEMAF1 * 2 - fPivotEMAF2
+    PDEMAS = fPivotEMAS1 * 2 - fPivotEMAS2
+    fPivotPDEMAF = ta.ema(PDEMAF, fFastEMA1)
+    fPivotPDEMAS = ta.ema(PDEMAS, fSlowEMA1)
+    fShortEMA = ta.ema(fPivot, 13)
+    fMedEMA = ta.ema(fPivot, 32)
+    upper = ta.highest(92)
+    lower = ta.lowest(92)
+    out = 100 * (close - upper) / (upper - lower)
+    m0 = ta.ema(out, 21)
+    m10 = ta.sma(out, 96)
+    len14 = 14
+    up14 = ta.change(high)
+    down14 = -ta.change(low)
+    plusDM = na(up14) ? na : (up14 > down14 and up14 > 0 ? up14 : 0)
+    minusDM = na(down14) ? na : (down14 > up14 and down14 > 0 ? down14 : 0)
+    trur = ta.rma(ta.tr, len14)
+    plus = fixnan(100 * ta.rma(plusDM, len14) / trur)
+    minus = fixnan(100 * ta.rma(minusDM, len14) / trur)
 
-    bullpower_ = open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? 1 : na : na : na : na : na
-    bearpower_ = close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? 1 : na : na : na : na : na
-    intraMid_ = (high + low) / 2
+    GREEN = (plus > minus) and (m0 > m10)
+    RED   = (minus > plus) and (m0 < m10)
+    GREENZONE = GREEN
+    REDZONE   = RED
 
-    bool bouncedUpAnyLevel_   = false
-    bool bouncedDownAnyLevel_ = false
+    // Missile S&R Bounce Detection
+    bullpower = open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? 1 : na : na : na : na : na
+    bearpower = close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? 1 : na : na : na : na : na
+    intraMid = (high + low) / 2
+
+    bool bouncedUpAnyLevel   = false
+    bool bouncedDownAnyLevel = false
     
     for i = 1 to srLookback
-        if not na(bearpower_[i])
-            rv_ = intraMid_[i]
-            if math.abs(rv_ - close) / close * 100 < srMaxDistPct
-                int breaks_ = 0
+        if not na(bearpower[i])
+            rv = intraMid[i]
+            if math.abs(rv - close) / close * 100 < srMaxDistPct
+                int breaks = 0
                 for j = i - 1 to 0
-                    if (open[j] < rv_ and close[j] > rv_) or (open[j] > rv_ and close[j] < rv_)
-                        breaks_ += 1
-                if breaks_ < srMaxBreaks
-                    if high >= rv_ and open <= rv_ and low < rv_ and close < rv_ and close < open
-                        bouncedDownAnyLevel_ := true
+                    if (open[j] < rv and close[j] > rv) or (open[j] > rv and close[j] < rv)
+                        breaks += 1
+                if breaks < srMaxBreaks
+                    if high >= rv and open <= rv and low < rv and close < rv and close < open
+                        bouncedDownAnyLevel := true
         
-        if not na(bullpower_[i])
-            sv_ = intraMid_[i]
-            if math.abs(sv_ - close) / close * 100 < srMaxDistPct
-                int breaks_ = 0
+        if not na(bullpower[i])
+            sv = intraMid[i]
+            if math.abs(sv - close) / close * 100 < srMaxDistPct
+                int breaks = 0
                 for j = i - 1 to 0
-                    if (open[j] < sv_ and close[j] > sv_) or (open[j] > sv_ and close[j] < sv_)
-                        breaks_ += 1
-                if breaks_ < srMaxBreaks
-                    if low <= sv_ and open >= sv_ and high > sv_ and close > sv_ and close > open
-                        bouncedUpAnyLevel_ := true
+                    if (open[j] < sv and close[j] > sv) or (open[j] > sv and close[j] < sv)
+                        breaks += 1
+                if breaks < srMaxBreaks
+                    if low <= sv and open >= sv and high > sv and close > sv and close > open
+                        bouncedUpAnyLevel := true
 
-    bool GREEN1_ = (plus_ > minus_) and (m0_ > m10_)
-    bool RED1_   = (minus_ > plus_) and (m0_ < m10_)
-    bool GrS_ = GREEN1_ and bouncedUpAnyLevel_
-    bool ReS_ = RED1_  and bouncedDownAnyLevel_
+    bool GrS = GREEN and bouncedUpAnyLevel
+    bool ReS = RED and bouncedDownAnyLevel
 
-    _mb = GrS_
-    _ms = ReS_
+    _mb = GrS
+    _ms = ReS
     _sb = false
     _ss = false
     _lb = false
     _ls = false
 
-    pivotlbar_ = 10
-    highleftempty_ = ta.pivothigh(pivotlbar_, 0)
-    lowleftempty_ = ta.pivotlow(pivotlbar_, 0)
-    Wmybodysize_ = math.abs(close - open)
-    WAverageBody_ = ta.sma(Wmybodysize_, 50)
-    Wmycandlesize_ = high - low
-    WAverageCandle_ = ta.sma(Wmycandlesize_, 50)
-    Wlong_ = close > open and open - low >= (close - open) * 3.25 and high - close <= (high - low) * 0.35 or close < open and close - low >= (open - close) * 3.25 and high - close <= (high - low) * 0.35 or close == open and close != high and high - low >= (high - close) * 3.25 and high - close <= (high - low) * 0.35 or open == high and close == high and high - low >= ta.sma(high - low, 50)
-    Wshort_ = close < open and high - open >= (open - close) * 3.25 and close - low <= (high - low) * 0.35 or close > open and high - close >= (close - open) * 3.25 and close - low <= (high - low) * 0.35 or close == open and close != low and high - low >= (close - low) * 3.25 and close - low <= (high - low) * 0.35 or open == low and close == low and high - low >= ta.sma(high - low, 50)
-    GREENZONE_hack_ = (plus_ > minus_) and (m0_ > m10_)
-    REDZONE_hack_ = (minus_ > plus_) and (m0_ < m10_)
-    _wls = GREENZONE_hack_ and not na(lowleftempty_) and Wlong_ and high - low >= WAverageCandle_ * 1.1
-    _wss = REDZONE_hack_ and not na(highleftempty_) and Wshort_ and high - low >= WAverageCandle_ * 1.1
-    _els = GREENZONE_hack_ and open[1] - close[1] >= 0.75 * (high[1] - low[1]) and high[1] - low[1] > WAverageCandle_ * 2.0 and open[1] - close[1] > WAverageBody_ and close > open
-    _ess = REDZONE_hack_ and close[1] - open[1] >= 0.75 * (high[1] - low[1]) and high[1] - low[1] > WAverageCandle_ * 2.0 and close[1] - open[1] > WAverageBody_ and open > close
-    _ols = GREENZONE_hack_ and low < low[1] and close > high[1] and high - low >= WAverageCandle_ * 1.25
-    _oss = REDZONE_hack_ and high > high[1] and close < low[1] and high - low >= WAverageCandle_ * 1.25
-    frangehl_ = high[1] - low[1]
-    frangeco_ = math.abs(close[1] - open[1])
-    sma10_ = ta.sma(close, 10)
-    Dshort_ = frangeco_ <= frangehl_ * 0.10 and close < low[1] and low[1] > sma10_ and close < open or close < low[2] and close[1] >= low[2] and frangeco_ <= frangeco_ * 0.10 and close < open and low[2] > sma10_
-    Dlong_ = frangeco_ <= frangehl_ * 0.10 and close > high[1] and high[1] < sma10_ and close > open or close > high[2] and close[1] <= high[2] and frangeco_ <= frangeco_ * 0.10 and close > open and high[2] < sma10_
-    _dls = GREENZONE_hack_ and not na(lowleftempty_) and Dlong_ and high - low >= WAverageCandle_ * 0.65
-    _dss = REDZONE_hack_ and not na(highleftempty_) and Dshort_ and high - low >= WAverageCandle_ * 0.65
-    rsi14_ = ta.rsi(close, 14)
+    // Pivot High / Low for Reversals (Strict 10-bar pivot)
+    highleftempty = ta.pivothigh(pivotlbar, 0)
+    lowleftempty  = ta.pivotlow(pivotlbar, 0)
 
-    _bDiv   = not na(ta.pivotlow(rsi14_, 5, 5)[1])  and low[1]  <= ta.lowest(low, 20)[2]   and rsi14_[1] >  ta.lowest(rsi14_, 20)[2]
-    _brDiv  = not na(ta.pivothigh(rsi14_, 5, 5)[1]) and high[1] >= ta.highest(high, 20)[2] and rsi14_[1] <  ta.highest(rsi14_, 20)[2]
-    _bhDiv  = not na(ta.pivotlow(rsi14_, 5, 5)[1])  and low[1]  >  ta.lowest(low, 20)[2]   and rsi14_[1] <= ta.lowest(rsi14_, 20)[2]
-    _brhDiv = not na(ta.pivothigh(rsi14_, 5, 5)[1]) and high[1] <  ta.highest(high, 20)[2] and rsi14_[1] >= ta.highest(rsi14_, 20)[2]
+    // 1. Wick Reversal System
+    Wmybodysize    = math.abs(close - open)
+    WAverageBody   = ta.sma(Wmybodysize, Wbarsback)
+    Wmycandlesize  = high - low
+    WAverageCandle = ta.sma(Wmycandlesize, Wbarsback)
+
+    Wlong = close > open and open - low >= (close - open) * wick_multiplier and high - close <= (high - low) * body_percentage or 
+       close < open and close - low >= (open - close) * wick_multiplier and high - close <= (high - low) * body_percentage or 
+       close == open and close != high and high - low >= (high - close) * wick_multiplier and high - close <= (high - low) * body_percentage or 
+       open == high and close == high and high - low >= ta.sma(high - low, 50)
+
+    Wshort = close < open and high - open >= (open - close) * wick_multiplier and close - low <= (high - low) * body_percentage or 
+       close > open and high - close >= (close - open) * wick_multiplier and close - low <= (high - low) * body_percentage or 
+       close == open and close != low and high - low >= (close - low) * wick_multiplier and close - low <= (high - low) * body_percentage or 
+       open == low and close == low and high - low >= ta.sma(high - low, 50)
+
+    _wls = GREENZONE and not na(lowleftempty) and Wlong and (high - low >= WAverageCandle * WBarMultiplier)
+    _wss = REDZONE and not na(highleftempty) and Wshort and (high - low >= WAverageCandle * WBarMultiplier)
+
+    // 2. Extreme Reversal System
+    AverageCandle = ta.sma(high - low, 50)
+    AverageBody   = ta.sma(math.abs(open - close), 50)
+
+    _els = GREENZONE and (open[1] - close[1] >= ext_bodysize * (high[1] - low[1])) and (high[1] - low[1] > AverageCandle * ext_bodymult) and (open[1] - close[1] > AverageBody) and (close > open)
+    _ess = REDZONE and (close[1] - open[1] >= ext_bodysize * (high[1] - low[1])) and (high[1] - low[1] > AverageCandle * ext_bodymult) and (close[1] - open[1] > AverageBody) and (open > close)
+
+    // 3. Outside Reversal System
+    AverageCandle1 = ta.sma(high - low, 50)
+    _ols = GREENZONE and (low < low[1]) and (close > high[1]) and (high - low >= AverageCandle1 * out_barmult)
+    _oss = REDZONE and (high > high[1]) and (close < low[1]) and (high - low >= AverageCandle1 * out_barmult)
+
+    // 4. Doji Reversal System
+    frangehl = high[1] - low[1]
+    frangeco = math.abs(close[1] - open[1])
+    sma10 = ta.sma(close, 10)
+
+    Dshort = (frangeco <= frangehl * doji_pct and close < low[1] and low[1] > sma10 and close < open) or 
+       (close < low[2] and close[1] >= low[2] and frangeco <= frangeco * doji_pct and close < open and low[2] > sma10)
+
+    Dlong = (frangeco <= frangehl * doji_pct and close > high[1] and high[1] < sma10 and close > open) or 
+       (close > high[2] and close[1] <= high[2] and frangeco <= frangeco * doji_pct and close > open and high[2] < sma10)
+
+    _dls = GREENZONE and not na(lowleftempty) and Dlong and (high - low >= WAverageCandle * doji_barmult)
+    _dss = REDZONE and not na(highleftempty) and Dshort and (high - low >= WAverageCandle * doji_barmult)
+
+    // 5. Divergences
+    rsi14 = ta.rsi(close, 14)
+    _bDiv   = not na(ta.pivotlow(rsi14, 5, 5)[1])  and low[1]  <= ta.lowest(low, 20)[2]   and rsi14[1] >  ta.lowest(rsi14, 20)[2]
+    _brDiv  = not na(ta.pivothigh(rsi14, 5, 5)[1]) and high[1] >= ta.highest(high, 20)[2] and rsi14[1] <  ta.highest(rsi14, 20)[2]
+    _bhDiv  = not na(ta.pivotlow(rsi14, 5, 5)[1])  and low[1]  >  ta.lowest(low, 20)[2]   and rsi14[1] <= ta.lowest(rsi14, 20)[2]
+    _brhDiv = not na(ta.pivothigh(rsi14, 5, 5)[1]) and high[1] <  ta.highest(high, 20)[2] and rsi14[1] >= ta.highest(rsi14, 20)[2]
 
     packSignals18(_mb, _ms, _sb, _ss, _lb, _ls, _wls, _wss, _els, _ess, _ols, _oss, _dls, _dss, _bDiv, _brDiv, _bhDiv, _brhDiv)
 
