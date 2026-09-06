@@ -397,13 +397,13 @@ method divergenceSignal(Zigzag this, array<DivergenceSignalObject> signalObjects
                 trend = properties.trendMethod == 3 ? math.sign(lastTrend) : properties.trendMethod == 1 ? math.sign(dir * (llastRatio - 1)) : math.sign(llastMa - lastMa)
                 divergence = trend == dir and sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
 
+                startBar = llastPivot.point.index
+                endBar   = lastPivot.point.index
+                startPrice = llastPrice
+                endPrice   = lastPrice
+
                 if divergence != 0 and endBar > startBar
                     candidateType = getDivergenceType(dir, divergence)
-
-                    startBar = llastPivot.point.index
-                    endBar   = lastPivot.point.index
-                    startPrice = llastPrice
-                    endPrice   = lastPrice
 
                     validDivergence = true
                     for bar = startBar + 1 to endBar - 1 by 1
