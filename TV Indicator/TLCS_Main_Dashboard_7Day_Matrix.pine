@@ -430,18 +430,11 @@ f_calc_packed() =>
     packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
 
 // ---- SYMBOL INPUT CONFIGURATION -----------------------------------------
-gDomestic = "Domestic Markets (NSE / MCX)"
-u1 = input.symbol("NSE:NIFTY1!", "NIFTY Futures", group=gDomestic)
-u2 = input.symbol("MCX:NATURALGAS1!", "MCX NaturalGas", group=gDomestic)
-u3 = input.symbol("MCX:CRUDEOIL1!", "MCX CrudeOil", group=gDomestic)
-u4 = input.symbol("MCX:GOLD1!", "MCX Gold", group=gDomestic)
-u5 = input.symbol("MCX:SILVER1!", "MCX Silver", group=gDomestic)
-
-gNymex = "Commodities (NYMEX/COMEX)"
-u6 = input.symbol("NYMEX:CL1!", "Futures 1 (Crude)", group=gNymex)
-u7 = input.symbol("NYMEX:NG1!", "Futures 2 (NatGas)", group=gNymex)
-u8 = input.symbol("COMEX:GC1!", "Futures 3 (Gold)", group=gNymex)
-u9 = input.symbol("COMEX:SI1!", "Futures 4 (Silver)", group=gNymex)
+gNymex = "Commodities (NYMEX & COMEX)"
+u1 = input.symbol("NYMEX:CL1!", "Futures 1 (Crude)", group=gNymex)
+u2 = input.symbol("NYMEX:NG1!", "Futures 2 (NatGas)", group=gNymex)
+u3 = input.symbol("COMEX:GC1!", "Futures 3 (Gold)", group=gNymex)
+u4 = input.symbol("COMEX:SI1!", "Futures 4 (Silver)", group=gNymex)
 
 gDisplay = "Dashboard Display"
 tablePosStr  = input.string("Bottom Right", "Table Position", options=["Middle Right", "Middle Left", "Top Right", "Top Center", "Top Left", "Bottom Right", "Bottom Center", "Bottom Left"], group=gDisplay)
@@ -462,21 +455,11 @@ f_get_7d_dt() =>
 [u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6] = request.security(u2, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
 [u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6] = request.security(u3, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
 [u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6] = request.security(u4, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6] = request.security(u5, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6] = request.security(u6, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6] = request.security(u7, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6] = request.security(u8, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6] = request.security(u9, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
 
 [u1_d0, u1_d1, u1_d2, u1_d3, u1_d4, u1_d5, u1_d6] = request.security(u1, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
 [u2_d0, u2_d1, u2_d2, u2_d3, u2_d4, u2_d5, u2_d6] = request.security(u2, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
 [u3_d0, u3_d1, u3_d2, u3_d3, u3_d4, u3_d5, u3_d6] = request.security(u3, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
 [u4_d0, u4_d1, u4_d2, u4_d3, u4_d4, u4_d5, u4_d6] = request.security(u4, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u5_d0, u5_d1, u5_d2, u5_d3, u5_d4, u5_d5, u5_d6] = request.security(u5, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u6_d0, u6_d1, u6_d2, u6_d3, u6_d4, u6_d5, u6_d6] = request.security(u6, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u7_d0, u7_d1, u7_d2, u7_d3, u7_d4, u7_d5, u7_d6] = request.security(u7, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u8_d0, u8_d1, u8_d2, u8_d3, u8_d4, u8_d5, u8_d6] = request.security(u8, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u9_d0, u9_d1, u9_d2, u9_d3, u9_d4, u9_d5, u9_d6] = request.security(u9, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
 
 // 7-Day Matrix Arrays (Column 0 = Today, Column 1 = 1d, ... Column 6 = 6d)
 var bullMissile = matrix.new<string>(7, 0, "")
@@ -733,11 +716,6 @@ if barstate.islast
     f_add_sym_all(u2, u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6, u2_d0, u2_d1, u2_d2, u2_d3, u2_d4, u2_d5, u2_d6)
     f_add_sym_all(u3, u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6, u3_d0, u3_d1, u3_d2, u3_d3, u3_d4, u3_d5, u3_d6)
     f_add_sym_all(u4, u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6, u4_d0, u4_d1, u4_d2, u4_d3, u4_d4, u4_d5, u4_d6)
-    f_add_sym_all(u5, u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6, u5_d0, u5_d1, u5_d2, u5_d3, u5_d4, u5_d5, u5_d6)
-    f_add_sym_all(u6, u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6, u6_d0, u6_d1, u6_d2, u6_d3, u6_d4, u6_d5, u6_d6)
-    f_add_sym_all(u7, u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6, u7_d0, u7_d1, u7_d2, u7_d3, u7_d4, u7_d5, u7_d6)
-    f_add_sym_all(u8, u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6, u8_d0, u8_d1, u8_d2, u8_d3, u8_d4, u8_d5, u8_d6)
-    f_add_sym_all(u9, u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6, u9_d0, u9_d1, u9_d2, u9_d3, u9_d4, u9_d5, u9_d6)
 
     txtSize = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
 
