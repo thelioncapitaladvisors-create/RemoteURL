@@ -2,8 +2,8 @@ name: Weekly Performance Edge Auto-Sync & Session Closure
 
 on:
   schedule:
-    # Sunday 18:30 UTC = Sunday 23:59:59 IST / Monday 00:00:00 IST (End of Trading Week)
-    - cron: '30 18 * * 0'
+    # Sunday 00:00:00 IST = Saturday 18:30:00 UTC (End of Trading Week / Start of Sunday)
+    - cron: '30 18 * * 6'
     # Friday 22:00 UTC = Saturday 03:30 IST (Weekly Close for Traditional Markets & Commodities)
     - cron: '0 22 * * 5'
   
