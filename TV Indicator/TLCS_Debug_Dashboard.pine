@@ -418,6 +418,7 @@ u9 = input.symbol("COMEX:SI1!", "Futures 4 (Silver)", group=gNymex)
 
 gDisplay = "Dashboard Display"
 tableTextSz  = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Normal"], group=gDisplay)
+showAllDbg   = input.bool(false, "Show All Rows & Columns (Even if 0 signals)", group=gDisplay)
 
 f_get_7d_sigs() =>
     s = f_calc_sigs()
@@ -493,13 +494,13 @@ if barstate.islast
 
     activeCols = array.new<int>()
     for c = 0 to numDbgCols - 1
-        if array.get(colActive, c)
+        if array.get(colActive, c) or showAllDbg
             array.push(activeCols, c)
     numActiveCols = array.size(activeCols)
 
     activeRows = array.new<int>()
     for r = 0 to numDbgRows - 1
-        if array.get(rowActive, r)
+        if array.get(rowActive, r) or showAllDbg
             array.push(activeRows, r)
     numActiveRows = array.size(activeRows)
 
