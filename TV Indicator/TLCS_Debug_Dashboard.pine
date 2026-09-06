@@ -1,5 +1,5 @@
 //@version=6
-indicator("TLCS Debug Dashboard", overlay=true, max_labels_count=500)
+indicator("TLCS Debug Dashboard", overlay=true, max_labels_count=500, max_bars_back=1000)
 // © TheLionCapitalsolutions.com and market-store.online
 
 // ---- MEMORY OPTIMIZATION: BITMASK PACKING (PINE SAFE) -----------------------
@@ -48,7 +48,376 @@ out_barmult     = input.float(1.25, 'Outside Reversal Multiplier', step=0.05, ma
 doji_barmult    = input.float(0.65, 'Doji Reversal Multiplier', step=0.05, maxval=3.5, group='Reversal Systems')
 doji_pct        = input.float(0.10, 'Doji Body Percentage', step=0.05, minval=0.05, group='Reversal Systems')
 
-f_calc_sigs() =>
+// ---- DIVERGENCE SETTINGS (AUTHENTIC ZIGZAG ENGINE) ------------------------
+gDiv           = "Divergence Settings"
+divOscType     = input.string('rsi', 'Divergence Oscillator', ['rsi', 'cci', 'cmo', 'cog', 'mfi', 'roc', 'stoch', 'wpr'], group=gDiv)
+divLength      = input.int(14, 'Oscillator Length', minval=1, group=gDiv)
+divZigzagLen   = input.int(13, 'Zigzag Length', minval=2, group=gDiv)
+divRepaint     = input.bool(true, 'Repaint (Fast Pivot Anchor)', group=gDiv)
+
+// =========================================================================
+// AUTHENTIC ZIGZAG DIVERGENCE ENGINE (PARITY WITH MASTER INDICATOR)
+// =========================================================================
+enum CustomSeries
+    EMA
+    SMA
+    RMA
+    HMA
+    WMA
+    VWMA
+    SWMA
+    LINREG
+    MEDIAN
+    MOM
+    HIGH
+    LOW
+    MEDIAN_HIGH
+    MEDIAN_LOW
+    PERCENTRANK
+    HIGHLOW
+
+customseries(float source = close, simple CustomSeries maType = CustomSeries.SMA, simple int length = 14) =>
+    switch maType
+        CustomSeries.EMA => ta.ema(source, length)
+        CustomSeries.SMA => ta.sma(source, length)
+        CustomSeries.RMA => ta.rma(source, length)
+        CustomSeries.HMA => ta.hma(source, length)
+        CustomSeries.WMA => ta.wma(source, length)
+        CustomSeries.VWMA => ta.vwma(source, length)
+        CustomSeries.SWMA => ta.swma(source)
+        CustomSeries.LINREG => ta.linreg(source, length, 0)
+        CustomSeries.MEDIAN => ta.median(source, length)
+        CustomSeries.MOM => ta.mom(source, length)
+        CustomSeries.HIGH => ta.highest(source, length)
+        CustomSeries.LOW => ta.lowest(source, length)
+        CustomSeries.MEDIAN_HIGH => ta.median(ta.highest(source, length), length)
+        CustomSeries.MEDIAN_LOW => ta.median(ta.lowest(source, length), length)
+        CustomSeries.PERCENTRANK => ta.percentrank(source, length)
+        => (ta.highest(length) + ta.lowest(length)) / 2
+
+method ma(simple CustomSeries maType = CustomSeries.SMA, simple int length = 14, float source = close) =>
+    customseries(source, maType, length)
+
+type Indicator
+    float indicatorHigh
+    float indicatorLow
+
+type PivotCandle
+    float _high = high
+    float _low = low
+    int length = 5
+    int pHighBar
+    int pLowBar
+    float pHigh
+    float pLow
+    array<Indicator> indicators
+
+type Pivot
+    chart.point point
+    int dir
+    int level = 0
+    int componentIndex = 0
+    int subComponents = 0
+    int microComponents = 1
+    float ratio = 1.0
+    float sizeRatio = 1.0
+    float barRatio = 1.0
+    array<Pivot> subPivots
+    array<Pivot> micropivots
+    array<string> indicatorNames
+    array<float> indicatorValues
+    array<float> indicatorRatios
+
+type ZigzagFlags
+    bool newPivot = false
+    bool doublePivot = false
+    bool updateLastPivot = false
+
+type Zigzag
+    int length = 5
+    int numberOfPivots = 20
+    int offset = 0
+    int level = 0
+    array<Pivot> zigzagPivots
+    ZigzagFlags flags
+
+method init(array<Indicator> indicators, matrix<float> indicatorValues) =>
+    for i = 0 to na(indicatorValues) or indicatorValues.rows() == 0 ? na : indicatorValues.rows() - 1 by 1
+        iRow = indicatorValues.row(i)
+        Indicator indicator = Indicator.new(iRow.first(), iRow.last())
+        indicators.push(indicator)
+    indicators
+
+method init(PivotCandle candle, matrix<float> indicators = na) =>
+    candle.pHighBar := ta.highestbars(candle._high, candle.length)
+    candle.pLowBar := ta.lowestbars(candle._low, candle.length)
+    candle.pHigh := ta.highest(candle._high, candle.length)
+    candle.pLow := ta.lowest(candle._low, candle.length)
+    candle.indicators := array.new<Indicator>()
+    candle.indicators.init(indicators)
+    candle
+
+method unshift(array<Pivot> arr, Pivot val, int maxItems) =>
+    arr.unshift(val)
+    if arr.size() > maxItems
+        arr.pop()
+
+method update(Pivot this, PivotCandle candle, array<string> indicatorNames) =>
+    dir = math.sign(this.dir)
+    array<float> _indicators = array.new<float>()
+    for indicator in candle.indicators
+        indicatorValue = dir > 0 ? indicator.indicatorHigh : indicator.indicatorLow
+        _indicators.push(indicatorValue)
+    this.indicatorNames := indicatorNames
+    this.indicatorValues := _indicators
+    this.indicatorRatios := array.new<float>()
+    this
+
+method init(Zigzag this) =>
+    if na(this.zigzagPivots)
+        this.zigzagPivots := array.new<Pivot>()
+        this.flags := ZigzagFlags.new()
+        this.flags
+    this
+
+method addnewpivot(Zigzag this, Pivot pivot, array<Pivot> components = na) =>
+    dir = math.sign(pivot.dir)
+    if this.zigzagPivots.size() >= 1
+        lastPivot = this.zigzagPivots.get(0)
+        lastValue = lastPivot.point.price
+        pivot.subComponents := lastPivot.componentIndex - pivot.componentIndex
+        if not na(components) ? components.size() > lastPivot.componentIndex : false
+            pivot.subPivots := components.slice(pivot.componentIndex, lastPivot.componentIndex + 1)
+            microComponents = 0
+            for [index, subPivot] in pivot.subPivots
+                if index != pivot.subPivots.size() - 1
+                    microComponents := microComponents + subPivot.microComponents
+                    if na(subPivot.micropivots) or subPivot.micropivots.size() == 0
+                        pivot.micropivots.push(subPivot)
+                    else
+                        pivot.micropivots.concat(subPivot.micropivots)
+                else if pivot.level == 1
+                    pivot.micropivots.push(subPivot)
+            pivot.microComponents := microComponents
+
+        if math.sign(lastPivot.dir) == math.sign(dir)
+            runtime.error('Direction mismatch')
+        if this.zigzagPivots.size() >= 2
+            llastPivot = this.zigzagPivots.get(1)
+            value = pivot.point.price
+            llastValue = llastPivot.point.price
+            newDir = dir * value > dir * llastValue ? dir * 2 : dir
+            pivot.dir := int(newDir)
+            pivot.ratio := math.round(math.abs(lastValue - value) / math.abs(llastValue - lastValue), 3)
+            pivot.barRatio := math.round(math.abs(lastPivot.point.index - pivot.point.index) / math.abs(llastPivot.point.index - lastPivot.point.index), 3)
+
+            if this.zigzagPivots.size() >= 3
+                lllastPivot = this.zigzagPivots.get(2)
+                lllastValue = lllastPivot.point.price
+                pivot.sizeRatio := math.round(math.abs(lastValue - value) / math.abs(lllastValue - llastValue), 3)
+
+            llastIndicators = llastPivot.indicatorValues
+            indicators = pivot.indicatorValues
+            lastIndicators = lastPivot.indicatorValues
+            pivot.indicatorRatios.clear()
+            for [index, indicatorValue] in indicators
+                lastIndicatorValue = lastIndicators.get(index)
+                llastIndicatorValue = llastIndicators.get(index)
+                indicatorRatio = math.round(math.abs(lastIndicatorValue - indicatorValue) / math.abs(llastIndicatorValue - lastIndicatorValue), 3)
+                pivot.indicatorRatios.push(indicatorRatio)
+    this.zigzagPivots.unshift(pivot, this.numberOfPivots)
+    this
+
+method addnewpivot(Zigzag this, Pivot pivot, PivotCandle candle, array<string> indicatorNames, array<Pivot> components = na) =>
+    pivot.update(candle, indicatorNames)
+    this.addnewpivot(pivot, components)
+
+method calculate(Zigzag this, array<float> ohlc, matrix<float> indicators, array<string> indicatorNames, int ltfHighTime = time, int ltfLowTime = time) =>
+    _ohlc = na(ohlc[this.offset]) ? ohlc : ohlc[this.offset]
+    _indicators = na(indicators[this.offset]) ? indicators : indicators[this.offset]
+    this.init()
+    PivotCandle candle = PivotCandle.new(_ohlc.max(), _ohlc.min(), this.length)
+    candle.init(_indicators)
+    pDir = 1
+    Pivot lastPivot = na
+    this.flags.updateLastPivot := false
+    this.flags.newPivot := false
+    this.flags.doublePivot := false
+    newBar = bar_index - this.offset
+    newbartime = time[this.offset]
+    distanceFromLastPivot = 0
+    forceDoublePivot = false
+
+    if this.zigzagPivots.size() > 0
+        lastPivot := this.zigzagPivots.get(0)
+        pDir := int(math.sign(lastPivot.dir))
+        distanceFromLastPivot := newBar - lastPivot.point.index
+
+    if this.zigzagPivots.size() > 1
+        llastPivot = this.zigzagPivots.get(1)
+        llastDir = int(math.sign(llastPivot.dir))
+        forceDoublePivot := pDir == 1 and candle.pLowBar == 0 ? candle.pLow < llastPivot.point.price : pDir == -1 and candle.pHighBar == 0 ? candle.pHigh > llastPivot.point.price : false
+
+    overflow = distanceFromLastPivot >= this.length
+
+    if (pDir == 1 and candle.pHighBar == 0 or pDir == -1 and candle.pLowBar == 0) and this.zigzagPivots.size() >= 1
+        value = pDir == 1 ? candle.pHigh : candle.pLow
+        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
+        inewbartime = pDir == 1 ? ltfHighTime[this.offset] : ltfLowTime[this.offset]
+        removeOld = value * lastPivot.dir >= lastPivot.point.price * lastPivot.dir
+        if removeOld
+            this.flags.updateLastPivot := true
+            this.flags.newPivot := true
+            this.zigzagPivots.shift()
+            newPivotObject = Pivot.new(chart.point.from_index(newBar, value), pDir, micropivots = array.new<Pivot>())
+            newPivotObject.point.time := inewbartime
+            this.addnewpivot(newPivotObject, candle, indicatorNames)
+
+    if pDir == 1 and candle.pLowBar == 0 or pDir == -1 and candle.pHighBar == 0 and (not this.flags.newPivot or forceDoublePivot)
+        value = pDir == 1 ? candle.pLow : candle.pHigh
+        inewbartime = pDir == 1 ? ltfLowTime[this.offset] : ltfHighTime[this.offset]
+        newPivotObject = Pivot.new(chart.point.from_index(newBar, value), -pDir, micropivots = array.new<Pivot>())
+        newPivotObject.point.time := inewbartime
+        this.addnewpivot(newPivotObject, candle, indicatorNames)
+        this.flags.doublePivot := this.flags.newPivot
+        this.flags.newPivot := true
+
+    if overflow and not this.flags.newPivot
+        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
+        ipivotbar = pDir == 1 ? newBar + candle.pLowBar : newBar + candle.pHighBar
+        ipivottime = pDir == 1 ? ltfLowTime[newBar - ipivotbar + this.offset] : ltfHighTime[newBar - ipivotbar + this.offset]
+        offset = newBar - ipivotbar
+        PivotCandle iCandle = na
+        if offset == 0
+            iCandle := candle
+        else
+            iPrice = close[offset]
+            iMa    = ta.sma(close, 200)[offset]
+            iIndicators = matrix.new<float>()
+            iIndicators.add_row(0, array.from(iPrice, iPrice, iPrice))
+            iIndicators.add_row(1, array.from(iMa, iMa, iMa))
+            iIndicators.add_row(2, array.from(iPrice, iPrice, iPrice))
+            iCandle := PivotCandle.new(ipivot, ipivot, this.length)
+            iCandle.indicators := array.new<Indicator>()
+            iCandle.indicators.init(iIndicators)
+        newPivotObject = Pivot.new(chart.point.from_index(ipivotbar, ipivot), -pDir, micropivots = array.new<Pivot>())
+        newPivotObject.point.time := ipivottime
+        this.addnewpivot(newPivotObject, iCandle, indicatorNames)
+        this.flags.newPivot := true
+    this
+
+oscillator(simple string type = 'rsi', simple int length = 14, float source = close, float highSource = high, float lowSource = low) =>
+    osc = switch type
+        'cci'   => ta.cci(source, length)
+        'cmo'   => ta.cmo(source, length)
+        'cog'   => ta.cog(source, length)
+        'mfi'   => ta.mfi(source, length)
+        'roc'   => ta.roc(source, length)
+        'rsi'   => ta.rsi(source, length)
+        'stoch' => ta.stoch(source, highSource, lowSource, length)
+        'wpr'   => ta.wpr(length)
+        => ta.rsi(source, length)
+    osc
+
+enum DivergenceType
+    BullishDivergence = "Bullish Divergence"
+    BearishDivergence = "Bearish Divergence"
+    BullishHiddenDivergence = "Bullish Hidden Divergence"
+    BearishHiddenDivergence = "Bearish Hidden Divergence"
+    None = "None"
+
+type ZigzagProperties
+    int trendMethod = 1
+    bool repaint = true
+
+enum PivotDirection
+    HH = "Higher High"
+    LH = "Lower High"
+    HL = "Higher Low"
+    LL = "Lower Low"
+
+getDivergenceType(direction, divergence) =>
+    direction > 0 ?
+         (divergence > 0 ? DivergenceType.BearishDivergence : DivergenceType.BearishHiddenDivergence) :
+         (divergence > 0 ? DivergenceType.BullishDivergence : DivergenceType.BullishHiddenDivergence)
+
+getPivotDirection(dir, ratio) =>
+    dir > 0 ? (ratio > 1 ? PivotDirection.HH : PivotDirection.LH) : ratio > 1 ? PivotDirection.LL : PivotDirection.HL
+
+type DivergenceSignalObject
+    int startIndex
+    int endIndex
+    DivergenceType divergenceType
+
+method divergenceSignal(Zigzag this, array<DivergenceSignalObject> signalObjects, ZigzagProperties properties) =>
+    startIndex = properties.repaint ? 0 : 1
+    DivergenceType divergenceType = DivergenceType.None
+    if this.zigzagPivots.size() > 2 + startIndex
+        lastPivot = this.zigzagPivots.get(startIndex)
+        llastPivot = this.zigzagPivots.get(startIndex + 2)
+        skip = false
+        if this.flags.updateLastPivot
+            if signalObjects.size() > 0
+                lastSignal = signalObjects.last()
+                divergenceStartBar = lastSignal.startIndex
+                llastPivotBar = llastPivot.point.index
+
+                divergenceEndBar = lastSignal.endIndex
+                lastPivotBar = lastPivot.point.index
+                if llastPivotBar == divergenceStartBar and lastPivotBar > divergenceEndBar
+                    signalObjects.pop()
+                skip := llastPivotBar == divergenceStartBar and lastPivotBar == divergenceEndBar
+                skip
+
+        if this.flags.newPivot and not skip
+            dir = math.sign(lastPivot.dir)
+            lastPrice = lastPivot.indicatorValues.get(0)
+            oscRatio = lastPivot.ratio
+            priceRatio = lastPivot.indicatorRatios.get(0)
+
+            priceDirection = getPivotDirection(lastPivot.dir, priceRatio)
+            oscillatorDirection = getPivotDirection(lastPivot.dir, oscRatio)
+
+            lastTrend = lastPivot.indicatorValues.get(2)
+            lastMa = lastPivot.indicatorValues.get(1)
+
+            if priceDirection != oscillatorDirection and llastPivot.indicatorRatios.size() > 0
+                llastPrice = llastPivot.indicatorValues.get(0)
+                llastRatio = llastPivot.indicatorRatios.get(0)
+                llastMa = llastPivot.indicatorValues.get(1)
+
+                sentiment = math.sign(oscRatio - priceRatio)
+                trend = properties.trendMethod == 3 ? math.sign(lastTrend) : properties.trendMethod == 1 ? math.sign(dir * (llastRatio - 1)) : math.sign(llastMa - lastMa)
+                divergence = trend == dir and sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
+
+                if divergence != 0 and endBar > startBar
+                    candidateType = getDivergenceType(dir, divergence)
+
+                    startBar = llastPivot.point.index
+                    endBar   = lastPivot.point.index
+                    startPrice = llastPrice
+                    endPrice   = lastPrice
+
+                    validDivergence = true
+                    for bar = startBar + 1 to endBar - 1 by 1
+                        offsetBar = bar_index - bar
+                        if offsetBar >= 0
+                            priceAtBar = close[offsetBar]
+                            priceTheo = startPrice + ((endPrice - startPrice) / (endBar - startBar)) * (bar - startBar)
+
+                            if priceAtBar * dir > priceTheo * dir
+                                validDivergence := false
+                                break
+
+                    if validDivergence
+                        divergenceType := candidateType
+                        signalObjects.push(DivergenceSignalObject.new(startBar, endBar, divergenceType))
+                        if signalObjects.size() > 50
+                            signalObjects.shift()
+
+    divergenceType
+
+f_calc_sigs_impl(Zigzag zz, ZigzagProperties zzProps, array<DivergenceSignalObject> divSigObjects) =>
     fPivot = (high + low + close) / 3
     fFastEMA1 = 5
     fSlowEMA1 = 13
@@ -171,14 +540,80 @@ f_calc_sigs() =>
     _dls = GREENZONE and not na(lowleftempty) and Dlong and (high - low >= WAverageCandle * doji_barmult)
     _dss = REDZONE and not na(highleftempty) and Dshort and (high - low >= WAverageCandle * doji_barmult)
 
-    // 5. Divergences
-    rsi14 = ta.rsi(close, 14)
-    _bDiv   = not na(ta.pivotlow(rsi14, 5, 5)[1])  and low[1]  <= ta.lowest(low, 20)[2]   and rsi14[1] >  ta.lowest(rsi14, 20)[2]
-    _brDiv  = not na(ta.pivothigh(rsi14, 5, 5)[1]) and high[1] >= ta.highest(high, 20)[2] and rsi14[1] <  ta.highest(rsi14, 20)[2]
-    _bhDiv  = not na(ta.pivotlow(rsi14, 5, 5)[1])  and low[1]  >  ta.lowest(low, 20)[2]   and rsi14[1] <= ta.lowest(rsi14, 20)[2]
-    _brhDiv = not na(ta.pivothigh(rsi14, 5, 5)[1]) and high[1] <  ta.highest(high, 20)[2] and rsi14[1] >= ta.highest(rsi14, 20)[2]
+    // 5. Divergences (Authentic Zigzag Divergence Engine)
+    oscVal = oscillator(divOscType, divLength)
+    maVal  = ta.sma(close, 200)
+    divIndicators = matrix.new<float>()
+    divIndicatorNames = array.from('Price', 'SMA-200', 'External Trend')
+    divIndicators.add_row(0, array.from(close, close, close))
+    divIndicators.add_row(1, array.from(maVal, maVal, maVal))
+    divIndicators.add_row(2, array.from(close, close, close))
+
+    zzProps.repaint := divRepaint
+    zz.length := divZigzagLen
+    zz.calculate(array.from(oscVal), divIndicators, divIndicatorNames)
+    currentDiv = zz.divergenceSignal(divSigObjects, zzProps)
+
+    _bDiv   = currentDiv == DivergenceType.BullishDivergence
+    _brDiv  = currentDiv == DivergenceType.BearishDivergence
+    _bhDiv  = currentDiv == DivergenceType.BullishHiddenDivergence
+    _brhDiv = currentDiv == DivergenceType.BearishHiddenDivergence
 
     packSignals18(_mb, _ms, _sb, _ss, _lb, _ls, _wls, _wss, _els, _ess, _ols, _oss, _dls, _dss, _bDiv, _brDiv, _bhDiv, _brhDiv)
+
+f_calc_sigs_1() =>
+    var Zigzag zz = Zigzag.new(divZigzagLen, 300, 0)
+    var ZigzagProperties zzProps = ZigzagProperties.new(1, divRepaint)
+    var divSigObjects = array.new<DivergenceSignalObject>()
+    f_calc_sigs_impl(zz, zzProps, divSigObjects)
+
+f_calc_sigs_2() =>
+    var Zigzag zz = Zigzag.new(divZigzagLen, 300, 0)
+    var ZigzagProperties zzProps = ZigzagProperties.new(1, divRepaint)
+    var divSigObjects = array.new<DivergenceSignalObject>()
+    f_calc_sigs_impl(zz, zzProps, divSigObjects)
+
+f_calc_sigs_3() =>
+    var Zigzag zz = Zigzag.new(divZigzagLen, 300, 0)
+    var ZigzagProperties zzProps = ZigzagProperties.new(1, divRepaint)
+    var divSigObjects = array.new<DivergenceSignalObject>()
+    f_calc_sigs_impl(zz, zzProps, divSigObjects)
+
+f_calc_sigs_4() =>
+    var Zigzag zz = Zigzag.new(divZigzagLen, 300, 0)
+    var ZigzagProperties zzProps = ZigzagProperties.new(1, divRepaint)
+    var divSigObjects = array.new<DivergenceSignalObject>()
+    f_calc_sigs_impl(zz, zzProps, divSigObjects)
+
+f_calc_sigs_5() =>
+    var Zigzag zz = Zigzag.new(divZigzagLen, 300, 0)
+    var ZigzagProperties zzProps = ZigzagProperties.new(1, divRepaint)
+    var divSigObjects = array.new<DivergenceSignalObject>()
+    f_calc_sigs_impl(zz, zzProps, divSigObjects)
+
+f_calc_sigs_6() =>
+    var Zigzag zz = Zigzag.new(divZigzagLen, 300, 0)
+    var ZigzagProperties zzProps = ZigzagProperties.new(1, divRepaint)
+    var divSigObjects = array.new<DivergenceSignalObject>()
+    f_calc_sigs_impl(zz, zzProps, divSigObjects)
+
+f_calc_sigs_7() =>
+    var Zigzag zz = Zigzag.new(divZigzagLen, 300, 0)
+    var ZigzagProperties zzProps = ZigzagProperties.new(1, divRepaint)
+    var divSigObjects = array.new<DivergenceSignalObject>()
+    f_calc_sigs_impl(zz, zzProps, divSigObjects)
+
+f_calc_sigs_8() =>
+    var Zigzag zz = Zigzag.new(divZigzagLen, 300, 0)
+    var ZigzagProperties zzProps = ZigzagProperties.new(1, divRepaint)
+    var divSigObjects = array.new<DivergenceSignalObject>()
+    f_calc_sigs_impl(zz, zzProps, divSigObjects)
+
+f_calc_sigs_9() =>
+    var Zigzag zz = Zigzag.new(divZigzagLen, 300, 0)
+    var ZigzagProperties zzProps = ZigzagProperties.new(1, divRepaint)
+    var divSigObjects = array.new<DivergenceSignalObject>()
+    f_calc_sigs_impl(zz, zzProps, divSigObjects)
 
 // ---- DAY TYPE BLUEPRINTS & SEQUENCES ENGINE --------------------------------
 adrLen = input.int(10, "ATR Lookback (bars)", minval=2, group="Blueprints Settings")
@@ -204,7 +639,30 @@ srdStructLen = input.int(5, "Lookback for prior swing high/low for MID check (ba
 maxActiveDays = input.int(20, "Max Days a Rejection/Stop Run/Failed Absorption Sequence Stays Active", minval=1, group="Blueprints Settings")
 accMaxActiveDays = input.int(60, "Max Days an Accumulation Sequence Stays Active", minval=1, group="Blueprints Settings")
 
-f_calc() =>
+type SeqState
+    int   accActiveStartBar = na
+    float accActiveMid      = na
+    bool  bullAccActive     = false
+    bool  bearAccActive     = false
+    int   rejActiveStartBar = na
+    float rejActiveMid      = na
+    float rejActiveHigh     = na
+    float rejActiveLow      = na
+    bool  bullRejActive     = false
+    bool  bearRejActive     = false
+    int   bullFailedAbsStartBar = na
+    int   bearFailedAbsStartBar = na
+    bool  bullFailedAbsActive   = false
+    bool  bearFailedAbsActive   = false
+    int   srdActiveStartBar = na
+    float srdActiveMid      = na
+    float srdActiveExt      = na
+    bool  bullSrdActive     = false
+    bool  bearSrdActive     = false
+    bool  prevActiveDayBull = false
+    bool  prevActiveDayBear = false
+
+f_calc(SeqState st) =>
     rng    = high - low
     body   = math.abs(close - open)
     upWick = high - math.max(open, close)
@@ -219,20 +677,16 @@ f_calc() =>
     bullAcc = isCompressing and close >= (accHigh + accLow) / 2
     bearDist = isCompressing and close < (accHigh + accLow) / 2
 
-    var int   accActiveStartBar = na
-    var float accActiveMid  = na
-    var bool  bullAccActive = false
-    var bool  bearAccActive = false
     if bullAcc
-        accActiveMid     := (accHigh + accLow) / 2
-        accActiveStartBar := bar_index
-        bullAccActive    := true
-        bearAccActive    := false
+        st.accActiveMid      := (accHigh + accLow) / 2
+        st.accActiveStartBar := bar_index
+        st.bullAccActive     := true
+        st.bearAccActive     := false
     else if bearDist
-        accActiveMid     := (accHigh + accLow) / 2
-        accActiveStartBar := bar_index
-        bearAccActive    := true
-        bullAccActive    := false
+        st.accActiveMid      := (accHigh + accLow) / 2
+        st.accActiveStartBar := bar_index
+        st.bearAccActive     := true
+        st.bullAccActive     := false
 
     rejRangeOK  = avgRange > 0 and rng > adrMultMin * avgRange
     bullTailOK  = body > 0 ? dnWick > tailBodyMult * body : dnWick > 0
@@ -257,103 +711,88 @@ f_calc() =>
     bearSrdMidExt     = mid <= ta.lowest(low, srdStructLen)[1]
     bearSrdSignal     = srdRangeOK and bearSrdClosePosOK and bearSrdCloseExt and bearSrdMidExt
 
-    if bullAccActive and bullSrdSignal
-        accActiveMid := mid
-    if bearAccActive and bearSrdSignal
-        accActiveMid := mid
-    if bullAccActive and close < accActiveMid
-        bullAccActive := false
-    if bearAccActive and close > accActiveMid
-        bearAccActive := false
-    if bullAccActive and not na(accActiveStartBar) and (bar_index - accActiveStartBar) > accMaxActiveDays
-        bullAccActive := false
-    if bearAccActive and not na(accActiveStartBar) and (bar_index - accActiveStartBar) > accMaxActiveDays
-        bearAccActive := false
+    if st.bullAccActive and bullSrdSignal
+        st.accActiveMid := mid
+    if st.bearAccActive and bearSrdSignal
+        st.accActiveMid := mid
+    if st.bullAccActive and close < st.accActiveMid
+        st.bullAccActive := false
+    if st.bearAccActive and close > st.accActiveMid
+        st.bearAccActive := false
+    if st.bullAccActive and not na(st.accActiveStartBar) and (bar_index - st.accActiveStartBar) > accMaxActiveDays
+        st.bullAccActive := false
+    if st.bearAccActive and not na(st.accActiveStartBar) and (bar_index - st.accActiveStartBar) > accMaxActiveDays
+        st.bearAccActive := false
 
-    var int   rejActiveStartBar = na
-    var float rejActiveMid   = na
-    var float rejActiveHigh  = na
-    var float rejActiveLow   = na
-    var bool  bullRejActive  = false
-    var bool  bearRejActive  = false
-    var int   bullFailedAbsStartBar = na
-    var int   bearFailedAbsStartBar = na
-    var bool  bullFailedAbsActive = false
-    var bool  bearFailedAbsActive = false
     int barsSinceRej = ta.barssince(bullRej or bearRej)
     if bullRej
-        rejActiveMid  := mid
-        rejActiveHigh := high
-        rejActiveLow  := low
-        rejActiveStartBar := bar_index
-        bullRejActive := true
-        bearRejActive := false
-        bullFailedAbsActive := false
-        bearFailedAbsActive := false
+        st.rejActiveMid  := mid
+        st.rejActiveHigh := high
+        st.rejActiveLow  := low
+        st.rejActiveStartBar := bar_index
+        st.bullRejActive := true
+        st.bearRejActive := false
+        st.bullFailedAbsActive := false
+        st.bearFailedAbsActive := false
     else if bearRej
-        rejActiveMid  := mid
-        rejActiveHigh := high
-        rejActiveLow  := low
-        rejActiveStartBar := bar_index
-        bearRejActive := true
-        bullRejActive := false
-        bullFailedAbsActive := false
-        bearFailedAbsActive := false
-    if bullRejActive and close < rejActiveMid
-        bullRejActive := false
-        bearFailedAbsActive := true
-        bearFailedAbsStartBar := bar_index
-    if bearRejActive and close > rejActiveMid
-        bearRejActive := false
-        bullFailedAbsActive := true
-        bullFailedAbsStartBar := bar_index
-    if bearFailedAbsActive and close > rejActiveHigh
-        bearFailedAbsActive := false
-    if bullFailedAbsActive and close < rejActiveLow
-        bullFailedAbsActive := false
-    if bullRejActive and not na(rejActiveStartBar) and (bar_index - rejActiveStartBar) > maxActiveDays
-        bullRejActive := false
-    if bearRejActive and not na(rejActiveStartBar) and (bar_index - rejActiveStartBar) > maxActiveDays
-        bearRejActive := false
-    if bullFailedAbsActive and not na(bullFailedAbsStartBar) and (bar_index - bullFailedAbsStartBar) > maxActiveDays
-        bullFailedAbsActive := false
-    if bearFailedAbsActive and not na(bearFailedAbsStartBar) and (bar_index - bearFailedAbsStartBar) > maxActiveDays
-        bearFailedAbsActive := false
+        st.rejActiveMid  := mid
+        st.rejActiveHigh := high
+        st.rejActiveLow  := low
+        st.rejActiveStartBar := bar_index
+        st.bearRejActive := true
+        st.bullRejActive := false
+        st.bullFailedAbsActive := false
+        st.bearFailedAbsActive := false
+    if st.bullRejActive and close < st.rejActiveMid
+        st.bullRejActive := false
+        st.bearFailedAbsActive := true
+        st.bearFailedAbsStartBar := bar_index
+    if st.bearRejActive and close > st.rejActiveMid
+        st.bearRejActive := false
+        st.bullFailedAbsActive := true
+        st.bullFailedAbsStartBar := bar_index
+    if st.bearFailedAbsActive and close > st.rejActiveHigh
+        st.bearFailedAbsActive := false
+    if st.bullFailedAbsActive and close < st.rejActiveLow
+        st.bullFailedAbsActive := false
+    if st.bullRejActive and not na(st.rejActiveStartBar) and (bar_index - st.rejActiveStartBar) > maxActiveDays
+        st.bullRejActive := false
+    if st.bearRejActive and not na(st.rejActiveStartBar) and (bar_index - st.rejActiveStartBar) > maxActiveDays
+        st.bearRejActive := false
+    if st.bullFailedAbsActive and not na(st.bullFailedAbsStartBar) and (bar_index - st.bullFailedAbsStartBar) > maxActiveDays
+        st.bullFailedAbsActive := false
+    if st.bearFailedAbsActive and not na(st.bearFailedAbsStartBar) and (bar_index - st.bearFailedAbsStartBar) > maxActiveDays
+        st.bearFailedAbsActive := false
 
-    var int   srdActiveStartBar = na
-    var float srdActiveMid   = na
-    var float srdActiveExt   = na
-    var bool  bullSrdActive  = false
-    var bool  bearSrdActive  = false
     int barsSinceSrd = ta.barssince(bullSrdSignal or bearSrdSignal)
     if bullSrdSignal
-        srdActiveMid  := mid
-        srdActiveExt  := high
-        srdActiveStartBar := bar_index
-        bullSrdActive := true
-        bearSrdActive := false
+        st.srdActiveMid  := mid
+        st.srdActiveExt  := high
+        st.srdActiveStartBar := bar_index
+        st.bullSrdActive := true
+        st.bearSrdActive := false
     else if bearSrdSignal
-        srdActiveMid  := mid
-        srdActiveExt  := low
-        srdActiveStartBar := bar_index
-        bearSrdActive := true
-        bullSrdActive := false
-    if bullSrdActive and close < srdActiveMid
-        bullSrdActive := false
-    if bearSrdActive and close > srdActiveMid
-        bearSrdActive := false
-    if bullSrdActive and not na(srdActiveStartBar) and (bar_index - srdActiveStartBar) > maxActiveDays
-        bullSrdActive := false
-    if bearSrdActive and not na(srdActiveStartBar) and (bar_index - srdActiveStartBar) > maxActiveDays
-        bearSrdActive := false
+        st.srdActiveMid  := mid
+        st.srdActiveExt  := low
+        st.srdActiveStartBar := bar_index
+        st.bearSrdActive := true
+        st.bullSrdActive := false
+    if st.bullSrdActive and close < st.srdActiveMid
+        st.bullSrdActive := false
+    if st.bearSrdActive and close > st.srdActiveMid
+        st.bearSrdActive := false
+    if st.bullSrdActive and not na(st.srdActiveStartBar) and (bar_index - st.srdActiveStartBar) > maxActiveDays
+        st.bullSrdActive := false
+    if st.bearSrdActive and not na(st.srdActiveStartBar) and (bar_index - st.srdActiveStartBar) > maxActiveDays
+        st.bearSrdActive := false
 
-    bullFade = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and high >= srdActiveExt * 0.995 and close < open
-    bearFade = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and low <= srdActiveExt * 1.005 and close > open
+    bullFade = st.bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and high >= st.srdActiveExt * 0.995 and close < open
+    bearFade = st.bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and low <= st.srdActiveExt * 1.005 and close > open
     absRangeOK = avgRange > 0 and rng < absAdrMaxMult * avgRange
-    bullAbs_Rej = bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close > rejActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - rejActiveMid) <= rejActiveMid * absMidTolPct
-    bearAbs_Rej = bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close < rejActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - rejActiveMid) <= rejActiveMid * absMidTolPct
-    bullAbs_Srd = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close > srdActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - srdActiveMid) <= srdActiveMid * absMidTolPct
-    bearAbs_Srd = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close < srdActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - srdActiveMid) <= srdActiveMid * absMidTolPct
+    bullAbs_Rej = st.bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close > st.rejActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - st.rejActiveMid) <= st.rejActiveMid * absMidTolPct
+    bearAbs_Rej = st.bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close < st.rejActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - st.rejActiveMid) <= st.rejActiveMid * absMidTolPct
+    bullAbs_Srd = st.bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close > st.srdActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - st.srdActiveMid) <= st.srdActiveMid * absMidTolPct
+    bearAbs_Srd = st.bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close < st.srdActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - st.srdActiveMid) <= st.srdActiveMid * absMidTolPct
     odRangeOK = avgRange > 0 and rng > odAdrMultMin * avgRange
     odBull = odRangeOK and low < low[1] and close > high[1]
     odBear = odRangeOK and high > high[1] and close < low[1]
@@ -367,25 +806,23 @@ f_calc() =>
     fnhSweep  = high > priorHighSweep
     fnhClose  = close < priorHighSweep and (requireAboveYMid ? close < yMidFnl : true)
     fnhSignal = fnlRangeOK and fnhSweep and fnhClose
-    bullFnl_Rej = bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnlSignal
-    bearFnh_Rej = bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnhSignal
-    bullFnl_Srd = bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnlSignal
-    bearFnh_Srd = bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnhSignal
-    int barsSinceFa = ta.barssince(bullFailedAbsActive or bearFailedAbsActive)
-    bullFailedBreakout = bullFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and low <= low[1] and close > open
-    bearFailedBreakout = bearFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and high >= high[1] and close < open
-    bullRetestAfterSrd = bullFailedAbsActive and (bullFade or bullAbs_Srd)
-    bearRetestAfterSrd = bearFailedAbsActive and (bearFade or bearAbs_Srd)
+    bullFnl_Rej = st.bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnlSignal
+    bearFnh_Rej = st.bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnhSignal
+    bullFnl_Srd = st.bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnlSignal
+    bearFnh_Srd = st.bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnhSignal
+    int barsSinceFa = ta.barssince(st.bullFailedAbsActive or st.bearFailedAbsActive)
+    bullFailedBreakout = st.bullFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and low <= low[1] and close > open
+    bearFailedBreakout = st.bearFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and high >= high[1] and close < open
+    bullRetestAfterSrd = st.bullFailedAbsActive and (bullFade or bullAbs_Srd)
+    bearRetestAfterSrd = st.bearFailedAbsActive and (bearFade or bearAbs_Srd)
     bullFade_final = bullFade and not bullRetestAfterSrd
     bearFade_final = bearFade and not bearRetestAfterSrd
     unifiedBullAbs = bullAbs_Rej or (bullAbs_Srd and not bullRetestAfterSrd)
     unifiedBearAbs = bearAbs_Rej or (bearAbs_Srd and not bearRetestAfterSrd)
-    var bool prevActiveDayBull = false
-    var bool prevActiveDayBear = false
-    bullCont = prevActiveDayBull and close > close[1]
-    bearCont = prevActiveDayBear and close < close[1]
-    prevActiveDayBull := bullRej or bullSrdSignal or unifiedBullAbs or fnlSignal or bullFailedBreakout or bullRetestAfterSrd
-    prevActiveDayBear := bearRej or bearSrdSignal or unifiedBearAbs or fnhSignal or bearFailedBreakout or bearRetestAfterSrd
+    bullCont = st.prevActiveDayBull and close > close[1]
+    bearCont = st.prevActiveDayBear and close < close[1]
+    st.prevActiveDayBull := bullRej or bullSrdSignal or unifiedBullAbs or fnlSignal or bullFailedBreakout or bullRetestAfterSrd
+    st.prevActiveDayBear := bearRej or bearSrdSignal or unifiedBearAbs or fnhSignal or bearFailedBreakout or bearRetestAfterSrd
 
     bullRejSeqHit = bullRej or bullAbs_Rej or bullFnl_Rej or bullRetestAfterSrd or bullCont
     bearRejSeqHit = bearRej or bearAbs_Rej or bearFnh_Rej or bearRetestAfterSrd or bearCont
@@ -393,13 +830,54 @@ f_calc() =>
     bearSrdSeqHit = bearSrdSignal or bearFade_final or bearAbs_Srd or bearFnh_Srd or bearCont
     bullFailAbsSeqHit = bullFailedBreakout or bullRetestAfterSrd
     bearFailAbsSeqHit = bearFailedBreakout or bearRetestAfterSrd
-    bullAccSeqHit = bullAccActive and (bullAcc or bullRej or bullSrdSignal or unifiedBullAbs or bullRetestAfterSrd or bullCont)
-    bearAccSeqHit = bearAccActive and (bearDist or bearRej or bearSrdSignal or unifiedBearAbs or bearRetestAfterSrd or bearCont)
+    bullAccSeqHit = st.bullAccActive and (bullAcc or bullRej or bullSrdSignal or unifiedBullAbs or bullRetestAfterSrd or bullCont)
+    bearAccSeqHit = st.bearAccActive and (bearDist or bearRej or bearSrdSignal or unifiedBearAbs or bearRetestAfterSrd or bearCont)
 
     [bullAcc, bearDist, bullRej, bearRej, bullSrdSignal, bearSrdSignal, odBull, odBear, bullFade_final, bearFade_final, unifiedBullAbs, unifiedBearAbs, fnlSignal, fnhSignal, bullFailedBreakout, bearFailedBreakout, bullRetestAfterSrd, bearRetestAfterSrd, bullCont, bearCont, bullRejSeqHit, bearRejSeqHit, bullSrdSeqHit, bearSrdSeqHit, bullFailAbsSeqHit, bearFailAbsSeqHit, bullAccSeqHit, bearAccSeqHit]
 
-f_calc_packed() =>
-    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc()
+f_calc_dt_1() =>
+    var SeqState st = SeqState.new()
+    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
+    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
+
+f_calc_dt_2() =>
+    var SeqState st = SeqState.new()
+    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
+    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
+
+f_calc_dt_3() =>
+    var SeqState st = SeqState.new()
+    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
+    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
+
+f_calc_dt_4() =>
+    var SeqState st = SeqState.new()
+    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
+    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
+
+f_calc_dt_5() =>
+    var SeqState st = SeqState.new()
+    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
+    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
+
+f_calc_dt_6() =>
+    var SeqState st = SeqState.new()
+    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
+    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
+
+f_calc_dt_7() =>
+    var SeqState st = SeqState.new()
+    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
+    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
+
+f_calc_dt_8() =>
+    var SeqState st = SeqState.new()
+    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
+    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
+
+f_calc_dt_9() =>
+    var SeqState st = SeqState.new()
+    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
     packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
 
 // ---- SYMBOLS & REQUESTS -----------------------------------------
@@ -419,12 +897,76 @@ u9 = input.symbol("COMEX:SI1!", "Futures 4 (Silver)", group=gNymex)
 gDisplay = "Dashboard Display"
 tableTextSz  = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Normal"], group=gDisplay)
 
-f_get_7d_sigs() =>
-    s = f_calc_sigs()
+f_get_7d_sigs_1() =>
+    s = f_calc_sigs_1()
     [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
 
-f_get_7d_dt() =>
-    d = f_calc_packed()
+f_get_7d_sigs_2() =>
+    s = f_calc_sigs_2()
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+
+f_get_7d_sigs_3() =>
+    s = f_calc_sigs_3()
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+
+f_get_7d_sigs_4() =>
+    s = f_calc_sigs_4()
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+
+f_get_7d_sigs_5() =>
+    s = f_calc_sigs_5()
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+
+f_get_7d_sigs_6() =>
+    s = f_calc_sigs_6()
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+
+f_get_7d_sigs_7() =>
+    s = f_calc_sigs_7()
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+
+f_get_7d_sigs_8() =>
+    s = f_calc_sigs_8()
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+
+f_get_7d_sigs_9() =>
+    s = f_calc_sigs_9()
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+
+f_get_7d_dt_1() =>
+    d = f_calc_dt_1()
+    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
+
+f_get_7d_dt_2() =>
+    d = f_calc_dt_2()
+    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
+
+f_get_7d_dt_3() =>
+    d = f_calc_dt_3()
+    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
+
+f_get_7d_dt_4() =>
+    d = f_calc_dt_4()
+    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
+
+f_get_7d_dt_5() =>
+    d = f_calc_dt_5()
+    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
+
+f_get_7d_dt_6() =>
+    d = f_calc_dt_6()
+    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
+
+f_get_7d_dt_7() =>
+    d = f_calc_dt_7()
+    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
+
+f_get_7d_dt_8() =>
+    d = f_calc_dt_8()
+    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
+
+f_get_7d_dt_9() =>
+    d = f_calc_dt_9()
     [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
 
 f_dbgCell(pack, bullBit, bearBit) =>
@@ -432,25 +974,25 @@ f_dbgCell(pack, bullBit, bearBit) =>
     bearHit = unpackBit(pack, bearBit)
     bullHit and bearHit ? "▲▼" : bullHit ? "▲" : bearHit ? "▼" : "-"
 
-[u1_s0, u1_s1, u1_s2, u1_s3, u1_s4, u1_s5, u1_s6] = request.security(u1, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6] = request.security(u2, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6] = request.security(u3, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6] = request.security(u4, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6] = request.security(u5, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6] = request.security(u6, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6] = request.security(u7, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6] = request.security(u8, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
-[u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6] = request.security(u9, "D", f_get_7d_sigs(), lookahead=barmerge.lookahead_on)
+[u1_s0, u1_s1, u1_s2, u1_s3, u1_s4, u1_s5, u1_s6] = request.security(u1, "D", f_get_7d_sigs_1(), lookahead=barmerge.lookahead_on)
+[u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6] = request.security(u2, "D", f_get_7d_sigs_2(), lookahead=barmerge.lookahead_on)
+[u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6] = request.security(u3, "D", f_get_7d_sigs_3(), lookahead=barmerge.lookahead_on)
+[u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6] = request.security(u4, "D", f_get_7d_sigs_4(), lookahead=barmerge.lookahead_on)
+[u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6] = request.security(u5, "D", f_get_7d_sigs_5(), lookahead=barmerge.lookahead_on)
+[u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6] = request.security(u6, "D", f_get_7d_sigs_6(), lookahead=barmerge.lookahead_on)
+[u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6] = request.security(u7, "D", f_get_7d_sigs_7(), lookahead=barmerge.lookahead_on)
+[u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6] = request.security(u8, "D", f_get_7d_sigs_8(), lookahead=barmerge.lookahead_on)
+[u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6] = request.security(u9, "D", f_get_7d_sigs_9(), lookahead=barmerge.lookahead_on)
 
-[u1_d0, u1_d1, u1_d2, u1_d3, u1_d4, u1_d5, u1_d6] = request.security(u1, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u2_d0, u2_d1, u2_d2, u2_d3, u2_d4, u2_d5, u2_d6] = request.security(u2, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u3_d0, u3_d1, u3_d2, u3_d3, u3_d4, u3_d5, u3_d6] = request.security(u3, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u4_d0, u4_d1, u4_d2, u4_d3, u4_d4, u4_d5, u4_d6] = request.security(u4, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u5_d0, u5_d1, u5_d2, u5_d3, u5_d4, u5_d5, u5_d6] = request.security(u5, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u6_d0, u6_d1, u6_d2, u6_d3, u6_d4, u6_d5, u6_d6] = request.security(u6, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u7_d0, u7_d1, u7_d2, u7_d3, u7_d4, u7_d5, u7_d6] = request.security(u7, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u8_d0, u8_d1, u8_d2, u8_d3, u8_d4, u8_d5, u8_d6] = request.security(u8, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
-[u9_d0, u9_d1, u9_d2, u9_d3, u9_d4, u9_d5, u9_d6] = request.security(u9, "D", f_get_7d_dt(), lookahead=barmerge.lookahead_on)
+[u1_d0, u1_d1, u1_d2, u1_d3, u1_d4, u1_d5, u1_d6] = request.security(u1, "D", f_get_7d_dt_1(), lookahead=barmerge.lookahead_on)
+[u2_d0, u2_d1, u2_d2, u2_d3, u2_d4, u2_d5, u2_d6] = request.security(u2, "D", f_get_7d_dt_2(), lookahead=barmerge.lookahead_on)
+[u3_d0, u3_d1, u3_d2, u3_d3, u3_d4, u3_d5, u3_d6] = request.security(u3, "D", f_get_7d_dt_3(), lookahead=barmerge.lookahead_on)
+[u4_d0, u4_d1, u4_d2, u4_d3, u4_d4, u4_d5, u4_d6] = request.security(u4, "D", f_get_7d_dt_4(), lookahead=barmerge.lookahead_on)
+[u5_d0, u5_d1, u5_d2, u5_d3, u5_d4, u5_d5, u5_d6] = request.security(u5, "D", f_get_7d_dt_5(), lookahead=barmerge.lookahead_on)
+[u6_d0, u6_d1, u6_d2, u6_d3, u6_d4, u6_d5, u6_d6] = request.security(u6, "D", f_get_7d_dt_6(), lookahead=barmerge.lookahead_on)
+[u7_d0, u7_d1, u7_d2, u7_d3, u7_d4, u7_d5, u7_d6] = request.security(u7, "D", f_get_7d_dt_7(), lookahead=barmerge.lookahead_on)
+[u8_d0, u8_d1, u8_d2, u8_d3, u8_d4, u8_d5, u8_d6] = request.security(u8, "D", f_get_7d_dt_8(), lookahead=barmerge.lookahead_on)
+[u9_d0, u9_d1, u9_d2, u9_d3, u9_d4, u9_d5, u9_d6] = request.security(u9, "D", f_get_7d_dt_9(), lookahead=barmerge.lookahead_on)
 
 f_simplifySym(sym) =>
     parts = str.split(sym, ":")
@@ -523,4 +1065,6 @@ if barstate.islast
             table.cell(dashDebug, 0, rowNum, array.get(dbgLabels, origRow), bgcolor=color.new(color.orange, 60), text_color=color.black, text_size=txtSize, text_halign=text.align_right)
             for i = 0 to numActiveCols - 1
                 origCol = array.get(activeCols, i)
-                table.cell(dashDebug, i + 1, rowNum, matrix.get(cellMat, origRow, origCol), text_size=txtSize, text_halign=text.align_center)
+                val = matrix.get(cellMat, origRow, origCol)
+                valFg = val == "▲▼" ? color.rgb(180, 83, 9) : val == "▲" ? color.rgb(0, 130, 0) : val == "▼" ? color.rgb(204, 0, 0) : color.rgb(120, 120, 120)
+                table.cell(dashDebug, i + 1, rowNum, val, bgcolor=color.new(color.orange, 60), text_color=valFg, text_size=txtSize, text_halign=text.align_center)
