@@ -965,7 +965,7 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Analytics Tab Scroll Hierarchy (`activeTab === 'ANALYTICS'`)**:
   1. **Daily Signal Dashboard Matrix (Apex Position)**: Today's active parameter signals (`MISSILE`, `SCALP`, `LIGHTNING`, Day Type Blueprints, Trade Sequences) across active symbols MUST be positioned at the very top of the scrollable Analytics view (`space-y-3`) for immediate visibility without scrolling.
   2. **Market Filters Header**: An institutional section header directly precedes the 7 market selection buttons:
-     - **Title**: `MARKET FILTERS` (rendered in signature `#d5a342` gold tracking: `text-xs sm:text-sm font-black uppercase tracking-widest text-[#d5a342]`).
+     - **Title**: `MARKET FILTERS` (rendered with canonical theme heading: `text-xs sm:text-sm font-black uppercase tracking-widest text-primary`).
      - **Subtitle**: `Filter active signals, win rates & performance metrics across markets.` (`text-[10px] sm:text-[11px] font-mono text-dim leading-tight`).
   3. **Market Filter Grid**: 3-row glassmorphic buttons for market segment filtering (`SYSTEM-WIDE`, `NIFTY 50`, `MCX COMMODITIES`, `NYMEX & COMEX`, `CRYPTO TOP 25`, `FOREX PAIRS`, `WORLD INDICES`).
   4. **Summary Stats Bar**: Realized performance KPI cards (Win Rate, Expectancy, Profit Factor, Calmar, Half-Kelly, Total Trades, W/L/BE).
@@ -993,6 +993,9 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 ## Version 1.0: Sequential Metrics Sorting Parity & Disaster Recovery Backups
 - **Canonical Sequential Sorting Anchor**: All chronological metric calculations across web (`dashboard.html`, `trade-metrics.js`) and mobile (`page.tsx`)—including **Consecutive Losses** and **Maximum Drawdown**—MUST sort closed trades using the canonical signal entry timestamp (`getSignalTime`), with `created_at` as the mandatory fallback tie-breaker.
 - **System-Wide Metric Parity**: Enforces identical performance metrics across both platforms (**2 Consecutive Losses**, **-0.56% Max Drawdown**).
+
+## Version 1.0: Strict Theme Uniformity for Headings & Subheadings and Sunday 00:00 IST Weekly Cron Schedule
+- **Strict Theme Heading Uniformity**: All main headings across all tabs (`HUB`, `LOGS`, `MARKETS`, `INSIGHTS`, `ANALYTICS`, `SCREENER`, `Terminal Menu`) must uniformly use `text-primary` (`var(--text-primary)`), which dynamically maps to crisp white (`#ffffff`) on `THE LION` and `DARK`, and deep obsidian black (`#000000` / `#0f172a`) on `LIGHT` and `GRAY`. Rogue hardcoded colors (`#d5a342`, `text-blue-600 dark:text-blue-400`, `text-slate-900 dark:text-white`) are strictly prohibited.
+- **Strict Theme Subheading Uniformity**: All subheadings throughout the application must uniformly use `text-dim` (`var(--text-dim)`), providing clean, readable contrast (`#475569` on Light/Gray, `#888899` / `#a0aec0` on Lion/Dark).
+- **Sunday 00:00:00 IST Weekly Cron Execution**: Scheduled aggregation in `TLCS_Website_Deploy/netlify/functions/cron-weekly-logs.js` and `.github/workflows/weekly-performance-cron.yml` is anchored to **`30 18 * * 6`** (Saturday 18:30:00 UTC = Sunday 00:00:00 IST), automatically publishing the completed week's performance edge to `weekly_performance_logs` every Sunday at 00:00 IST without fail.
 - **Disaster Recovery Repository Backups**: Complete uncompressed mirror trees and standalone `.zip` archives (excluding disposable dependencies and build caches) are permanently archived in `Project/Backups/` and mirrored to `Documents/Backups/`.
-
-
