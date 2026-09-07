@@ -1008,10 +1008,34 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Interactive Multi-Timeframe & Multi-Unit Controls**:
   - Timeframe toggles: **`TODAY`**, **`WEEK`**, **`MONTH`**, **`QUARTER`**, **`YEAR`**.
   - Metric Unit toggles: **`₹`** (Rupee P&L based on market lot multipliers and USD/INR exchange rate `87.5`) and **`%`** (Exact Percentage Return from `metadata.exact_pct`).
-- **Zero-Line Layout & Micro-Tooltips**:
-  - Central dashed zero line divides positive winners (extending upwards) from negative losses (extending downwards).
-  - Hovering over any trade column reveals a rich tooltip displaying symbol name, outcome type, realized rupee amount, and percentage return.
+- **Upright Baseline Alignment & Loss Portion Flipped Above Line**:
+  - The legacy downward-hanging loss layout is permanently deprecated. Both **Losses (Red)** and **Wins (Green)** now rise **upwards above the horizontal dashed baseline line** (`border-t border-dashed border-zinc-400/80` or `rgba(255,255,255,0.25)`).
+  - Every bar column is anchored to the bottom baseline (`items-end` / `justify-content: flex-end`), eliminating the previous split where losses hung downward below the line.
+  - Flipped loss bars (`isLoss`) extend upward with top rounded corners (`rounded-t-md` / `border-radius: 4px 4px 0 0`), upward gradient (`from-rose-600 via-rose-500 to-rose-400`), and red glow highlights.
+  - Breakeven trades (`0.00%`) sit directly on the baseline as a clean flat indicator pill (`3px` height).
+  - **Direct Side-by-Side Asymmetric Comparison**: Traders can immediately compare the flat, controlled ceiling of the loss tail against tall green winners on the exact same scale, eliminating 50% dead vertical space.
+  - **Bounds & Pills Placement**: X-axis bounds (`Min: -X%`, `0.00%`, `Max: +Y%`) and `W / L / BE` pills row sit directly beneath the horizontal baseline line.
 - **KPI Callouts & Footnote**:
   - Real-time trade count summary badge: `X trades (YL / ZW / BE)`.
   - Largest winning trade callout: `↑ largest +₹... / +X.XX%`.
   - Institutional trend-following signature footer: *"Many small losses, a few large winners — the trend-following signature"*.
+
+## Version 1.0: LOGS Tab Uniformity & HUB Styling Parity (Mobile App)
+- **Header Uniformity**: The LOGS tab (`activeTab === 'ALERTS'`) must strictly match the HUB tab header hierarchy (`TLCS AI (ALERTS INTELLIGENCE)` subtitle, `RECENT TRADES` with glowing `<Bell />` icon, and `🎓 Novice Mode: OFF/ON` toggle button).
+- **Executive 10 Stats KPI Cards Strip**: Added to the apex of the LOGS tab matching HUB tab's 2-row × 5-column layout (`ACTIVE LIMITS`, `LIVE TRADES`, `CLOSED TRADES`, `TODAY'S SUCCESS`, `TODAY'S PROFIT FACTOR`, `WEEKLY TRADES`, `WEEKLY SUCCESS`, `WEEKLY PROFIT FACTOR`, `WEEKLY EXPECTANCY`, `WEEKLY CALMAR`) using `getGridCardTheme` glass gradient styling.
+- **Trade Distribution 8 KPI Cards**: Rendered with identical HUB glass gradient backgrounds, subtle borders, and smooth rounded corners (`rounded-[14px] sm:rounded-2xl`).
+- **Interactive Filter Pills**: Category filters (`ALL`, `NIFTY`, `MCX`, `NYMEX`, `CRYPTO`, `FOREX`, `WORLD`) and Level filters (`B/E`, `SL`, `TRAIL`, `TP1`, `TP2`, `TP3`, `TP4`, `EMA`, `DIV`, `EOD`, `ACTIVE LIMITS`, `LIVE TRADES`) use HUB tab's glowing blue/emerald glass pill styles with pulsing live dot for `LIVE TRADES`.
+- **Recent Trade Audit Logs Micro-Cards Grid**: Every trade log card is rendered with the full **6-microcard layout**:
+  1. `ENTRY`: Green glass micro-card with entry price and fill timestamp.
+  2. `STOP LOSS`: Red glass micro-card with price and risk distance.
+  3. `OUTCOME`: Color-coded micro-card with percentage return pill (`exact_pct`) and hold duration.
+  4. `TRAIL SL`: Blue glass micro-card with dynamic trail level and secured profit/breakeven state.
+  5. `TARGET / EXITED AT`: Amber (`TARGET`) during active state, flipping to Green (`EXITED AT`) upon trade close.
+  6. `PAYOUT (R)`: Purple glass micro-card with realized or projected R:R multiplier.
+- **Multi-Device Responsiveness**: The micro-card grid must use `grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-1.5` to adapt cleanly across compact mobile screens, standard smartphones, tablets, and desktop displays.
+
+## Version 1.0: Canonical Manifest & Release Architecture
+- **Canonical Package Manifests**: All repository package manifests (`Tv-Alert-Mobile/package.json`, `TLCS_Website_Deploy/package.json`) are locked to canonical version **`1.0.0`**.
+- **Git Release Tagging**: Official Git Tag **`v1.0`** is anchored to the release commit across `Tv-Alert-Mobile`, `TLCS_Website_Deploy`, and the root `Project` repository.
+- **Zero-Ambiguity Single Source of Truth**: Production Netlify deployments automatically deploy and serve this release.
+
