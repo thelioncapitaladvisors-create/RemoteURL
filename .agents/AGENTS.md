@@ -203,6 +203,16 @@ function resolveOutcome(s) {
 - The exact mathematical percentage (`exact_pct`) is ONLY to be used as a backend fail-safe fallback for ambiguous labels.
 - **Continuous Trailing SL Deprecation**: The strategy engine permanently relies on mathematically exact rigid levels (Breakeven, TP1, TP2, TP3) or the EMA boundary. The "Standard Distance-Based Trailing SL" block (`trailLevel := high - trailRange`) has been permanently deleted from the Pine Script architecture and should not be reintroduced.
 
+## Trade Distribution Statistical Bell Curve Architecture
+- **Canonical Ordering**: The Trade Distribution chart (on `Tv-Alert-Mobile/src/app/page.tsx` and `TLCS_Website_Deploy/blog.html`) must display trade returns as a statistical **Bell Curve** (`/\` shape) centered around the transition boundary between losses and wins.
+- **Sorting Logic**:
+  - **Losses (`lossTrades`)**: Sorted in ascending magnitude (`Math.abs(a) - Math.abs(b)`), starting with smallest losses on the far left tail and climbing steadily taller towards the central dividing axis.
+  - **Wins (`winTrades`)**: Sorted in descending magnitude (`Math.abs(b) - Math.abs(a)`), starting with largest winners adjacent to the central dividing axis and tapering steadily down to smallest winners on the far right tail.
+  - **Breakevens (`beTrades`)**: Centered at the 0.00% dividing transition between losses and wins.
+  - Combined sequence: `[...lossesAscending, ...beTrades, ...winsDescending]`.
+- **Dynamic Central Vertical Dividing Line**: A dashed vertical line (`border-r border-dashed`) is dynamically anchored at the transition point `centerBoundaryPct = ((lossesAscending.length + beTrades.length / 2) / sorted.length) * 100`, providing clean visual symmetry.
+- **X-Axis Bounds**: Left tail displays `Min Loss`, center displays `0.00%` / `B/E`, right tail displays `Min Win`, with the inspection strip highlighting `↑ largest` winner and interactive hover inspections.
+
 ## UI Dynamic State Presentation
 - **Active Trade Targets**: When a trade is `ACTIVE`/`OPEN` and has no exit price, the UI MUST NOT display a blank or `---` "EXITED AT" box. Instead, dynamically flip the box to display the upcoming Take Profit level (labeled "TARGET" in amber styling). It should only flip to a green "EXITED AT" box upon trade closure.
 - **Risk to Reward Formatting**: The Risk:Reward ratio must always be suffixed with `R` (e.g., `2.00R`) across all UI elements, web dashboards, and mobile views. Never append a percentage `%` to a multiplier ratio.

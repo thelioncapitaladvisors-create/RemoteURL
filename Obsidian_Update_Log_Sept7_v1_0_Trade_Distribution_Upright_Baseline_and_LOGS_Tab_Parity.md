@@ -35,6 +35,25 @@
   6. `PAYOUT (R)`: Purple glass micro-card with realized/projected R:R multiplier.
 - **Multi-Device Responsive Grid**: Designed with `grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-1.5` so it displays gracefully across narrow phones, standard mobile screens, tablets, and desktop displays.
 
+### C. Statistical Bell Curve Transformation & Central Vertical Line Alignment
+- **Problem Statement**:
+  - Sorting trades strictly by signed return (`-maxLoss ... 0 ... +maxWin`) created an inverted "V-shaped" valley chart where the tallest losses were on the far left edge, the tallest winners were on the far right edge, and the bars dipped down to 0 in the center.
+  - In statistical distribution theory and trading portfolio analysis, distributions are presented as a bell curve where small-magnitude tail trades taper off at the outer edges while the peak trades cluster towards the central dividing axis.
+- **Architectural Resolution**:
+  - **Flipped Ordering Towards Central Dividing Line**:
+    - **Losses (`lossTrades`)**: Sorted ascending in magnitude (`Math.abs(a) - Math.abs(b)`), starting with smallest losses on the far left tail and climbing steadily taller towards the central dividing axis.
+    - **Wins (`winTrades`)**: Sorted descending in magnitude (`Math.abs(b) - Math.abs(a)`), starting with largest winners adjacent to the central dividing axis and tapering steadily down to smallest winners on the far right tail.
+    - **Breakevens (`beTrades`)**: Centered at the 0.00% dividing transition between losses and wins.
+  - **Dynamic Central Vertical Dividing Line**:
+    - Rendered a subtle dashed vertical line (`border-r border-dashed border-zinc-400/60`) dynamically anchored at the transition point: `centerBoundaryPct = ((lossesAscending.length + beTrades.length / 2) / sorted.length) * 100`.
+    - Separates losses from wins with crisp mathematical symmetry.
+  - **Adaptive X-Axis Bounds**:
+    - Left tail displays `Min Loss: -X%` (smallest loss magnitude).
+    - Center displays `0.00%` / `B/E`.
+    - Right tail displays `Min Win: +Y%` (smallest win magnitude).
+    - Inspection bar dynamically highlights `↑ largest +Z%` with full interactive tap/hover audit metrics.
+  - **Synchronized Across Platforms**: Deployed to both `Tv-Alert-Mobile/src/app/page.tsx` and `TLCS_Website_Deploy/blog.html`.
+
 ---
 
 ## 2. Version 1.0 Release & Repository Verification
