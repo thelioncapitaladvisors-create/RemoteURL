@@ -25,13 +25,21 @@ jobs:
     steps:
       - name: Checkout main repository
         uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
         
-      - name: Checkout website repository
+      - name: Checkout website repository (if GH_PAT available)
+        continue-on-error: true
+        if: env.HAS_PAT == 'true'
+        env:
+          HAS_PAT: ${{ secrets.GH_PAT != '' }}
         uses: actions/checkout@v4
         with:
           repository: 'thelioncapitaladvisors-create/TLCS_Website'
           path: 'TLCS_Website_Deploy'
-          token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PAT }}
+          ref: main
           
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -46,7 +54,6 @@ jobs:
           pip install -r algo_engine/requirements.txt
           echo "--- installed versions ---"
           python -m pip show httpx gotrue supabase | grep -E "^(Name|Version):"
-          python -c "import httpx, inspect; print('httpx.Client accepts proxy:', 'proxy' in inspect.signature(httpx.Client.__init__).parameters)"
           
       - name: Generate Tearsheet
         env:
@@ -56,11 +63,21 @@ jobs:
           cd algo_engine
           python backtest_edge.py
           
-      - name: Commit and push changes to Website Repo
+      - name: Commit and push changes to Main Repo
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add algo_engine/strategy_tearsheet.html
+          git commit -m "chore(tearsheet): auto-generate strategy tearsheet" || echo "No changes to commit in main repo"
+          git push origin main || echo "Push to main repo handled"
+
+      - name: Commit and push changes to Website Repo (if checked out)
+        if: hashFiles('TLCS_Website_Deploy/strategy_tearsheet.html') != ''
+        continue-on-error: true
         run: |
           cd TLCS_Website_Deploy
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add strategy_tearsheet.html
-          git commit -m "chore(tearsheet): auto-generate strategy tearsheet" || echo "No changes to commit"
-          git push
+          git commit -m "chore(tearsheet): auto-generate strategy tearsheet" || echo "No changes to commit in website repo"
+          git push origin main || echo "Push to website repo handled"
