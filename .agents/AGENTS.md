@@ -1049,3 +1049,17 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Git Release Tagging**: Official Git Tag **`v1.0`** is anchored to the release commit across `Tv-Alert-Mobile`, `TLCS_Website_Deploy`, and the root `Project` repository.
 - **Zero-Ambiguity Single Source of Truth**: Production Netlify deployments automatically deploy and serve this release.
 
+## Version 1.0: Universal Multi-Skin Design System & Cross-Tab Architectural Parity
+- **Cross-Tab Design System Parity**: All 5 tabs of the mobile application (`HUB`, `LOGS`, `MARKETS`, `INSIGHTS`, `ANALYTICS`) are governed by the canonical `.wc-card-*` and `.wc-table-*` universal theme framework.
+- **Theme-Adaptive Micro-Cards (`.wc-card-*`)**:
+  - `wc-card-green`: Jade/emerald gradient with glowing green borders. In **The Lion** skin, infused with rich `#070d08` obsidian and `#27c93f` reflections; in **Slate**, high-contrast forest green; in **Light**, crisp translucent mint.
+  - `wc-card-red`: Ruby crimson styling for drawdowns, losses, and negative metrics.
+  - `wc-card-blue`: Cyan/sapphire glow for execution metrics, trades counts, and Sharpe/Sortino ratios.
+  - `wc-card-amber`: Infused with Lion Gold (`#f2c64b`) reflections for Profit Factor and Expectancy.
+  - `wc-card-neutral`: Sleek obsidian/slate frosted card with subtle ambient borders for neutral breakdowns (e.g. `WIN / LOSS / B/E`, Equity Curve).
+- **Institutional Table System (`.wc-table-card` & `.wc-table-thead`)**:
+  - Replaces flat borders with high-depth blurred glass containers, gold-tinted headers in **The Lion**, crisp slate headers in **Slate**, and bright clean cards in **Light**.
+- **MARKETS Tab Parity**: Both `MARKET WIDE PERFORMANCE` and all individual market cards (`NIFTY`, `MCX`, `NYMEX`, `CRYPTO`, `FOREX`, `WORLD INDICES`) strictly use the 14-metric micro-card grid layout with zero plain unbordered text boxes.
+- **ANALYTICS & INSIGHTS Tab Parity**: All statistical summary bars, parameter filter buttons, and data tables bind directly to the canonical `.wc-card-*` and `.wc-table-*` definitions across all visual skins (`THE LION`, `DARK`, `LIGHT`, `GRAY`, `AUTO`).
+
+
