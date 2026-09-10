@@ -49,8 +49,31 @@ This release optimizes the data presentation and analytical depth of the Mobile 
 
 ---
 
+---
+
+### D. Website & Mobile Trade Distribution 100% Mathematical Parity
+1. **Root Cause Analysis**:
+   - In `Tv-Alert-Mobile/src/app/page.tsx`, `isSignalActiveForMarket` checked entry time `getSignalTime(s)` when filtering closed trades for `todayClosedSignals`. Multi-session trades (Crypto, Forex, NYMEX) entered yesterday that realized P&L and exited today were erroneously excluded from today's closed trades.
+   - In `TLCS_Website_Deploy/blog.html`, `filterSignalsByTimeframe` checked realized closure timestamp `s.exit_at || s.signal_ts || s.created_at`.
+   - In `dedupeSignals`, the minute key was previously based on `signal_ts` rather than `real_entry_time`, leading to false collision for distinct execution intervals.
+2. **Canonical Timestamp Alignment**:
+   - For all closed trades (`resolveOutcome(s) !== 'OPEN'`), both `page.tsx`, `blog.html`, `dashboard.html`, and `trade-metrics.js` now strictly evaluate the realized closure timestamp `exit_at || updated_at || signal_ts || created_at >= startOfToday`.
+   - In `Tv-Alert-Mobile/src/app/page.tsx`, `dedupeSignals` uses `getSignalTime(s)` prioritizing `metadata.real_entry_time`.
+   - In `TLCS_Website_Deploy/blog.html`, `dedupeSignals` and `isRealTrade` are applied to `cachedDistSignals`.
+3. **Confirmed Parity across Website & Mobile**:
+   - **Total Closed Trades Today**: `24` (`5 Wins · 16 Losses · 3 Breakeven`).
+   - **Win Rate**: `20.8%`.
+   - **Profit Factor**: `1.81`.
+   - **Net Realized %**: `+5.97%`.
+   - **Net Realized P&L**: `+₹6.0 k`.
+   - **WEEK rolling window (7-day)**: Identical 129 closed trades (`+9.64%` net).
+
+---
+
 ## 2. Verification & Validation
 
-- **Client-Side Build**: Verified Next.js compilation in `Tv-Alert-Mobile`.
+- **Client-Side Build**: Verified Next.js compilation in `Tv-Alert-Mobile` (`✓ Compiled successfully`, static pages generated with 0 errors).
+- **Parity Verification**: Verified through diagnostic script matching Supabase data across both engines. Both engines yield exact 24 trades, 20.8% win rate, and +5.97% net return.
 - **Responsive Layout**: Validated 5-column and 7-column table cards on mobile viewport widths (360px–420px). Zero overflow, zero awkward wrapping.
 - **Data Integrity**: Verified that `exact_pct` remains the strict single source of truth for all calculations in accordance with Version 1.0 system rules.
+
