@@ -83,10 +83,34 @@ This release optimizes the data presentation and analytical depth of the Mobile 
 
 ---
 
+### F. Retrospective Trade Reconstruction Mechanism for Missed Signal Generation
+1. **Background & Problem Statement**:
+   - TradingView alerts occasionally fail on initial generation (e.g. limit order `OPEN` or `TradeFill` triggers) due to TradingView's strict 3-second webhook delivery timeout (`Webhook delivery failed — request took too long and timed out`), cold starts, or transient network drops.
+   - When the initial generation alert timed out, the trade was never stored in the database.
+   - Subsequently, when Pine Script sent follow-up alerts for that same trade (`TrailingSLUpdate` when moving stops, or `TradeClose` upon reaching TP/SL), the backend previously searched for an open trade, found none, and discarded the event with `Skipping ghost insert to prevent duplicate trade cards` or `No active trade found. Skipping trailing update`.
+   - As a result, valid executed trades were permanently lost from the database and dashboards.
+
+2. **Self-Healing Retrospective Architecture**:
+   - Every TradingView alert emitted by the Pine Script carries a unique, deterministic trade anchor: `trade_id = {symbol}_{entryTime}_{type}` (e.g., `EURUSD_1789056000358_LONG MISSILE`), along with rich setup details (`entryPrice`, `slLevel`, `tpLevel`, `entryTime`, `entryDate`, `type`, `dayType`, `opening_bias`).
+   - In `TLCS_Website_Deploy/netlify/functions/process-webhook-background.js`, four key routes now implement retrospective trade reconstruction:
+     - **`TradeClose` / `isOutcomeUpdate`**: If no open active trade is found, the backend inspects `trade_id`. It first checks if a record for `trade_id` already exists. If not, it **retrospectively reconstructs and inserts the trade as closed**, computing exact percentage math (`((exit - entry) / entry) * 100`), implied outcome (`WIN`/`LOSS`/`BREAKEVEN`), hold duration, and full metadata, and dispatches the Telegram closure notification.
+     - **`TrailingSLUpdate`**: If no active trade is found, it inspects `trade_id`. If absent from the database, it **retrospectively reconstructs and inserts the trade as `Active`** with `trail_sl: trailLevel`, entry, stop, and target levels, and dispatches the active trade Telegram notification and web push.
+     - **`TradeFill`**: Checks `metadata->>trade_id` to prevent duplicate insertions if already processed, and inserts as `Active` if missing.
+     - **`TradeUpdate`**: Strictly binds to the unique `trade_id` and retrospectively reconstructs active trades instead of dangerous loose bulk updates on open trades of the symbol.
+
+3. **Strict Constraints Enforced**:
+   - **Zero Cross-Contamination**: Under NO circumstances does a fresh new signal or different setup on the same symbol match or heal an unrelated trade. Reconstruction requires the definitive `trade_id` (or explicit `entryTime` + `type`).
+   - **Full Auditability**: Reconstructed records are permanently tagged in `metadata` with `retrospectively_reconstructed: true`, `reconstructed_from_trigger`, and `reconstructed_at` timestamp.
+   - **Duplicate Guard**: Existing records with that `trade_id` are never duplicated.
+
+---
+
 ## 2. Verification & Validation
 
 - **Client-Side Build**: Verified Next.js compilation in `Tv-Alert-Mobile` (`✓ Compiled successfully`, static pages generated with 0 errors).
 - **Parity Verification**: Verified through diagnostic script matching Supabase data across both engines. Both engines yield exact 24 trades, 20.8% win rate, and +5.97% net return.
 - **Responsive Layout**: Validated 5-column and 7-column table cards on mobile viewport widths (360px–420px). Zero overflow, zero awkward wrapping.
 - **Data Integrity**: Verified that `exact_pct` remains the strict single source of truth for all calculations in accordance with Version 1.0 system rules.
+- **Retrospective Healing Engine**: Validated through sandbox test (`test_retrospective_logic.js`) confirming reconstruction of missed `EURUSD` trade on `TradeClose`, rejection of duplicate alerts, and complete isolation from fresh new signals.
+
 
