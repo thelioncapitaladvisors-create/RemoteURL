@@ -70,6 +70,19 @@ This release optimizes the data presentation and analytical depth of the Mobile 
 
 ---
 
+### E. Website Weekly Performance & Achievement Table: Calmar Ratio & Half-Kelly % Integration
+1. **New Columns Added**:
+   - **`Calmar` (`width: 65px`)**: Realized day-wise and consolidated Calmar Ratio computed from intra-day equity curve peak-to-trough max drawdown ($\text{Calmar} = \frac{\text{Net Return \%}}{\text{Max Drawdown \%}}$). Color coded in high-contrast semantic tones: Emerald (`≥1.0` or `MAX`), Amber (`>0`), Rose (`<0`), Dim (`0.00`/`--`).
+   - **`Half-Kelly` (`width: 75px`)**: Half-Kelly fraction percentage derived from day-wise win rate, loss rate, and realized risk-reward ratio ($\text{Half-Kelly} = (W - \frac{L}{R}) \times 50$). Highlighted in amber glow (`#fcd34d`) when edge is positive and dimmed when zero.
+2. **Synchronized 7-Day Performance Metrics**:
+   - Uses clean deduplicated trades (`isRealTrade` and `dedupeSignals`) filtered by realized closure timestamp (`s.exit_at || s.updated_at || s.signal_ts || s.created_at`).
+   - **TILL DATE (Consolidated 7-Day)**: 129 Closed Trades (`26W / 91L / 12BE`), 20.2% Win Rate, `+9.64%` Net Return, `1.08` Calmar Ratio, `3.4%` Half-Kelly Edge.
+   - **Today (D7)**: 24 Closed Trades (`5W / 16L / 3BE`), 20.8% Win Rate, `+5.97%` Net Return, `0.89` Calmar Ratio, `5.3%` Half-Kelly Edge. 100% agreement with top Trade Distribution card.
+3. **Responsive Geometry**:
+   - Preserves `compact-table-card` glassmorphic theme with `overflow-x: auto` and clear 8-column header (`Day` | `Sigs` | `WR` | `Targets` | `Net` | `Avg` | `Calmar` | `Half-Kelly`).
+
+---
+
 ## 2. Verification & Validation
 
 - **Client-Side Build**: Verified Next.js compilation in `Tv-Alert-Mobile` (`✓ Compiled successfully`, static pages generated with 0 errors).
