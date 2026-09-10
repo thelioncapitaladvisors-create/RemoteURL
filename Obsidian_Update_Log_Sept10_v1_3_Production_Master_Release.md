@@ -56,6 +56,15 @@ Version 1.3 establishes comprehensive stability, typographic elegance, automated
   - Synchronized deduplicated closed trade filtering (`s.exit_at || s.updated_at || s.signal_ts || s.created_at >= startOfToday`).
   - Consolidated 7-day performance: 129 Closed Trades, 20.2% Win Rate, `+9.64%` Net Return, `1.08` Calmar Ratio, `3.4%` Half-Kelly Edge.
 
+### E. Permanent Trade Card Entry vs Exit Timestamp Alignment
+- **Root Problem**: Even when a trade was held for hours or overnight (e.g. NDQ held for `11h 59m` from Sep 9 20:45 IST to Sep 10 08:44 IST), the trade card header displayed the **entry time** (`20:45 IST 09 SEPT`) right under `CLOSED TRADE`, making it appear as though the entry and exit times were identical. Furthermore, the true closure timestamp (`signal.exit_at`) was mistakenly displayed inside the **STOP LOSS** card (even on Take Profit winners), while the **EXITED AT** card only displayed the generic string `'EXECUTED'`.
+- **Solution Applied Across HUB and LOGS Tabs (`Tv-Alert-Mobile/src/app/page.tsx`)**:
+  1. **Card Header**: Bound to `exitTimeStr` (`signal.exit_at || signal.updated_at || sigMeta.closeDate`) whenever `!isActive`. Closed trade headers now unambiguously show the exact closure date and time (e.g. `08:44 IST 10 SEPT`).
+  2. **ENTRY Micro-Card**: Retains `liveEntryTime` (e.g. `09 SEPT 20:45`).
+  3. **EXITED AT Micro-Card**: Displays the exact exit date and time (e.g. `10 SEPT 08:44`) instead of generic text.
+  4. **STOP LOSS Micro-Card**: Replaced the misplaced exit timestamp with the clean, canonical label `INITIAL SL`.
+  5. **OUTCOME Micro-Card**: Preserves the exact hold duration (`HELD: 11h 59m`), establishing 100% intuitive and mathematical harmony across all card elements.
+
 ---
 
 ## 3. Git Deployment & Multi-Repository Version 1.3 State
