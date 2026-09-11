@@ -2882,15 +2882,7 @@ checkAnyBounceDown(r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r
 // --- ARRAY HELPER FUNCTIONS TO REDUCE MAIN SCRIPT SIZE ---
 // ====================================================================
 
-initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool bypassDayFilter = false) =>
-    
-    // 🛑 FLAG SIDEWAYS DAYS (Bulletproof matching)
-    bool isSideways = (mX == 'INRANGEINVALUE') or 
-                      (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or 
-                      str.contains(mX, "TRADING RANGE") or 
-                      str.contains(mX, "SIDEWAYS") or 
-                      str.contains(mX, "TYPICAL DAY") or 
-                      (dX == 'IN RANGE \n IN VALUE')
+initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message) =>
     // ── H4/L4 HARD GATE (defensive safety net) ──
     // No new LONG trades at or above H4, no new SHORT trades at or below L4
     bool _buy  = buyCond  and close < H4
@@ -2902,11 +2894,7 @@ initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string lo
         if lastTrade.startBarIndex == bar_index
             alreadyOpenedThisBar := true
 
-    // 🛡️ BLOCK SIDEWAYS TRADES — Exception: Narrow CPR days bypass the sideways filter
-    // NCPR = true when CPR width < 0.2% of pivot → compression day → expect breakout
-    // bypassDayFilter = true allows Hidden Divergence inside CPR to enter regardless of day types or NCPR
-    bool dayFilterPassed = bypassDayFilter or (not isSideways or NCPR)
-    if (_buy or _sell) and not alreadyOpenedThisBar and dayFilterPassed
+    if (_buy or _sell) and not alreadyOpenedThisBar
         TradeLogic newTrade = initializeTradeSession(settings, _buy ? longName : shortName)
         TradeVisuals newVis = TradeVisuals.new()
         sendAlert(settings, newTrade, dX, mX, z1, d1_message)
@@ -3127,10 +3115,10 @@ var array<TradeVisuals> currentVisualsArr = array.new<TradeVisuals>()
 var array<TradeLogic>   extremeRevSessions   = array.new<TradeLogic>()
 var array<TradeVisuals> extremeRevVisualsArr = array.new<TradeVisuals>()
 
-initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message, false)
-initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message, false)
-initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message, lightningBypassDayFilter)
-initializeAndPushTrade(settings, ExtremeReversalBuy, ExtremeReversalSell, 'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL', extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message, false)
+initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, ExtremeReversalBuy, ExtremeReversalSell, 'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL', extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message)
 
 // ====================================================================
 // 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS ELEGANTLY)
