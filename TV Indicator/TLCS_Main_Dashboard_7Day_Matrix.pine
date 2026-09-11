@@ -488,6 +488,9 @@ f_calc_sigs_impl(Zigzag zz, ZigzagProperties zzProps, array<DivergenceSignalObje
                     if low <= sv and open >= sv and high > sv and close > sv and close > open
                         bouncedUpAnyLevel := true
 
+    bool GrS = GREEN and bouncedUpAnyLevel
+    bool ReS = RED and bouncedDownAnyLevel
+
     RisingUp = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10)
     FallingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10)
 
