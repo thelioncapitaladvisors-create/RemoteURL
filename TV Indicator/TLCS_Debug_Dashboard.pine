@@ -481,15 +481,15 @@ f_calc_sigs_impl(Zigzag zz, ZigzagProperties zzProps, array<DivergenceSignalObje
                     if low <= sv and open >= sv and high > sv and close > sv and close > open
                         bouncedUpAnyLevel := true
 
-    bool GrS = GREEN and bouncedUpAnyLevel
-    bool ReS = RED and bouncedDownAnyLevel
+    RisingUp = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10)
+    FallingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10)
 
     _mb = GrS
     _ms = ReS
-    _sb = false
-    _ss = false
-    _lb = false
-    _ls = false
+    _sb = RisingUp and close > open and ta.crossover(fShortEMA, fMedEMA)
+    _ss = FallingDown and close < open and ta.crossunder(fShortEMA, fMedEMA)
+    _lb = RisingUp and ta.crossover(m0, m10)
+    _ls = FallingDown and ta.crossunder(m0, m10)
 
     // Pivot High / Low for Reversals (Strict 10-bar pivot)
     highleftempty = ta.pivothigh(pivotlbar, 0)
@@ -1004,10 +1004,10 @@ if barstate.islast
     txtSize = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
 
     // ---- ALL SIGNAL TYPES + BLUEPRINTS + SEQUENCES (FULL DEBUG ENGINE) -------
-    dbgLabels  = array.from("Missile", "Wick Reversal", "Extreme Reversal", "Outside Reversal", "Doji Reversal", "Price Divergences", "Hidden Divergences", "Rejection Day", "Absorption Day", "Failed New Low/High", "Outside Day", "Stop Run Day", "Rejection Seq", "Stop Run Seq", "Failed Abs Seq", "Acc/Dist Seq")
-    dbgBullBit = array.from(1, 64, 256, 1024, 4096, 16384, 65536, 4, 1024, 4096, 64, 16, 1048576, 4194304, 16777216, 67108864)
-    dbgBearBit = array.from(2, 128, 512, 2048, 8192, 32768, 131072, 8, 2048, 8192, 128, 32, 2097152, 8388608, 33554432, 134217728)
-    dbgUseSig  = array.from(true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false)
+    dbgLabels  = array.from("Missile", "Scalp", "Lightning", "Wick Reversal", "Extreme Reversal", "Outside Reversal", "Doji Reversal", "Price Divergences", "Hidden Divergences", "Rejection Day", "Absorption Day", "Failed New Low/High", "Outside Day", "Stop Run Day", "Rejection Seq", "Stop Run Seq", "Failed Abs Seq", "Acc/Dist Seq")
+    dbgBullBit = array.from(1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 4, 1024, 4096, 64, 16, 1048576, 4194304, 16777216, 67108864)
+    dbgBearBit = array.from(2, 8, 32, 128, 512, 2048, 8192, 32768, 131072, 8, 2048, 8192, 128, 32, 2097152, 8388608, 33554432, 134217728)
+    dbgUseSig  = array.from(true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false)
 
     sigPacks = array.from(u1_s0, u2_s0, u3_s0, u4_s0, u5_s0, u6_s0, u7_s0, u8_s0, u9_s0)
     dtPacks  = array.from(u1_d0, u2_d0, u3_d0, u4_d0, u5_d0, u6_d0, u7_d0, u8_d0, u9_d0)

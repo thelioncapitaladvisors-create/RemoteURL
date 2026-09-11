@@ -488,15 +488,15 @@ f_calc_sigs_impl(Zigzag zz, ZigzagProperties zzProps, array<DivergenceSignalObje
                     if low <= sv and open >= sv and high > sv and close > sv and close > open
                         bouncedUpAnyLevel := true
 
-    bool GrS = GREEN and bouncedUpAnyLevel
-    bool ReS = RED and bouncedDownAnyLevel
+    RisingUp = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10)
+    FallingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10)
 
     _mb = GrS
     _ms = ReS
-    _sb = false
-    _ss = false
-    _lb = false
-    _ls = false
+    _sb = RisingUp and close > open and ta.crossover(fShortEMA, fMedEMA)
+    _ss = FallingDown and close < open and ta.crossunder(fShortEMA, fMedEMA)
+    _lb = RisingUp and ta.crossover(m0, m10)
+    _ls = FallingDown and ta.crossunder(m0, m10)
 
     // Pivot High / Low for Reversals (Strict 10-bar pivot)
     highleftempty = ta.pivothigh(pivotlbar, 0)
@@ -1287,7 +1287,7 @@ if barstate.islast
 
     txtSize = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
 
-    dash1 := table.new(tablePos, lookback_days + 1, 26, border_width=1, frame_width=1, frame_color=c_frame, border_color=c_border)
+    dash1 := table.new(tablePos, lookback_days + 1, 30, border_width=1, frame_width=1, frame_color=c_frame, border_color=c_border)
     
     int currentRow = 0
 
@@ -1304,6 +1304,10 @@ if barstate.islast
     currentRow += 1
 
     if f_render_matrix_row(dash1, currentRow, "Missile", bullMissile, bearMissile, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Scalp", bullScalp, bearScalp, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Lightning", bullLight, bearLight, txtSize)
         currentRow += 1
     if f_render_matrix_row(dash1, currentRow, "Wick Reversal", bullWick, bearWick, txtSize)
         currentRow += 1
