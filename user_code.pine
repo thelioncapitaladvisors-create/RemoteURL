@@ -2435,16 +2435,20 @@ bool regBearDiv = (ext_bearishDiv[1] == 1)
 bool isSidewaysGlobal = str.contains(mX, "TRADING RANGE") or str.contains(mX, "SIDEWAYS") or str.contains(mX, "TYPICAL DAY")
 bool allowTrade = (not isSidewaysGlobal or NCPR)
 
-// Standard Lightning (requires allowTrade)
-bool standardLightningBuy = ((CanBuy and ScalpBuy) or (regBullDiv and GrS)) and allowTrade
-bool standardLightningSell = ((CanSell and ScalpSell) or (regBearDiv and ReS)) and allowTrade
+// Standard Lightning (Native Missile+Scalp Confluence, requires allowTrade)
+bool standardLightningBuy = (CanBuy and ScalpBuy) and allowTrade
+bool standardLightningSell = (CanSell and ScalpSell) and allowTrade
 
-// Hidden Divergence Lightning (EXEMPT from day types & NCPR!)
-bool hiddenDivLightningBuy = (hiddenBullishConfirmed and GrS)
-bool hiddenDivLightningSell = (hiddenBearishConfirmed and ReS)
+// Regular Divergence Signals (Decoupled from Lightning, requires allowTrade)
+bool DivergenceBuy = (regBullDiv and GrS) and allowTrade
+bool DivergenceSell = (regBearDiv and ReS) and allowTrade
 
-bool LightningBuy = standardLightningBuy or hiddenDivLightningBuy
-bool LightningSell = standardLightningSell or hiddenDivLightningSell
+// Hidden Divergence Signals (EXEMPT from day types & NCPR!)
+bool HiddenDivBuy = (hiddenBullishConfirmed and GrS)
+bool HiddenDivSell = (hiddenBearishConfirmed and ReS)
+
+bool LightningBuy = standardLightningBuy
+bool LightningSell = standardLightningSell
 
 // Extreme Reversal (independent signal, requires allowTrade)
 bool ExtremeReversalBuy = Elongsignal and allowTrade
@@ -2463,11 +2467,17 @@ var array<TradeLogic> scalpSessions = array.new<TradeLogic>()
 var array<TradeVisuals> scalpVisualsArr = array.new<TradeVisuals>()
 var array<TradeLogic> currentSessions = array.new<TradeLogic>()
 var array<TradeVisuals> currentVisualsArr = array.new<TradeVisuals>()
+var array<TradeLogic> divergenceSessions = array.new<TradeLogic>()
+var array<TradeVisuals> divergenceVisualsArr = array.new<TradeVisuals>()
+var array<TradeLogic> hiddenDivSessions = array.new<TradeLogic>()
+var array<TradeVisuals> hiddenDivVisualsArr = array.new<TradeVisuals>()
 var array<TradeLogic> extremeRevSessions = array.new<TradeLogic>()
 var array<TradeVisuals> extremeRevVisualsArr = array.new<TradeVisuals>()
 initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message)
 initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message)
 initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, DivergenceBuy, DivergenceSell, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, HiddenDivBuy, HiddenDivSell, 'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE', hiddenDivSessions, hiddenDivVisualsArr, z1, dX, mX, d1_message)
 initializeAndPushTrade(settings, ExtremeReversalBuy, ExtremeReversalSell, 'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL', extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message)
 // ====================================================================
 // 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS ELEGANTLY)
@@ -2503,10 +2513,12 @@ deleteTradeVisuals(vis)
 array.remove(sessionsArr, i)
 array.remove(visualsArr, i)
 0
-// ✅ EXECUTE ALL 4 ARRAYS IN 4 CLEAN LINES
+// ✅ EXECUTE ALL ARRAYS IN CLEAN LINES
 processTradeArray(settings, missileSessions, missileVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, currentSessions, currentVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, hiddenDivSessions, hiddenDivVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 // ✅ MISSILE PLOTS (Now perfectly synced with the engine)
 plotshape(JustMissileBuy, title = 'Long Signal', style = shape.triangleup, location = location.belowbar, color = color.green, size = size.small)
