@@ -1,0 +1,2262 @@
+6c6
+< import { Bell, BellOff, Clock, TrendingUp, TrendingDown, LayoutDashboard, Target, ChevronRight, LogOut, ShieldCheck, Sun, Moon, Monitor, Volume2, Trash2, X as CloseIcon, RefreshCcw, RotateCcw, Smartphone, Share2, LayoutGrid, CloudFog, Zap, Rocket, Crosshair, Crown, Activity, SlidersHorizontal, Calculator, DollarSign, Wallet, ArrowUpRight, ArrowDownRight, Layers, PieChart } from 'lucide-react';
+---
+> import { Bell, BellOff, Clock, TrendingUp, TrendingDown, LayoutDashboard, Target, ChevronRight, LogOut, ShieldCheck, Sun, Moon, Monitor, Volume2, Trash2, X as CloseIcon, RefreshCcw, RotateCcw, Smartphone, Share2, LayoutGrid, CloudFog, Zap, Rocket, Crosshair, Crown, Activity, SlidersHorizontal, Calculator, DollarSign, Wallet, ArrowUpRight, ArrowDownRight, Layers, PieChart, Cpu, Play, CheckCircle2 } from 'lucide-react';
+473c473,477
+< function getTradeRupeePnL(s: Signal, usdInrRate: number): number {
+---
+> function getTradeRupeePnL(s: Signal, usdInrRate: number = 87.5): number {
+>   const pct = getExactPct(s);
+>   if (pct != null && !isNaN(pct)) {
+>     return (pct / 100) * 100000;
+>   }
+477,488c481,483
+<   
+<   let ptsDiff = 0;
+<   if (s.exit_price != null && entry > 0) {
+<     ptsDiff = isShort ? (entry - exit) : (exit - entry);
+<   } else {
+<     let meta = s.metadata || {};
+<     if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) { meta = {}; } }
+<     if (meta.exact_pts != null) {
+<       ptsDiff = Number(meta.exact_pts);
+<     } else if (meta.exact_pct != null && entry > 0) {
+<       ptsDiff = (Number(meta.exact_pct) / 100) * entry;
+<     }
+---
+>   if (entry > 0 && exit > 0) {
+>     const rawPct = isShort ? ((entry - exit) / entry) * 100 : ((exit - entry) / entry) * 100;
+>     return (rawPct / 100) * 100000;
+490,553c485
+< 
+<   const cleanS = (s.symbol || '').toUpperCase().replace(/^(NSE_DLY|NSE|MCX|NYMEX|COMEX|BINANCE|TVC):/i, '').replace(/1!$/, '').trim();
+<   const isNiftyIndex = cleanS === 'NIFTY' || cleanS === 'BANKNIFTY';
+<   const isStock = MARKET_SYMBOLS.nifty.includes(cleanS) && !isNiftyIndex;
+<   
+<   let mult = 100;
+<   if (cleanS === 'BANKNIFTY') {
+<     mult = 15;
+<     return ptsDiff * mult;
+<   } else if (isNiftyIndex) {
+<     mult = 65;
+<     return ptsDiff * mult;
+<   } else if (isStock) {
+<     mult = 100;
+<     return ptsDiff * mult;
+<   } else if (MARKET_SYMBOLS.mcx.includes(cleanS)) {
+<     if (cleanS.includes('CRUDEOILM')) mult = 10;
+<     else if (cleanS.includes('CRUDE') || cleanS.includes('GOLD')) mult = 100;
+<     else if (cleanS.includes('SILVERMIC')) mult = 1;
+<     else if (cleanS.includes('SILVERM')) mult = 5;
+<     else if (cleanS.includes('SILVER')) mult = 30;
+<     else if (cleanS.includes('NATURALGASM')) mult = 250;
+<     else if (cleanS.includes('NATURALGAS')) mult = 1250;
+<     else mult = 100;
+<     return ptsDiff * mult;
+<   } else if (MARKET_SYMBOLS.nymex.includes(cleanS) || ['CL', 'NG', 'GC', 'SI', 'CL1', 'NG1', 'GC1', 'SI1', 'HG', 'PL', 'PA', 'RB', 'HO'].includes(cleanS)) {
+<     if (cleanS.startsWith('CL')) mult = 100;
+<     else if (cleanS.startsWith('NG')) mult = 2500;
+<     else if (cleanS.startsWith('GC')) mult = 10;
+<     else if (cleanS.startsWith('SI')) mult = 500;
+<     else mult = 100;
+<     return ptsDiff * mult * usdInrRate;
+<   } else if (MARKET_SYMBOLS.crypto.includes(cleanS) || cleanS.endsWith('USDT') || cleanS.endsWith('BTC')) {
+<     if (cleanS.startsWith('BTC')) mult = 0.05;
+<     else if (cleanS.startsWith('ETH')) mult = 0.5;
+<     else if (cleanS.startsWith('SOL')) mult = 10;
+<     else if (cleanS.startsWith('BNB')) mult = 2;
+<     else if (['AVAXUSDT', 'LINKUSDT', 'DOTUSDT', 'LTCUSDT', 'BCHUSDT', 'ATOMUSDT', 'UNIUSDT', 'APTUSDT', 'NEARUSDT', 'ICPUSDT'].includes(cleanS)) mult = 50;
+<     else mult = 1000;
+<     return ptsDiff * mult * usdInrRate;
+<   } else if (cleanS.endsWith('INR')) {
+<     mult = 1000;
+<     return ptsDiff * mult;
+<   } else if (MARKET_SYMBOLS.forex.includes(cleanS) || cleanS.length === 6) {
+<     mult = 10000;
+<     if (cleanS.endsWith('JPY')) {
+<       return ((ptsDiff * mult) / (entry > 0 ? entry : 155.0)) * usdInrRate;
+<     } else if (cleanS.startsWith('USD')) {
+<       return ((ptsDiff * mult) / (entry > 0 ? entry : 1.0)) * usdInrRate;
+<     } else {
+<       return ptsDiff * mult * usdInrRate;
+<     }
+<   } else if (cleanS === 'NI225' || cleanS === 'JP225') {
+<     return (ptsDiff * 1 / 155.0) * usdInrRate;
+<   } else if (cleanS === 'UKX' || cleanS === 'UK100') {
+<     return ptsDiff * 1 * (usdInrRate * 1.30);
+<   } else if (['DAX', 'DE40', 'CAC40', 'SX5E', 'EU50'].includes(cleanS)) {
+<     return ptsDiff * 1 * (usdInrRate * 1.08);
+<   } else if (MARKET_SYMBOLS.world.includes(cleanS) || ['US30', 'DJI', 'SPX', 'SPX500', 'NAS100', 'NDX', 'US2000', 'RUT'].includes(cleanS)) {
+<     return ptsDiff * 1 * usdInrRate;
+<   } else {
+<     mult = 100;
+<     return ptsDiff * mult;
+<   }
+---
+>   return 0;
+601a534
+>   const [hoveredDistTrade, setHoveredDistTrade] = useState<any | null>(null);
+610a544,550
+>   // ── AUTONOMOUS AUDIT & RESOLUTION AGENT STATE ────────────────────────
+>   const [auditStatus, setAuditStatus] = useState<'HEALTHY' | 'DESYNC' | 'CHECKING'>('CHECKING');
+>   const [auditDetails, setAuditDetails] = useState<any>(null);
+>   const [isResolving, setIsResolving] = useState<string | null>(null);
+>   const [resolutionToast, setResolutionToast] = useState<string | null>(null);
+>   const [showAuditModal, setShowAuditModal] = useState<boolean>(false);
+> 
+2255a2196,2347
+>   // ── AUTONOMOUS AUDIT WATCHDOG & DEDICATED RESOLUTION HANDLERS ─────────
+>   const fetchWeeklyLogs = useCallback(async () => {
+>     try {
+>       const { data, error } = await supabase.from('weekly_performance_logs').select('*').order('week_start_date', { ascending: false }).limit(600);
+>       if (error) throw error;
+>       if (data && data.length > 0) {
+>         setRawWeeklyLogs(data);
+>       }
+>     } catch (err) {
+>       console.error('Failed to fetch weekly logs:', err);
+>     } finally {
+>       setWeeklyEdgeLoading(false);
+>     }
+>   }, []);
+> 
+>   const lastAuditTsRef = useRef<number>(0);
+> 
+>   const runSystemAudit = useCallback(async (autoFix = false) => {
+>     const now = Date.now();
+>     const COOLDOWN_MS = 15 * 60 * 1000; // Strict 15-minute cooldown to prevent billing and rate-limit spikes
+> 
+>     // For background/passive checks, enforce 15-minute cooldown
+>     if (!autoFix && (now - lastAuditTsRef.current < COOLDOWN_MS) && lastAuditTsRef.current > 0) {
+>       return;
+>     }
+> 
+>     try {
+>       // ── Zero-Cost Client-Side Memory Pre-Check ──
+>       // Before making an HTTP request to the serverless function, check local state in memory.
+>       // If closed signals count matches or is less than logged trades in rawWeeklyLogs, skip network call!
+>       if (!autoFix && signals.length > 0 && rawWeeklyLogs.length > 0) {
+>         const closedCount = signals.filter(s => s.exit_price != null).length;
+>         const loggedCount = rawWeeklyLogs.reduce((acc, l) => acc + (Number(l.total_trades) || 0), 0);
+>         
+>         if (loggedCount >= closedCount && closedCount > 0) {
+>           lastAuditTsRef.current = now;
+>           setAuditStatus('HEALTHY');
+>           return; // 0 API calls, 0 Netlify function invocations, 0 bill!
+>         }
+>       }
+> 
+>       lastAuditTsRef.current = now;
+> 
+>       const { data: { session } } = await supabase.auth.getSession();
+>       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+>       if (session?.access_token) {
+>         headers['Authorization'] = `Bearer ${session.access_token}`;
+>       }
+> 
+>       const res = await fetch('/api/system-audit', {
+>         method: 'POST',
+>         headers,
+>         body: JSON.stringify({ action: autoFix ? 'auto_repair' : 'audit' })
+>       });
+>       const data = await res.json();
+>       if (data && data.success) {
+>         if (autoFix) {
+>           setAuditStatus('HEALTHY');
+>           setAuditDetails(data.final_audit || data);
+>           await fetchWeeklyLogs();
+>           setResolutionToast(`⚡ Autonomous Agent: Synced ${data.weekly_logs_synced || 0} weekly logs across ${data.weeks_synced || 0} weeks`);
+>           setTimeout(() => setResolutionToast(null), 10000);
+>         } else {
+>           const isHealthy = data.status === 'HEALTHY';
+>           setAuditStatus(isHealthy ? 'HEALTHY' : 'DESYNC');
+>           setAuditDetails(data);
+>           if (!isHealthy && (data.unrolled_trades > 0 || data.missing_weeks?.length > 0 || data.outcome_mismatches > 0)) {
+>             console.log(`[AUTONOMOUS_WATCHDOG] Desync detected (${data.unrolled_trades} unrolled trades). Auto-healing...`);
+>             runSystemAudit(true);
+>           }
+>         }
+>       }
+>     } catch (err) {
+>       console.warn('[AUDIT_AGENT] Watchdog error:', err);
+>     }
+>   }, [fetchWeeklyLogs, signals, rawWeeklyLogs]);
+> 
+>   const handleResolutionAction = async (action: 'auto_repair' | 'sync_weekly' | 'heal_outcomes' | 'sweep_stale' | 'sync_tearsheet') => {
+>     setIsResolving(action);
+>     setResolutionToast(null);
+>     try {
+>       const { data: { session } } = await supabase.auth.getSession();
+>       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+>       if (session?.access_token) {
+>         headers['Authorization'] = `Bearer ${session.access_token}`;
+>       }
+> 
+>       const res = await fetch('/api/system-audit', {
+>         method: 'POST',
+>         headers,
+>         body: JSON.stringify({ action })
+>       });
+>       const data = await res.json();
+>       if (data && data.success) {
+>         await fetchWeeklyLogs();
+>         const auditRes = await fetch('/api/system-audit', { method: 'POST', headers, body: JSON.stringify({ action: 'audit' }) });
+>         const auditData = await auditRes.json();
+>         if (auditData?.success) {
+>           setAuditStatus(auditData.status === 'HEALTHY' ? 'HEALTHY' : 'DESYNC');
+>           setAuditDetails(auditData);
+>         }
+> 
+>         if (action === 'auto_repair') {
+>           setTearsheetKey(Date.now());
+>           setResolutionToast(`✅ Auto-Repair Complete! Synced ${data.weekly_logs_synced} logs across ${data.weeks_synced} weeks & refreshed tearsheet.`);
+>         } else if (action === 'sync_weekly') {
+>           setResolutionToast(`✅ Weekly Performance Synced! Upserted ${data.upserted_count} market logs.`);
+>         } else if (action === 'heal_outcomes') {
+>           setResolutionToast(`✅ Outcomes Healed! Reconciled ${data.healed_count} signals.`);
+>         } else if (action === 'sweep_stale') {
+>           setResolutionToast(`✅ Session Sweep Complete! Closed ${data.swept_count} stale signals.`);
+>         } else if (action === 'sync_tearsheet') {
+>           setTearsheetKey(Date.now());
+>           setResolutionToast(`✅ Strategy Tearsheet Resolved! Live analytics cache refreshed (${data.total_closed_trades || 0} trades).`);
+>         }
+>       } else {
+>         setResolutionToast(`❌ Failed: ${data?.error || 'Unknown error'}`);
+>       }
+>     } catch (err: any) {
+>       setResolutionToast(`❌ Error: ${err.message}`);
+>     } finally {
+>       setIsResolving(null);
+>       setTimeout(() => setResolutionToast(null), 12000);
+>     }
+>   };
+> 
+>   useEffect(() => {
+>     // Initial lightweight check 3 seconds after load
+>     const initialTimer = setTimeout(() => {
+>       runSystemAudit(false);
+>     }, 3000);
+> 
+>     // Refresh every 15 minutes (900,000 ms) strictly to prevent monthly billing and rate limit increases
+>     const auditInterval = setInterval(() => {
+>       runSystemAudit(false);
+>     }, 900000);
+> 
+>     // Visibility change listener: guarded by the 15-minute cooldown inside runSystemAudit
+>     const handleVisibility = () => {
+>       if (document.visibilityState === 'visible') {
+>         runSystemAudit(false);
+>       }
+>     };
+>     document.addEventListener('visibilitychange', handleVisibility);
+> 
+>     return () => {
+>       clearTimeout(initialTimer);
+>       clearInterval(auditInterval);
+>       document.removeEventListener('visibilitychange', handleVisibility);
+>     };
+>   }, [runSystemAudit]);
+> 
+3040,3052d3131
+<     const fetchWeeklyLogs = async () => {
+<       try {
+<         const { data, error } = await supabase.from('weekly_performance_logs').select('*').order('week_start_date', { ascending: false }).limit(600);
+<         if (error) throw error;
+<         if (data && data.length > 0) {
+<           setRawWeeklyLogs(data);
+<         }
+<       } catch (err) {
+<         console.error('Failed to fetch weekly logs:', err);
+<       } finally {
+<         setWeeklyEdgeLoading(false);
+<       }
+<     };
+3079c3158
+<   // Recompute weeklyEdgeLogs whenever raw logs or analyticsMarket filter changes
+---
+>   // Recompute weeklyEdgeLogs whenever raw logs, analyticsMarket, or signals change
+3081c3160,3242
+<     if (!rawWeeklyLogs || rawWeeklyLogs.length === 0) return;
+---
+>     const logsToUse = [...(rawWeeklyLogs || [])];
+>     
+>     // ── DYNAMIC LIVE BLENDING FALLBACK ─────────────────────────────────────
+>     // If signals has closed trades for weeks missing from rawWeeklyLogs (e.g. current week),
+>     // dynamically synthesize those weekly records so the UI is NEVER frozen or missing the active week.
+>     if (signals && signals.length > 0) {
+>       const getIstStart = (tsStr: string) => {
+>         const d = new Date(tsStr);
+>         if (isNaN(d.getTime())) return null;
+>         const istMs = d.getTime() + (5.5 * 3600 * 1000);
+>         const ist = new Date(istMs);
+>         const day = ist.getUTCDay();
+>         const diffToMon = (day === 0 ? -6 : 1) - day;
+>         return new Date(istMs + diffToMon * 86400000).toISOString().slice(0, 10);
+>       };
+> 
+>       const existingWeekMkts = new Set(logsToUse.map(l => `${l.market_type}_${l.week_start_date}`));
+>       const unloggedData: Record<string, any[]> = {};
+> 
+>       signals.forEach(s => {
+>         if (!s.exit_price) return;
+>         const out = resolveOutcome(s);
+>         if (out === 'OPEN' || out === 'CANCELLED') return;
+>         const mkt = getMarket(s);
+>         if (mkt === 'other') return;
+>         const tsStr = s.exit_at || s.updated_at || s.created_at;
+>         const wDate = getIstStart(tsStr);
+>         if (!wDate) return;
+> 
+>         const key = `${mkt}_${wDate}`;
+>         if (!existingWeekMkts.has(key)) {
+>           if (!unloggedData[key]) unloggedData[key] = [];
+>           unloggedData[key].push({ s, out, pct: getExactPct(s) || 0, mkt, wDate });
+>         }
+>       });
+> 
+>       for (const key in unloggedData) {
+>         const items = unloggedData[key];
+>         const mkt = items[0].mkt;
+>         const wDate = items[0].wDate;
+>         let wins = 0, losses = 0, bes = 0, netR = 0, grossProfit = 0, grossLoss = 0, bestTrade = 0;
+>         items.forEach(it => {
+>           if (it.out === 'WIN') wins++;
+>           else if (it.out === 'LOSS') losses++;
+>           else if (it.out === 'BREAKEVEN') bes++;
+>           netR += it.pct;
+>           if (it.pct > 0) grossProfit += it.pct;
+>           else if (it.pct < 0) grossLoss += Math.abs(it.pct);
+>           if (it.pct > bestTrade) bestTrade = it.pct;
+>         });
+>         const total = wins + losses + bes;
+>         if (total === 0) continue;
+>         const pf = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? 99.99 : 0);
+>         const winRate = (wins / total) * 100;
+>         const avgR = netR / total;
+> 
+>         const avgWin = wins > 0 ? grossProfit / wins : 0;
+>         const avgLoss = losses > 0 ? grossLoss / losses : 1;
+>         const rr = avgLoss > 0 ? avgWin / avgLoss : (avgWin > 0 ? 999 : 0);
+>         const wl = wins + losses;
+>         const kw = wl > 0 ? wins / wl : 0;
+>         const kl = wl > 0 ? losses / wl : 0;
+>         let kelly = (rr > 0 && rr !== 999) ? (((kw - (kl / rr)) * 100) * 0.5) : (rr === 999 ? kw * 50 : 0);
+>         if (kelly < 0) kelly = 0;
+> 
+>         logsToUse.push({
+>           market_type: mkt,
+>           week_start_date: wDate,
+>           win_rate: winRate.toFixed(2),
+>           total_trades: total,
+>           profit_factor: pf.toFixed(2),
+>           avg_exact_pct: avgR.toFixed(2),
+>           net_exact_pct: netR.toFixed(2),
+>           best_trade: bestTrade.toFixed(2),
+>           kelly_pct: kelly.toFixed(2),
+>           wins,
+>           losses,
+>           breakevens: bes
+>         });
+>       }
+>     }
+> 
+>     if (logsToUse.length === 0) return;
+3084,3085c3245,3246
+<       ? rawWeeklyLogs 
+<       : rawWeeklyLogs.filter(log => log.market_type === analyticsMarket);
+---
+>       ? logsToUse 
+>       : logsToUse.filter(log => log.market_type === analyticsMarket);
+3126c3287
+<   }, [rawWeeklyLogs, analyticsMarket]);
+---
+>   }, [rawWeeklyLogs, analyticsMarket, signals]);
+3363a3525,3535
+>                      {/* Uniform Tab Header */}
+>                      <div className="flex items-center justify-between mb-1.5 mt-0.5 px-1">
+>                        <div className="flex items-center gap-2">
+>                          <LayoutGrid className="text-accent" size={20} />
+>                          <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary">Hub</h2>
+>                        </div>
+>                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30 uppercase tracking-wider">
+>                          Execution Edge
+>                        </span>
+>                      </div>
+> 
+3367c3539,3542
+<                          <span className="block mt-1 sm:mt-1.5 text-primary">TRADE GUIDANCE</span>
+---
+>                          <span className="flex items-center gap-2 mt-1 sm:mt-1.5 text-primary">
+>                            <LayoutGrid className="text-accent shrink-0" size={22} />
+>                            <span>TRADE GUIDANCE</span>
+>                          </span>
+3388,3393c3563,3564
+<                            const getPillValueSize = (val: string | number) => {
+<                              const s = String(val || '');
+<                              if (s.length <= 2) return 'text-sm sm:text-base md:text-lg lg:text-xl';
+<                              if (s.length <= 4) return 'text-xs sm:text-sm md:text-base lg:text-lg';
+<                              if (s.length <= 6) return 'text-[10px] sm:text-xs md:text-sm lg:text-base';
+<                              return 'text-[9px] sm:text-[10px] md:text-xs lg:text-sm';
+---
+>                            const getPillValueSize = (_val?: string | number) => {
+>                              return 'text-sm sm:text-base md:text-lg lg:text-xl';
+3647,3650c3818,3820
+<                               let outcomeLabel = isActive ? (!signal.updated_at ? 'ACTIVE LIMIT' : 'OPEN') : 'ACTIVE';
+<                               let outcomeClr = 'text-slate-600 dark:text-gray-400 glow-gray';
+<                               let outcomeBoxClass = 'bg-gradient-to-br from-gray-500/[0.08] theme-gray:from-gray-500/[0.05] to-gray-500/[0.01] theme-gray:to-gray-500/[0.01] dark:from-gray-500/[0.12] dark:to-gray-950/[0.1] border-gray-500/30 dark:border-gray-500/40 shadow-[0_4px_12px_rgba(156,163,175,0.04),inset_0_1px_1px_rgba(255,255,255,0.03)]';
+<                               let outcomePillClass = '';
+---
+>                            let outcomeLabel = isActive ? (!signal.updated_at ? 'ACTIVE LIMIT' : 'OPEN') : 'ACTIVE';
+>                            let outcomeClr = 'text-slate-600 theme-gray:text-slate-800 dark:text-gray-400 glow-gray';
+>                            let outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-gray-500/[0.15] theme-gray:from-gray-500/[0.12] to-gray-500/[0.05] theme-gray:to-gray-500/[0.03] dark:from-gray-500/[0.18] dark:to-gray-950/[0.20] border-gray-500/50 theme-gray:border-gray-500/40 dark:border-gray-500/40 shadow-[0_4px_16px_rgba(156,163,175,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+3652,3681c3822,3846
+<                               if (isActive) {
+<                                 if (protectedLevel) {
+<                                   outcomeLabel = protectedLevel;
+<                                   if (protectedLevel.includes('BREAKEVEN') || protectedLevel.includes('B/E')) {
+<                                     outcomeClr = 'text-blue-500 dark:text-blue-400 glow-info';
+<                                     outcomeBoxClass = 'bg-gradient-to-br from-blue-500/[0.08] theme-gray:from-blue-500/[0.04] theme-gray:from-blue-500/[0.05] theme-gray:from-blue-500/[0.04] to-blue-500/[0.01] theme-gray:to-blue-500/[0.00] theme-gray:to-blue-500/[0.01] theme-gray:to-blue-500/[0.00] dark:from-blue-500/[0.12] dark:to-blue-950/[0.1] border-blue-500/30 dark:border-blue-500/40 shadow-[0_4px_12px_rgba(59,130,246,0.04),inset_0_1px_1px_rgba(255,255,255,0.03)]';
+<                                     outcomePillClass = '';
+<                                   } else {
+<                                     outcomeClr = 'text-green-500 dark:text-green-400 glow-success';
+<                                     outcomeBoxClass = 'bg-gradient-to-br from-green-500/[0.08] theme-gray:from-green-500/[0.05] to-green-500/[0.01] theme-gray:to-green-500/[0.01] dark:from-green-500/[0.12] dark:to-green-950/[0.1] border-green-500/30 dark:border-green-500/40 shadow-[0_4px_12px_rgba(34,197,94,0.04),inset_0_1px_1px_rgba(255,255,255,0.03)]';
+<                                     outcomePillClass = '';
+<                                   }
+<                                 }
+<                               } else if (isWin) {
+<                                 const exitLvl = getDisplayExitLevel(signal);
+<                                 outcomeLabel = exitLvl !== 'UNKNOWN' ? exitLvl : 'WIN';
+<                                 outcomeClr = 'text-green-500 dark:text-green-400 glow-success';
+<                                 outcomeBoxClass = 'bg-gradient-to-br from-green-500/[0.08] theme-gray:from-green-500/[0.05] to-green-500/[0.01] theme-gray:to-green-500/[0.01] dark:from-green-500/[0.12] dark:to-green-950/[0.1] border-green-500/30 dark:border-green-500/40 shadow-[0_4px_12px_rgba(34,197,94,0.04),inset_0_1px_1px_rgba(255,255,255,0.03)]';
+<                                 outcomePillClass = '';
+<                               } else if (isLoss) {
+<                                 outcomeLabel = 'SL HIT';
+<                                 outcomeClr = 'text-red-500 dark:text-red-400 glow-danger';
+<                                 outcomeBoxClass = 'bg-gradient-to-br from-red-500/[0.08] theme-gray:from-red-500/[0.05] to-red-500/[0.01] theme-gray:to-red-500/[0.01] dark:from-red-500/[0.12] dark:to-red-950/[0.1] border-red-500/30 dark:border-red-500/40 shadow-[0_4px_12px_rgba(239,68,68,0.04),inset_0_1px_1px_rgba(255,255,255,0.03)]';
+<                                 outcomePillClass = '';
+<                               } else if (isBE) {
+<                                 outcomeLabel = 'BREAKEVEN';
+<                                 outcomeClr = 'text-blue-500 dark:text-blue-400 glow-info';
+<                                 outcomeBoxClass = 'bg-gradient-to-br from-blue-500/[0.08] theme-gray:from-blue-500/[0.04] theme-gray:from-blue-500/[0.05] theme-gray:from-blue-500/[0.04] to-blue-500/[0.01] theme-gray:to-blue-500/[0.00] theme-gray:to-blue-500/[0.01] theme-gray:to-blue-500/[0.00] dark:from-blue-500/[0.12] dark:to-blue-950/[0.1] border-blue-500/30 dark:border-blue-500/40 shadow-[0_4px_12px_rgba(59,130,246,0.04),inset_0_1px_1px_rgba(255,255,255,0.03)]';
+<                                 outcomePillClass = '';
+<                               }
+---
+>                            if (isActive) {
+>                              if (protectedLevel) {
+>                                outcomeLabel = protectedLevel;
+>                                if (protectedLevel.includes('BREAKEVEN') || protectedLevel.includes('B/E')) {
+>                                  outcomeClr = 'text-blue-500 theme-gray:text-blue-600 dark:text-blue-400 glow-info';
+>                                  outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-blue-500/[0.20] theme-gray:from-blue-500/[0.18] to-blue-500/[0.06] theme-gray:to-blue-500/[0.05] dark:from-blue-500/[0.20] dark:to-blue-950/[0.25] border-blue-500/70 theme-gray:border-blue-600/60 dark:border-blue-500/50 shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                                } else {
+>                                  outcomeClr = 'text-green-500 theme-gray:text-green-600 dark:text-green-400 glow-success';
+>                                  outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-green-500/[0.20] theme-gray:from-green-500/[0.18] to-green-500/[0.06] theme-gray:to-green-500/[0.05] dark:from-green-500/[0.20] dark:to-green-950/[0.25] border-green-500/70 theme-gray:border-green-600/60 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                                }
+>                              }
+>                            } else if (isWin) {
+>                              const exitLvl = getDisplayExitLevel(signal);
+>                              outcomeLabel = exitLvl !== 'UNKNOWN' ? exitLvl : 'WIN';
+>                              outcomeClr = 'text-green-500 theme-gray:text-green-600 dark:text-green-400 glow-success';
+>                              outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-green-500/[0.20] theme-gray:from-green-500/[0.18] to-green-500/[0.06] theme-gray:to-green-500/[0.05] dark:from-green-500/[0.20] dark:to-green-950/[0.25] border-green-500/70 theme-gray:border-green-600/60 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                            } else if (isLoss) {
+>                              outcomeLabel = 'SL HIT';
+>                              outcomeClr = 'text-red-500 theme-gray:text-red-600 dark:text-red-400 glow-danger';
+>                              outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-red-500/[0.20] theme-gray:from-red-500/[0.18] to-red-500/[0.06] theme-gray:to-red-500/[0.05] dark:from-red-500/[0.20] dark:to-red-950/[0.25] border-red-500/70 theme-gray:border-red-600/60 dark:border-red-500/50 shadow-[0_4px_16px_rgba(239,68,68,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                            } else if (isBE) {
+>                              outcomeLabel = 'BREAKEVEN';
+>                              outcomeClr = 'text-blue-500 theme-gray:text-blue-600 dark:text-blue-400 glow-info';
+>                              outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-blue-500/[0.20] theme-gray:from-blue-500/[0.18] to-blue-500/[0.06] theme-gray:to-blue-500/[0.05] dark:from-blue-500/[0.20] dark:to-blue-950/[0.25] border-blue-500/70 theme-gray:border-blue-600/60 dark:border-blue-500/50 shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                            }
+3683,3748c3848
+<                                 return (
+< <div key={signal.id} className={`p-3 rounded-xl border ${theme.border} ${theme.bg} ${theme.shadow || ''} transition-all duration-300 hover:scale-[1.01]`}>
+<                                    <div className="flex justify-between items-start mb-4 gap-2">
+<                                       <div className="flex-1 min-w-0">
+<                                          {(() => {
+<                                              return (
+<                                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+<                                                  <StrategyBadge typeStr={signal.type} isActive={true} />
+<                                                  <div className={`inline-flex items-center px-2.5 py-0.5 rounded-lg border border-primary/20 bg-primary/5 text-[10px] font-mono uppercase tracking-widest font-bold ${outcomeClr} ${outcomePillClass}`}>
+<                                                     {outcomeLabel}
+<                                                  </div>
+<                                                </div>
+<                                              );
+<                                           })()}
+<                                          <div className="flex items-center gap-3 mt-1">
+<                                             <div className={`${(signal.symbol?.length || 0) > 11 ? 'text-xl sm:text-2xl' : (signal.symbol?.length || 0) > 8 ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'} font-bold italic tracking-tighter leading-none pr-1`}>{signal.symbol}</div>
+<                                             <button 
+<                                                 onClick={(e) => handleShare(signal, e.currentTarget)}
+<                                                 className="text-accent cursor-pointer hover:opacity-80 active:scale-95 transition-all flex items-center justify-center bg-primary/10 hover:bg-primary/20 w-8 h-8 rounded-lg border border-primary/20 shrink-0"
+<                                             >
+<                                                <Share2 size={16} className="text-accent" />
+<                                             </button>
+<                                          </div>
+<                                       </div>
+<                                       <div className="text-right">
+<                                          <div className="text-[9px] font-mono font-bold mb-0.5 uppercase tracking-widest text-primary/60">LIMIT SIGNAL</div>
+<                                          <div className="text-xs font-bold font-mono text-primary">
+<                                            {(() => {
+<                                              const signalTime = signal.signal_ts || signal.created_at;
+<                                              const _d = new Date(signalTime); return isNaN(_d.getTime()) ? '--' : _d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+<                                            })()} IST
+<                                          </div>
+<                                          <div className="text-[10px] font-mono text-dim mt-0.5">
+<                                            {(() => {
+<                                              const signalTime = signal.signal_ts || signal.created_at;
+<                                              const _d = new Date(signalTime); return isNaN(_d.getTime()) ? '--' : _d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase();
+<                                            })()}
+<                                          </div>
+<                                       </div>
+<                                    </div>
+<                                          {(() => {
+<                                            let meta = signal.metadata || {};
+<                                            if (typeof meta === 'string') {
+<                                                try { meta = JSON.parse(meta); } catch(e) { meta = {}; }
+<                                            }
+<                                            if (signal.dhan_traded_symbol || meta.exit_logic) {
+<                                              return (
+<                                                <div className="flex flex-wrap gap-1.5 mt-2.5">
+<                                                  {signal.dhan_traded_symbol && (
+<                                                    <span className="text-[9px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-blue-500/15 to-blue-500/5 border border-blue-500/30 text-blue-400 px-2.5 py-1 rounded-full flex items-center gap-1 shadow-[0_2px_8px_rgba(59,130,246,0.1)]">
+<                                                      🤖 Dhan: {signal.dhan_traded_symbol}
+<                                                    </span>
+<                                                  )}
+<                                                  {meta.exit_logic && (
+<                                                    <span className="text-[9px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-green-500/15 to-green-500/5 border border-green-500/30 text-green-400 px-2.5 py-1 rounded-full shadow-[0_2px_8px_rgba(34,197,94,0.1)]">
+<                                                      {meta.exit_logic}
+<                                                    </span>
+<                                                  )}
+<                                                </div>
+<                                              );
+<                                            }
+<                                            return null;
+<                                          })()}
+<                                     {/* Simplified Alert: Entry | SL | Trail SL | Next TP */}
+<                                     {(() => {
+<                                       const riskAmt = Math.abs(Number(signal.entry) - Number(stopVal));
+---
+>                            const riskAmt = Math.abs(Number(signal.entry) - Number(stopVal));
+3750,3767c3850,3861
+<                                       let calcRR = null;
+<                                       if (riskAmt > 0) {
+<                                           if (!isActive) {
+<                                               if (signal.exit_price != null && !isNaN(Number(signal.exit_price))) {
+<                                                   const realizedRewardAmt = isShort ? (Number(signal.entry) - Number(signal.exit_price)) : (Number(signal.exit_price) - Number(signal.entry));
+<                                                   calcRR = (realizedRewardAmt / riskAmt).toFixed(2);
+<                                               } else {
+<                                                   calcRR = null;
+<                                               }
+<                                           } else if (isActive && nextTP != null) {
+<                                               const projectedRewardAmt = Math.abs(Number(nextTP) - Number(signal.entry));
+<                                               calcRR = (projectedRewardAmt / riskAmt).toFixed(2);
+<                                           }
+<                                       }
+< 
+<                                       const rr = !isActive 
+<                                          ? (calcRR != null ? calcRR : null) 
+<                                          : (calcRR != null ? calcRR : (signal.rr != null ? Number(signal.rr).toFixed(2) : null));
+---
+>                            let calcRR = null;
+>                            if (riskAmt > 0) {
+>                                if (!isActive) {
+>                                    if (signal.exit_price != null && !isNaN(Number(signal.exit_price))) {
+>                                        const realizedRewardAmt = isShort ? (Number(signal.entry) - Number(signal.exit_price)) : (Number(signal.exit_price) - Number(signal.entry));
+>                                        calcRR = (realizedRewardAmt / riskAmt).toFixed(2);
+>                                    }
+>                                } else if (isActive && nextTP != null) {
+>                                    const projectedRewardAmt = Math.abs(Number(nextTP) - Number(signal.entry));
+>                                    calcRR = (projectedRewardAmt / riskAmt).toFixed(2);
+>                                }
+>                            }
+3769,3772c3863,3865
+<                                       const sigMeta = typeof signal.metadata === 'string' ? (() => { try { return JSON.parse(signal.metadata); } catch { return {}; } })() : (signal.metadata || {});
+<                                       const isCancelledOrSkipped = finalOutcome === 'CANCELLED' || (signal.status || '').toUpperCase().includes('CANCEL') || (signal.status || '').toUpperCase().includes('EXPIRED') || (signal.status || '').toUpperCase().includes('SKIPPED');
+<                                       const isLimitOrder = isActive && !signal.updated_at && !sigMeta.real_entry_time;
+<                                       const hasEntered = !isLimitOrder && !isCancelledOrSkipped && (sigMeta.real_entry_time || signal.updated_at || ['WIN', 'LOSS', 'BREAKEVEN'].includes(finalOutcome));
+---
+>                            const rr = !isActive 
+>                               ? (calcRR != null ? calcRR : null) 
+>                               : (calcRR != null ? calcRR : (signal.rr != null ? Number(signal.rr).toFixed(2) : null));
+3774,3775c3867,3870
+<                                       const liveEntryTime = sigMeta.real_entry_time || (hasEntered ? (signal.signal_ts || signal.created_at) : null);
+<                                       const entryTime = liveEntryTime;
+---
+>                            const sigMeta = typeof signal.metadata === 'string' ? (() => { try { return JSON.parse(signal.metadata); } catch { return {}; } })() : (signal.metadata || {});
+>                            const isCancelledOrSkipped = finalOutcome === 'CANCELLED' || (signal.status || '').toUpperCase().includes('CANCEL') || (signal.status || '').toUpperCase().includes('EXPIRED') || (signal.status || '').toUpperCase().includes('SKIPPED');
+>                            const isLimitOrder = isActive && !signal.updated_at && !sigMeta.real_entry_time;
+>                            const hasEntered = !isLimitOrder && !isCancelledOrSkipped && (sigMeta.real_entry_time || signal.updated_at || ['WIN', 'LOSS', 'BREAKEVEN'].includes(finalOutcome));
+3777,3780c3872
+<                                       const formatHold = (mins: number) => {
+<                                          if (mins <= 0) return '<1m';
+<                                          return mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h ${mins % 60}m`;
+<                                        };
+---
+>                            const liveEntryTime = sigMeta.real_entry_time || (hasEntered ? (signal.signal_ts || signal.created_at) : null);
+3782,3784c3874,3877
+<                                       const elapsedMins = liveEntryTime ? Math.max(0, Math.floor((Date.now() - new Date(liveEntryTime).getTime()) / 60000)) : 0;
+<                                       let exitTimeStr = signal.exit_at || signal.updated_at;
+<                                       if (!isActive && !isCancelledOrSkipped && !exitTimeStr) exitTimeStr = signal.created_at || liveEntryTime;
+---
+>                            const formatHold = (mins: number) => {
+>                               if (mins <= 0) return '<1m';
+>                               return mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h ${mins % 60}m`;
+>                            };
+3786,3788c3879,3881
+<                                       const finalHoldMins = (exitTimeStr && liveEntryTime) 
+<                                         ? Math.max(0, Math.floor((new Date(exitTimeStr).getTime() - new Date(liveEntryTime).getTime()) / 60000))
+<                                         : elapsedMins;
+---
+>                            const elapsedMins = liveEntryTime ? Math.max(0, Math.floor((Date.now() - new Date(liveEntryTime).getTime()) / 60000)) : 0;
+>                            let exitTimeStr = signal.exit_at || signal.updated_at;
+>                            if (!isActive && !isCancelledOrSkipped && !exitTimeStr) exitTimeStr = signal.created_at || liveEntryTime;
+3790,3809c3883,3885
+<                                         return (
+<                                         <div className="grid grid-cols-3 gap-1.5 mt-2">
+<                                           {/* Entry Card */}
+<                                           <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-transparent dark:bg-transparent bg-gradient-to-br from-green-500/[0.20] theme-gray:from-green-500/[0.05] to-green-500/[0.06] theme-gray:to-green-500/[0.01] dark:from-green-500/[0.18] dark:to-green-950/[0.12] border-green-500/70 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+<                                             <div>
+<                                               <div className="text-[10px] font-mono text-green-700 dark:text-green-400 font-bold mb-1.5 uppercase tracking-widest">ENTRY</div>
+<                                               <div className="text-[13px] sm:text-[15px] font-bold text-green-600 dark:text-green-300 tracking-tighter glow-success break-words leading-none">{fmt(signal.entry)}</div>
+<                                             </div>
+<                                             {hasEntered && entryTime && (
+<                                               <div className="text-[10px] font-mono font-bold text-primary/70 dark:text-primary/60 mt-1.5 leading-tight border-t border-green-500/20 pt-1.5">
+<                                                 {(() => {
+<                                                   const d = new Date(entryTime);
+<                                                   if (isNaN(d.getTime())) return '--';
+<                                                   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase() + 
+<                                                          ' ' + 
+<                                                          d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+<                                                 })()}
+<                                               </div>
+<                                             )}
+<                                           </div>
+---
+>                            const finalHoldMins = (exitTimeStr && liveEntryTime) 
+>                              ? Math.max(0, Math.floor((new Date(exitTimeStr).getTime() - new Date(liveEntryTime).getTime()) / 60000))
+>                              : elapsedMins;
+3811,3828c3887,3929
+<                                           {/* Stop Loss Card */}
+<                                           <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-transparent dark:bg-transparent bg-gradient-to-br from-red-500/[0.20] theme-gray:from-red-500/[0.05] to-red-500/[0.06] theme-gray:to-red-500/[0.01] dark:from-red-500/[0.18] dark:to-red-950/[0.12] border-red-500/70 dark:border-red-500/50 shadow-[0_4px_16px_rgba(239,68,68,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+<                                             <div>
+<                                               <div className="text-[10px] font-mono text-red-700 dark:text-red-400 font-bold mb-1.5 uppercase tracking-widest">STOP LOSS</div>
+<                                               <div className="text-[13px] sm:text-[15px] font-bold text-red-600 dark:text-red-300 tracking-tighter glow-danger break-words leading-none">{fmt(stopVal)}</div>
+<                                             </div>
+<                                             {!isActive && signal.exit_at && (
+<                                               <div className="text-[10px] font-mono font-bold text-primary/70 dark:text-primary/60 mt-1.5 leading-tight border-t border-red-500/20 pt-1.5">
+<                                                 {(() => {
+<                                                   const d = new Date(signal.exit_at);
+<                                                   if (isNaN(d.getTime())) return '--';
+<                                                   return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase() + 
+<                                                          ' ' + 
+<                                                          d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+<                                                 })()}
+<                                               </div>
+<                                             )}
+<                                           </div>
+---
+>                            return (
+>                              <div key={signal.id} className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border ${theme.border} ${theme.bg} ${theme.shadow || ''} transition-all duration-300 hover:scale-[1.005]`}>
+>                                {/* Row 1: Badges, Symbol, Share, Time */}
+>                                <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
+>                                  <div className="flex-1 min-w-0">
+>                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+>                                      <StrategyBadge typeStr={signal.type} isActive={isActive} />
+>                                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-lg border border-primary/20 bg-primary/5 text-[10px] font-mono uppercase tracking-widest font-bold ${outcomeClr}`}>
+>                                        {outcomeLabel}
+>                                      </div>
+>                                    </div>
+>                                    <div className="flex items-center gap-2.5 sm:gap-3 mt-1">
+>                                      <div className={`${(signal.symbol?.length || 0) > 11 ? 'text-xl sm:text-2xl' : (signal.symbol?.length || 0) > 8 ? 'text-2xl sm:text-3xl' : 'text-2xl sm:text-3xl md:text-4xl'} font-bold italic tracking-tighter leading-none pr-1`}>
+>                                        {signal.symbol}
+>                                      </div>
+>                                      <button 
+>                                        onClick={(e) => handleShare(signal, e.currentTarget)}
+>                                        className="text-accent cursor-pointer hover:opacity-80 active:scale-95 transition-all flex items-center justify-center bg-primary/10 hover:bg-primary/20 w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-primary/20 shrink-0"
+>                                      >
+>                                        <Share2 size={15} className="text-accent" />
+>                                      </button>
+>                                    </div>
+>                                  </div>
+>                                  <div className="text-right shrink-0">
+>                                    <div className="text-[9px] font-mono font-bold mb-0.5 uppercase tracking-widest text-primary/60">
+>                                      {isActive ? (!signal.updated_at ? 'LIMIT SIGNAL' : 'LIVE TRADE') : 'CLOSED TRADE'}
+>                                    </div>
+>                                    <div className="text-xs font-bold font-mono text-primary">
+>                                      {(() => {
+>                                        const signalTime = liveEntryTime || signal.signal_ts || signal.created_at;
+>                                        const _d = new Date(signalTime);
+>                                        return isNaN(_d.getTime()) ? '--' : _d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+>                                      })()} IST
+>                                    </div>
+>                                    <div className="text-[10px] font-mono text-dim mt-0.5">
+>                                      {(() => {
+>                                        const signalTime = liveEntryTime || signal.signal_ts || signal.created_at;
+>                                        const _d = new Date(signalTime);
+>                                        return isNaN(_d.getTime()) ? '--' : _d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase();
+>                                      })()}
+>                                    </div>
+>                                  </div>
+>                                </div>
+3830,3849c3931,3950
+<                                           {/* Outcome Card */}
+<                                           <div className={`p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-transparent dark:bg-transparent ${outcomeBoxClass}`}>
+<                                             <div>
+<                                               <div className="text-[10px] font-mono font-bold mb-1.5 uppercase tracking-widest opacity-80" style={{color:'inherit'}}><span className={outcomeClr.includes('green') ? 'text-green-700 dark:text-green-400' : outcomeClr.includes('red') ? 'text-red-700 dark:text-red-400' : 'text-slate-600 dark:text-slate-400'}>OUTCOME</span></div>
+<                                               <div className={`text-[13px] sm:text-[15px] font-bold mt-0.5 break-words leading-none ${outcomeClr.replace('-500', '-600')}`}>{isActive ? (!signal.updated_at ? 'ACTIVE LIMIT' : 'OPEN') : finalOutcome}</div>
+<                                               {(() => {
+<                                                 if (!isWin && !isLoss && !isBE) return null;
+<                                                 const pctVal = getExactPct(signal);
+<                                                 if (pctVal == null) return null;
+<                                                 return (
+<                                                   <div className={`text-[12px] sm:text-[14px] font-mono font-bold mt-1.5 ${pctVal >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+<                                                     {pctVal > 0 ? '+' : ''}{pctVal.toFixed(2)}%
+<                                                   </div>
+<                                                 );
+<                                               })()}
+<                                             </div>
+<                                             <div className={`text-[10px] font-mono font-bold mt-1.5 leading-tight border-t border-primary/10 pt-1.5 ${isActive ? (!signal.updated_at ? 'text-amber-600 dark:text-amber-500' : 'text-blue-600 dark:text-blue-500') : 'text-primary/70 dark:text-primary/60'}`}>
+<                                               {isActive ? `ALIVE: ${entryTime ? formatHold(elapsedMins) : '--'}` : `HELD: ${entryTime ? formatHold(finalHoldMins) : '--'}`}
+<                                             </div>
+<                                           </div>
+---
+>                                {/* Tags: Dhan & Exit Logic */}
+>                                {(() => {
+>                                  if (signal.dhan_traded_symbol || sigMeta.exit_logic) {
+>                                    return (
+>                                      <div className="flex flex-wrap gap-1.5 mb-2.5">
+>                                        {signal.dhan_traded_symbol && (
+>                                          <span className="text-[9px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-blue-500/15 to-blue-500/5 border border-blue-500/30 text-blue-400 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-[0_2px_8px_rgba(59,130,246,0.1)]">
+>                                            🤖 Dhan: {signal.dhan_traded_symbol}
+>                                          </span>
+>                                        )}
+>                                        {sigMeta.exit_logic && (
+>                                          <span className="text-[9px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-green-500/15 to-green-500/5 border border-green-500/30 text-green-400 px-2.5 py-0.5 rounded-full shadow-[0_2px_8px_rgba(34,197,94,0.1)]">
+>                                            {sigMeta.exit_logic}
+>                                          </span>
+>                                        )}
+>                                      </div>
+>                                    );
+>                                  }
+>                                  return null;
+>                                })()}
+3851,3857c3952,3969
+<                                           {/* Trail SL Card */}
+<                                           <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-transparent dark:bg-transparent bg-gradient-to-br from-blue-500/[0.20] theme-gray:from-blue-500/[0.05] to-blue-500/[0.06] theme-gray:to-blue-500/[0.01] dark:from-blue-500/[0.18] dark:to-blue-950/[0.12] border-blue-500/70 dark:border-blue-500/50 shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+<                                             <div>
+<                                               <div className="text-[10px] font-mono text-blue-700 dark:text-blue-400 font-bold mb-1.5 uppercase tracking-widest">TRAIL SL</div>
+<                                               <div className="text-[13px] sm:text-[15px] font-bold text-blue-600 dark:text-blue-300 tracking-tighter glow-info break-words leading-none">{fmt(trailSL)}</div>
+<                                             </div>
+<                                           </div>
+---
+>                                {/* 6-Card Micro Grid */}
+>                                <div className="grid grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-1.5 mt-2">
+>                                  {/* Entry Card */}
+>                                  <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-green-500/[0.20] theme-gray:from-green-500/[0.18] to-green-500/[0.06] theme-gray:to-green-500/[0.05] dark:from-green-500/[0.20] dark:to-green-950/[0.25] border-green-500/70 theme-gray:border-green-600/60 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+>                                    <div>
+>                                      <div className="text-[10px] font-mono text-green-700 theme-gray:text-green-800 dark:text-green-400 font-bold mb-1 uppercase tracking-widest">ENTRY</div>
+>                                      <div className="text-[13px] sm:text-[15px] font-bold text-green-600 theme-gray:text-green-700 dark:text-green-300 tracking-tighter glow-success break-words leading-none">{fmt(signal.entry)}</div>
+>                                    </div>
+>                                    {hasEntered && liveEntryTime && (
+>                                      <div className="text-[10px] font-mono font-bold text-primary/70 dark:text-primary/60 mt-1.5 leading-tight border-t border-green-500/20 pt-1">
+>                                        {(() => {
+>                                          const d = new Date(liveEntryTime);
+>                                          if (isNaN(d.getTime())) return '--';
+>                                          return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase() + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+>                                        })()}
+>                                      </div>
+>                                    )}
+>                                  </div>
+3859,3877c3971,3986
+<                                           {/* Target / Exited At Card */}
+<                                           <div className={`p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-transparent dark:bg-transparent bg-gradient-to-br shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)] ${
+<                                             isActive 
+<                                               ? "from-amber-500/[0.20] theme-gray:from-amber-500/[0.05] to-amber-500/[0.06] theme-gray:to-amber-500/[0.01] dark:from-amber-500/[0.18] dark:to-amber-950/[0.12] border-amber-500/70 dark:border-amber-500/50 shadow-[0_4px_16px_rgba(245,158,11,0.08)]"
+<                                               : "from-green-500/[0.20] theme-gray:from-green-500/[0.05] to-green-500/[0.06] theme-gray:to-green-500/[0.01] dark:from-green-500/[0.18] dark:to-green-950/[0.12] border-green-500/70 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08)]"
+<                                           }`}>
+<                                             <div>
+<                                               <div className={`text-[10px] font-mono font-bold mb-1.5 uppercase tracking-widest ${isActive ? 'text-amber-700 dark:text-amber-400' : 'text-green-700 dark:text-green-400'}`}>
+<                                                 {isActive ? 'TARGET' : 'EXITED AT'}
+<                                               </div>
+<                                               <div className={`text-[13px] sm:text-[15px] font-bold tracking-tighter break-words leading-none ${isActive ? 'text-amber-600 dark:text-amber-300 glow-warning' : 'text-green-600 dark:text-green-300 glow-success'}`}>
+<                                                 {(() => {
+<                                                   if (isActive) return nextTP != null ? fmt(nextTP) : '---';
+<                                                   if (signal.exit_price != null) return fmt(signal.exit_price);
+<                                                   return '---';
+<                                                 })()}
+<                                               </div>
+<                                             </div>
+<                                           </div>
+---
+>                                  {/* Stop Loss Card */}
+>                                  <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-red-500/[0.20] theme-gray:from-red-500/[0.18] to-red-500/[0.06] theme-gray:to-red-500/[0.05] dark:from-red-500/[0.20] dark:to-red-950/[0.25] border-red-500/70 theme-gray:border-red-600/60 dark:border-red-500/50 shadow-[0_4px_16px_rgba(239,68,68,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+>                                    <div>
+>                                      <div className="text-[10px] font-mono text-red-700 theme-gray:text-red-800 dark:text-red-400 font-bold mb-1 uppercase tracking-widest">STOP LOSS</div>
+>                                      <div className="text-[13px] sm:text-[15px] font-bold text-red-600 theme-gray:text-red-700 dark:text-red-300 tracking-tighter glow-danger break-words leading-none">{fmt(stopVal)}</div>
+>                                    </div>
+>                                    {!isActive && signal.exit_at && (
+>                                      <div className="text-[10px] font-mono font-bold text-primary/70 dark:text-primary/60 mt-1.5 leading-tight border-t border-red-500/20 pt-1">
+>                                        {(() => {
+>                                          const d = new Date(signal.exit_at);
+>                                          if (isNaN(d.getTime())) return '--';
+>                                          return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase() + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+>                                        })()}
+>                                      </div>
+>                                    )}
+>                                  </div>
+3879,3908c3988,4002
+<                                           {/* RR Card */}
+<                                           {(() => {
+<                                              let rrTheme = 'purple';
+<                                              if (!isActive) {
+<                                                  if (Number(rr) > 0) rrTheme = 'green';
+<                                                  else if (Number(rr) < 0) rrTheme = 'red';
+<                                                  else rrTheme = 'slate';
+<                                              } else {
+<                                                  if (!signal.updated_at) rrTheme = 'amber';
+<                                                  else rrTheme = 'blue';
+<                                              }
+<                                              
+<                                              const rrBorder = rrTheme === 'green' ? 'border-green-500/70 dark:border-green-500/50' : rrTheme === 'red' ? 'border-red-500/70 dark:border-red-500/50' : rrTheme === 'slate' ? 'border-slate-500/70 dark:border-slate-500/50' : rrTheme === 'amber' ? 'border-amber-500/70 dark:border-amber-500/50' : rrTheme === 'blue' ? 'border-blue-500/70 dark:border-blue-500/50' : 'border-purple-500/70 dark:border-purple-500/50';
+<                                              const rrBgFrom = rrTheme === 'green' ? 'from-green-500/[0.20] theme-gray:from-green-500/[0.05] dark:from-green-500/[0.18]' : rrTheme === 'red' ? 'from-red-500/[0.20] theme-gray:from-red-500/[0.05] dark:from-red-500/[0.18]' : rrTheme === 'slate' ? 'from-slate-500/[0.20] theme-gray:from-slate-500/[0.05] dark:from-slate-500/[0.18]' : rrTheme === 'amber' ? 'from-amber-500/[0.20] theme-gray:from-amber-500/[0.05] dark:from-amber-500/[0.18]' : rrTheme === 'blue' ? 'from-blue-500/[0.20] theme-gray:from-blue-500/[0.05] dark:from-blue-500/[0.18]' : 'from-purple-500/[0.20] theme-gray:from-purple-500/[0.05] dark:from-purple-500/[0.18]';
+<                                              const rrBgTo = rrTheme === 'green' ? 'to-green-500/[0.06] theme-gray:to-green-500/[0.01] dark:to-green-950/[0.12]' : rrTheme === 'red' ? 'to-red-500/[0.06] theme-gray:to-red-500/[0.01] dark:to-red-950/[0.12]' : rrTheme === 'slate' ? 'to-slate-500/[0.06] theme-gray:to-slate-500/[0.01] dark:to-slate-950/[0.12]' : rrTheme === 'amber' ? 'to-amber-500/[0.06] theme-gray:to-amber-500/[0.01] dark:to-amber-950/[0.12]' : rrTheme === 'blue' ? 'to-blue-500/[0.06] theme-gray:to-blue-500/[0.01] dark:to-blue-950/[0.12]' : 'to-purple-500/[0.06] theme-gray:to-purple-500/[0.01] dark:to-purple-950/[0.12]';
+<                                              const rrShadow = rrTheme === 'green' ? 'shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]' : rrTheme === 'red' ? 'shadow-[0_4px_16px_rgba(239,68,68,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]' : rrTheme === 'slate' ? 'shadow-[0_4px_16px_rgba(100,116,139,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]' : rrTheme === 'amber' ? 'shadow-[0_4px_16px_rgba(245,158,11,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]' : rrTheme === 'blue' ? 'shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]' : 'shadow-[0_4px_16px_rgba(168,85,247,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+<                                              const rrText1 = rrTheme === 'green' ? 'text-green-700 dark:text-green-400' : rrTheme === 'red' ? 'text-red-700 dark:text-red-400' : rrTheme === 'slate' ? 'text-slate-700 dark:text-slate-400' : rrTheme === 'amber' ? 'text-amber-700 dark:text-amber-500' : rrTheme === 'blue' ? 'text-blue-700 dark:text-blue-400' : 'text-purple-700 dark:text-purple-400';
+<                                              const rrText2 = rrTheme === 'green' ? 'text-green-600 dark:text-green-300 glow-success' : rrTheme === 'red' ? 'text-red-600 dark:text-red-300 glow-danger' : rrTheme === 'slate' ? 'text-slate-600 dark:text-slate-300' : rrTheme === 'amber' ? 'text-amber-600 dark:text-amber-400 glow-warning' : rrTheme === 'blue' ? 'text-blue-600 dark:text-blue-300 glow-info' : 'text-purple-600 dark:text-purple-300 glow-purple';
+<                                              return (
+<                                                <div className={`p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-transparent dark:bg-transparent bg-gradient-to-br ${rrBgFrom} ${rrBgTo} ${rrBorder} ${rrShadow}`}>
+<                                                  <div>
+<                                                    <div className={`text-[10px] font-mono font-bold mb-1.5 uppercase tracking-widest ${rrText1}`}>RISK:REWARD</div>
+<                                                    <div className="flex items-baseline gap-1 flex-wrap overflow-hidden leading-tight">
+<                                                      <div className={`text-[13px] sm:text-[15px] font-bold tracking-tighter shrink-0 leading-none ${rrText2}`}>{rr ? (Number(rr) > 0 && !isActive ? '+' : '')+rr+'R' : '---'}</div>
+<                                                    </div>
+<                                                  </div>
+<                                                </div>
+<                                              );
+<                                           })()}
+<                                         </div>
+---
+>                                  {/* Outcome Card */}
+>                                  <div className={`p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 ${outcomeBoxClass}`}>
+>                                    <div>
+>                                      <div className="text-[10px] font-mono font-bold mb-1 uppercase tracking-widest opacity-80">
+>                                        <span className={outcomeClr.includes('green') ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400' : outcomeClr.includes('red') ? 'text-red-700 theme-gray:text-red-800 dark:text-red-400' : outcomeClr.includes('blue') ? 'text-blue-700 theme-gray:text-blue-800 dark:text-blue-400' : 'text-slate-600 theme-gray:text-slate-800 dark:text-slate-400'}>OUTCOME</span>
+>                                      </div>
+>                                      <div className={`text-[13px] sm:text-[15px] font-bold mt-0.5 break-words leading-none ${outcomeClr.replace('-500', '-600')}`}>{isActive ? (!signal.updated_at ? 'ACTIVE LIMIT' : 'OPEN') : finalOutcome}</div>
+>                                      {(() => {
+>                                        if (!isWin && !isLoss && !isBE) return null;
+>                                        const pctVal = getExactPct(signal);
+>                                        if (pctVal == null) return null;
+>                                        return (
+>                                          <div className={`text-[12px] sm:text-[14px] font-mono font-bold mt-1.5 ${pctVal >= 0 ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400'}`}>
+>                                            {pctVal > 0 ? '+' : ''}{pctVal.toFixed(2)}%
+>                                          </div>
+3910a4005,4008
+>                                    </div>
+>                                    <div className={`text-[10px] font-mono font-bold mt-1.5 leading-tight border-t border-primary/10 pt-1 ${isActive ? (!signal.updated_at ? 'text-amber-600 dark:text-amber-500' : 'text-blue-600 dark:text-blue-500') : 'text-primary/70 dark:text-primary/60'}`}>
+>                                      {isActive ? `ALIVE: ${liveEntryTime ? formatHold(elapsedMins) : '--'}` : `HELD: ${formatHold(finalHoldMins)}`}
+>                                    </div>
+3912c4010,4065
+<                               )
+---
+> 
+>                                  {/* Trail SL Card */}
+>                                  <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-blue-500/[0.20] theme-gray:from-blue-500/[0.18] to-blue-500/[0.06] theme-gray:to-blue-500/[0.05] dark:from-blue-500/[0.20] dark:to-blue-950/[0.25] border-blue-500/70 theme-gray:border-blue-600/60 dark:border-blue-500/50 shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+>                                    <div>
+>                                      <div className="text-[10px] font-mono text-blue-700 theme-gray:text-blue-800 dark:text-blue-400 font-bold mb-1 uppercase tracking-widest">TRAIL SL</div>
+>                                      <div className="text-[13px] sm:text-[15px] font-bold text-blue-600 theme-gray:text-blue-700 dark:text-blue-300 tracking-tighter glow-info break-words leading-none">{fmt(trailSL)}</div>
+>                                    </div>
+>                                    <div className="text-[10px] font-mono font-medium text-dim mt-1.5 pt-1 border-t border-blue-500/20">
+>                                      {protectedLevel || 'RIGID LEVEL'}
+>                                    </div>
+>                                  </div>
+> 
+>                                  {/* Target / Exited At Card */}
+>                                  <div className={`p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)] ${
+>                                    isActive 
+>                                      ? "from-amber-500/[0.20] theme-gray:from-amber-500/[0.18] to-amber-500/[0.06] theme-gray:to-amber-500/[0.05] dark:from-amber-500/[0.20] dark:to-amber-950/[0.25] border-amber-500/70 theme-gray:border-amber-600/60 dark:border-amber-500/50 shadow-[0_4px_16px_rgba(245,158,11,0.08)]"
+>                                      : "from-green-500/[0.20] theme-gray:from-green-500/[0.18] to-green-500/[0.06] theme-gray:to-green-500/[0.05] dark:from-green-500/[0.20] dark:to-green-950/[0.25] border-green-500/70 theme-gray:border-green-600/60 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08)]"
+>                                  }`}>
+>                                    <div>
+>                                      <div className={`text-[10px] font-mono font-bold mb-1 uppercase tracking-widest ${isActive ? 'text-amber-700 theme-gray:text-amber-800 dark:text-amber-400' : 'text-green-700 theme-gray:text-green-800 dark:text-green-400'}`}>
+>                                        {isActive ? 'TARGET' : 'EXITED AT'}
+>                                      </div>
+>                                      <div className={`text-[13px] sm:text-[15px] font-bold tracking-tighter break-words leading-none ${isActive ? 'text-amber-600 theme-gray:text-amber-700 dark:text-amber-300 glow-warning' : 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success'}`}>
+>                                        {(() => {
+>                                          if (isActive) return nextTP != null ? fmt(nextTP) : '---';
+>                                          if (signal.exit_price != null) return fmt(signal.exit_price);
+>                                          if (finalOutcome === 'BREAKEVEN') return fmt(signal.entry);
+>                                          return '---';
+>                                        })()}
+>                                      </div>
+>                                    </div>
+>                                    <div className="text-[10px] font-mono font-medium text-dim mt-1.5 pt-1 border-t border-primary/10">
+>                                      {isActive ? 'PLANNED TP' : (exitTimeStr ? 'EXECUTED' : '--')}
+>                                    </div>
+>                                  </div>
+> 
+>                                  {/* RR / Multiplier Card */}
+>                                  <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-purple-500/[0.20] theme-gray:from-purple-500/[0.18] to-purple-500/[0.06] theme-gray:to-purple-500/[0.05] dark:from-purple-500/[0.20] dark:to-purple-950/[0.25] border-purple-500/70 theme-gray:border-purple-600/60 dark:border-purple-500/50 shadow-[0_4px_16px_rgba(168,85,247,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+>                                    <div>
+>                                      <div className="text-[10px] font-mono text-purple-700 theme-gray:text-purple-800 dark:text-purple-400 font-bold mb-1 uppercase tracking-widest">PAYOUT (R)</div>
+>                                      <div className="text-[13px] sm:text-[15px] font-bold text-purple-600 theme-gray:text-purple-700 dark:text-purple-300 tracking-tighter break-words leading-none">
+>                                        {(() => {
+>                                          if (rr != null && !isNaN(Number(rr))) {
+>                                            return `${Number(rr).toFixed(2)}R`;
+>                                          }
+>                                          return '--';
+>                                        })()}
+>                                      </div>
+>                                    </div>
+>                                    <div className="text-[10px] font-mono font-medium text-dim mt-1.5 pt-1 border-t border-purple-500/20">
+>                                      {isActive ? 'PROJECTED' : 'REALIZED'}
+>                                    </div>
+>                                  </div>
+>                                </div>
+>                              </div>
+>                            );
+3946,3961c4099,4104
+<                   <motion.div key="alerts" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
+<                     {/* TLCS AI header */}
+<                     <div className={`shiny-card rounded-3xl p-5 mb-2 ${theme === 'lion' ? 'lion-card-green' : ''}`}>
+<                       <div className="flex justify-between items-start">
+<                         <div>
+<                           <h2 className="text-xl sm:text-3xl font-bold italic tracking-tighter uppercase leading-[1.1] mb-2">
+<                             <span className="shiny-text pr-2">TLCS AI </span> <span className="text-[10px] sm:text-base font-bold not-italic text-dim block sm:inline mt-2.5 sm:mt-0 sm:ml-1.5">(ALERTS INTELLIGENCE)</span>
+<                           </h2>
+<                           <h3 className="text-lg sm:text-2xl font-black italic tracking-tighter uppercase text-primary leading-none mt-4">Recent Trades</h3>
+<                         </div>
+<                         <div className="flex flex-col items-end gap-2 shrink-0">
+<                           <div className="uppercase text-[9px] sm:text-[10px] font-black tracking-widest px-3 py-1 rounded-full border border-green-500/50 text-green-500 bg-black mb-1 shrink-0 shadow-lg shadow-green-500/20">MARKET UPDATE</div>
+<                           <span className="text-[10px] font-mono font-black text-accent bg-accent/10 border border-accent/30 px-3 py-1 rounded-full uppercase tracking-widest">
+<                             {activeAlertLogs.length} MATCH{activeAlertLogs.length !== 1 ? 'ES' : ''}
+<                           </span>
+<                         </div>
+---
+>                   <motion.div key="alerts" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+>                     {/* Uniform Tab Header */}
+>                     <div className="flex items-center justify-between mb-1.5 mt-0.5 px-1">
+>                       <div className="flex items-center gap-2">
+>                         <Bell className="text-accent" size={20} />
+>                         <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary">Logs</h2>
+3962a4106,4108
+>                       <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30 uppercase tracking-wider">
+>                         Alert Edge
+>                       </span>
+3963a4110,4236
+> 
+>                     <div className="flex justify-between items-start mb-4 sm:mb-6 gap-2">
+>                       <h2 className="text-xl sm:text-3xl font-bold italic tracking-tighter uppercase leading-[1.1]">
+>                         <span className="shiny-text pr-2">TLCS AI </span> <span className="text-[10px] sm:text-base font-bold not-italic text-dim block sm:inline mt-2.5 sm:mt-0 sm:ml-1.5">(ALERTS INTELLIGENCE)</span>
+>                         <span className="flex items-center gap-2 mt-1 sm:mt-1.5 text-primary">
+>                           <Bell className="text-accent shrink-0" size={22} />
+>                           <span>RECENT TRADES</span>
+>                         </span>
+>                       </h2>
+>                       <div className="flex flex-col items-end gap-1.5 shrink-0">
+>                         <button onClick={() => setIsNoviceMode(!isNoviceMode)} className={`flex shrink-0 items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] sm:text-xs font-bold transition-all ${isNoviceMode ? 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-400 border-yellow-400/50' : 'bg-secondary border-primary text-dim hover:text-primary'}`}>
+>                           🎓 Novice Mode: {isNoviceMode ? 'ON' : 'OFF'}
+>                         </button>
+>                         <span className="text-[9px] font-mono font-black text-blue-500 bg-blue-500/10 border border-blue-500/30 px-2.5 py-0.5 rounded-full uppercase tracking-widest">
+>                           {activeAlertLogs.length} MATCH{activeAlertLogs.length !== 1 ? 'ES' : ''}
+>                         </span>
+>                       </div>
+>                     </div>
+> 
+>                     {/* Stats Section: Bifurcated into 2 rows (Parity with HUB tab) */}
+>                     <div className="space-y-2 mb-2">
+>                        {(() => {
+>                          const getGridCardTheme = (colorClass: string) => {
+>                            const base = 'backdrop-blur-md transition-all duration-300 ';
+>                            if (colorClass.includes('success') || colorClass.includes('green')) {
+>                              return base + 'bg-gradient-to-br from-green-500/[0.12] theme-gray:from-green-500/[0.05] to-green-500/[0.02] theme-gray:to-green-500/[0.01] dark:from-green-500/[0.18] dark:to-green-950/[0.12] border-green-500/40 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                            }
+>                            if (colorClass.includes('danger') || colorClass.includes('red')) {
+>                              return base + 'bg-gradient-to-br from-red-500/[0.12] theme-gray:from-red-500/[0.05] to-red-500/[0.02] theme-gray:to-red-500/[0.01] dark:from-red-500/[0.18] dark:to-red-950/[0.12] border-red-500/40 dark:border-red-500/50 shadow-[0_4px_16px_rgba(239,68,68,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                            }
+>                            return base + 'bg-gradient-to-br from-blue-500/[0.12] theme-gray:from-blue-500/[0.05] to-blue-500/[0.02] theme-gray:to-blue-500/[0.01] dark:from-blue-500/[0.18] dark:to-blue-950/[0.12] border-blue-500/40 dark:border-blue-500/50 shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                          };
+> 
+>                          const getPillValueSize = (val: string | number) => {
+>                             return 'text-sm sm:text-base md:text-lg lg:text-xl';
+>                          };
+> 
+>                          const activeLimitsCount = activeSignals.filter(s => !s.updated_at).length;
+>                          const liveTradesCount = activeSignals.filter(s => !!s.updated_at).length;
+>                          const closedTradesCount = todayClosedSignals.length;
+>                          const todaySuccessDisp = todayClosedSignals.length > 0 ? `${todaySuccessRate}%` : '---';
+>                          const weeklyTradesCount = weeklyClosedSignals.length;
+>                          const weeklySuccessDisp = weeklyClosedSignals.length > 0 ? `${weeklySuccessRate}%` : '---';
+> 
+>                          return (
+>                            <>
+>                              {/* Row 1: Today & Live */}
+>                               <div className="grid grid-cols-5 gap-1.5 w-full">
+>                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme('blue')}`}>
+>                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+>                                       <span className="block whitespace-nowrap">ACTIVE</span>
+>                                       <span className="block whitespace-nowrap">LIMITS</span>
+>                                     </div>
+>                                     <div className={`font-bold italic text-primary tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${getPillValueSize(activeLimitsCount)}`}>{activeLimitsCount}</div>
+>                                  </div>
+>                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme('blue')}`}>
+>                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+>                                       <span className="block whitespace-nowrap">LIVE</span>
+>                                       <span className="block whitespace-nowrap">TRADES</span>
+>                                     </div>
+>                                     <div className={`font-bold italic text-primary tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${getPillValueSize(liveTradesCount)}`}>{liveTradesCount}</div>
+>                                  </div>
+>                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme('blue')}`}>
+>                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+>                                       <span className="block whitespace-nowrap">CLOSED</span>
+>                                       <span className="block whitespace-nowrap">TRADES</span>
+>                                     </div>
+>                                     <div className={`font-bold italic text-primary tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${getPillValueSize(closedTradesCount)}`}>{closedTradesCount}</div>
+>                                  </div>
+>                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(todaySuccessColorClass)}`}>
+>                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+>                                       <span className="block whitespace-nowrap">TODAY'S</span>
+>                                       <span className="block whitespace-nowrap">SUCCESS</span>
+>                                     </div>
+>                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${todaySuccessColorClass} ${getPillValueSize(todaySuccessDisp)}`}>{todaySuccessDisp}</div>
+>                                  </div>
+>                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(todayPFColorClass)}`}>
+>                                     <div className="text-[6.5px] sm:text-[7.5px] md:text-[8.5px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.1] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+>                                       <span className="block whitespace-nowrap">TODAY'S</span>
+>                                       <span className="block whitespace-nowrap">PROFIT FACTOR</span>
+>                                     </div>
+>                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${todayPFColorClass} ${getPillValueSize(todayPFVal)}`}>{todayPFVal}</div>
+>                                  </div>
+>                               </div>
+>     
+>                              {/* Row 2: Current Week & Overall */}
+>                              <div className="grid grid-cols-5 gap-1.5 w-full">
+>                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme('blue')}`}>
+>                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+>                                       <span className="block whitespace-nowrap">WEEKLY</span>
+>                                       <span className="block whitespace-nowrap">TRADES</span>
+>                                     </div>
+>                                     <div className={`font-bold italic text-primary tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${getPillValueSize(weeklyTradesCount)}`}>{weeklyTradesCount}</div>
+>                                  </div>
+>                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(weeklySuccessColorClass)}`}>
+>                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+>                                       <span className="block whitespace-nowrap">WEEKLY</span>
+>                                       <span className="block whitespace-nowrap">SUCCESS</span>
+>                                     </div>
+>                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${weeklySuccessColorClass} ${getPillValueSize(weeklySuccessDisp)}`}>{weeklySuccessDisp}</div>
+>                                  </div>
+>                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(weeklyPFColorClass)}`}>
+>                                     <div className="text-[6.5px] sm:text-[7.5px] md:text-[8.5px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.1] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+>                                       <span className="block whitespace-nowrap">WEEKLY</span>
+>                                       <span className="block whitespace-nowrap">PROFIT FACTOR</span>
+>                                     </div>
+>                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${weeklyPFColorClass} ${getPillValueSize(weeklyPFVal)}`}>{weeklyPFVal}</div>
+>                                  </div>
+>                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(profitFactorColorClass)}`}>
+>                                     <div className="text-[6.5px] sm:text-[7.5px] md:text-[8.5px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.1] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+>                                       <span className="block whitespace-nowrap">WEEKLY</span>
+>                                       <span className="block whitespace-nowrap">EXPECTANCY</span>
+>                                     </div>
+>                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${profitFactorColorClass} ${getPillValueSize(profitFactorTextValue)}`}>{profitFactorTextValue}</div>
+>                                  </div>
+>                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(weeklyCalmarColorClass)}`}>
+>                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+>                                       <span className="block whitespace-nowrap">WEEKLY</span>
+>                                       <span className="block whitespace-nowrap">CALMAR</span>
+>                                     </div>
+>                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${weeklyCalmarColorClass} ${getPillValueSize(weeklyCalmarVal)}`}>{weeklyCalmarVal}</div>
+>                                  </div>
+>                              </div>
+>                            </>
+>                          );
+>                        })()}
+>                     </div>
+3966c4239
+<                     <div className={`shiny-card rounded-3xl p-5 mb-4 ${theme === 'lion' ? 'lion-card-green' : ''}`}>
+---
+>                     <div className={`shiny-card rounded-2xl p-3 sm:p-3.5 mb-2 ${theme === 'lion' ? 'lion-card-green' : ''}`}>
+4017,4031c4290,4384
+<                         return (
+<                           <div>
+<                             {/* Card Top: Main Heading, Subtitle & Interactive Controls */}
+<                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+<                               <div>
+<                                 <h2 className="text-xl sm:text-2xl md:text-3xl font-black italic tracking-tighter uppercase text-primary leading-tight">
+<                                   TRADE DISTRIBUTION
+<                                 </h2>
+<                                 <p className="text-[10px] sm:text-xs font-mono font-bold tracking-widest text-dim uppercase mt-0.5">
+<                                   P&L PER TRADE
+<                                 </p>
+<                               </div>
+<                               <div className="flex items-center gap-2 self-end sm:self-auto">
+<                                 {/* Timeframe Selector */}
+<                                 <div className="flex items-center bg-secondary/40 p-0.5 rounded-xl border border-primary/15 overflow-x-auto hide-scrollbar max-w-full">
+---
+>                         // Institutional KPI Calculations
+>                         const totalNetRupee = distTrades.reduce((acc, s) => acc + getTradeRupeePnL(s, usdInrRate), 0);
+>                         const totalNetPct = distTrades.reduce((acc, s) => acc + (getExactPct(s) || 0), 0);
+>                         const netVal = distUnit === 'PERCENT' ? totalNetPct : totalNetRupee;
+>                         const isNetPos = netVal > 0;
+>                         const isNetNeg = netVal < 0;
+> 
+>                         const grossWin = distTrades.reduce((acc, s) => {
+>                           const v = distUnit === 'PERCENT' ? (getExactPct(s) || 0) : getTradeRupeePnL(s, usdInrRate);
+>                           return v > 0 ? acc + v : acc;
+>                         }, 0);
+>                         const grossLoss = Math.abs(distTrades.reduce((acc, s) => {
+>                           const v = distUnit === 'PERCENT' ? (getExactPct(s) || 0) : getTradeRupeePnL(s, usdInrRate);
+>                           return v < 0 ? acc + v : acc;
+>                         }, 0));
+>                         const profitFactor = grossLoss > 0 ? grossWin / grossLoss : (grossWin > 0 ? 99.9 : 0);
+>                         const winRate = distTrades.length > 0 ? (winValues.length / distTrades.length) * 100 : 0;
+>                         const avgWin = winValues.length > 0 ? grossWin / winValues.length : 0;
+>                         const avgLoss = lossValues.length > 0 ? grossLoss / lossValues.length : 0;
+>                         const winLossRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
+> 
+>                         const grossWinPct = distTrades.reduce((acc, s) => {
+>                           const v = getExactPct(s) || 0;
+>                           return v > 0 ? acc + v : acc;
+>                         }, 0);
+>                         const grossLossPct = Math.abs(distTrades.reduce((acc, s) => {
+>                           const v = getExactPct(s) || 0;
+>                           return v < 0 ? acc + v : acc;
+>                         }, 0));
+>                         const grossWinRupee = distTrades.reduce((acc, s) => {
+>                           const v = getTradeRupeePnL(s, usdInrRate);
+>                           return v > 0 ? acc + v : acc;
+>                         }, 0);
+>                         const grossLossRupee = Math.abs(distTrades.reduce((acc, s) => {
+>                           const v = getTradeRupeePnL(s, usdInrRate);
+>                           return v < 0 ? acc + v : acc;
+>                         }, 0));
+> 
+>                         const avgWinPct = winValues.length > 0 ? grossWinPct / winValues.length : 0;
+>                         const avgLossPct = lossValues.length > 0 ? grossLossPct / lossValues.length : 0;
+>                         const avgWinRupee = winValues.length > 0 ? grossWinRupee / winValues.length : 0;
+>                         const avgLossRupee = lossValues.length > 0 ? grossLossRupee / lossValues.length : 0;
+> 
+>                         // Expectancy % & Calmar Ratio Calculations
+>                         const expectancyPct = distTrades.length > 0 ? totalNetPct / distTrades.length : 0;
+> 
+>                         const chronoDistTrades = [...distTrades].sort((a, b) => {
+>                           const tA = new Date(a.exit_at || a.updated_at || a.created_at || a.signal_ts || 0).getTime();
+>                           const tB = new Date(b.exit_at || b.updated_at || b.created_at || b.signal_ts || 0).getTime();
+>                           return tA - tB;
+>                         });
+> 
+>                         let equityCurve = 0;
+>                         let peakEquity = 0;
+>                         let maxDrawdownPct = 0;
+> 
+>                         chronoDistTrades.forEach(s => {
+>                           const pct = getExactPct(s) || 0;
+>                           equityCurve += pct;
+>                           if (equityCurve > peakEquity) {
+>                             peakEquity = equityCurve;
+>                           }
+>                           const dd = peakEquity - equityCurve;
+>                           if (dd > maxDrawdownPct) {
+>                             maxDrawdownPct = dd;
+>                           }
+>                         });
+> 
+>                         const calmarRatio = distTrades.length === 0
+>                           ? '--'
+>                           : (maxDrawdownPct > 0
+>                               ? (totalNetPct / maxDrawdownPct).toFixed(2)
+>                               : (totalNetPct > 0 ? 'MAX' : '0.00')
+>                             );
+> 
+>                         return (
+>                           <div>
+>                             {/* Card Top: Main Heading, Subtitle & Interactive Controls */}
+>                             <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
+>                               <div>
+>                                 <div className="flex items-center gap-1.5">
+>                                   <h2 className="text-sm sm:text-base md:text-lg font-black italic tracking-tighter uppercase text-primary leading-tight">
+>                                     TRADE DISTRIBUTION
+>                                   </h2>
+>                                   <span className="text-[8px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-accent/15 text-accent border border-accent/30 not-italic uppercase">
+>                                     Live P&L
+>                                   </span>
+>                                 </div>
+>                                 <p className="text-[8px] sm:text-[9px] font-mono font-bold tracking-wider text-dim uppercase">
+>                                   P&L PER TRADE • ASYMMETRIC FREQUENCY
+>                                 </p>
+>                               </div>
+>                               <div className="flex items-center gap-1.5">
+>                                 {/* Timeframe Selector */}
+>                                 <div className="flex items-center bg-secondary/40 p-0.5 rounded-lg border border-primary/15 overflow-x-auto hide-scrollbar">
+4035,4036c4388,4389
+<                                       onClick={() => setDistTimeframe(tf)}
+<                                       className={`px-2 sm:px-2.5 py-1 text-[9px] sm:text-[10px] font-mono font-bold rounded-lg transition-all whitespace-nowrap ${
+---
+>                                       onClick={() => { setDistTimeframe(tf); setHoveredDistTrade(null); }}
+>                                       className={`px-1.5 sm:px-2 py-0.5 text-[8.5px] sm:text-[9px] font-mono font-bold rounded-md transition-all whitespace-nowrap ${
+4047c4400
+<                                 <div className="flex items-center bg-secondary/40 p-0.5 rounded-xl border border-primary/15">
+---
+>                                 <div className="flex items-center bg-secondary/40 p-0.5 rounded-lg border border-primary/15">
+4050c4403
+<                                     className={`px-2.5 py-1 text-[10px] font-mono font-bold rounded-lg transition-all ${
+---
+>                                     className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-md transition-all ${
+4060c4413
+<                                     className={`px-2.5 py-1 text-[10px] font-mono font-bold rounded-lg transition-all ${
+---
+>                                     className={`px-1.5 py-0.5 text-[9px] font-mono font-bold rounded-md transition-all ${
+4072,4075c4425,4438
+<                             {/* Summary row + Largest Winner Callout */}
+<                             <div className="flex justify-between items-center mb-2 px-0.5">
+<                               <div className="text-[11px] font-mono text-dim">
+<                                 {distTrades.length} trade{distTrades.length !== 1 ? 's' : ''} ({lossValues.length}L / {winValues.length}W{beCount > 0 ? ` / ${beCount}BE` : ''})
+---
+>                             {/* Institutional KPI Metrics Strip */}
+>                             <div className="grid grid-cols-2 min-[380px]:grid-cols-4 lg:grid-cols-8 gap-1.5 mb-2.5">
+>                               {/* Net P&L Card */}
+>                               <div className={`py-2 px-2.5 rounded-[14px] sm:rounded-2xl border transition-all duration-300 backdrop-blur-md ${isNetPos ? 'bg-gradient-to-br from-green-500/[0.14] theme-gray:from-green-500/[0.06] to-green-500/[0.02] border-green-500/40 shadow-[0_4px_16px_rgba(34,197,94,0.08)]' : isNetNeg ? 'bg-gradient-to-br from-red-500/[0.14] theme-gray:from-red-500/[0.06] to-red-500/[0.02] border-red-500/40 shadow-[0_4px_16px_rgba(239,68,68,0.08)]' : 'bg-gradient-to-br from-secondary/50 to-secondary/20 border-primary/15'}`}>
+>                                 <div className="text-[8px] sm:text-[8.5px] font-mono font-bold uppercase tracking-tight text-dim flex items-center justify-between">
+>                                   <span>NET P&L</span>
+>                                   <span className={`w-1.5 h-1.5 rounded-full ${isNetPos ? 'bg-emerald-400 animate-pulse' : isNetNeg ? 'bg-rose-400' : 'bg-zinc-400'}`} />
+>                                 </div>
+>                                 <div className={`text-xs sm:text-sm font-black font-mono tracking-tight mt-0.5 leading-tight ${isNetPos ? 'text-emerald-500 dark:text-emerald-400' : isNetNeg ? 'text-rose-500 dark:text-rose-400' : 'text-primary'}`}>
+>                                   {formatDistVal(netVal, distUnit)}
+>                                 </div>
+>                                 <div className="text-[7.5px] sm:text-[8px] font-mono text-dim mt-0.5 truncate leading-tight">
+>                                   {distUnit === 'CURRENCY' ? (totalNetPct >= 0 ? `+${totalNetPct.toFixed(2)}%` : `${totalNetPct.toFixed(2)}%`) : (totalNetRupee >= 0 ? `+₹${Math.round(totalNetRupee).toLocaleString('en-IN')}` : `-₹${Math.round(Math.abs(totalNetRupee)).toLocaleString('en-IN')}`)}
+>                                 </div>
+4077,4080c4440,4445
+<                               {actualMaxWin > 0 && (
+<                                 <div className="text-xs font-bold font-mono text-emerald-500 dark:text-emerald-400 flex items-center gap-1">
+<                                   <span>↑</span>
+<                                   <span>largest {formatDistVal(actualMaxWin, distUnit)}</span>
+---
+> 
+>                               {/* Win Rate Card */}
+>                               <div className="py-2 px-2.5 rounded-[14px] sm:rounded-2xl border transition-all duration-300 backdrop-blur-md bg-gradient-to-br from-secondary/50 to-secondary/20 border-primary/15 hover:border-primary/30 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+>                                 <div className="text-[8px] sm:text-[8.5px] font-mono font-bold uppercase tracking-tight text-dim">WIN RATE</div>
+>                                 <div className="text-xs sm:text-sm font-black font-mono tracking-tight text-primary mt-0.5 leading-tight">
+>                                   {winRate.toFixed(1)}%
+4081a4447,4563
+>                                 <div className="text-[7.5px] sm:text-[8px] font-mono text-dim mt-0.5 truncate leading-tight">
+>                                   {winValues.length}W · {lossValues.length}L{beCount > 0 ? ` · ${beCount}B` : ''}
+>                                 </div>
+>                               </div>
+> 
+>                               {/* Profit Factor Card */}
+>                               <div className={`py-2 px-2.5 rounded-[14px] sm:rounded-2xl border transition-all duration-300 backdrop-blur-md ${profitFactor >= 1.5 ? 'bg-gradient-to-br from-green-500/[0.12] to-green-500/[0.02] border-green-500/30' : profitFactor >= 1 ? 'bg-gradient-to-br from-amber-500/[0.12] to-amber-500/[0.02] border-amber-500/30' : 'bg-gradient-to-br from-red-500/[0.12] to-red-500/[0.02] border-red-500/30'}`}>
+>                                 <div className="text-[8px] sm:text-[8.5px] font-mono font-bold uppercase tracking-tight text-dim">PROFIT FACTOR</div>
+>                                 <div className={`text-xs sm:text-sm font-black font-mono tracking-tight mt-0.5 leading-tight ${profitFactor >= 1.5 ? 'text-emerald-500 dark:text-emerald-400' : profitFactor >= 1 ? 'text-amber-500' : 'text-rose-500'}`}>
+>                                   {profitFactor > 0 ? profitFactor.toFixed(2) : '--'}
+>                                 </div>
+>                                 <div className="text-[7.5px] sm:text-[8px] font-mono text-dim mt-0.5 truncate leading-tight">
+>                                   Wins / Losses
+>                                 </div>
+>                               </div>
+> 
+>                               {/* Payout Asymmetry / R:R */}
+>                               <div className="py-2 px-2.5 rounded-[14px] sm:rounded-2xl border transition-all duration-300 backdrop-blur-md bg-gradient-to-br from-blue-500/[0.12] to-blue-500/[0.02] border-blue-500/30 shadow-[0_2px_8px_rgba(59,130,246,0.04)]">
+>                                 <div className="text-[8px] sm:text-[8.5px] font-mono font-bold uppercase tracking-tight text-dim">PAYOUT (R:R)</div>
+>                                 <div className="text-xs sm:text-sm font-black font-mono tracking-tight text-blue-500 dark:text-blue-400 mt-0.5 leading-tight">
+>                                   {winLossRatio > 0 ? `${winLossRatio.toFixed(2)}R` : '--'}
+>                                 </div>
+>                                 <div className="text-[7.5px] sm:text-[8px] font-mono text-dim mt-0.5 truncate leading-tight">
+>                                   {winValues.length > 0 ? `+${avgWinPct.toFixed(2)}%` : '--'} / {lossValues.length > 0 ? `-${Math.abs(avgLossPct).toFixed(2)}%` : '--'}
+>                                 </div>
+>                               </div>
+> 
+>                               {/* Average Winner Card */}
+>                               <div className="py-2 px-2.5 rounded-[14px] sm:rounded-2xl border transition-all duration-300 backdrop-blur-md bg-gradient-to-br from-green-500/[0.12] to-green-500/[0.02] border-green-500/30 shadow-[0_2px_8px_rgba(34,197,94,0.04)]">
+>                                 <div className="text-[8px] sm:text-[8.5px] font-mono font-bold uppercase tracking-tight text-dim">AVG WINNER</div>
+>                                 <div className="text-xs sm:text-sm font-black font-mono tracking-tight text-emerald-500 dark:text-emerald-400 mt-0.5 leading-tight">
+>                                   {winValues.length > 0 ? `+${avgWinPct.toFixed(2)}%` : '--'}
+>                                 </div>
+>                                 <div className="text-[7.5px] sm:text-[8px] font-mono text-dim mt-0.5 truncate leading-tight">
+>                                   Per Winning Trade
+>                                 </div>
+>                               </div>
+> 
+>                               {/* Average Loser Card */}
+>                               <div className="py-2 px-2.5 rounded-[14px] sm:rounded-2xl border transition-all duration-300 backdrop-blur-md bg-gradient-to-br from-red-500/[0.12] to-red-500/[0.02] border-red-500/30 shadow-[0_2px_8px_rgba(239,68,68,0.04)]">
+>                                 <div className="text-[8px] sm:text-[8.5px] font-mono font-bold uppercase tracking-tight text-dim">AVG LOSER</div>
+>                                 <div className="text-xs sm:text-sm font-black font-mono tracking-tight text-rose-500 dark:text-rose-400 mt-0.5 leading-tight">
+>                                   {lossValues.length > 0 ? `-${Math.abs(avgLossPct).toFixed(2)}%` : '--'}
+>                                 </div>
+>                                 <div className="text-[7.5px] sm:text-[8px] font-mono text-dim mt-0.5 truncate leading-tight">
+>                                   Per Losing Trade
+>                                 </div>
+>                               </div>
+> 
+>                               {/* Expectancy % Card */}
+>                               <div className={`py-2 px-2.5 rounded-[14px] sm:rounded-2xl border transition-all duration-300 backdrop-blur-md ${expectancyPct > 0 ? 'bg-gradient-to-br from-green-500/[0.12] to-green-500/[0.02] border-green-500/30' : expectancyPct < 0 ? 'bg-gradient-to-br from-red-500/[0.12] to-red-500/[0.02] border-red-500/30' : 'bg-gradient-to-br from-secondary/50 to-secondary/20 border-primary/15'}`}>
+>                                 <div className="text-[8px] sm:text-[8.5px] font-mono font-bold uppercase tracking-tight text-dim">EXPECTANCY</div>
+>                                 <div className={`text-xs sm:text-sm font-black font-mono tracking-tight mt-0.5 leading-tight ${expectancyPct > 0 ? 'text-emerald-500 dark:text-emerald-400' : expectancyPct < 0 ? 'text-rose-500 dark:text-rose-400' : 'text-primary'}`}>
+>                                   {distTrades.length > 0 ? `${expectancyPct >= 0 ? '+' : ''}${expectancyPct.toFixed(2)}%` : '--'}
+>                                 </div>
+>                                 <div className="text-[7.5px] sm:text-[8px] font-mono text-dim mt-0.5 truncate leading-tight">
+>                                   Per Trade
+>                                 </div>
+>                               </div>
+> 
+>                               {/* Calmar Ratio Card */}
+>                               <div className={`py-2 px-2.5 rounded-[14px] sm:rounded-2xl border transition-all duration-300 backdrop-blur-md ${calmarRatio === 'MAX' || Number(calmarRatio) >= 1 ? 'bg-gradient-to-br from-green-500/[0.12] to-green-500/[0.02] border-green-500/30' : Number(calmarRatio) > 0 ? 'bg-gradient-to-br from-amber-500/[0.12] to-amber-500/[0.02] border-amber-500/30' : 'bg-gradient-to-br from-red-500/[0.12] to-red-500/[0.02] border-red-500/30'}`}>
+>                                 <div className="text-[8px] sm:text-[8.5px] font-mono font-bold uppercase tracking-tight text-dim">CALMAR RATIO</div>
+>                                 <div className={`text-xs sm:text-sm font-black font-mono tracking-tight mt-0.5 leading-tight ${calmarRatio === 'MAX' || Number(calmarRatio) >= 1 ? 'text-emerald-500 dark:text-emerald-400' : Number(calmarRatio) > 0 ? 'text-amber-500' : 'text-rose-500'}`}>
+>                                   {calmarRatio}
+>                                 </div>
+>                                 <div className="text-[7.5px] sm:text-[8px] font-mono text-dim mt-0.5 truncate leading-tight">
+>                                   DD: {maxDrawdownPct > 0 ? `-${maxDrawdownPct.toFixed(1)}%` : '0%'}
+>                                 </div>
+>                               </div>
+>                             </div>
+> 
+>                             {/* Interactive Inspection Bar */}
+>                             <div className="mb-1.5 px-2 py-1 rounded-lg bg-black/[0.03] dark:bg-white/5 border border-primary/10 flex items-center justify-between text-[9px] sm:text-[10px] font-mono min-h-[26px] transition-all">
+>                               {hoveredDistTrade ? (
+>                                 <div className="flex items-center gap-2 flex-wrap w-full justify-between animate-fadeIn">
+>                                   <div className="flex items-center gap-1.5">
+>                                     <span className="font-black text-primary bg-primary/10 px-1 py-0.2 rounded text-[9px]">
+>                                       {(hoveredDistTrade.signal.symbol || '').replace(/^(NSE_DLY|NSE|MCX|NYMEX|COMEX|BINANCE|TVC):/i, '').replace(/1!$/, '')}
+>                                     </span>
+>                                     <span className="text-dim font-bold text-[8.5px]">
+>                                       {hoveredDistTrade.signal.type || 'TRADE'}
+>                                     </span>
+>                                     <span className={`font-black px-1.5 py-0.2 rounded text-[8.5px] ${
+>                                       hoveredDistTrade.outcome === 'WIN' 
+>                                         ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30' 
+>                                         : hoveredDistTrade.outcome === 'LOSS' 
+>                                         ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/30' 
+>                                         : 'bg-zinc-500/20 text-zinc-400 border border-zinc-500/30'
+>                                     }`}>
+>                                       {hoveredDistTrade.outcome}
+>                                     </span>
+>                                     {hoveredDistTrade.signal.status && (
+>                                       <span className="text-dim text-[8px] hidden sm:inline">
+>                                         ({hoveredDistTrade.signal.status})
+>                                       </span>
+>                                     )}
+>                                   </div>
+>                                   <div className="flex items-center gap-1.5">
+>                                     <span className={`font-black text-[10px] sm:text-xs ${hoveredDistTrade.value > 0 ? 'text-emerald-500 dark:text-emerald-400' : hoveredDistTrade.value < 0 ? 'text-rose-500 dark:text-rose-400' : 'text-dim'}`}>
+>                                       {formatDistVal(hoveredDistTrade.value, distUnit)} ({(getExactPct(hoveredDistTrade.signal) ?? 0) >= 0 ? '+' : ''}{(getExactPct(hoveredDistTrade.signal) ?? 0).toFixed(2)}%)
+>                                     </span>
+>                                   </div>
+>                                 </div>
+>                               ) : (
+>                                 <div className="flex items-center justify-between w-full text-dim">
+>                                   <div className="flex items-center gap-1">
+>                                     <span className="text-accent text-[10px]">⚡</span>
+>                                     <span className="font-semibold text-[8.5px] sm:text-[9.5px]">Tap or hover on any bar to inspect trade metrics</span>
+>                                   </div>
+>                                   {actualMaxWin > 0 && (
+>                                     <div className="text-[9.5px] sm:text-[10px] font-bold font-mono text-emerald-500 dark:text-emerald-400 flex items-center gap-1 shrink-0">
+>                                       <span>↑ largest</span>
+>                                       <span>{formatDistVal(actualMaxWin, distUnit)}</span>
+>                                     </div>
+>                                   )}
+>                                 </div>
+4085c4567
+<                             {/* Per-Trade Bar Chart — each bar = 1 trade, height ∝ actual P&L value */}
+---
+>                             {/* Per-Trade Bar Chart — Unified Symmetric Scaling (Bell Curve / Flipping towards central vertical lines) */}
+4087,4089c4569,4572
+<                               // Sort trades from most negative to most positive
+<                               const sorted = [...tradeValues].sort((a, b) => a.value - b.value);
+<                               const absMax = Math.max(1, ...sorted.map(t => Math.abs(t.value)));
+---
+>                               // Separate trades by outcome/value
+>                               const lossTrades = tradeValues.filter(t => t.value < 0);
+>                               const winTrades = tradeValues.filter(t => t.value > 0);
+>                               const beTrades = tradeValues.filter(t => t.value === 0);
+4090a4574,4584
+>                               // Bell Curve Ordering (Flip towards central vertical lines):
+>                               // Losses ascend in magnitude towards the central divide: smallest loss on left -> largest loss near center
+>                               const lossesAscending = [...lossTrades].sort((a, b) => Math.abs(a.value) - Math.abs(b.value));
+> 
+>                               // Wins descend in magnitude away from the central divide: largest win near center -> smallest win on right
+>                               const winsDescending = [...winTrades].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+> 
+>                               // Combined: [Losses Ascending -> Breakeven -> Wins Descending] forms a bell curve peaking towards the central line
+>                               const sorted = [...lossesAscending, ...beTrades, ...winsDescending];
+>                               const absMax = Math.max(0.001, ...tradeValues.map(t => Math.abs(t.value)));
+> 
+4093,4094c4587,4588
+<                                   <div className="h-36 sm:h-44 flex items-center justify-center text-dim text-xs font-mono italic">
+<                                     No closed trades to display.
+---
+>                                   <div className="h-32 sm:h-36 flex items-center justify-center text-dim text-xs font-mono italic">
+>                                     No closed trades to display for this timeframe.
+4098a4593,4597
+>                               const barGapClass = sorted.length <= 15 ? 'gap-1.5 sm:gap-2' : sorted.length <= 30 ? 'gap-1 sm:gap-1.5' : sorted.length <= 50 ? 'gap-[1px]' : 'gap-[0.5px]';
+>                               const centerBoundaryPct = sorted.length > 0 
+>                                 ? Math.min(95, Math.max(5, ((lossesAscending.length + beTrades.length / 2) / sorted.length) * 100))
+>                                 : 50;
+> 
+4100,4104c4599,4606
+<                                 <div className="h-36 sm:h-44 flex flex-col relative w-full">
+<                                   {/* Chart area with zero-line in the middle */}
+<                                   <div className="flex-1 flex items-stretch relative overflow-x-auto hide-scrollbar">
+<                                     {/* Zero-line */}
+<                                     <div className="absolute left-0 right-0 top-1/2 -translate-y-[0.5px] h-[1px] border-t border-dashed border-zinc-400 dark:border-zinc-500 pointer-events-none z-0 min-w-full" />
+---
+>                                 <div className="h-28 sm:h-32 flex flex-col relative w-full pt-1">
+>                                   {/* Chart area with all bars anchored at bottom baseline */}
+>                                   <div className="flex-1 flex items-end relative w-full overflow-hidden">
+>                                     {/* Central vertical line dividing losses and wins */}
+>                                     <div 
+>                                       style={{ left: `${centerBoundaryPct}%` }}
+>                                       className="absolute top-0 bottom-0 w-[1px] border-r border-dashed border-zinc-400/60 dark:border-zinc-500/60 pointer-events-none z-0" 
+>                                     />
+4106c4608
+<                                     <div className={`flex items-center h-full gap-[1px] sm:gap-[2px] px-0.5 relative z-10 ${sorted.length > 50 ? 'min-w-max' : 'w-full'}`}>
+---
+>                                     <div className={`flex items-end h-full justify-between w-full ${barGapClass} px-0.5 relative z-10`}>
+4108d4609
+<                                         const barPct = Math.max(4, Math.round((Math.abs(t.value) / absMax) * 50));
+4110a4612,4614
+>                                         // Exact proportional scaling as per actual profit/loss levels
+>                                         const barPct = Math.max(3, Math.min(100, Math.round((Math.abs(t.value) / absMax) * 100)));
+>                                         const isSelected = hoveredDistTrade?.signal?.id === t.signal.id;
+4113,4136c4617,4645
+<                                           <div key={idx} className={`${sorted.length > 50 ? 'w-[4px] sm:w-[6px]' : 'flex-1'} flex flex-col h-full group relative`}>
+<                                             {/* Top half (wins) */}
+<                                             <div className="flex-1 flex items-end justify-center">
+<                                               {isWin && (
+<                                                 <div
+<                                                   style={{ height: `${barPct}%` }}
+<                                                   className="w-full bg-[#22c55e] dark:bg-[#10b981] rounded-t-sm transition-all duration-300 hover:brightness-125 shadow-sm min-h-[2px]"
+<                                                 />
+<                                               )}
+<                                             </div>
+<                                             {/* Bottom half (losses) */}
+<                                             <div className="flex-1 flex items-start justify-center">
+<                                               {isLoss && (
+<                                                 <div
+<                                                   style={{ height: `${barPct}%` }}
+<                                                   className="w-full bg-[#f46a6a] dark:bg-[#ef4444] rounded-b-sm transition-all duration-300 hover:brightness-125 shadow-sm min-h-[2px]"
+<                                                 />
+<                                               )}
+<                                               {t.value === 0 && (
+<                                                 <div className="w-full h-[2px] bg-zinc-400 dark:bg-zinc-500 rounded-full" />
+<                                               )}
+<                                             </div>
+<                                             {/* Tooltip */}
+<                                             <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/90 text-white text-[9px] font-mono py-0.5 px-1.5 rounded pointer-events-none whitespace-nowrap z-20 shadow-lg border border-white/10">
+---
+>                                           <div
+>                                             key={idx}
+>                                             onClick={() => setHoveredDistTrade(hoveredDistTrade?.signal?.id === t.signal.id ? null : t)}
+>                                             onMouseEnter={() => setHoveredDistTrade(t)}
+>                                             onMouseLeave={() => setHoveredDistTrade(null)}
+>                                             className="flex-1 min-w-[2px] max-w-[22px] flex flex-col justify-end items-center h-full group relative cursor-pointer transition-all select-none pb-[1px]"
+>                                           >
+>                                             {/* Hover vertical focus track */}
+>                                             <div className={`absolute inset-0 bg-primary/5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${isSelected ? 'opacity-100 bg-primary/10' : ''}`} />
+> 
+>                                             {/* Bar flipped above horizontal baseline: Wins and Losses both stand upright */}
+>                                             {isWin && (
+>                                               <div
+>                                                 style={{ height: `${barPct}%` }}
+>                                                 className={`w-full bg-gradient-to-t from-emerald-600 via-emerald-500 to-emerald-400 dark:from-emerald-700 dark:via-emerald-500 dark:to-emerald-300 rounded-t-md transition-all duration-300 group-hover:brightness-125 shadow-[0_0_8px_rgba(16,185,129,0.35)] min-h-[3px] ${isSelected ? 'brightness-125 ring-1 ring-emerald-300' : ''}`}
+>                                               />
+>                                             )}
+>                                             {isLoss && (
+>                                               <div
+>                                                 style={{ height: `${barPct}%` }}
+>                                                 className={`w-full bg-gradient-to-t from-rose-600 via-rose-500 to-rose-400 dark:from-rose-700 dark:via-rose-500 dark:to-rose-300 rounded-t-md transition-all duration-300 group-hover:brightness-125 shadow-[0_0_8px_rgba(244,63,94,0.35)] min-h-[3px] ${isSelected ? 'brightness-125 ring-1 ring-rose-300' : ''}`}
+>                                               />
+>                                             )}
+>                                             {t.value === 0 && (
+>                                               <div className="w-full h-[3px] bg-slate-400 dark:bg-slate-500 rounded-full shadow-sm mb-[0.5px]" />
+>                                             )}
+> 
+>                                             {/* Tooltip on hover */}
+>                                             <div className="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/95 text-white text-[9.5px] font-mono font-bold py-1 px-2 rounded-lg pointer-events-none whitespace-nowrap z-30 shadow-xl border border-white/20">
+4143a4653,4655
+> 
+>                                   {/* Horizontal baseline line directly under bars */}
+>                                   <div className="w-full h-[1.5px] border-t border-dashed border-zinc-400/80 dark:border-zinc-500/80 pointer-events-none z-0 mt-0.5" />
+4148,4149c4660,4661
+<                             {/* X-Axis Labels */}
+<                             <div className="flex items-center text-[10px] sm:text-xs font-mono text-dim pt-2 border-t border-primary/10">
+---
+>                             {/* X-Axis Labels & Bounds */}
+>                             <div className="flex items-center text-[9px] sm:text-[10px] font-mono text-dim pt-1.5">
+4151c4663,4666
+<                                 {actualMinLoss < 0 ? formatDistVal(actualMinLoss, distUnit) : (distUnit === 'PERCENT' ? '0.00%' : '₹0')}
+---
+>                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-rose-500/10 text-rose-500 dark:text-rose-400 font-bold border border-rose-500/20">
+>                                   <span>Min Loss:</span>
+>                                   <span>{lossValues.length > 0 ? formatDistVal(Math.max(...lossValues), distUnit) : (distUnit === 'PERCENT' ? '0.00%' : '₹0')}</span>
+>                                 </span>
+4154c4669,4671
+<                                 {distUnit === 'PERCENT' ? '0%' : '₹0'}
+---
+>                                 <span className="inline-block px-1.5 py-0.2 rounded bg-secondary/50 border border-primary/15">
+>                                   {distUnit === 'PERCENT' ? '0.00%' : '₹0'}
+>                                 </span>
+4157c4674,4677
+<                                 {actualMaxWin > 0 ? formatDistVal(actualMaxWin, distUnit) : (distUnit === 'PERCENT' ? '0.00%' : '₹0')}
+---
+>                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 font-bold border border-emerald-500/20">
+>                                   <span>Min Win:</span>
+>                                   <span>{winValues.length > 0 ? formatDistVal(Math.min(...winValues), distUnit) : (distUnit === 'PERCENT' ? '0.00%' : '₹0')}</span>
+>                                 </span>
+4160a4681,4699
+>                             {/* W / L / BE Distribution Pills */}
+>                             <div className="flex items-center justify-center gap-1.5 sm:gap-2 pt-1.5 flex-wrap">
+>                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-[8.5px] sm:text-[9.5px] font-mono font-black shadow-sm">
+>                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+>                                 <span>{winValues.length} WINS</span>
+>                               </span>
+>                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/25 text-[8.5px] sm:text-[9.5px] font-mono font-black shadow-sm">
+>                                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.8)]" />
+>                                 <span>{lossValues.length} LOSSES</span>
+>                               </span>
+>                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-500/10 text-zinc-500 dark:text-zinc-300 border border-zinc-500/25 text-[8.5px] sm:text-[9.5px] font-mono font-black shadow-sm">
+>                                 <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+>                                 <span>{beCount} B/E</span>
+>                               </span>
+>                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/5 text-dim border border-primary/10 text-[8.5px] sm:text-[9.5px] font-mono font-bold">
+>                                 <span>{distTrades.length} TOTAL</span>
+>                               </span>
+>                             </div>
+> 
+4162,4163c4701,4708
+<                             <div className="mt-3 pt-2 text-[11px] sm:text-xs text-dim italic border-t border-primary/5 flex items-center justify-between">
+<                               <span>Many small losses, a few large winners — the trend-following signature</span>
+---
+>                             <div className="mt-1.5 pt-1 text-[9.5px] sm:text-[10.5px] text-dim italic border-t border-primary/5 flex items-center justify-between">
+>                               <span className="flex items-center gap-1">
+>                                 <span className="text-accent not-italic">★</span>
+>                                 <span>Many small losses, a few large winners — the trend-following signature</span>
+>                               </span>
+>                               <span className="text-[8.5px] font-mono not-italic text-dim hidden sm:inline">
+>                                 TLCS Systematic Trade Engine
+>                               </span>
+4177c4722
+<                             className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-mono uppercase tracking-widest font-black transition-all border text-center flex items-center justify-center shrink-0 whitespace-nowrap min-h-[34px] leading-tight ${
+---
+>                             className={`px-3 sm:px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-mono uppercase tracking-wider font-bold transition-all duration-300 border text-center flex items-center justify-center shrink-0 whitespace-nowrap min-h-[32px] leading-tight ${
+4179,4180c4724,4725
+<                                 ? 'bg-accent/20 text-accent border-accent shadow-[0_0_12px_var(--accent-glow)] font-black scale-102 border-[1.5px]' 
+<                                 : 'bg-gradient-to-r from-secondary/40 to-secondary/15 text-dim border-primary/20 hover:border-accent/40 hover:text-accent hover:bg-secondary/60'
+---
+>                                 ? 'bg-blue-600/20 text-blue-500 border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.3)] font-black scale-102 border-[1.5px]' 
+>                                 : 'bg-primary/5 text-dim border-primary/20 hover:border-blue-500/40 hover:text-blue-500 hover:bg-blue-500/10'
+4192c4737
+<                             className={`px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-mono uppercase tracking-widest font-black transition-all border text-center flex items-center justify-center shrink-0 whitespace-nowrap min-h-[34px] leading-tight ${
+---
+>                             className={`px-3 sm:px-3.5 py-1.5 rounded-full text-[10px] sm:text-xs font-mono uppercase tracking-wider font-bold transition-all duration-300 border text-center flex items-center justify-center shrink-0 whitespace-nowrap min-h-[32px] leading-tight ${
+4194,4195c4739,4744
+<                                 ? 'bg-accent/20 text-accent border-accent shadow-[0_0_12px_var(--accent-glow)] font-black scale-102 border-[1.5px]' 
+<                                 : 'bg-gradient-to-r from-secondary/40 to-secondary/15 text-dim border-primary/20 hover:border-accent/40 hover:text-accent hover:bg-secondary/60'
+---
+>                                 ? lvl === 'LIVE TRADES'
+>                                   ? 'bg-emerald-600/20 text-emerald-400 border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.35)] font-black scale-102 border-[1.5px]'
+>                                   : 'bg-blue-600/20 text-blue-500 border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.3)] font-black scale-102 border-[1.5px]' 
+>                                 : lvl === 'LIVE TRADES'
+>                                   ? 'bg-primary/5 text-dim border-primary/20 hover:border-emerald-400/40 hover:text-emerald-400 hover:bg-emerald-400/10'
+>                                   : 'bg-primary/5 text-dim border-primary/20 hover:border-blue-500/40 hover:text-blue-500 hover:bg-blue-500/10'
+4197a4747
+>                             {lvl === 'LIVE TRADES' && <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse" />}
+4202c4752
+<                           <div className="text-[10px] font-mono font-black text-accent uppercase tracking-widest shrink-0 bg-accent/10 px-3 py-1.5 rounded-full border border-accent/30 whitespace-nowrap">
+---
+>                           <div className="text-[10px] font-mono font-black text-blue-500 bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 rounded-full uppercase tracking-widest whitespace-nowrap">
+4209,4210c4759,4772
+<                      <div className="pr-2 space-y-4" onScroll={() => console.log(`[SIEM][USER_INTERACTION] User scrolling recent trade logs`)}>
+<                        {activeAlertLogs.length > 0 ? activeAlertLogs.map(signal => {
+---
+>                     {/* Recent Trade Logs Section */}
+>                     <div className="space-y-4" onScroll={() => console.log(`[SIEM][USER_INTERACTION] User scrolling recent trade logs`)}>
+>                       <div className="flex justify-between items-center px-0.5">
+>                         <h3 className="text-base sm:text-lg font-black italic tracking-tighter uppercase text-primary flex items-center gap-2">
+>                           <Bell className="text-accent shrink-0" size={18} />
+>                           <span>RECENT TRADE AUDIT LOGS</span>
+>                         </h3>
+>                         <span className="text-[10px] font-mono font-black text-blue-500 bg-blue-500/10 border border-blue-500/30 px-3 py-1 rounded-full uppercase tracking-widest">
+>                           TOTAL: {activeAlertLogs.length}
+>                         </span>
+>                       </div>
+> 
+>                        {activeAlertLogs.length > 0 ? (
+>                          activeAlertLogs.map(signal => {
+4221c4783
+<                            const bgBorderClass = `${theme.bg} ${theme.border} ${theme.shadow || ''}`;
+---
+>                            const fmt = (v: any) => formatPrice(v, signal.symbol);
+4225d4786
+<                            const dirClass = 'bg-gradient-to-r from-gray-500/20 to-gray-500/5 border-gray-500/40 text-gray-500 dark:text-gray-400 shadow-[0_0_15px_rgba(107,114,128,0.2)]';
+4227,4233c4788,4791
+<                            const rMultiple = (() => {
+<                                const pctReturn = getExactPct(signal);
+<                                if (pctReturn != null) {
+<                                    return pctReturn;
+<                                }
+<                                return signal.r_multiple != null ? Number(signal.r_multiple) : null;
+<                            })();
+---
+>                            let meta = signal.metadata || {};
+>                            if (typeof meta === 'string') {
+>                                try { meta = JSON.parse(meta); } catch(e) { meta = {}; }
+>                            }
+4235,4238c4793,4796
+<                             const hdMeta = typeof signal.metadata === 'string' ? (() => { try { return JSON.parse(signal.metadata); } catch { return {}; } })() : (signal.metadata || {});
+<                             const isCancelledOrSkipped = finalOutcome === 'CANCELLED' || (signal.status || '').toUpperCase().includes('CANCEL') || (signal.status || '').toUpperCase().includes('EXPIRED') || (signal.status || '').toUpperCase().includes('SKIPPED');
+<                             const isActiveLimit = isActive && !signal.updated_at && !hdMeta.real_entry_time;
+<                             const hasEntered = !isActiveLimit && !isCancelledOrSkipped && (hdMeta.real_entry_time || signal.updated_at || ['WIN', 'LOSS', 'BREAKEVEN'].includes(finalOutcome));
+---
+>                            let stopVal = signal.stop != null ? Number(signal.stop) : (meta.stop != null ? Number(meta.stop) : (meta.sl != null ? Number(meta.sl) : null));
+>                            let targetVal = signal.target != null ? Number(signal.target) : (meta.target != null ? Number(meta.target) : (meta.tp1 != null ? Number(meta.tp1) : null));
+>                            let rrVal = signal.rr != null ? Number(signal.rr) : (meta.rr != null ? Number(meta.rr) : null);
+>                            const entryVal = signal.entry ? Number(signal.entry) : null;
+4240,4241c4798,4808
+<                             const liveEntryTs = hdMeta.real_entry_time || (hasEntered ? (signal.signal_ts || signal.created_at) : null);
+<                             const entryTs = liveEntryTs;
+---
+>                            if (entryVal) {
+>                                if (!stopVal && !targetVal) {
+>                                    const cleanSym = (signal.symbol || '').toUpperCase().replace(/^NSE:|^TVC:|^NYMEX:|^MCX:/i, '').replace(/1!$/, '').trim();
+>                                    let defPct = 0.005;
+>                                    if (['CL1!', 'CL', 'CRUDEOIL', 'CRUDEOILM'].includes(cleanSym)) defPct = 0.005;
+>                                    else if (['GC1!', 'GC', 'GOLD', 'GOLDM', 'GOLDPETAL'].includes(cleanSym)) defPct = 0.003;
+>                                    else if (['SI1!', 'SI', 'SILVER', 'SILVERM', 'SILVERMIC'].includes(cleanSym)) defPct = 0.005;
+>                                    else if (['NG1!', 'NG', 'NATURALGAS', 'NATURALGASM'].includes(cleanSym)) defPct = 0.008;
+>                                    else if (cleanSym.startsWith('NSE:') || ['ADANIENT', 'RELIANCE', 'SBIN', 'NIFTY'].includes(cleanSym)) defPct = 0.0035;
+>                                    else if (cleanSym.endsWith('USDT') || cleanSym.endsWith('BTC')) defPct = 0.0075;
+>                                    else if (cleanSym.length === 6) defPct = 0.0025;
+4243,4244c4810,4827
+<                             const holdMins = (() => {
+<                               if (!hasEntered || !liveEntryTs) return null;
+---
+>                                    if (isLong) {
+>                                        stopVal = entryVal * (1 - defPct);
+>                                        targetVal = entryVal * (1 + defPct);
+>                                    } else {
+>                                        stopVal = entryVal * (1 + defPct);
+>                                        targetVal = entryVal * (1 - defPct);
+>                                    }
+>                                    rrVal = 1.0;
+>                                } else if (stopVal && !targetVal) {
+>                                    const risk = Math.abs(entryVal - stopVal);
+>                                    const rrMult = rrVal || 1.0;
+>                                    targetVal = isLong ? (entryVal + risk * rrMult) : (entryVal - risk * rrMult);
+>                                } else if (!stopVal && targetVal) {
+>                                    const reward = Math.abs(targetVal - entryVal);
+>                                    const rrMult = rrVal || 1.0;
+>                                    stopVal = isLong ? (entryVal - reward / rrMult) : (entryVal + reward / rrMult);
+>                                }
+>                            }
+4246,4256c4829,4830
+<                               if (isActive) {
+<                                 // Live open active trade: duration since trade became open and live
+<                                 const diff = Date.now() - new Date(liveEntryTs).getTime();
+<                                 if (diff < 0) return null;
+<                                 const m = Math.floor(diff / 60000);
+<                                 if (m === 0) {
+<                                   const s = Math.floor(diff / 1000);
+<                                   return s > 0 ? `${s}s` : '<1m';
+<                                 }
+<                                 return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+<                               }
+---
+>                            const trailSL = signal.trailing_stop || signal.trail_sl || meta.trailing_stop || meta.trail_sl || meta.trailing_sl || meta.trailSL || meta.tsl || stopVal;
+>                            const nextTP = targetVal || signal.tp2 || meta.tp1 || meta.TP1 || meta.tp2 || meta.TP2;
+4258,4259c4832,4839
+<                               const isClosed = ['WIN', 'LOSS', 'BREAKEVEN'].includes(finalOutcome);
+<                               if (!isClosed) return null;
+---
+>                            let protectedLevel = null;
+>                            if (isActive && trailSL && signal.entry) {
+>                              const sl = Number(trailSL);
+>                              const en = Number(signal.entry);
+>                              const tp1 = targetVal ? Number(targetVal) : null;
+>                              const tp2 = signal.tp2 ? Number(signal.tp2) : null;
+>                              const tp3 = signal.tp3 ? Number(signal.tp3) : null;
+>                              const tp4 = signal.tp4 ? Number(signal.tp4) : null;
+4261,4281c4841,4856
+<                               const exitTs = signal.exit_at || signal.updated_at || signal.created_at;
+<                               if (!exitTs) return null;
+<                               const diff = new Date(exitTs).getTime() - new Date(liveEntryTs).getTime();
+<                               if (diff < 0) return '0m';
+<                               const m = Math.floor(diff / 60000);
+<                               if (m === 0) {
+<                                 const s = Math.floor(diff / 1000);
+<                                 return s > 0 ? `${s}s` : '<1m';
+<                               }
+<                               return m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`;
+<                             })();
+< 
+<                             const timeAgo = (() => {
+<                               const ts = liveEntryTs || signal.created_at;
+<                               if (!ts) return '';
+<                               const diffMins = Math.floor((Date.now() - new Date(ts).getTime()) / 60000);
+<                               if (diffMins < 60) return `${diffMins}m ago`;
+<                               const hrs = Math.floor(diffMins / 60);
+<                               const mins = diffMins % 60;
+<                               return `${hrs}h ${mins}m ago`;
+<                             })();
+---
+>                              if (isLong) {
+>                                if (tp4 && sl >= tp4) protectedLevel = 'TP4 SECURED';
+>                                else if (tp3 && sl >= tp3) protectedLevel = 'TP3 SECURED';
+>                                else if (tp2 && sl >= tp2) protectedLevel = 'TP2 SECURED';
+>                                else if (tp1 && sl >= tp1) protectedLevel = 'TP1 SECURED';
+>                                else if (sl > en) protectedLevel = 'PROFIT SECURED';
+>                                else if (sl === en) protectedLevel = 'BREAKEVEN';
+>                              } else if (isShort) {
+>                                if (tp4 && sl <= tp4) protectedLevel = 'TP4 SECURED';
+>                                else if (tp3 && sl <= tp3) protectedLevel = 'TP3 SECURED';
+>                                else if (tp2 && sl <= tp2) protectedLevel = 'TP2 SECURED';
+>                                else if (tp1 && sl <= tp1) protectedLevel = 'TP1 SECURED';
+>                                else if (sl < en) protectedLevel = 'PROFIT SECURED';
+>                                else if (sl === en) protectedLevel = 'BREAKEVEN';
+>                              }
+>                            }
+4282a4858,4926
+>                            let outcomeLabel = isActive ? (!signal.updated_at ? 'ACTIVE LIMIT' : 'OPEN') : 'ACTIVE';
+>                            let outcomeClr = 'text-slate-600 theme-gray:text-slate-800 dark:text-gray-400 glow-gray';
+>                            let outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-gray-500/[0.15] theme-gray:from-gray-500/[0.12] to-gray-500/[0.05] theme-gray:to-gray-500/[0.03] dark:from-gray-500/[0.18] dark:to-gray-950/[0.20] border-gray-500/50 theme-gray:border-gray-500/40 dark:border-gray-500/40 shadow-[0_4px_16px_rgba(156,163,175,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+> 
+>                            if (isActive) {
+>                              if (protectedLevel) {
+>                                outcomeLabel = protectedLevel;
+>                                if (protectedLevel.includes('BREAKEVEN') || protectedLevel.includes('B/E')) {
+>                                  outcomeClr = 'text-blue-500 theme-gray:text-blue-600 dark:text-blue-400 glow-info';
+>                                  outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-blue-500/[0.20] theme-gray:from-blue-500/[0.18] to-blue-500/[0.06] theme-gray:to-blue-500/[0.05] dark:from-blue-500/[0.20] dark:to-blue-950/[0.25] border-blue-500/70 theme-gray:border-blue-600/60 dark:border-blue-500/50 shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                                } else {
+>                                  outcomeClr = 'text-green-500 theme-gray:text-green-600 dark:text-green-400 glow-success';
+>                                  outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-green-500/[0.20] theme-gray:from-green-500/[0.18] to-green-500/[0.06] theme-gray:to-green-500/[0.05] dark:from-green-500/[0.20] dark:to-green-950/[0.25] border-green-500/70 theme-gray:border-green-600/60 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                                }
+>                              }
+>                            } else if (isWin) {
+>                              const exitLvl = getDisplayExitLevel(signal);
+>                              outcomeLabel = exitLvl !== 'UNKNOWN' ? exitLvl : 'WIN';
+>                              outcomeClr = 'text-green-500 theme-gray:text-green-600 dark:text-green-400 glow-success';
+>                              outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-green-500/[0.20] theme-gray:from-green-500/[0.18] to-green-500/[0.06] theme-gray:to-green-500/[0.05] dark:from-green-500/[0.20] dark:to-green-950/[0.25] border-green-500/70 theme-gray:border-green-600/60 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                            } else if (isLoss) {
+>                              outcomeLabel = 'SL HIT';
+>                              outcomeClr = 'text-red-500 theme-gray:text-red-600 dark:text-red-400 glow-danger';
+>                              outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-red-500/[0.20] theme-gray:from-red-500/[0.18] to-red-500/[0.06] theme-gray:to-red-500/[0.05] dark:from-red-500/[0.20] dark:to-red-950/[0.25] border-red-500/70 theme-gray:border-red-600/60 dark:border-red-500/50 shadow-[0_4px_16px_rgba(239,68,68,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                            } else if (isBE) {
+>                              outcomeLabel = 'BREAKEVEN';
+>                              outcomeClr = 'text-blue-500 theme-gray:text-blue-600 dark:text-blue-400 glow-info';
+>                              outcomeBoxClass = 'bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-blue-500/[0.20] theme-gray:from-blue-500/[0.18] to-blue-500/[0.06] theme-gray:to-blue-500/[0.05] dark:from-blue-500/[0.20] dark:to-blue-950/[0.25] border-blue-500/70 theme-gray:border-blue-600/60 dark:border-blue-500/50 shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+>                            }
+> 
+>                            const riskAmt = Math.abs(Number(signal.entry) - Number(stopVal));
+> 
+>                            let calcRR = null;
+>                            if (riskAmt > 0) {
+>                                if (!isActive) {
+>                                    if (signal.exit_price != null && !isNaN(Number(signal.exit_price))) {
+>                                        const realizedRewardAmt = isShort ? (Number(signal.entry) - Number(signal.exit_price)) : (Number(signal.exit_price) - Number(signal.entry));
+>                                        calcRR = (realizedRewardAmt / riskAmt).toFixed(2);
+>                                    }
+>                                } else if (isActive && nextTP != null) {
+>                                    const projectedRewardAmt = Math.abs(Number(nextTP) - Number(signal.entry));
+>                                    calcRR = (projectedRewardAmt / riskAmt).toFixed(2);
+>                                }
+>                            }
+> 
+>                            const rr = !isActive 
+>                               ? (calcRR != null ? calcRR : null) 
+>                               : (calcRR != null ? calcRR : (signal.rr != null ? Number(signal.rr).toFixed(2) : null));
+> 
+>                            const sigMeta = typeof signal.metadata === 'string' ? (() => { try { return JSON.parse(signal.metadata); } catch { return {}; } })() : (signal.metadata || {});
+>                            const isCancelledOrSkipped = finalOutcome === 'CANCELLED' || (signal.status || '').toUpperCase().includes('CANCEL') || (signal.status || '').toUpperCase().includes('EXPIRED') || (signal.status || '').toUpperCase().includes('SKIPPED');
+>                            const isLimitOrder = isActive && !signal.updated_at && !sigMeta.real_entry_time;
+>                            const hasEntered = !isLimitOrder && !isCancelledOrSkipped && (sigMeta.real_entry_time || signal.updated_at || ['WIN', 'LOSS', 'BREAKEVEN'].includes(finalOutcome));
+> 
+>                            const liveEntryTime = sigMeta.real_entry_time || (hasEntered ? (signal.signal_ts || signal.created_at) : null);
+> 
+>                            const formatHold = (mins: number) => {
+>                               if (mins <= 0) return '<1m';
+>                               return mins < 60 ? `${mins}m` : `${Math.floor(mins / 60)}h ${mins % 60}m`;
+>                            };
+> 
+>                            const elapsedMins = liveEntryTime ? Math.max(0, Math.floor((Date.now() - new Date(liveEntryTime).getTime()) / 60000)) : 0;
+>                            let exitTimeStr = signal.exit_at || signal.updated_at;
+>                            if (!isActive && !isCancelledOrSkipped && !exitTimeStr) exitTimeStr = signal.created_at || liveEntryTime;
+> 
+>                            const finalHoldMins = (exitTimeStr && liveEntryTime) 
+>                              ? Math.max(0, Math.floor((new Date(exitTimeStr).getTime() - new Date(liveEntryTime).getTime()) / 60000))
+>                              : elapsedMins;
+> 
+4284,4289c4928,4954
+<                              <div key={signal.id} className={`${bgBorderClass} rounded-2xl p-4 transition-all duration-300`}>
+<                                {/* Row 1: Symbol + outcome badge + time */}
+<                                <div className="flex justify-between items-start mb-4">
+<                                  <div className="flex flex-col gap-2.5">
+<                                    <div className={`${(signal.symbol?.length || 0) > 11 ? 'text-sm sm:text-base' : (signal.symbol?.length || 0) > 8 ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'} font-black italic tracking-tight leading-none flex items-center flex-wrap gap-2.5`}>
+<                                      <span>{signal.symbol}</span>
+---
+>                              <div key={signal.id} className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border ${theme.border} ${theme.bg} ${theme.shadow || ''} transition-all duration-300 hover:scale-[1.005]`}>
+>                                {/* Row 1: Badges, Symbol, Share, Time */}
+>                                <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
+>                                  <div className="flex-1 min-w-0">
+>                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+>                                      <StrategyBadge typeStr={signal.type} isActive={isActive} />
+>                                      <div className={`inline-flex items-center px-2.5 py-0.5 rounded-lg border border-primary/20 bg-primary/5 text-[10px] font-mono uppercase tracking-widest font-bold ${outcomeClr}`}>
+>                                        {outcomeLabel}
+>                                      </div>
+>                                    </div>
+>                                    <div className="flex items-center gap-2.5 sm:gap-3 mt-1">
+>                                      <div className={`${(signal.symbol?.length || 0) > 11 ? 'text-xl sm:text-2xl' : (signal.symbol?.length || 0) > 8 ? 'text-2xl sm:text-3xl' : 'text-2xl sm:text-3xl md:text-4xl'} font-bold italic tracking-tighter leading-none pr-1`}>
+>                                        {signal.symbol}
+>                                      </div>
+>                                      <button 
+>                                        onClick={(e) => handleShare(signal, e.currentTarget)}
+>                                        className="text-accent cursor-pointer hover:opacity-80 active:scale-95 transition-all flex items-center justify-center bg-primary/10 hover:bg-primary/20 w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-primary/20 shrink-0"
+>                                      >
+>                                        <Share2 size={15} className="text-accent" />
+>                                      </button>
+>                                    </div>
+>                                  </div>
+>                                  <div className="text-right shrink-0">
+>                                    <div className="text-[9px] font-mono font-bold mb-0.5 uppercase tracking-widest text-primary/60">
+>                                      {isActive ? (!signal.updated_at ? 'LIMIT SIGNAL' : 'LIVE TRADE') : 'CLOSED TRADE'}
+>                                    </div>
+>                                    <div className="text-xs font-bold font-mono text-primary">
+4291,4319c4956,4959
+<                                         let statusText = '';
+<                                         if (finalOutcome === 'CANCELLED') {
+<                                             statusText = 'CANCELLED';
+<                                         } else if (isActive) {
+<                                             statusText = !signal.updated_at ? 'ACTIVE LIMIT' : 'ACTIVE';
+<                                         } else {
+<                                             statusText = getDisplayExitLevel(signal);
+<                                         }
+< 
+<                                         let badgeColor = '';
+<                                         if (statusText === 'CANCELLED') {
+<                                             badgeColor = 'text-gray-500 dark:text-gray-400 bg-gray-500/10 dark:bg-gray-400/10';
+<                                         } else if (statusText.includes('B/E') || statusText.includes('BREAK EVEN') || statusText.includes('BREAKEVEN')) {
+<                                             badgeColor = 'text-blue-500 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-500/10';
+<                                         } else if (statusText.includes('SL') || statusText.includes('LOSS') || statusText.includes('STOP')) {
+<                                             badgeColor = 'text-red-600 dark:text-red-400 bg-red-500/10 dark:bg-red-400/10';
+<                                         } else if (statusText.includes('TP') || statusText.includes('WIN') || statusText.includes('TRAIL') || statusText.includes('EMA') || statusText.includes('DIV') || statusText.includes('EOD')) {
+<                                             badgeColor = 'text-green-600 dark:text-green-400 bg-green-500/10 dark:bg-green-400/10';
+<                                         } else {
+<                                             if (isLoss) badgeColor = 'text-red-600 dark:text-red-400 bg-red-500/10 dark:bg-red-400/10';
+<                                             else if (isBE) badgeColor = 'text-blue-500 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-500/10';
+<                                             else if (isWin) badgeColor = 'text-green-600 dark:text-green-400 bg-green-500/10 dark:bg-green-400/10';
+<                                             else badgeColor = 'text-gray-500 dark:text-gray-400 bg-gray-500/10 dark:bg-gray-400/10';
+<                                         }
+<                                         if (badgeColor && statusText) {
+<                                             return <span className={`${badgeColor} text-[10px] font-bold not-italic tracking-normal px-1.5 py-0.5 rounded`}>{statusText}</span>;
+<                                         }
+<                                         return null;
+<                                       })()}
+---
+>                                        const signalTime = liveEntryTime || signal.signal_ts || signal.created_at;
+>                                        const _d = new Date(signalTime);
+>                                        return isNaN(_d.getTime()) ? '--' : _d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+>                                      })()} IST
+4321c4961,4967
+<                                    <StrategyBadge typeStr={signal.type} isActive={isActive} />
+---
+>                                    <div className="text-[10px] font-mono text-dim mt-0.5">
+>                                      {(() => {
+>                                        const signalTime = liveEntryTime || signal.signal_ts || signal.created_at;
+>                                        const _d = new Date(signalTime);
+>                                        return isNaN(_d.getTime()) ? '--' : _d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase();
+>                                      })()}
+>                                    </div>
+4323,4341c4969,5001
+<                                  <div className="text-right flex flex-col items-end shrink-0 ml-2">
+<                                    <div className="text-[11px] font-bold text-primary/80">{(() => { const _d = new Date(signal.created_at); return isNaN(_d.getTime()) ? '--' : _d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }); })()}</div>
+<                                    <div className="text-[10px] font-mono font-medium text-dim mb-1.5">{(() => { const _d = new Date(signal.created_at); return isNaN(_d.getTime()) ? '--' : _d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase(); })()}</div>
+<                                    {!isActive && (
+<                                      <>
+<                                        <div className={`text-sm font-black font-mono ${isWin ? 'text-green-600 dark:text-green-400' : isBE ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
+<                                          {isWin ? '✅ WIN' : isBE ? '➡️ B/E' : '❌ LOSS'}
+<                                        </div>
+<                                        <div className="flex items-center justify-end gap-2 mt-1">
+<                                          {rMultiple != null && (
+<                                            <div className={`text-[11px] font-mono font-bold ${rMultiple >= 0 ? 'text-green-600/90 dark:text-green-400/90' : 'text-red-600/90 dark:text-red-400/90'}`}>
+<                                              {rMultiple > 0 ? '+' : ''}{rMultiple.toFixed(2)}%
+<                                            </div>
+<                                          )}
+<                                        </div>
+<                                      </>
+<                                    )}
+<                                    {isActive && (
+<                                      <div className="text-xs font-black font-mono text-accent uppercase tracking-wider mt-1">
+---
+>                                </div>
+> 
+>                                {/* Tags: Dhan & Exit Logic */}
+>                                {(() => {
+>                                  if (signal.dhan_traded_symbol || sigMeta.exit_logic) {
+>                                    return (
+>                                      <div className="flex flex-wrap gap-1.5 mb-2.5">
+>                                        {signal.dhan_traded_symbol && (
+>                                          <span className="text-[9px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-blue-500/15 to-blue-500/5 border border-blue-500/30 text-blue-400 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-[0_2px_8px_rgba(59,130,246,0.1)]">
+>                                            🤖 Dhan: {signal.dhan_traded_symbol}
+>                                          </span>
+>                                        )}
+>                                        {sigMeta.exit_logic && (
+>                                          <span className="text-[9px] font-mono font-black uppercase tracking-wider bg-gradient-to-r from-green-500/15 to-green-500/5 border border-green-500/30 text-green-400 px-2.5 py-0.5 rounded-full shadow-[0_2px_8px_rgba(34,197,94,0.1)]">
+>                                            {sigMeta.exit_logic}
+>                                          </span>
+>                                        )}
+>                                      </div>
+>                                    );
+>                                  }
+>                                  return null;
+>                                })()}
+> 
+>                                {/* 6-Card Micro Grid */}
+>                                <div className="grid grid-cols-2 min-[380px]:grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-1.5 mt-2">
+>                                  {/* Entry Card */}
+>                                  <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-green-500/[0.20] theme-gray:from-green-500/[0.18] to-green-500/[0.06] theme-gray:to-green-500/[0.05] dark:from-green-500/[0.20] dark:to-green-950/[0.25] border-green-500/70 theme-gray:border-green-600/60 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+>                                    <div>
+>                                      <div className="text-[10px] font-mono text-green-700 theme-gray:text-green-800 dark:text-green-400 font-bold mb-1 uppercase tracking-widest">ENTRY</div>
+>                                      <div className="text-[13px] sm:text-[15px] font-bold text-green-600 theme-gray:text-green-700 dark:text-green-300 tracking-tighter glow-success break-words leading-none">{fmt(signal.entry)}</div>
+>                                    </div>
+>                                    {hasEntered && liveEntryTime && (
+>                                      <div className="text-[10px] font-mono font-bold text-primary/70 dark:text-primary/60 mt-1.5 leading-tight border-t border-green-500/20 pt-1">
+4343,4364c5003,5005
+<                                          let statusStr = (signal.status || signal.outcome || 'ACTIVE').toUpperCase();
+<                                          if ((statusStr === 'ACTIVE' || statusStr === 'OPEN') && !signal.updated_at) {
+<                                            statusStr = 'ACTIVE LIMIT';
+<                                          } else if (statusStr === 'ACTIVE' || statusStr === 'OPEN') {
+<                                            const trail = Number(signal.trail_sl);
+<                                            const entry = Number(signal.entry);
+<                                            if (trail && entry) {
+<                                              const tp1 = Number(signal.target), tp2 = Number(signal.tp2), tp3 = Number(signal.tp3), tp4 = Number(signal.tp4);
+<                                              if (isLong) {
+<                                                if (tp4 && trail >= tp4) statusStr = 'ACTIVE (TP4)';
+<                                                else if (tp3 && trail >= tp3) statusStr = 'ACTIVE (TP3)';
+<                                                else if (tp2 && trail >= tp2) statusStr = 'ACTIVE (TP2)';
+<                                                else if (tp1 && trail >= tp1) statusStr = 'ACTIVE (TP1)';
+<                                              } else if (isShort) {
+<                                                if (tp4 && trail <= tp4) statusStr = 'ACTIVE (TP4)';
+<                                                else if (tp3 && trail <= tp3) statusStr = 'ACTIVE (TP3)';
+<                                                else if (tp2 && trail <= tp2) statusStr = 'ACTIVE (TP2)';
+<                                                else if (tp1 && trail <= tp1) statusStr = 'ACTIVE (TP1)';
+<                                              }
+<                                            }
+<                                          }
+<                                          return statusStr.includes('ACTIVE') || statusStr === 'OPEN' ? statusStr : 'ACTIVE';
+---
+>                                          const d = new Date(liveEntryTime);
+>                                          if (isNaN(d.getTime())) return '--';
+>                                          return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase() + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+4369d5009
+<                                </div>
+4371,4384c5011,5015
+<                                {/* Row 2: Entry → Exit + prices + hold */}
+<                                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-primary/20">
+<                                  <div>
+<                                    <div className="text-[10px] font-black text-primary/80 uppercase tracking-wider mb-1">Entry</div>
+<                                    <div className="text-[13px] font-black text-primary">{signal.entry ? formatPrice(signal.entry, signal.symbol) : '--'}</div>
+<                                    <div className="text-[11px] font-mono font-medium text-dim mt-1 leading-tight">
+<                                      {hasEntered && liveEntryTs ? (
+<                                          <>
+<                                              {(() => { const _d = new Date(liveEntryTs); return isNaN(_d.getTime()) ? '--' : _d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase(); })()}
+<                                              <br/>{(() => { const _d = new Date(liveEntryTs); return isNaN(_d.getTime()) ? '--' : _d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }); })()}
+<                                          </>
+<                                      ) : (
+<                                          <>--<br/>--</>
+<                                      )}
+---
+>                                  {/* Stop Loss Card */}
+>                                  <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-red-500/[0.20] theme-gray:from-red-500/[0.18] to-red-500/[0.06] theme-gray:to-red-500/[0.05] dark:from-red-500/[0.20] dark:to-red-950/[0.25] border-red-500/70 theme-gray:border-red-600/60 dark:border-red-500/50 shadow-[0_4px_16px_rgba(239,68,68,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+>                                    <div>
+>                                      <div className="text-[10px] font-mono text-red-700 theme-gray:text-red-800 dark:text-red-400 font-bold mb-1 uppercase tracking-widest">STOP LOSS</div>
+>                                      <div className="text-[13px] sm:text-[15px] font-bold text-red-600 theme-gray:text-red-700 dark:text-red-300 tracking-tighter glow-danger break-words leading-none">{fmt(stopVal)}</div>
+4386,4396c5017,5043
+<                                  </div>
+<                                  <div className="text-center">
+<                                    <div className="text-[10px] font-black text-primary/80 uppercase tracking-wider mb-1">Exit</div>
+<                                    <div className="text-[13px] font-black text-primary">
+<                                      {(() => {
+<                                          if (isActive) return '--';
+<                                          if (signal.exit_price != null) return formatPrice(signal.exit_price, signal.symbol);
+<                                          
+<                                          const finalOutcome = resolveOutcome(signal);
+<                                          if (finalOutcome === 'BREAKEVEN') return formatPrice(signal.entry, signal.symbol);
+<                                          return '--';
+---
+>                                    {!isActive && signal.exit_at && (
+>                                      <div className="text-[10px] font-mono font-bold text-primary/70 dark:text-primary/60 mt-1.5 leading-tight border-t border-red-500/20 pt-1">
+>                                        {(() => {
+>                                          const d = new Date(signal.exit_at);
+>                                          if (isNaN(d.getTime())) return '--';
+>                                          return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase() + ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+>                                        })()}
+>                                      </div>
+>                                    )}
+>                                  </div>
+> 
+>                                  {/* Outcome Card */}
+>                                  <div className={`p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 ${outcomeBoxClass}`}>
+>                                    <div>
+>                                      <div className="text-[10px] font-mono font-bold mb-1 uppercase tracking-widest opacity-80">
+>                                        <span className={outcomeClr.includes('green') ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400' : outcomeClr.includes('red') ? 'text-red-700 theme-gray:text-red-800 dark:text-red-400' : outcomeClr.includes('blue') ? 'text-blue-700 theme-gray:text-blue-800 dark:text-blue-400' : 'text-slate-600 theme-gray:text-slate-800 dark:text-slate-400'}>OUTCOME</span>
+>                                      </div>
+>                                      <div className={`text-[13px] sm:text-[15px] font-bold mt-0.5 break-words leading-none ${outcomeClr.replace('-500', '-600')}`}>{isActive ? (!signal.updated_at ? 'ACTIVE LIMIT' : 'OPEN') : finalOutcome}</div>
+>                                      {(() => {
+>                                        if (!isWin && !isLoss && !isBE) return null;
+>                                        const pctVal = getExactPct(signal);
+>                                        if (pctVal == null) return null;
+>                                        return (
+>                                          <div className={`text-[12px] sm:text-[14px] font-mono font-bold mt-1.5 ${pctVal >= 0 ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400'}`}>
+>                                            {pctVal > 0 ? '+' : ''}{pctVal.toFixed(2)}%
+>                                          </div>
+>                                        );
+4399,4409c5046,5047
+<                                    <div className="text-[11px] font-mono font-medium text-dim mt-1 leading-tight">
+<                                      {(!isActive && !isCancelledOrSkipped && (signal.exit_at || signal.updated_at || signal.created_at)) ? (() => {
+<                                         const exitDateStr = signal.exit_at || signal.updated_at || signal.created_at;
+<                                         return (
+<                                         <>
+<                                           {(() => { const _d = new Date(exitDateStr); return isNaN(_d.getTime()) ? '--' : _d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }).toUpperCase(); })()}
+<                                           <br/>{(() => { const _d = new Date(exitDateStr); return isNaN(_d.getTime()) ? '--' : _d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }); })()}
+<                                         </>);
+<                                      })() : (
+<                                         <>--<br/>--</>
+<                                      )}
+---
+>                                    <div className={`text-[10px] font-mono font-bold mt-1.5 leading-tight border-t border-primary/10 pt-1 ${isActive ? (!signal.updated_at ? 'text-amber-600 dark:text-amber-500' : 'text-blue-600 dark:text-blue-500') : 'text-primary/70 dark:text-primary/60'}`}>
+>                                      {isActive ? `ALIVE: ${liveEntryTime ? formatHold(elapsedMins) : '--'}` : `HELD: ${formatHold(finalHoldMins)}`}
+4412,4415c5050,5059
+<                                  <div className="text-right">
+<                                    <div className="text-[10px] font-black text-primary/80 uppercase tracking-wider mb-1">Hold</div>
+<                                    <div className="text-[13px] font-black text-accent">{holdMins ?? '--'}</div>
+<                                    <div className="text-[11px] font-mono font-medium text-dim mt-1 leading-tight">duration</div>
+---
+> 
+>                                  {/* Trail SL Card */}
+>                                  <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-blue-500/[0.20] theme-gray:from-blue-500/[0.18] to-blue-500/[0.06] theme-gray:to-blue-500/[0.05] dark:from-blue-500/[0.20] dark:to-blue-950/[0.25] border-blue-500/70 theme-gray:border-blue-600/60 dark:border-blue-500/50 shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+>                                    <div>
+>                                      <div className="text-[10px] font-mono text-blue-700 theme-gray:text-blue-800 dark:text-blue-400 font-bold mb-1 uppercase tracking-widest">TRAIL SL</div>
+>                                      <div className="text-[13px] sm:text-[15px] font-bold text-blue-600 theme-gray:text-blue-700 dark:text-blue-300 tracking-tighter glow-info break-words leading-none">{fmt(trailSL)}</div>
+>                                    </div>
+>                                    <div className="text-[10px] font-mono font-medium text-dim mt-1.5 pt-1 border-t border-blue-500/20">
+>                                      {protectedLevel || 'RIGID LEVEL'}
+>                                    </div>
+4416a5061,5102
+> 
+>                                  {/* Target / Exited At Card */}
+>                                  <div className={`p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br shadow-[0_4px_16px_rgba(0,0,0,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)] ${
+>                                    isActive 
+>                                      ? "from-amber-500/[0.20] theme-gray:from-amber-500/[0.18] to-amber-500/[0.06] theme-gray:to-amber-500/[0.05] dark:from-amber-500/[0.20] dark:to-amber-950/[0.25] border-amber-500/70 theme-gray:border-amber-600/60 dark:border-amber-500/50 shadow-[0_4px_16px_rgba(245,158,11,0.08)]"
+>                                      : "from-green-500/[0.20] theme-gray:from-green-500/[0.18] to-green-500/[0.06] theme-gray:to-green-500/[0.05] dark:from-green-500/[0.20] dark:to-green-950/[0.25] border-green-500/70 theme-gray:border-green-600/60 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08)]"
+>                                  }`}>
+>                                    <div>
+>                                      <div className={`text-[10px] font-mono font-bold mb-1 uppercase tracking-widest ${isActive ? 'text-amber-700 theme-gray:text-amber-800 dark:text-amber-400' : 'text-green-700 theme-gray:text-green-800 dark:text-green-400'}`}>
+>                                        {isActive ? 'TARGET' : 'EXITED AT'}
+>                                      </div>
+>                                      <div className={`text-[13px] sm:text-[15px] font-bold tracking-tighter break-words leading-none ${isActive ? 'text-amber-600 theme-gray:text-amber-700 dark:text-amber-300 glow-warning' : 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success'}`}>
+>                                        {(() => {
+>                                          if (isActive) return nextTP != null ? fmt(nextTP) : '---';
+>                                          if (signal.exit_price != null) return fmt(signal.exit_price);
+>                                          if (finalOutcome === 'BREAKEVEN') return fmt(signal.entry);
+>                                          return '---';
+>                                        })()}
+>                                      </div>
+>                                    </div>
+>                                    <div className="text-[10px] font-mono font-medium text-dim mt-1.5 pt-1 border-t border-primary/10">
+>                                      {isActive ? 'PLANNED TP' : (exitTimeStr ? 'EXECUTED' : '--')}
+>                                    </div>
+>                                  </div>
+> 
+>                                  {/* RR / Multiplier Card */}
+>                                  <div className="p-2 rounded-xl border flex flex-col justify-between min-h-[50px] min-w-0 bg-secondary theme-gray:bg-white/80 dark:bg-black/40 bg-gradient-to-br from-purple-500/[0.20] theme-gray:from-purple-500/[0.18] to-purple-500/[0.06] theme-gray:to-purple-500/[0.05] dark:from-purple-500/[0.20] dark:to-purple-950/[0.25] border-purple-500/70 theme-gray:border-purple-600/60 dark:border-purple-500/50 shadow-[0_4px_16px_rgba(168,85,247,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]">
+>                                    <div>
+>                                      <div className="text-[10px] font-mono text-purple-700 theme-gray:text-purple-800 dark:text-purple-400 font-bold mb-1 uppercase tracking-widest">PAYOUT (R)</div>
+>                                      <div className="text-[13px] sm:text-[15px] font-bold text-purple-600 theme-gray:text-purple-700 dark:text-purple-300 tracking-tighter break-words leading-none">
+>                                        {(() => {
+>                                          if (rr != null && !isNaN(Number(rr))) {
+>                                            return `${Number(rr).toFixed(2)}R`;
+>                                          }
+>                                          return '--';
+>                                        })()}
+>                                      </div>
+>                                    </div>
+>                                    <div className="text-[10px] font-mono font-medium text-dim mt-1.5 pt-1 border-t border-purple-500/20">
+>                                      {isActive ? 'PROJECTED' : 'REALIZED'}
+>                                    </div>
+>                                  </div>
+4420c5106,5107
+<                     }) : (
+---
+>                       })
+>                     ) : (
+4437a5125,5135
+>                      {/* Uniform Tab Header */}
+>                      <div className="flex items-center justify-between mb-1.5 mt-0.5 px-1">
+>                        <div className="flex items-center gap-2">
+>                          <TrendingUp className="text-accent" size={20} />
+>                          <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary">Markets</h2>
+>                        </div>
+>                        <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30 uppercase tracking-wider">
+>                          Research Edge
+>                        </span>
+>                      </div>
+> 
+4442c5140,5143
+<                            <span className="block mt-1 sm:mt-1.5 text-primary">MARKETS TODAY</span>
+---
+>                            <span className="flex items-center gap-2 mt-1 sm:mt-1.5 text-primary">
+>                              <TrendingUp className="text-accent shrink-0" size={22} />
+>                              <span>MARKETS TODAY</span>
+>                            </span>
+4449c5150,5153
+<                        <h3 className="text-lg sm:text-xl font-black italic tracking-widest uppercase mb-2 text-primary pb-1 border-b border-primary/20">MARKET WIDE PERFORMANCE</h3>
+---
+>                        <h3 className="text-lg sm:text-xl font-black italic tracking-widest uppercase mb-2 text-primary pb-1 border-b border-primary/20 flex items-center gap-2">
+>                          <TrendingUp className="text-accent shrink-0" size={18} />
+>                          <span>MARKET WIDE PERFORMANCE</span>
+>                        </h3>
+5727c6431
+<                               <h2 className="text-sm sm:text-base font-black italic tracking-tighter uppercase text-primary">
+---
+>                               <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary">
+6771a7476,7494
+> 
+>                   {/* ── AUTONOMOUS AUDIT & RESOLUTION AGENT ── */}
+>                    <section className="bg-secondary border border-primary p-6 sm:p-8 rounded-[2.5rem] shadow-xl space-y-4">
+>                       <div className="flex items-center justify-between border-b border-primary pb-3">
+>                         <div className="flex items-center gap-2">
+>                           <Cpu size={18} className="text-accent animate-pulse" />
+>                           <span className="text-xs sm:text-sm font-mono text-accent tracking-widest uppercase font-black">Resolution Agent</span>
+>                         </div>
+>                         <div className={`px-2.5 py-1 rounded-full text-[9px] sm:text-[10px] font-mono font-black uppercase tracking-wider flex items-center gap-1.5 ${
+>                           auditStatus === 'HEALTHY' 
+>                             ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30' 
+>                             : auditStatus === 'DESYNC' 
+>                               ? 'bg-amber-500/15 text-amber-500 border border-amber-500/30 animate-pulse'
+>                               : 'bg-primary/20 text-dim border border-primary/30'
+>                         }`}>
+>                           <span className={`w-1.5 h-1.5 rounded-full ${auditStatus === 'HEALTHY' ? 'bg-emerald-500' : auditStatus === 'DESYNC' ? 'bg-amber-500' : 'bg-dim'}`}></span>
+>                           {auditStatus === 'HEALTHY' ? 'ALL SYSTEMS OPTIMAL' : auditStatus === 'DESYNC' ? 'DESYNC DETECTED' : 'AUDITING...'}
+>                         </div>
+>                       </div>
+6772a7496,7619
+>                       {resolutionToast && (
+>                         <div className="p-3 bg-accent/10 border border-accent/30 rounded-xl text-[10px] font-mono text-accent animate-fade-in flex items-center justify-between">
+>                           <span>{resolutionToast}</span>
+>                           <button onClick={() => setResolutionToast(null)} className="opacity-60 hover:opacity-100 ml-2"><CloseIcon size={12} /></button>
+>                         </div>
+>                       )}
+> 
+>                       {/* Diagnostic Quick Bar */}
+>                       {auditDetails && (
+>                         <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between text-[10px] font-mono text-dim">
+>                           <div>Signals: <span className="font-bold text-primary">{auditDetails.total_closed_signals || 0}</span></div>
+>                           <div>Weeks: <span className="font-bold text-primary">{auditDetails.weeks_detected?.length || 0}</span></div>
+>                           <div>Unrolled: <span className={`font-bold ${auditDetails.unrolled_trades > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>{auditDetails.unrolled_trades || 0}</span></div>
+>                           <button onClick={() => setShowAuditModal(!showAuditModal)} className="text-accent underline font-bold uppercase tracking-wider text-[9px] ml-1">
+>                             {showAuditModal ? 'Hide' : 'Report'}
+>                           </button>
+>                         </div>
+>                       )}
+> 
+>                       {/* Diagnostic Detailed Drawer */}
+>                       {showAuditModal && auditDetails && (
+>                         <div className="p-4 rounded-xl bg-black/40 border border-accent/20 space-y-2 text-[9.5px] font-mono text-dim">
+>                           <div className="text-accent font-bold uppercase tracking-wider text-[10px] border-b border-white/10 pb-1">Live Diagnostic Audit Report</div>
+>                           <div className="grid grid-cols-2 gap-2 pt-1">
+>                             <div>• Total Closed: <span className="text-primary font-bold">{auditDetails.total_closed_signals}</span></div>
+>                             <div>• Logged Trades: <span className="text-primary font-bold">{auditDetails.total_logged_trades}</span></div>
+>                             <div>• Outcome Mismatches: <span className={auditDetails.outcome_mismatches > 0 ? "text-amber-400 font-bold" : "text-emerald-400 font-bold"}>{auditDetails.outcome_mismatches}</span></div>
+>                             <div>• Corrupted Labels: <span className={auditDetails.corrupt_labels > 0 ? "text-amber-400 font-bold" : "text-emerald-400 font-bold"}>{auditDetails.corrupt_labels}</span></div>
+>                             <div>• Fake Price Spikes: <span className="text-emerald-400 font-bold">{auditDetails.fake_price_spikes}</span></div>
+>                             <div>• Unrolled Count: <span className={auditDetails.unrolled_trades > 0 ? "text-amber-400 font-bold" : "text-emerald-400 font-bold"}>{auditDetails.unrolled_trades}</span></div>
+>                           </div>
+>                           {auditDetails.missing_weeks?.length > 0 && (
+>                             <div className="text-amber-400 text-[9px] pt-1">⚠️ Missing Weeks: {auditDetails.missing_weeks.join(', ')}</div>
+>                           )}
+>                         </div>
+>                       )}
+> 
+>                       <div className="space-y-3 pt-1">
+>                         {/* Button 1: Master Autonomous Repair */}
+>                         <button
+>                           onClick={() => handleResolutionAction('auto_repair')}
+>                           disabled={isResolving !== null}
+>                           className="w-full flex items-center justify-between p-4 bg-accent/15 border border-accent/40 text-accent rounded-2xl hover:bg-accent/25 active:scale-[0.98] transition-all font-black text-xs uppercase italic tracking-wider group shadow-lg"
+>                         >
+>                           <div className="flex items-center gap-3">
+>                             <Zap size={18} className={`text-accent ${isResolving === 'auto_repair' ? 'animate-spin' : 'group-hover:scale-110'} transition-transform`} />
+>                             <div className="text-left">
+>                               <div className="font-black text-primary">Run Autonomous Repair</div>
+>                               <div className="text-[9px] font-mono text-dim normal-case not-italic tracking-normal">Audits, heals outcomes & syncs weekly performance edge</div>
+>                             </div>
+>                           </div>
+>                           {isResolving === 'auto_repair' ? (
+>                             <RefreshCcw size={16} className="animate-spin text-accent" />
+>                           ) : (
+>                             <ChevronRight size={16} className="text-accent group-hover:translate-x-1 transition-transform" />
+>                           )}
+>                         </button>
+> 
+>                         {/* Button 2: Sync Weekly Performance Edge */}
+>                         <button
+>                           onClick={() => handleResolutionAction('sync_weekly')}
+>                           disabled={isResolving !== null}
+>                           className="w-full flex items-center justify-between p-3.5 bg-primary/10 border border-primary/30 text-primary rounded-2xl hover:bg-primary/20 active:scale-[0.98] transition-all font-black text-xs uppercase italic tracking-wider group"
+>                         >
+>                           <div className="flex items-center gap-3">
+>                             <RefreshCcw size={16} className={`text-accent ${isResolving === 'sync_weekly' ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500`} />
+>                             <div className="text-left">
+>                               <div className="text-primary font-black">Sync Weekly Performance Edge</div>
+>                               <div className="text-[9px] font-mono text-dim normal-case not-italic tracking-normal">Rolls up all active & historical weeks into weekly edge ledger</div>
+>                             </div>
+>                           </div>
+>                           {isResolving === 'sync_weekly' ? <RefreshCcw size={14} className="animate-spin text-accent" /> : <Play size={14} className="text-dim opacity-40 group-hover:opacity-100" />}
+>                         </button>
+> 
+>                         {/* Button 3: Audit & Heal Outcomes */}
+>                         <button
+>                           onClick={() => handleResolutionAction('heal_outcomes')}
+>                           disabled={isResolving !== null}
+>                           className="w-full flex items-center justify-between p-3.5 bg-primary/10 border border-primary/30 text-primary rounded-2xl hover:bg-primary/20 active:scale-[0.98] transition-all font-black text-xs uppercase italic tracking-wider group"
+>                         >
+>                           <div className="flex items-center gap-3">
+>                             <ShieldCheck size={16} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+>                             <div className="text-left">
+>                               <div className="text-primary font-black">Audit & Heal Outcomes</div>
+>                               <div className="text-[9px] font-mono text-dim normal-case not-italic tracking-normal">Reconciles outcome vs exact_pct and cleans TP labels</div>
+>                             </div>
+>                           </div>
+>                           {isResolving === 'heal_outcomes' ? <RefreshCcw size={14} className="animate-spin text-accent" /> : <Play size={14} className="text-dim opacity-40 group-hover:opacity-100" />}
+>                         </button>
+> 
+>                         {/* Button 4: Sweep Stale Market Sessions */}
+>                         <button
+>                           onClick={() => handleResolutionAction('sweep_stale')}
+>                           disabled={isResolving !== null}
+>                           className="w-full flex items-center justify-between p-3.5 bg-primary/10 border border-primary/30 text-primary rounded-2xl hover:bg-primary/20 active:scale-[0.98] transition-all font-black text-xs uppercase italic tracking-wider group"
+>                         >
+>                           <div className="flex items-center gap-3">
+>                             <Clock size={16} className="text-amber-500 group-hover:scale-110 transition-transform" />
+>                             <div className="text-left">
+>                               <div className="text-primary font-black">Sweep Stale Market Sessions</div>
+>                               <div className="text-[9px] font-mono text-dim normal-case not-italic tracking-normal">Closes or cancels stale orders on closed sessions</div>
+>                             </div>
+>                           </div>
+>                           {isResolving === 'sweep_stale' ? <RefreshCcw size={14} className="animate-spin text-accent" /> : <Play size={14} className="text-dim opacity-40 group-hover:opacity-100" />}
+>                         </button>
+> 
+>                         {/* Button 5: Resolve & Regenerate Strategy Tearsheet */}
+>                         <button
+>                           onClick={() => handleResolutionAction('sync_tearsheet')}
+>                           disabled={isResolving !== null}
+>                           className="w-full flex items-center justify-between p-3.5 bg-primary/10 border border-primary/30 text-primary rounded-2xl hover:bg-primary/20 active:scale-[0.98] transition-all font-black text-xs uppercase italic tracking-wider group"
+>                         >
+>                           <div className="flex items-center gap-3">
+>                             <TrendingUp size={16} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+>                             <div className="text-left">
+>                               <div className="text-primary font-black">Resolve & Regenerate Tearsheet</div>
+>                               <div className="text-[9px] font-mono text-dim normal-case not-italic tracking-normal">Rebuilds VectorBT multi-asset tearsheet & refreshes analytics engine</div>
+>                             </div>
+>                           </div>
+>                           {isResolving === 'sync_tearsheet' ? <RefreshCcw size={14} className="animate-spin text-accent" /> : <Play size={14} className="text-dim opacity-40 group-hover:opacity-100" />}
+>                         </button>
+>                       </div>
+>                    </section>
+> 
