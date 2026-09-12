@@ -763,8 +763,9 @@ ANYDAY = BULLISH or MODERATELYBULLISH or BEARISH or MODERATELYBEARISH or INSIDE 
 columns = 8
 rows = 6
 
-//var table perfTable = table.new(position.bottom_center, columns, rows, border_width = 3)
-var table perfTablec = table.new(position.top_center, columns, rows, border_width = 5)
+var table perfTableLeft   = table.new(position.top_left, 2, 3, border_width = 0)
+var table perfTablec      = table.new(position.top_center, columns, rows, border_width = 5)
+var table perfTableRight  = table.new(position.top_right, 2, 3, border_width = 0)
 
 f_fillcell(_table, _column, _row, _cellText, _c_color, _t_color) =>
     table.cell(_table, _column, _row, _cellText, bgcolor = color.new(color.white, 100), text_color = color.new(_c_color, 0), width = 55, text_size = size.small)
@@ -866,6 +867,10 @@ f_fillcellc(perfTablec, 0, 0, n1_message, color.new(c1_col,100), color.new(paint
 f_fillcellc(perfTablec, 0, 1, n1_message, color.new(c1_col,100), color.new(paintc,100))
 
 f_fillcellc(perfTablec, 0, 2, c1_message, c1_col, paintc)
+
+// Top-Left Value Area Bias and Top-Right Day Type direct cell mapping (tiny size, row 1 to clear TV top header bar)
+table.cell(perfTableLeft, 0, 1, str.tostring(dX), bgcolor = color.new(color.white, 100), text_color = color.new(paintX, 0), text_size = size.tiny, text_halign = text.align_left)
+table.cell(perfTableRight, 0, 1, str.tostring(mX), bgcolor = color.new(color.white, 100), text_color = color.new(paintmX, 0), text_size = size.tiny, text_halign = text.align_right)
 
 
 //===================================

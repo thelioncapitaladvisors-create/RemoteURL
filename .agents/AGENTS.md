@@ -1065,4 +1065,40 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **MARKETS Tab Parity**: Both `MARKET WIDE PERFORMANCE` and all individual market cards (`NIFTY`, `MCX`, `NYMEX`, `CRYPTO`, `FOREX`, `WORLD INDICES`) strictly use the 14-metric micro-card grid layout with zero plain unbordered text boxes.
 - **ANALYTICS & INSIGHTS Tab Parity**: All statistical summary bars, parameter filter buttons, and data tables bind directly to the canonical `.wc-card-*` and `.wc-table-*` definitions across all visual skins (`THE LION`, `DARK`, `LIGHT`, `GRAY`, `AUTO`).
 
+## Version 1.0: Pine Script Indicator Architecture (`TLCS_Live_Pivot_Alerts.pine`) & Header Layout
+- **Single Unified Top Header Bar (`tbl_bias`)**: The top header text MUST use a single responsive 3-column table configured at `position.top_center` (2 rows, 0 border):
+  - **Top Left (35% width)**: `dX` (Market Position / Value Area Bias, e.g. `IN RANGE / OUT OF VALUE`) in `size.tiny` text, left-aligned (`text.align_left`).
+  - **Top Center (30% width)**: `c1` (Opening Bias, e.g. `REJECTED BEARISH`) in `size.normal` text, centered on lower row 1 (`text.align_center`).
+  - **Top Right (35% width)**: `mX` (Day Type Blueprint, e.g. `TREND DAY / DOUBLE DISTRIBUTION TREND / EXPANDED TYPICAL`) in `size.tiny` text, right-aligned (`text.align_right`).
+- **Prohibition on Duplicate Header Tables**: Standalone tables on `position.top_right` (e.g. `perfTablecX`) or `position.top_left` are strictly prohibited to prevent text overlay duplication on TradingView.
+- **6 Decoupled Trade Execution Arrays**: The indicator execution engine processes 6 decoupled strategy sessions:
+  1. `missileSessions`: `LONG MISSILE` / `SHORT MISSILE` (`JustMissileBuy` / `JustMissileSell`)
+  2. `scalpSessions`: `LONG SCALP` / `SHORT SCALP` (`JustScalpBuy` / `JustScalpSell`)
+  3. `currentSessions`: `LONG LIGHTNING` / `SHORT LIGHTNING` (`LightningBuy` / `LightningSell`)
+  4. `divergenceSessions`: `LONG DIVERGENCE` / `SHORT DIVERGENCE` (`DivergenceBuy` / `DivergenceSell`)
+  5. `hiddenDivSessions`: `LONG HIDDEN DIVERGENCE` / `SHORT HIDDEN DIVERGENCE` (`HiddenDivBuy` / `HiddenDivSell`)
+  6. `extremeRevSessions`: `LONG EXTREME REVERSAL` / `SHORT EXTREME REVERSAL` (`ExtremeReversalBuy` / `ExtremeReversalSell`)
+- **Divergence Strategies Exemption (Regular `D` & Hidden `H`)**:
+  - **Hidden Divergence (`H`)**: Initiated when candle structure is within CPR boundaries (`hBullInsideCPR` / `hBearInsideCPR`). Strictly EXEMPT from day types and NCPR gating (`dayAllowed`).
+  - **Regular Divergence (`D`)**: Decoupled standalone strategy. Strictly EXEMPT from day types and NCPR gating (`dayAllowed`), requiring only direction and boundary checks (`longAllowed = close < H4`, `shortAllowed = close > L4`).
+- **Power Candle Midpoint Bounce & Scalp Architecture**:
+  - Power Candles (`GrS` / `ReS`) are discrete reaction candles triggered by momentum + support/resistance rejection (`Gr1..Gr15` / `Ra1..Ra15`).
+  - Midpoints (`grsMid` / `resMid`) persist and can signal **multiple trades** on successive pullbacks/bounces until explicitly **invalidated**.
+  - `grsMid` is invalidated and cleared (`grsMid := na`) only when price closes below the level (`close < grsMid`) or on a new day session reset (`new_day`).
+  - `resMid` is invalidated and cleared (`resMid := na`) only when price closes above the level (`close > resMid`) or on a new day session reset (`new_day`).
+  - `ScalpBuy` / `ScalpSell` entries strictly require price to test and bounce off an active Power Candle 50% midpoint (`bouncedOffActualGrsMid` / `bouncedOffActualResMid`).
+
+- **On-Chart Plot Markers Standard**:
+  - Regular Divergence: Lime/Maroon `D` text labels (`shape.labelup` / `shape.labeldown`)
+  - Hidden Divergence (CPR): Teal/Orange `H` text labels (`shape.labelup` / `shape.labeldown`)
+  - Lightning: Teal/Maroon Stars (`★`) and Lime Bolts (`⚡`)
+  - Extreme Reversal: Aqua/Fuchsia `EXT REV` text arrows (`shape.arrowup` / `shape.arrowdown`)
+  - Missile: Green Triangle Up (`shape.triangleup`) / Red Triangle Down (`shape.triangledown`)
+  - Scalp: Green Diamond (`shape.diamond`) / Red Diamond (`shape.diamond`)
+  - Bounce: Large Green Arrow Up (`BounceUp`) / Large Red Arrow Down (`BounceDown`)
+  - Active Trade Level Visuals: Entry level (`⏳ ` when pending unfilled limit, flipping to `🔰 ` or `⚡ ` upon fill), Stop Loss level (`⛔ `), Target level (`🎯 `), and Trailing Diamond (`◆`).
+
+
+
+
 
