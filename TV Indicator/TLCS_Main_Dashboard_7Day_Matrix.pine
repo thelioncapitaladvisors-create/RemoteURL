@@ -491,12 +491,15 @@ f_calc_sigs_impl(Zigzag zz, ZigzagProperties zzProps, array<DivergenceSignalObje
     bool GrS = GREEN and bouncedUpAnyLevel
     bool ReS = RED and bouncedDownAnyLevel
 
+    RisingUp = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10)
+    FallingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10)
+
     _mb = GrS
     _ms = ReS
-    _sb = false
-    _ss = false
-    _lb = false
-    _ls = false
+    _sb = RisingUp and close > open and ta.crossover(fShortEMA, fMedEMA)
+    _ss = FallingDown and close < open and ta.crossunder(fShortEMA, fMedEMA)
+    _lb = RisingUp and ta.crossover(m0, m10)
+    _ls = FallingDown and ta.crossunder(m0, m10)
 
     // Pivot High / Low for Reversals (Strict 10-bar pivot)
     highleftempty = ta.pivothigh(pivotlbar, 0)
@@ -1287,7 +1290,7 @@ if barstate.islast
 
     txtSize = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
 
-    dash1 := table.new(tablePos, lookback_days + 1, 26, border_width=1, frame_width=1, frame_color=c_frame, border_color=c_border)
+    dash1 := table.new(tablePos, lookback_days + 1, 30, border_width=1, frame_width=1, frame_color=c_frame, border_color=c_border)
     
     int currentRow = 0
 
@@ -1304,6 +1307,10 @@ if barstate.islast
     currentRow += 1
 
     if f_render_matrix_row(dash1, currentRow, "Missile", bullMissile, bearMissile, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Scalp", bullScalp, bearScalp, txtSize)
+        currentRow += 1
+    if f_render_matrix_row(dash1, currentRow, "Lightning", bullLight, bearLight, txtSize)
         currentRow += 1
     if f_render_matrix_row(dash1, currentRow, "Wick Reversal", bullWick, bearWick, txtSize)
         currentRow += 1
@@ -1362,32 +1369,75 @@ if barstate.islast
     if (isDailyClose or barstate.islast) and enable_alerts
         string daysJson = "["
         for col = 0 to 6
-            bM = str.replace_all(matrix.get(bullMissile, col, 0), "\n", ",")
-            sM = str.replace_all(matrix.get(bearMissile, col, 0), "\n", ",")
-            bSc = str.replace_all(matrix.get(bullScalp, col, 0), "\n", ",")
-            sSc = str.replace_all(matrix.get(bearScalp, col, 0), "\n", ",")
-            bL = str.replace_all(matrix.get(bullLight, col, 0), "\n", ",")
-            sL = str.replace_all(matrix.get(bearLight, col, 0), "\n", ",")
-            bD = str.replace_all(matrix.get(bullDiv, col, 0), "\n", ",")
-            sD = str.replace_all(matrix.get(bearDiv, col, 0), "\n", ",")
-            bR = str.replace_all(matrix.get(bullRej, col, 0), "\n", ",")
-            sR = str.replace_all(matrix.get(bearRej, col, 0), "\n", ",")
-            bAb = str.replace_all(matrix.get(bullAbs, col, 0), "\n", ",")
-            sAb = str.replace_all(matrix.get(bearAbs, col, 0), "\n", ",")
-            bFn = str.replace_all(matrix.get(bullFnl, col, 0), "\n", ",")
-            sFn = str.replace_all(matrix.get(bearFnh, col, 0), "\n", ",")
-            bOd = str.replace_all(matrix.get(bullOd, col, 0), "\n", ",")
-            sOd = str.replace_all(matrix.get(bearOd, col, 0), "\n", ",")
-            bSr = str.replace_all(matrix.get(bullSrdActiveM, col, 0), "\n", ",")
-            sSr = str.replace_all(matrix.get(bearSrdActiveM, col, 0), "\n", ",")
-            bFb = str.replace_all(matrix.get(bullFailAbsActiveM, col, 0), "\n", ",")
-            sFb = str.replace_all(matrix.get(bearFailAbsActiveM, col, 0), "\n", ",")
-            bAc = str.replace_all(matrix.get(bullAccActiveM, col, 0), "\n", ",")
-            sAc = str.replace_all(matrix.get(bearAccActiveM, col, 0), "\n", ",")
+            bM = str.replace_all(matrix.get(bullMissile, col, 0), "
+", ",")
+            sM = str.replace_all(matrix.get(bearMissile, col, 0), "
+", ",")
+            bSc = str.replace_all(matrix.get(bullScalp, col, 0), "
+", ",")
+            sSc = str.replace_all(matrix.get(bearScalp, col, 0), "
+", ",")
+            bL = str.replace_all(matrix.get(bullLight, col, 0), "
+", ",")
+            sL = str.replace_all(matrix.get(bearLight, col, 0), "
+", ",")
+            bW = str.replace_all(matrix.get(bullWick, col, 0), "
+", ",")
+            sW = str.replace_all(matrix.get(bearWick, col, 0), "
+", ",")
+            bExt = str.replace_all(matrix.get(bullExt, col, 0), "
+", ",")
+            sExt = str.replace_all(matrix.get(bearExt, col, 0), "
+", ",")
+            bO = str.replace_all(matrix.get(bullOut, col, 0), "
+", ",")
+            sO = str.replace_all(matrix.get(bearOut, col, 0), "
+", ",")
+            bDo = str.replace_all(matrix.get(bullDoji, col, 0), "
+", ",")
+            sDo = str.replace_all(matrix.get(bearDoji, col, 0), "
+", ",")
+            bD = str.replace_all(matrix.get(bullDiv, col, 0), "
+", ",")
+            sD = str.replace_all(matrix.get(bearDiv, col, 0), "
+", ",")
+            bHD = str.replace_all(matrix.get(bullHDiv, col, 0), "
+", ",")
+            sHD = str.replace_all(matrix.get(bearHDiv, col, 0), "
+", ",")
+            bR = str.replace_all(matrix.get(bullRej, col, 0), "
+", ",")
+            sR = str.replace_all(matrix.get(bearRej, col, 0), "
+", ",")
+            bAb = str.replace_all(matrix.get(bullAbs, col, 0), "
+", ",")
+            sAb = str.replace_all(matrix.get(bearAbs, col, 0), "
+", ",")
+            bFn = str.replace_all(matrix.get(bullFnl, col, 0), "
+", ",")
+            sFn = str.replace_all(matrix.get(bearFnh, col, 0), "
+", ",")
+            bOd = str.replace_all(matrix.get(bullOd, col, 0), "
+", ",")
+            sOd = str.replace_all(matrix.get(bearOd, col, 0), "
+", ",")
+            bSr = str.replace_all(matrix.get(bullSrdActiveM, col, 0), "
+", ",")
+            sSr = str.replace_all(matrix.get(bearSrdActiveM, col, 0), "
+", ",")
+            bFb = str.replace_all(matrix.get(bullFailAbsActiveM, col, 0), "
+", ",")
+            sFb = str.replace_all(matrix.get(bearFailAbsActiveM, col, 0), "
+", ",")
+            bAc = str.replace_all(matrix.get(bullAccActiveM, col, 0), "
+", ",")
+            sAc = str.replace_all(matrix.get(bearAccActiveM, col, 0), "
+", ",")
 
-            daysJson += '{"col":' + str.tostring(col) + ',"bM":"' + bM + '","sM":"' + sM + '","bSc":"' + bSc + '","sSc":"' + sSc + '","bL":"' + bL + '","sL":"' + sL + '","bD":"' + bD + '","sD":"' + sD + '","bR":"' + bR + '","sR":"' + sR + '","bAb":"' + bAb + '","sAb":"' + sAb + '","bFn":"' + bFn + '","sFn":"' + sFn + '","bOd":"' + bOd + '","sOd":"' + sOd + '","bSr":"' + bSr + '","sSr":"' + sSr + '","bFb":"' + bFb + '","sFb":"' + sFb + '","bAc":"' + bAc + '","sAc":"' + sAc + '"}' + (col < 6 ? ',' : '')
+            daysJson += '{"col":' + str.tostring(col) + ',"bM":"' + bM + '","sM":"' + sM + '","bSc":"' + bSc + '","sSc":"' + sSc + '","bL":"' + bL + '","sL":"' + sL + '","bW":"' + bW + '","sW":"' + sW + '","bExt":"' + bExt + '","sExt":"' + sExt + '","bO":"' + bO + '","sO":"' + sO + '","bDo":"' + bDo + '","sDo":"' + sDo + '","bD":"' + bD + '","sD":"' + sD + '","bHD":"' + bHD + '","sHD":"' + sHD + '","bR":"' + bR + '","sR":"' + sR + '","bAb":"' + bAb + '","sAb":"' + sAb + '","bFn":"' + bFn + '","sFn":"' + sFn + '","bOd":"' + bOd + '","sOd":"' + sOd + '","bSr":"' + bSr + '","sSr":"' + sSr + '","bFb":"' + bFb + '","sFb":"' + sFb + '","bAc":"' + bAc + '","sAc":"' + sAc + '"}' + (col < 6 ? ',' : '')
         daysJson += "]"
 
-        string alertPayload = '{"ticker":"' + syminfo.ticker + '","trigger":"SessionOpenMatrix","secret":"' + webhook_secret + '","matrix_days":' + daysJson + ',"signals":{"bullMissile":"' + matrix.get(bullMissile, 0, 0) + '","bearMissile":"' + matrix.get(bearMissile, 0, 0) + '","bullDiv":"' + matrix.get(bullDiv, 0, 0) + '","bearDiv":"' + matrix.get(bearDiv, 0, 0) + '","bullRej":"' + matrix.get(bullRejActiveM, 0, 0) + '","bearRej":"' + matrix.get(bearRejActiveM, 0, 0) + '","bullAbs":"' + matrix.get(bullAbs, 0, 0) + '","bearAbs":"' + matrix.get(bearAbs, 0, 0) + '","bullFnl":"' + matrix.get(bullFnl, 0, 0) + '","bearFnh":"' + matrix.get(bearFnh, 0, 0) + '","bullOd":"' + matrix.get(bullOd, 0, 0) + '","bearOd":"' + matrix.get(bearOd, 0, 0) + '","bullSrd":"' + matrix.get(bullSrdActiveM, 0, 0) + '","bearSrd":"' + matrix.get(bearSrdActiveM, 0, 0) + '","bullFb":"' + matrix.get(bullFailAbsActiveM, 0, 0) + '","bearFb":"' + matrix.get(bearFailAbsActiveM, 0, 0) + '","bullAcc":"' + matrix.get(bullAccActiveM, 0, 0) + '","bearAcc":"' + matrix.get(bearAccActiveM, 0, 0) + '"},"timestamp":"' + str.tostring(time) + '"}'
+
+        string alertPayload = '{"ticker":"' + syminfo.ticker + '","trigger":"SessionOpenMatrix","secret":"' + webhook_secret + '","matrix_days":' + daysJson + ',"signals":{"bullMissile":"' + matrix.get(bullMissile, 0, 0) + '","bearMissile":"' + matrix.get(bearMissile, 0, 0) + '","bullScalp":"' + matrix.get(bullScalp, 0, 0) + '","bearScalp":"' + matrix.get(bearScalp, 0, 0) + '","bullLight":"' + matrix.get(bullLight, 0, 0) + '","bearLight":"' + matrix.get(bearLight, 0, 0) + '","bullWick":"' + matrix.get(bullWick, 0, 0) + '","bearWick":"' + matrix.get(bearWick, 0, 0) + '","bullExt":"' + matrix.get(bullExt, 0, 0) + '","bearExt":"' + matrix.get(bearExt, 0, 0) + '","bullOut":"' + matrix.get(bullOut, 0, 0) + '","bearOut":"' + matrix.get(bearOut, 0, 0) + '","bullDoji":"' + matrix.get(bullDoji, 0, 0) + '","bearDoji":"' + matrix.get(bearDoji, 0, 0) + '","bullDiv":"' + matrix.get(bullDiv, 0, 0) + '","bearDiv":"' + matrix.get(bearDiv, 0, 0) + '","bullHDiv":"' + matrix.get(bullHDiv, 0, 0) + '","bearHDiv":"' + matrix.get(bearHDiv, 0, 0) + '","bullRej":"' + matrix.get(bullRejActiveM, 0, 0) + '","bearRej":"' + matrix.get(bearRejActiveM, 0, 0) + '","bullAbs":"' + matrix.get(bullAbs, 0, 0) + '","bearAbs":"' + matrix.get(bearAbs, 0, 0) + '","bullFnl":"' + matrix.get(bullFnl, 0, 0) + '","bearFnh":"' + matrix.get(bearFnh, 0, 0) + '","bullOd":"' + matrix.get(bullOd, 0, 0) + '","bearOd":"' + matrix.get(bearOd, 0, 0) + '","bullSrd":"' + matrix.get(bullSrdActiveM, 0, 0) + '","bearSrd":"' + matrix.get(bearSrdActiveM, 0, 0) + '","bullFb":"' + matrix.get(bullFailAbsActiveM, 0, 0) + '","bearFb":"' + matrix.get(bearFailAbsActiveM, 0, 0) + '","bullAcc":"' + matrix.get(bullAccActiveM, 0, 0) + '","bearAcc":"' + matrix.get(bearAccActiveM, 0, 0) + '"},"timestamp":"' + str.tostring(time) + '"}'
 
         alert(alertPayload, alert.freq_once_per_bar_close)

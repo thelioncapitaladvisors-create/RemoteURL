@@ -484,12 +484,15 @@ f_calc_sigs_impl(Zigzag zz, ZigzagProperties zzProps, array<DivergenceSignalObje
     bool GrS = GREEN and bouncedUpAnyLevel
     bool ReS = RED and bouncedDownAnyLevel
 
+    RisingUp = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10)
+    FallingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10)
+
     _mb = GrS
     _ms = ReS
-    _sb = false
-    _ss = false
-    _lb = false
-    _ls = false
+    _sb = RisingUp and close > open and ta.crossover(fShortEMA, fMedEMA)
+    _ss = FallingDown and close < open and ta.crossunder(fShortEMA, fMedEMA)
+    _lb = RisingUp and ta.crossover(m0, m10)
+    _ls = FallingDown and ta.crossunder(m0, m10)
 
     // Pivot High / Low for Reversals (Strict 10-bar pivot)
     highleftempty = ta.pivothigh(pivotlbar, 0)
@@ -897,102 +900,20 @@ u9 = input.symbol("COMEX:SI1!", "Futures 4 (Silver)", group=gNymex)
 gDisplay = "Dashboard Display"
 tableTextSz  = input.string("Small", "Table Text Size", options=["Tiny", "Small", "Normal"], group=gDisplay)
 
-f_get_7d_sigs_1() =>
-    s = f_calc_sigs_1()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
-
-f_get_7d_sigs_2() =>
-    s = f_calc_sigs_2()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
-
-f_get_7d_sigs_3() =>
-    s = f_calc_sigs_3()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
-
-f_get_7d_sigs_4() =>
-    s = f_calc_sigs_4()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
-
-f_get_7d_sigs_5() =>
-    s = f_calc_sigs_5()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
-
-f_get_7d_sigs_6() =>
-    s = f_calc_sigs_6()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
-
-f_get_7d_sigs_7() =>
-    s = f_calc_sigs_7()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
-
-f_get_7d_sigs_8() =>
-    s = f_calc_sigs_8()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
-
-f_get_7d_sigs_9() =>
-    s = f_calc_sigs_9()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
-
-f_get_7d_dt_1() =>
-    d = f_calc_dt_1()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_2() =>
-    d = f_calc_dt_2()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_3() =>
-    d = f_calc_dt_3()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_4() =>
-    d = f_calc_dt_4()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_5() =>
-    d = f_calc_dt_5()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_6() =>
-    d = f_calc_dt_6()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_7() =>
-    d = f_calc_dt_7()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_8() =>
-    d = f_calc_dt_8()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_9() =>
-    d = f_calc_dt_9()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
 f_dbgCell(pack, bullBit, bearBit) =>
     bullHit = unpackBit(pack, bullBit)
     bearHit = unpackBit(pack, bearBit)
     bullHit and bearHit ? "▲▼" : bullHit ? "▲" : bearHit ? "▼" : "-"
 
-[u1_s0, u1_s1, u1_s2, u1_s3, u1_s4, u1_s5, u1_s6] = request.security(u1, "D", f_get_7d_sigs_1(), lookahead=barmerge.lookahead_on)
-[u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6] = request.security(u2, "D", f_get_7d_sigs_2(), lookahead=barmerge.lookahead_on)
-[u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6] = request.security(u3, "D", f_get_7d_sigs_3(), lookahead=barmerge.lookahead_on)
-[u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6] = request.security(u4, "D", f_get_7d_sigs_4(), lookahead=barmerge.lookahead_on)
-[u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6] = request.security(u5, "D", f_get_7d_sigs_5(), lookahead=barmerge.lookahead_on)
-[u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6] = request.security(u6, "D", f_get_7d_sigs_6(), lookahead=barmerge.lookahead_on)
-[u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6] = request.security(u7, "D", f_get_7d_sigs_7(), lookahead=barmerge.lookahead_on)
-[u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6] = request.security(u8, "D", f_get_7d_sigs_8(), lookahead=barmerge.lookahead_on)
-[u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6] = request.security(u9, "D", f_get_7d_sigs_9(), lookahead=barmerge.lookahead_on)
-
-[u1_d0, u1_d1, u1_d2, u1_d3, u1_d4, u1_d5, u1_d6] = request.security(u1, "D", f_get_7d_dt_1(), lookahead=barmerge.lookahead_on)
-[u2_d0, u2_d1, u2_d2, u2_d3, u2_d4, u2_d5, u2_d6] = request.security(u2, "D", f_get_7d_dt_2(), lookahead=barmerge.lookahead_on)
-[u3_d0, u3_d1, u3_d2, u3_d3, u3_d4, u3_d5, u3_d6] = request.security(u3, "D", f_get_7d_dt_3(), lookahead=barmerge.lookahead_on)
-[u4_d0, u4_d1, u4_d2, u4_d3, u4_d4, u4_d5, u4_d6] = request.security(u4, "D", f_get_7d_dt_4(), lookahead=barmerge.lookahead_on)
-[u5_d0, u5_d1, u5_d2, u5_d3, u5_d4, u5_d5, u5_d6] = request.security(u5, "D", f_get_7d_dt_5(), lookahead=barmerge.lookahead_on)
-[u6_d0, u6_d1, u6_d2, u6_d3, u6_d4, u6_d5, u6_d6] = request.security(u6, "D", f_get_7d_dt_6(), lookahead=barmerge.lookahead_on)
-[u7_d0, u7_d1, u7_d2, u7_d3, u7_d4, u7_d5, u7_d6] = request.security(u7, "D", f_get_7d_dt_7(), lookahead=barmerge.lookahead_on)
-[u8_d0, u8_d1, u8_d2, u8_d3, u8_d4, u8_d5, u8_d6] = request.security(u8, "D", f_get_7d_dt_8(), lookahead=barmerge.lookahead_on)
-[u9_d0, u9_d1, u9_d2, u9_d3, u9_d4, u9_d5, u9_d6] = request.security(u9, "D", f_get_7d_dt_9(), lookahead=barmerge.lookahead_on)
+[u1_s0, u1_d0] = request.security(u1, "D", [f_calc_sigs_1(), f_calc_dt_1()], lookahead=barmerge.lookahead_on)
+[u2_s0, u2_d0] = request.security(u2, "D", [f_calc_sigs_2(), f_calc_dt_2()], lookahead=barmerge.lookahead_on)
+[u3_s0, u3_d0] = request.security(u3, "D", [f_calc_sigs_3(), f_calc_dt_3()], lookahead=barmerge.lookahead_on)
+[u4_s0, u4_d0] = request.security(u4, "D", [f_calc_sigs_4(), f_calc_dt_4()], lookahead=barmerge.lookahead_on)
+[u5_s0, u5_d0] = request.security(u5, "D", [f_calc_sigs_5(), f_calc_dt_5()], lookahead=barmerge.lookahead_on)
+[u6_s0, u6_d0] = request.security(u6, "D", [f_calc_sigs_6(), f_calc_dt_6()], lookahead=barmerge.lookahead_on)
+[u7_s0, u7_d0] = request.security(u7, "D", [f_calc_sigs_7(), f_calc_dt_7()], lookahead=barmerge.lookahead_on)
+[u8_s0, u8_d0] = request.security(u8, "D", [f_calc_sigs_8(), f_calc_dt_8()], lookahead=barmerge.lookahead_on)
+[u9_s0, u9_d0] = request.security(u9, "D", [f_calc_sigs_9(), f_calc_dt_9()], lookahead=barmerge.lookahead_on)
 
 f_simplifySym(sym) =>
     parts = str.split(sym, ":")
@@ -1004,10 +925,10 @@ if barstate.islast
     txtSize = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
 
     // ---- ALL SIGNAL TYPES + BLUEPRINTS + SEQUENCES (FULL DEBUG ENGINE) -------
-    dbgLabels  = array.from("Missile", "Wick Reversal", "Extreme Reversal", "Outside Reversal", "Doji Reversal", "Price Divergences", "Hidden Divergences", "Rejection Day", "Absorption Day", "Failed New Low/High", "Outside Day", "Stop Run Day", "Rejection Seq", "Stop Run Seq", "Failed Abs Seq", "Acc/Dist Seq")
-    dbgBullBit = array.from(1, 64, 256, 1024, 4096, 16384, 65536, 4, 1024, 4096, 64, 16, 1048576, 4194304, 16777216, 67108864)
-    dbgBearBit = array.from(2, 128, 512, 2048, 8192, 32768, 131072, 8, 2048, 8192, 128, 32, 2097152, 8388608, 33554432, 134217728)
-    dbgUseSig  = array.from(true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false)
+    dbgLabels  = array.from("Missile", "Scalp", "Lightning", "Wick Reversal", "Extreme Reversal", "Outside Reversal", "Doji Reversal", "Price Divergences", "Hidden Divergences", "Rejection Day", "Absorption Day", "Failed New Low/High", "Outside Day", "Stop Run Day", "Rejection Seq", "Stop Run Seq", "Failed Abs Seq", "Acc/Dist Seq")
+    dbgBullBit = array.from(1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 4, 1024, 4096, 64, 16, 1048576, 4194304, 16777216, 67108864)
+    dbgBearBit = array.from(2, 8, 32, 128, 512, 2048, 8192, 32768, 131072, 8, 2048, 8192, 128, 32, 2097152, 8388608, 33554432, 134217728)
+    dbgUseSig  = array.from(true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false)
 
     sigPacks = array.from(u1_s0, u2_s0, u3_s0, u4_s0, u5_s0, u6_s0, u7_s0, u8_s0, u9_s0)
     dtPacks  = array.from(u1_d0, u2_d0, u3_d0, u4_d0, u5_d0, u6_d0, u7_d0, u8_d0, u9_d0)

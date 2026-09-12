@@ -914,7 +914,7 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 
 ## Automated Strategy Tearsheet Generation on Market Closure
 - **VectorBT Performance Engine**: The strategy tearsheet (`strategy_tearsheet.html`) is rendered via an embedded iframe in the Analytics tab of the mobile app and web dashboard, showing multi-asset cumulative equity curves, drawdowns, raw return scatter, and performance tables.
-- **Automated Market Close Cron Schedule**: GitHub Actions workflow (`.github/workflows/generate_tearsheet_cron.yml`) MUST automatically trigger `generate_tearsheet.py` on all 4 market closing boundaries:
+- **Automated Market Close Cron Schedule**: GitHub Actions workflow (`.github/workflows/generate-tearsheet.yml`) MUST automatically trigger `generate_tearsheet.py` on all 4 market closing boundaries:
   - **NSE / Indian Equities**: 16:00 IST (10:30 UTC, Mon–Fri)
   - **MCX Commodities**: 00:00 IST (18:30 UTC, Mon–Fri)
   - **US / NYMEX / Global Futures**: 22:30 UTC (Mon–Fri)
@@ -922,6 +922,9 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **CI/CD Execution Resilience**:
   - `generate_tearsheet.py` MUST contain robust fallback Supabase credentials to prevent CI build failures if secrets are unset in repo settings.
   - The workflow checkout step MUST explicitly pass `token: ${{ secrets.GITHUB_TOKEN }}` and set `permissions: contents: write` so regenerated HTML files are automatically committed and pushed to `TLCS_Website`, immediately triggering Netlify production deployment.
+- **Proactive Agent Daily Verification & Auto-Fix**:
+  - Whenever the Antigravity assistant/app agent operates in the codebase or on daily sessions, it MUST verify if `strategy_tearsheet.html` in `TLCS_Website_Deploy` is synchronized with the latest closed trade timestamp.
+  - If the tearsheet date lags behind the current date, the agent MUST automatically execute `python3 TLCS_Website_Deploy/generate_tearsheet.py`, verify the VectorBT output, and push `strategy_tearsheet.html` to both `TLCS_Website` and `RemoteURL` to keep the Mobile App ANALYTICS tab 100% updated without requiring manual intervention.
 
 ## Co-Existence of Opposing Trades (Long & Short Independence) & Mandatory Triple-Binding
 - **Opposing Trades Co-Existence**: Short and Long trades can legitimate co-exist for the same symbol on the same calendar day (particularly in extended-hours markets like MCX Commodities, NYMEX, Crypto, and Forex where regime shifts or different strategy blueprints trigger opposing signals, e.g. morning `SHORT MISSILE` vs evening `LONG LIGHTNING`).

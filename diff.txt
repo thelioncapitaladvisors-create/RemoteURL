@@ -1,0 +1,686 @@
+3553,3561c3553,3564
+<                              const base = 'backdrop-blur-md transition-all duration-300 ';
+<                              if (colorClass.includes('success') || colorClass.includes('green')) {
+<                                return base + 'bg-gradient-to-br from-green-500/[0.12] theme-gray:from-green-500/[0.05] to-green-500/[0.02] theme-gray:to-green-500/[0.01] dark:from-green-500/[0.18] dark:to-green-950/[0.12] border-green-500/40 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+<                              }
+<                              if (colorClass.includes('danger') || colorClass.includes('red')) {
+<                                return base + 'bg-gradient-to-br from-red-500/[0.12] theme-gray:from-red-500/[0.05] to-red-500/[0.02] theme-gray:to-red-500/[0.01] dark:from-red-500/[0.18] dark:to-red-950/[0.12] border-red-500/40 dark:border-red-500/50 shadow-[0_4px_16px_rgba(239,68,68,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+<                              }
+<                              return base + 'bg-gradient-to-br from-blue-500/[0.12] theme-gray:from-blue-500/[0.05] to-blue-500/[0.02] theme-gray:to-blue-500/[0.01] dark:from-blue-500/[0.18] dark:to-blue-950/[0.12] border-blue-500/40 dark:border-blue-500/50 shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+<                            };
+---
+>                             const base = 'backdrop-blur-md transition-all duration-300 hover:scale-[1.02] ';
+>                             if (colorClass.includes('success') || colorClass.includes('green')) {
+>                               return base + 'wc-card-green';
+>                             }
+>                             if (colorClass.includes('danger') || colorClass.includes('red')) {
+>                               return base + 'wc-card-red';
+>                             }
+>                             if (colorClass.includes('amber') || colorClass.includes('yellow') || colorClass.includes('gold')) {
+>                               return base + 'wc-card-amber';
+>                             }
+>                             return base + 'wc-card-blue';
+>                           };
+4128,4152d4130
+< 
+<                     {/* Stats Section: Bifurcated into 2 rows (Parity with HUB tab) */}
+<                     <div className="space-y-2 mb-2">
+<                        {(() => {
+<                          const getGridCardTheme = (colorClass: string) => {
+<                            const base = 'backdrop-blur-md transition-all duration-300 ';
+<                            if (colorClass.includes('success') || colorClass.includes('green')) {
+<                              return base + 'bg-gradient-to-br from-green-500/[0.12] theme-gray:from-green-500/[0.05] to-green-500/[0.02] theme-gray:to-green-500/[0.01] dark:from-green-500/[0.18] dark:to-green-950/[0.12] border-green-500/40 dark:border-green-500/50 shadow-[0_4px_16px_rgba(34,197,94,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+<                            }
+<                            if (colorClass.includes('danger') || colorClass.includes('red')) {
+<                              return base + 'bg-gradient-to-br from-red-500/[0.12] theme-gray:from-red-500/[0.05] to-red-500/[0.02] theme-gray:to-red-500/[0.01] dark:from-red-500/[0.18] dark:to-red-950/[0.12] border-red-500/40 dark:border-red-500/50 shadow-[0_4px_16px_rgba(239,68,68,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+<                            }
+<                            return base + 'bg-gradient-to-br from-blue-500/[0.12] theme-gray:from-blue-500/[0.05] to-blue-500/[0.02] theme-gray:to-blue-500/[0.01] dark:from-blue-500/[0.18] dark:to-blue-950/[0.12] border-blue-500/40 dark:border-blue-500/50 shadow-[0_4px_16px_rgba(59,130,246,0.08),inset_0_1px_1px_rgba(255,255,255,0.05)]';
+<                          };
+< 
+<                          const getPillValueSize = (val: string | number) => {
+<                             return 'text-sm sm:text-base md:text-lg lg:text-xl';
+<                          };
+< 
+<                          const activeLimitsCount = activeSignals.filter(s => !s.updated_at).length;
+<                          const liveTradesCount = activeSignals.filter(s => !!s.updated_at).length;
+<                          const closedTradesCount = todayClosedSignals.length;
+<                          const todaySuccessDisp = todayClosedSignals.length > 0 ? `${todaySuccessRate}%` : '---';
+<                          const weeklyTradesCount = weeklyClosedSignals.length;
+<                          const weeklySuccessDisp = weeklyClosedSignals.length > 0 ? `${weeklySuccessRate}%` : '---';
+4154,4236c4132
+<                          return (
+<                            <>
+<                              {/* Row 1: Today & Live */}
+<                               <div className="grid grid-cols-5 gap-1.5 w-full">
+<                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme('blue')}`}>
+<                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+<                                       <span className="block whitespace-nowrap">ACTIVE</span>
+<                                       <span className="block whitespace-nowrap">LIMITS</span>
+<                                     </div>
+<                                     <div className={`font-bold italic text-primary tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${getPillValueSize(activeLimitsCount)}`}>{activeLimitsCount}</div>
+<                                  </div>
+<                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme('blue')}`}>
+<                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+<                                       <span className="block whitespace-nowrap">LIVE</span>
+<                                       <span className="block whitespace-nowrap">TRADES</span>
+<                                     </div>
+<                                     <div className={`font-bold italic text-primary tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${getPillValueSize(liveTradesCount)}`}>{liveTradesCount}</div>
+<                                  </div>
+<                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme('blue')}`}>
+<                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+<                                       <span className="block whitespace-nowrap">CLOSED</span>
+<                                       <span className="block whitespace-nowrap">TRADES</span>
+<                                     </div>
+<                                     <div className={`font-bold italic text-primary tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${getPillValueSize(closedTradesCount)}`}>{closedTradesCount}</div>
+<                                  </div>
+<                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(todaySuccessColorClass)}`}>
+<                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+<                                       <span className="block whitespace-nowrap">TODAY'S</span>
+<                                       <span className="block whitespace-nowrap">SUCCESS</span>
+<                                     </div>
+<                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${todaySuccessColorClass} ${getPillValueSize(todaySuccessDisp)}`}>{todaySuccessDisp}</div>
+<                                  </div>
+<                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(todayPFColorClass)}`}>
+<                                     <div className="text-[6.5px] sm:text-[7.5px] md:text-[8.5px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.1] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+<                                       <span className="block whitespace-nowrap">TODAY'S</span>
+<                                       <span className="block whitespace-nowrap">PROFIT FACTOR</span>
+<                                     </div>
+<                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${todayPFColorClass} ${getPillValueSize(todayPFVal)}`}>{todayPFVal}</div>
+<                                  </div>
+<                               </div>
+<     
+<                              {/* Row 2: Current Week & Overall */}
+<                              <div className="grid grid-cols-5 gap-1.5 w-full">
+<                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme('blue')}`}>
+<                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+<                                       <span className="block whitespace-nowrap">WEEKLY</span>
+<                                       <span className="block whitespace-nowrap">TRADES</span>
+<                                     </div>
+<                                     <div className={`font-bold italic text-primary tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${getPillValueSize(weeklyTradesCount)}`}>{weeklyTradesCount}</div>
+<                                  </div>
+<                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(weeklySuccessColorClass)}`}>
+<                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+<                                       <span className="block whitespace-nowrap">WEEKLY</span>
+<                                       <span className="block whitespace-nowrap">SUCCESS</span>
+<                                     </div>
+<                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${weeklySuccessColorClass} ${getPillValueSize(weeklySuccessDisp)}`}>{weeklySuccessDisp}</div>
+<                                  </div>
+<                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(weeklyPFColorClass)}`}>
+<                                     <div className="text-[6.5px] sm:text-[7.5px] md:text-[8.5px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.1] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+<                                       <span className="block whitespace-nowrap">WEEKLY</span>
+<                                       <span className="block whitespace-nowrap">PROFIT FACTOR</span>
+<                                     </div>
+<                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${weeklyPFColorClass} ${getPillValueSize(weeklyPFVal)}`}>{weeklyPFVal}</div>
+<                                  </div>
+<                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(profitFactorColorClass)}`}>
+<                                     <div className="text-[6.5px] sm:text-[7.5px] md:text-[8.5px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.1] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+<                                       <span className="block whitespace-nowrap">WEEKLY</span>
+<                                       <span className="block whitespace-nowrap">EXPECTANCY</span>
+<                                     </div>
+<                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${profitFactorColorClass} ${getPillValueSize(profitFactorTextValue)}`}>{profitFactorTextValue}</div>
+<                                  </div>
+<                                  <div className={`rounded-[16px] py-2 px-0.5 sm:px-1.5 text-center flex flex-col justify-between items-center min-h-[72px] sm:min-h-[76px] border overflow-hidden w-full ${getGridCardTheme(weeklyCalmarColorClass)}`}>
+<                                     <div className="text-[7px] sm:text-[8px] md:text-[9px] font-extrabold tracking-tight sm:tracking-wider text-blue-600 dark:text-blue-400 uppercase leading-[1.15] text-center w-full flex flex-col items-center justify-center shrink-0 min-h-[22px] sm:min-h-[24px]">
+<                                       <span className="block whitespace-nowrap">WEEKLY</span>
+<                                       <span className="block whitespace-nowrap">CALMAR</span>
+<                                     </div>
+<                                     <div className={`font-bold italic tracking-tight leading-none mt-1 whitespace-nowrap px-0.5 flex items-center justify-center ${weeklyCalmarColorClass} ${getPillValueSize(weeklyCalmarVal)}`}>{weeklyCalmarVal}</div>
+<                                  </div>
+<                              </div>
+<                            </>
+<                          );
+<                        })()}
+<                     </div>
+---
+>                     {/* Stats Section removed as requested */}
+5154,5174c5050,5069
+<                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 md:gap-2">
+<                            
+<                            {/* Row 1 */}
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Total Trades</div>
+<                              <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-accent glow-accent">{marketsStats.total}</div>
+<                            </div>
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Win Rate</div>
+<                              <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.winRate >= 40 ? 'text-success glow-success' : 'text-danger glow-danger'}`}>{marketsStats.winRate}%</div>
+<                            </div>
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Profit Factor</div>
+<                              <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.profitFactor === 'MAX' || Number(marketsStats.profitFactor) >= 1 ? 'text-accent glow-accent' : 'text-danger glow-danger'}`}>{marketsStats.profitFactor}</div>
+<                            </div>
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Max Risk/Trade' : 'Half-Kelly %'}</div>
+<                              <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.kellyR != null && marketsStats.kellyR >= 0 ? 'text-success glow-success' : 'text-danger glow-danger'}`}>
+<                                {marketsStats.kellyR != null ? `${marketsStats.kellyR > 0 ? '+' : ''}${marketsStats.kellyR.toFixed(1)}%` : '--'}
+<                              </div>
+<                            </div>
+---
+>                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5">
+>                             {/* Row 1 */}
+>                             <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-blue hover:scale-[1.01]">
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-blue-700 theme-gray:text-blue-800 dark:text-blue-400 theme-lion:text-[#38bdf8] uppercase mb-1 font-black shrink-0">Total Trades</div>
+>                               <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-primary glow-accent">{marketsStats.total}</div>
+>                             </div>
+>                             <div className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 hover:scale-[1.01] ${marketsStats.winRate >= 40 ? 'wc-card-green' : 'wc-card-red'}`}>
+>                               <div className={`text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono uppercase mb-1 font-black shrink-0 ${marketsStats.winRate >= 40 ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f]' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56]'}`}>Win Rate</div>
+>                               <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.winRate >= 40 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{marketsStats.winRate}%</div>
+>                             </div>
+>                             <div className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 hover:scale-[1.01] ${marketsStats.profitFactor === 'MAX' || Number(marketsStats.profitFactor) >= 1 ? 'wc-card-amber' : 'wc-card-red'}`}>
+>                               <div className={`text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono uppercase mb-1 font-black shrink-0 ${marketsStats.profitFactor === 'MAX' || Number(marketsStats.profitFactor) >= 1 ? 'text-amber-700 theme-gray:text-amber-800 dark:text-amber-400 theme-lion:text-[#f2c64b]' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56]'}`}>Profit Factor</div>
+>                               <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.profitFactor === 'MAX' || Number(marketsStats.profitFactor) >= 1 ? 'text-amber-600 theme-gray:text-amber-700 dark:text-amber-300 glow-accent' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{marketsStats.profitFactor}</div>
+>                             </div>
+>                             <div className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 hover:scale-[1.01] ${marketsStats.kellyR != null && marketsStats.kellyR >= 0 ? 'wc-card-green' : 'wc-card-red'}`}>
+>                               <div className={`text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono uppercase mb-1 font-black shrink-0 ${marketsStats.kellyR != null && marketsStats.kellyR >= 0 ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f]' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56]'}`}>{isNoviceMode ? 'Max Risk/Trade' : 'Half-Kelly %'}</div>
+>                               <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.kellyR != null && marketsStats.kellyR >= 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>
+>                                 {marketsStats.kellyR != null ? `${marketsStats.kellyR > 0 ? '+' : ''}${marketsStats.kellyR.toFixed(1)}%` : '--'}
+>                               </div>
+>                             </div>
+5176,5202c5071,5097
+<                            {/* Row 2 */}
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{'Avg Profit'}</div>
+<                              <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.avgR === '--' || marketsStats.avgR == null ? 'text-dim' : Number(marketsStats.avgR) >= 0.5 ? 'text-success glow-success' : 'text-danger glow-danger'}`}>
+<                                {isNoviceMode ? (marketsStats.avgR ? `${Number(marketsStats.avgR) >= 0 ? '+' : ''}${Math.round(Number(marketsStats.avgR) * 100)}%` : '---') : (marketsStats.avgR ? `${Number(marketsStats.avgR) >= 0 ? '+' : ''}${marketsStats.avgR}%` : '---')}
+<                              </div>
+<                            </div>
+<                            <div className="col-span-1 sm:col-span-2 md:col-span-1 p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">WIN/LOSS/B/E</div>
+<                              <div className="text-xs sm:text-sm md:text-base tracking-tighter font-bold italic flex justify-center items-center gap-1.5 h-full">
+<                                <span className="text-success">{marketsStats.winCount}</span> <span className="text-dim/40">/</span>
+<                                <span className="text-danger">{marketsStats.lossCount}</span> <span className="text-dim/40">/</span>
+<                                <span className="text-accent">{marketsStats.beCount}</span>
+<                              </div>
+<                            </div>
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Best Profit' : 'Best Trade'}</div>
+<                              <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-success glow-success">
+<                                {isNoviceMode ? (marketsStats.bestTradePts > 0 ? `+${Math.round(marketsStats.bestTradePts)}%` : '--') : `${marketsStats.bestTradeR > 0 ? '+' : ''}${marketsStats.bestTradeR.toFixed(2)}%`}
+<                              </div>
+<                            </div>
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Avg Win' : 'Avg Winner'}</div>
+<                              <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-success glow-success">
+<                                {isNoviceMode ? (marketsStats.avgWinnerPts > 0 ? `+${Math.round(marketsStats.avgWinnerPts)}%` : '--') : `+${marketsStats.avgWinnerR.toFixed(2)}%`}
+<                              </div>
+<                            </div>
+---
+>                             {/* Row 2 */}
+>                             <div className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 hover:scale-[1.01] ${marketsStats.avgR === '--' || marketsStats.avgR == null ? 'wc-card-neutral' : Number(marketsStats.avgR) >= 0.5 ? 'wc-card-green' : 'wc-card-red'}`}>
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{'Avg Profit'}</div>
+>                               <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.avgR === '--' || marketsStats.avgR == null ? 'text-dim' : Number(marketsStats.avgR) >= 0.5 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>
+>                                 {isNoviceMode ? (marketsStats.avgR ? `${Number(marketsStats.avgR) >= 0 ? '+' : ''}${Math.round(Number(marketsStats.avgR) * 100)}%` : '---') : (marketsStats.avgR ? `${Number(marketsStats.avgR) >= 0 ? '+' : ''}${marketsStats.avgR}%` : '---')}
+>                               </div>
+>                             </div>
+>                             <div className="col-span-1 sm:col-span-2 md:col-span-1 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-neutral hover:scale-[1.01]">
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">WIN / LOSS / B/E</div>
+>                               <div className="text-xs sm:text-sm md:text-base tracking-tighter font-bold italic flex justify-center items-center gap-1.5 h-full">
+>                                 <span className="text-green-600 theme-gray:text-green-700 dark:text-green-400 font-black">{marketsStats.winCount}</span> <span className="text-dim/40">/</span>
+>                                 <span className="text-red-600 theme-gray:text-red-700 dark:text-red-400 font-black">{marketsStats.lossCount}</span> <span className="text-dim/40">/</span>
+>                                 <span className="text-blue-600 theme-gray:text-blue-700 dark:text-blue-400 font-black">{marketsStats.beCount}</span>
+>                               </div>
+>                             </div>
+>                             <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-green hover:scale-[1.01]">
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Best Profit' : 'Best Trade'}</div>
+>                               <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success">
+>                                 {isNoviceMode ? (marketsStats.bestTradePts > 0 ? `+${Math.round(marketsStats.bestTradePts)}%` : '--') : `${marketsStats.bestTradeR > 0 ? '+' : ''}${marketsStats.bestTradeR.toFixed(2)}%`}
+>                               </div>
+>                             </div>
+>                             <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-green hover:scale-[1.01]">
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Avg Win' : 'Avg Winner'}</div>
+>                               <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success">
+>                                 {isNoviceMode ? (marketsStats.avgWinnerPts > 0 ? `+${Math.round(marketsStats.avgWinnerPts)}%` : '--') : `+${marketsStats.avgWinnerR.toFixed(2)}%`}
+>                               </div>
+>                             </div>
+5204,5242c5099,5137
+<                            {/* Row 3 */}
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Avg Loss' : 'Avg Loser'}</div>
+<                              <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-danger glow-danger">
+<                                {isNoviceMode ? (marketsStats.avgLoserPts > 0 ? `-${Math.round(marketsStats.avgLoserPts)}%` : '--') : `-${marketsStats.avgLoserR.toFixed(2)}%`}
+<                              </div>
+<                            </div>
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Reward/Pt Risk' : 'Realized R:R'}</div>
+<                              <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-success glow-success">
+<                                {isNoviceMode ? (marketsStats.realizedRRPtsNum === 999 ? 'MAX' : `${marketsStats.realizedRRPtsNum.toFixed(2)}%`) : (marketsStats.realizedRRNum === 999 ? 'MAX' : marketsStats.realizedRRNum.toFixed(2))}
+<                              </div>
+<                            </div>
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Worst Drop' : 'Max Drawdown'}</div>
+<                              <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-danger glow-danger">
+<                                {isNoviceMode ? (marketsStats.maxDrawdownPts > 0 ? `-${Math.round(marketsStats.maxDrawdownPts)}%` : '--') : `-${marketsStats.maxDrawdown.toFixed(2)}%`}
+<                              </div>
+<                            </div>
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Consec. Losses</div>
+<                              <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-danger glow-danger">
+<                                {marketsStats.maxConsecLosses} <span className="text-[10px] sm:text-xs text-dim not-italic font-sans">trades</span>
+<                              </div>
+<                            </div>
+<                            
+<                            {/* Row 4 */}
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Risk/Reward Grade' : 'Sharpe Ratio'}</div>
+<                              <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.globalSharpe != null && Number(marketsStats.globalSharpe) >= 1 ? 'text-success glow-success' : 'text-dim'}`}>
+<                                {isNoviceMode && marketsStats.globalSharpe != null ? (Number(marketsStats.globalSharpe) >= 1.5 ? <span className="text-success font-black">Grade A</span> : Number(marketsStats.globalSharpe) >= 1 ? <span className="text-yellow-500 font-black">Grade B</span> : <span className="text-danger font-black">Grade C</span>) : (marketsStats.globalSharpe != null ? marketsStats.globalSharpe : '--')}
+<                              </div>
+<                            </div>
+<                            <div className="p-1 text-center min-w-0 overflow-hidden flex flex-col justify-between">
+<                              <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Safety Grade' : 'Sortino Ratio'}</div>
+<                              <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.globalSortino != null && Number(marketsStats.globalSortino) >= 1 ? 'text-success glow-success' : 'text-dim'}`}>
+<                                {isNoviceMode && marketsStats.globalSortino != null ? (Number(marketsStats.globalSortino) >= 2.0 ? <span className="text-success font-black">Grade A</span> : Number(marketsStats.globalSortino) >= 1.0 ? <span className="text-yellow-500 font-black">Grade B</span> : <span className="text-danger font-black">Grade C</span>) : (marketsStats.globalSortino != null ? marketsStats.globalSortino : '--')}
+<                              </div>
+<                            </div>
+---
+>                             {/* Row 3 */}
+>                             <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-red hover:scale-[1.01]">
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Avg Loss' : 'Avg Loser'}</div>
+>                               <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger">
+>                                 {isNoviceMode ? (marketsStats.avgLoserPts > 0 ? `-${Math.round(marketsStats.avgLoserPts)}%` : '--') : `-${marketsStats.avgLoserR.toFixed(2)}%`}
+>                               </div>
+>                             </div>
+>                             <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-green hover:scale-[1.01]">
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Reward/Pt Risk' : 'Realized R:R'}</div>
+>                               <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success">
+>                                 {isNoviceMode ? (marketsStats.realizedRRPtsNum === 999 ? 'MAX' : `${marketsStats.realizedRRPtsNum.toFixed(2)}%`) : (marketsStats.realizedRRNum === 999 ? 'MAX' : marketsStats.realizedRRNum.toFixed(2))}
+>                               </div>
+>                             </div>
+>                             <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-red hover:scale-[1.01]">
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Worst Drop' : 'Max Drawdown'}</div>
+>                               <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger">
+>                                 {isNoviceMode ? (marketsStats.maxDrawdownPts > 0 ? `-${Math.round(marketsStats.maxDrawdownPts)}%` : '--') : `-${marketsStats.maxDrawdown.toFixed(2)}%`}
+>                               </div>
+>                             </div>
+>                             <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-red hover:scale-[1.01]">
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56] uppercase mb-1 font-black shrink-0">Consec. Losses</div>
+>                               <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger">
+>                                 {marketsStats.maxConsecLosses} <span className="text-[10px] sm:text-xs text-dim not-italic font-sans">trades</span>
+>                               </div>
+>                             </div>
+>                             
+>                             {/* Row 4 */}
+>                             <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-blue hover:scale-[1.01]">
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-blue-700 theme-gray:text-blue-800 dark:text-blue-400 theme-lion:text-[#38bdf8] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Risk/Reward Grade' : 'Sharpe Ratio'}</div>
+>                               <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.globalSharpe != null && Number(marketsStats.globalSharpe) >= 1 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-dim'}`}>
+>                                 {isNoviceMode && marketsStats.globalSharpe != null ? (Number(marketsStats.globalSharpe) >= 1.5 ? <span className="text-green-600 font-black">Grade A</span> : Number(marketsStats.globalSharpe) >= 1 ? <span className="text-amber-500 font-black">Grade B</span> : <span className="text-red-500 font-black">Grade C</span>) : (marketsStats.globalSharpe != null ? marketsStats.globalSharpe : '--')}
+>                               </div>
+>                             </div>
+>                             <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-blue hover:scale-[1.01]">
+>                               <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-blue-700 theme-gray:text-blue-800 dark:text-blue-400 theme-lion:text-[#38bdf8] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Safety Grade' : 'Sortino Ratio'}</div>
+>                               <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${marketsStats.globalSortino != null && Number(marketsStats.globalSortino) >= 1 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-dim'}`}>
+>                                 {isNoviceMode && marketsStats.globalSortino != null ? (Number(marketsStats.globalSortino) >= 2.0 ? <span className="text-green-600 font-black">Grade A</span> : Number(marketsStats.globalSortino) >= 1.0 ? <span className="text-amber-500 font-black">Grade B</span> : <span className="text-red-500 font-black">Grade C</span>) : (marketsStats.globalSortino != null ? marketsStats.globalSortino : '--')}
+>                               </div>
+>                             </div>
+5244,5268c5139,5163
+<                            {/* Row 4 (Equity) */}
+<                            <div className="col-span-2 sm:col-span-3 md:col-span-4 border-t border-primary/10 pt-4 mt-2 flex items-center justify-between min-w-0 overflow-hidden">
+<                              <div className="text-left">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Total Earned' : 'Equity Curve'}</div>
+<                                <div className={`text-lg sm:text-xl md:text-2xl tracking-tighter font-bold italic ${marketsStats.equityCurveR > 0 ? 'text-success glow-success' : marketsStats.equityCurveR < 0 ? 'text-danger glow-danger' : 'text-accent'}`}>
+<                                  {isNoviceMode ? `${marketsStats.equityCurvePts >= 0 ? '+' : ''}${Math.round(marketsStats.equityCurvePts)}%` : `${marketsStats.equityCurveR > 0 ? '+' : ''}${marketsStats.equityCurveR.toFixed(2)}%`}
+<                                </div>
+<                              </div>
+<                              {marketsStats.equityPoints.length > 1 && (
+<                                <div className="relative w-[120px] sm:w-[150px] md:w-[200px] h-[40px] md:h-[50px] ml-4 flex-shrink-0">
+<                                  <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+<                                    <defs>
+<                                      <linearGradient id="equityGradientMarkets" x1="0" y1="0" x2="0" y2="1">
+<                                        <stop offset="0%" stopColor={marketsStats.equityCurveR >= 0 ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'} />
+<                                        <stop offset="100%" stopColor={marketsStats.equityCurveR >= 0 ? 'rgba(34,197,94,0)' : 'rgba(239,68,68,0)'} />
+<                                      </linearGradient>
+<                                    </defs>
+<                                    <path d={marketsStats.svgAreaPath} fill="url(#equityGradientMarkets)" />
+<                                    <path d={marketsStats.svgPath} fill="none" stroke={marketsStats.equityCurveR >= 0 ? '#22c55e' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+<                                  </svg>
+<                                </div>
+<                              )}
+<                            </div>
+<                          </div>
+<                        </div>
+---
+>                             {/* Row 4 (Equity) */}
+>                             <div className="col-span-2 sm:col-span-3 md:col-span-4 p-3 sm:p-4 rounded-2xl border wc-card-neutral mt-2 flex items-center justify-between min-w-0 overflow-hidden">
+>                               <div className="text-left">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Total Earned' : 'Equity Curve'}</div>
+>                                 <div className={`text-lg sm:text-xl md:text-2xl tracking-tighter font-bold italic ${marketsStats.equityCurveR > 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : marketsStats.equityCurveR < 0 ? 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger' : 'text-accent'}`}>
+>                                   {isNoviceMode ? `${marketsStats.equityCurvePts >= 0 ? '+' : ''}${Math.round(marketsStats.equityCurvePts)}%` : `${marketsStats.equityCurveR > 0 ? '+' : ''}${marketsStats.equityCurveR.toFixed(2)}%`}
+>                                 </div>
+>                               </div>
+>                               {marketsStats.equityPoints.length > 1 && (
+>                                 <div className="relative w-[120px] sm:w-[150px] md:w-[200px] h-[40px] md:h-[50px] ml-4 flex-shrink-0">
+>                                   <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+>                                     <defs>
+>                                       <linearGradient id="equityGradientMarkets" x1="0" y1="0" x2="0" y2="1">
+>                                         <stop offset="0%" stopColor={marketsStats.equityCurveR >= 0 ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'} />
+>                                         <stop offset="100%" stopColor={marketsStats.equityCurveR >= 0 ? 'rgba(34,197,94,0)' : 'rgba(239,68,68,0)'} />
+>                                       </linearGradient>
+>                                     </defs>
+>                                     <path d={marketsStats.svgAreaPath} fill="url(#equityGradientMarkets)" />
+>                                     <path d={marketsStats.svgPath} fill="none" stroke={marketsStats.equityCurveR >= 0 ? '#22c55e' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+>                                   </svg>
+>                                 </div>
+>                               )}
+>                             </div>
+>                           </div>
+>                         </div>
+5405,5421c5300,5316
+<                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 md:gap-2">
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Total Trades</div>
+<                                <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-accent glow-accent">{mSignals.length}</div>
+<                              </div>
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Win Rate</div>
+<                                <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mWinRate >= 40 ? 'text-success glow-success' : 'text-danger glow-danger'}`}>{mWinRate}%</div>
+<                              </div>
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Profit Factor</div>
+<                                <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mProfitFactor === 'MAX' || Number(mProfitFactor) >= 1 ? 'text-accent glow-accent' : 'text-danger glow-danger'}`}>{mProfitFactor}</div>
+<                              </div>
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Half-Kelly %</div>
+<                                <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mKelly != null && mKelly >= 0 ? 'text-success glow-success' : 'text-danger glow-danger'}`}>{mKelly != null ? `${mKelly > 0 ? '+' : ''}${mKelly.toFixed(1)}%` : '--'}</div>
+<                              </div>
+---
+>                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5">
+>                               <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-blue hover:scale-[1.01]">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-blue-700 theme-gray:text-blue-800 dark:text-blue-400 theme-lion:text-[#38bdf8] uppercase mb-1 font-black shrink-0">Total Trades</div>
+>                                 <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-primary glow-accent">{mSignals.length}</div>
+>                               </div>
+>                               <div className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 hover:scale-[1.01] ${mWinRate >= 40 ? 'wc-card-green' : 'wc-card-red'}`}>
+>                                 <div className={`text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono uppercase mb-1 font-black shrink-0 ${mWinRate >= 40 ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f]' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56]'}`}>Win Rate</div>
+>                                 <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mWinRate >= 40 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{mWinRate}%</div>
+>                               </div>
+>                               <div className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 hover:scale-[1.01] ${mProfitFactor === 'MAX' || Number(mProfitFactor) >= 1 ? 'wc-card-amber' : 'wc-card-red'}`}>
+>                                 <div className={`text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono uppercase mb-1 font-black shrink-0 ${mProfitFactor === 'MAX' || Number(mProfitFactor) >= 1 ? 'text-amber-700 theme-gray:text-amber-800 dark:text-amber-400 theme-lion:text-[#f2c64b]' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56]'}`}>Profit Factor</div>
+>                                 <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mProfitFactor === 'MAX' || Number(mProfitFactor) >= 1 ? 'text-amber-600 theme-gray:text-amber-700 dark:text-amber-300 glow-accent' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{mProfitFactor}</div>
+>                               </div>
+>                               <div className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 hover:scale-[1.01] ${mKelly != null && mKelly >= 0 ? 'wc-card-green' : 'wc-card-red'}`}>
+>                                 <div className={`text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono uppercase mb-1 font-black shrink-0 ${mKelly != null && mKelly >= 0 ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f]' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56]'}`}>Half-Kelly %</div>
+>                                 <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mKelly != null && mKelly >= 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{mKelly != null ? `${mKelly > 0 ? '+' : ''}${mKelly.toFixed(1)}%` : '--'}</div>
+>                               </div>
+5423,5442c5318,5337
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Avg Profit</div>
+<                                <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mAvgR === '--' ? 'text-dim' : Number(mAvgR) >= 0.5 ? 'text-success glow-success' : 'text-danger glow-danger'}`}>{mAvgR !== '--' && Number(mAvgR) > 0 ? '+' : ''}{mAvgR}</div>
+<                              </div>
+<                              <div className="col-span-1 sm:col-span-2 md:col-span-1 p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">WIN/LOSS/B/E</div>
+<                                <div className="text-xs sm:text-sm md:text-base tracking-tighter font-bold italic flex justify-center items-center gap-1.5 h-full">
+<                                  <span className="text-success">{mWins.length}</span> <span className="text-dim/40">/</span>
+<                                  <span className="text-danger">{mLosses.length}</span> <span className="text-dim/40">/</span>
+<                                  <span className="text-accent">{mBE}</span>
+<                                </div>
+<                              </div>
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Best Profit' : 'Best Trade'}</div>
+<                                <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-success glow-success">{isNoviceMode ? (mBestTradePts > 0 ? `+${Math.round(mBestTradePts)}%` : '--') : `${mBestTrade > 0 ? '+' : ''}${mBestTrade.toFixed(2)}%`}</div>
+<                              </div>
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Avg Win' : 'Avg Winner'}</div>
+<                                <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-success glow-success">{isNoviceMode ? (mAvgWinnerPts > 0 ? `+${Math.round(mAvgWinnerPts)}%` : '--') : `+${mAvgWinner.toFixed(2)}%`}</div>
+<                              </div>
+---
+>                               <div className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 hover:scale-[1.01] ${mAvgR === '--' ? 'wc-card-neutral' : Number(mAvgR) >= 0.5 ? 'wc-card-green' : 'wc-card-red'}`}>
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Avg Profit</div>
+>                                 <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mAvgR === '--' ? 'text-dim' : Number(mAvgR) >= 0.5 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{mAvgR !== '--' && Number(mAvgR) > 0 ? '+' : ''}{mAvgR}</div>
+>                               </div>
+>                               <div className="col-span-1 sm:col-span-2 md:col-span-1 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-neutral hover:scale-[1.01]">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">WIN / LOSS / B/E</div>
+>                                 <div className="text-xs sm:text-sm md:text-base tracking-tighter font-bold italic flex justify-center items-center gap-1.5 h-full">
+>                                   <span className="text-green-600 theme-gray:text-green-700 dark:text-green-400 font-black">{mWins.length}</span> <span className="text-dim/40">/</span>
+>                                   <span className="text-red-600 theme-gray:text-red-700 dark:text-red-400 font-black">{mLosses.length}</span> <span className="text-dim/40">/</span>
+>                                   <span className="text-blue-600 theme-gray:text-blue-700 dark:text-blue-400 font-black">{mBE}</span>
+>                                 </div>
+>                               </div>
+>                               <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-green hover:scale-[1.01]">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Best Profit' : 'Best Trade'}</div>
+>                                 <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success">{isNoviceMode ? (mBestTradePts > 0 ? `+${Math.round(mBestTradePts)}%` : '--') : `${mBestTrade > 0 ? '+' : ''}${mBestTrade.toFixed(2)}%`}</div>
+>                               </div>
+>                               <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-green hover:scale-[1.01]">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Avg Win' : 'Avg Winner'}</div>
+>                                 <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success">{isNoviceMode ? (mAvgWinnerPts > 0 ? `+${Math.round(mAvgWinnerPts)}%` : '--') : `+${mAvgWinner.toFixed(2)}%`}</div>
+>                               </div>
+5444,5469c5339,5364
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Avg Loss' : 'Avg Loser'}</div>
+<                                <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-danger glow-danger">{isNoviceMode ? (mAvgLoserPts > 0 ? `-${Math.round(mAvgLoserPts)}%` : '--') : `-${mAvgLoser.toFixed(2)}%`}</div>
+<                              </div>
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Reward/Pt Risk' : 'Realized R:R'}</div>
+<                                <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-success glow-success">{isNoviceMode ? (mRealizedRRPtsNum === 999 ? 'MAX' : `${mRealizedRRPtsNum.toFixed(2)}%`) : (mRealizedRRNum === 999 ? 'MAX' : mRealizedRRNum.toFixed(2))}</div>
+<                              </div>
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Worst Drop' : 'Max Drawdown'}</div>
+<                                <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-danger glow-danger">{isNoviceMode ? (mMaxDrawdownPts > 0 ? `-${Math.round(mMaxDrawdownPts)}%` : '--') : `-${mMaxDrawdown.toFixed(2)}%`}</div>
+<                              </div>
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Consec. Losses</div>
+<                                <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-danger glow-danger">{mMaxStreak} <span className="text-[10px] sm:text-xs text-dim not-italic font-sans">trades</span></div>
+<                              </div>
+<                              
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Sharpe Ratio</div>
+<                                <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mSharpe != null && Number(mSharpe) >= 1 ? 'text-success glow-success' : 'text-dim'}`}>{mSharpe != null ? mSharpe : '--'}</div>
+<                              </div>
+<                              
+<                              <div className="p-1 text-center flex flex-col justify-between">
+<                                <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">Sortino Ratio</div>
+<                                <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mSortino != null && Number(mSortino) >= 1 ? 'text-success glow-success' : 'text-dim'}`}>{mSortino != null ? mSortino : '--'}</div>
+<                              </div>
+---
+>                               <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-red hover:scale-[1.01]">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Avg Loss' : 'Avg Loser'}</div>
+>                                 <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger">{isNoviceMode ? (mAvgLoserPts > 0 ? `-${Math.round(mAvgLoserPts)}%` : '--') : `-${mAvgLoser.toFixed(2)}%`}</div>
+>                               </div>
+>                               <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-green hover:scale-[1.01]">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Reward/Pt Risk' : 'Realized R:R'}</div>
+>                                 <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success">{isNoviceMode ? (mRealizedRRPtsNum === 999 ? 'MAX' : `${mRealizedRRPtsNum.toFixed(2)}%`) : (mRealizedRRNum === 999 ? 'MAX' : mRealizedRRNum.toFixed(2))}</div>
+>                               </div>
+>                               <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-red hover:scale-[1.01]">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56] uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Worst Drop' : 'Max Drawdown'}</div>
+>                                 <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger">{isNoviceMode ? (mMaxDrawdownPts > 0 ? `-${Math.round(mMaxDrawdownPts)}%` : '--') : `-${mMaxDrawdown.toFixed(2)}%`}</div>
+>                               </div>
+>                               <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-red hover:scale-[1.01]">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56] uppercase mb-1 font-black shrink-0">Consec. Losses</div>
+>                                 <div className="text-sm sm:text-base md:text-lg tracking-tighter font-bold italic text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger">{mMaxStreak} <span className="text-[10px] sm:text-xs text-dim not-italic font-sans">trades</span></div>
+>                               </div>
+>                               
+>                               <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-blue hover:scale-[1.01]">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-blue-700 theme-gray:text-blue-800 dark:text-blue-400 theme-lion:text-[#38bdf8] uppercase mb-1 font-black shrink-0">Sharpe Ratio</div>
+>                                 <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mSharpe != null && Number(mSharpe) >= 1 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-dim'}`}>{mSharpe != null ? mSharpe : '--'}</div>
+>                               </div>
+>                               
+>                               <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl text-center min-w-0 overflow-hidden flex flex-col justify-between border transition-all duration-300 wc-card-blue hover:scale-[1.01]">
+>                                 <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-blue-700 theme-gray:text-blue-800 dark:text-blue-400 theme-lion:text-[#38bdf8] uppercase mb-1 font-black shrink-0">Sortino Ratio</div>
+>                                 <div className={`text-sm sm:text-base md:text-lg tracking-tighter font-bold italic ${mSortino != null && Number(mSortino) >= 1 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-dim'}`}>{mSortino != null ? mSortino : '--'}</div>
+>                               </div>
+5471,5493c5366,5388
+<                              {/* Equity Row */}
+<                              <div className="col-span-2 sm:col-span-3 md:col-span-4 border-t border-primary/10 pt-4 mt-2 overflow-hidden flex items-center justify-between">
+<                                <div className="text-left">
+<                                  <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Total Earned' : 'Equity Curve'}</div>
+<                                  <div className={`text-lg sm:text-xl md:text-2xl tracking-tighter font-bold italic ${mEq > 0 ? 'text-success glow-success' : mEq < 0 ? 'text-danger glow-danger' : 'text-accent'}`}>{isNoviceMode ? `${mEqPts >= 0 ? '+' : ''}${Math.round(mEqPts)}%` : `${mEq > 0 ? '+' : ''}${mEq.toFixed(2)}%`}</div>
+<                                </div>
+<                                {mEqPoints.length > 1 && (
+<                                  <div className="relative w-[120px] sm:w-[150px] md:w-[200px] h-[40px] md:h-[50px] ml-4 flex-shrink-0">
+<                                    <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+<                                      <defs>
+<                                        <linearGradient id={`eqGrad-${m.id}`} x1="0" y1="0" x2="0" y2="1">
+<                                          <stop offset="0%" stopColor={mEq >= 0 ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'} />
+<                                          <stop offset="100%" stopColor={mEq >= 0 ? 'rgba(34,197,94,0)' : 'rgba(239,68,68,0)'} />
+<                                        </linearGradient>
+<                                      </defs>
+<                                      <path d={mSvgAreaPath} fill={`url(#eqGrad-${m.id})`} />
+<                                      <path d={mSvgPath} fill="none" stroke={mEq >= 0 ? '#22c55e' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+<                                    </svg>
+<                                  </div>
+<                                )}
+<                              </div>
+<                            </div>
+<                          </div>
+---
+>                               {/* Equity Row */}
+>                               <div className="col-span-2 sm:col-span-3 md:col-span-4 p-3 sm:p-4 rounded-2xl border wc-card-neutral mt-2 overflow-hidden flex items-center justify-between">
+>                                 <div className="text-left">
+>                                   <div className="text-[8px] sm:text-[9px] md:text-[10px] leading-tight font-mono text-dim uppercase mb-1 font-black shrink-0">{isNoviceMode ? 'Total Earned' : 'Equity Curve'}</div>
+>                                   <div className={`text-lg sm:text-xl md:text-2xl tracking-tighter font-bold italic ${mEq > 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : mEq < 0 ? 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger' : 'text-accent'}`}>{isNoviceMode ? `${mEqPts >= 0 ? '+' : ''}${Math.round(mEqPts)}%` : `${mEq > 0 ? '+' : ''}${mEq.toFixed(2)}%`}</div>
+>                                 </div>
+>                                 {mEqPoints.length > 1 && (
+>                                   <div className="relative w-[120px] sm:w-[150px] md:w-[200px] h-[40px] md:h-[50px] ml-4 flex-shrink-0">
+>                                     <svg viewBox="0 0 100 30" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+>                                       <defs>
+>                                         <linearGradient id={`eqGrad-${m.id}`} x1="0" y1="0" x2="0" y2="1">
+>                                           <stop offset="0%" stopColor={mEq >= 0 ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)'} />
+>                                           <stop offset="100%" stopColor={mEq >= 0 ? 'rgba(34,197,94,0)' : 'rgba(239,68,68,0)'} />
+>                                         </linearGradient>
+>                                       </defs>
+>                                       <path d={mSvgAreaPath} fill={`url(#eqGrad-${m.id})`} />
+>                                       <path d={mSvgPath} fill="none" stroke={mEq >= 0 ? '#22c55e' : '#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+>                                     </svg>
+>                                   </div>
+>                                 )}
+>                               </div>
+>                             </div>
+>                           </div>
+5537c5432
+<                                     : 'bg-white/60 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 border-slate-300/70 dark:border-white/10 hover:bg-white/90 dark:hover:bg-slate-800/70'
+---
+>                                     : 'wc-card-neutral text-primary/80 border-primary/20 hover:border-accent/40'
+5565c5460
+<                                     : 'bg-white/60 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 border-slate-300/70 dark:border-white/10 hover:bg-white/90 dark:hover:bg-slate-800/70'
+---
+>                                     : 'wc-card-neutral text-primary/80 border-primary/20 hover:border-accent/40'
+5585c5480
+<                             <div className="w-full min-w-[650px] rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 theme-gray:border-slate-400/30 shadow-sm bg-white/70 dark:bg-slate-900/60 theme-gray:bg-slate-200/60 backdrop-blur-md">
+---
+>                             <div className="w-full min-w-[650px] rounded-2xl overflow-hidden wc-table-card">
+5587c5482
+<                                 <thead className="border-b border-black/10 dark:border-white/10 bg-slate-100/90 dark:bg-slate-800/90 theme-gray:bg-slate-300/90 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 font-mono font-black text-[9px] sm:text-[10px] uppercase tracking-wider">
+---
+>                                 <thead className="wc-table-thead text-primary font-mono font-black text-[9px] sm:text-[10px] uppercase tracking-wider">
+5644c5539
+<                                   : 'bg-white/60 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 border-slate-300/70 dark:border-white/10 hover:bg-white/90 dark:hover:bg-slate-800/70 hover:text-slate-950 dark:hover:text-white'
+---
+>                                   : 'wc-card-neutral text-primary/80 border-primary/20 hover:border-accent/40 hover:text-slate-950 dark:hover:text-white'
+5654c5549
+<                             <div className="w-full min-w-[650px] rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 theme-gray:border-slate-400/30 shadow-sm bg-white/70 dark:bg-slate-900/60 theme-gray:bg-slate-200/60 backdrop-blur-md">
+---
+>                             <div className="w-full min-w-[650px] rounded-2xl overflow-hidden wc-table-card">
+5656c5551
+<                                 <thead className="border-b border-black/10 dark:border-white/10 bg-slate-100/90 dark:bg-slate-800/90 theme-gray:bg-slate-300/90 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 font-mono font-black text-[9px] sm:text-[10px] uppercase tracking-wider">
+---
+>                                 <thead className="wc-table-thead text-primary font-mono font-black text-[9px] sm:text-[10px] uppercase tracking-wider">
+5844c5739
+<                                     <div className="w-full rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 theme-gray:border-slate-400/30 shadow-sm bg-white/70 dark:bg-slate-900/60 theme-gray:bg-slate-200/60 backdrop-blur-md">
+---
+>                                     <div className="w-full rounded-2xl overflow-hidden wc-table-card">
+5846c5741
+<                                             <thead className="border-b border-black/10 dark:border-white/10 bg-slate-100/90 dark:bg-slate-800/90 theme-gray:bg-slate-300/90 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 font-mono font-black text-[8.5px] sm:text-[10px] uppercase tracking-wider">
+---
+>                                             <thead className="wc-table-thead text-primary font-mono font-black text-[8.5px] sm:text-[10px] uppercase tracking-wider">
+5968c5863
+<                               glassStyle = 'bg-white/60 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 border-slate-300/70 dark:border-white/10 hover:bg-white/90 dark:hover:bg-slate-800/70 hover:border-slate-400 dark:hover:border-white/20 hover:text-slate-950 dark:hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]';
+---
+>                               glassStyle = 'wc-card-neutral text-primary/80 border-primary/20 hover:border-accent/40 hover:border-slate-400 dark:hover:border-white/20 hover:text-slate-950 dark:hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]';
+6035,6042c5930,5933
+<                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 shiny-card rounded-2xl p-2 border border-primary/20 bg-white/90 theme-gray:bg-slate-200/50 dark:bg-[#090e17]/95 shadow-sm backdrop-blur-xl mb-0.5 text-primary">
+<                               <div className="flex flex-col items-center justify-center p-1 rounded-lg bg-primary/[0.03]">
+<                                 <span className="text-[7.5px] sm:text-[8px] uppercase tracking-widest text-dim font-bold mb-0.5">Win Rate</span>
+<                                 <span className="font-black font-mono text-xs sm:text-sm text-slate-900 dark:text-slate-100 theme-gray:text-slate-900">{cWinRate}%</span>
+<                               </div>
+<                               <div className="flex flex-col items-center justify-center p-1 rounded-lg bg-primary/[0.03]">
+<                                 <span className="text-[7.5px] sm:text-[8px] uppercase tracking-widest text-dim font-bold mb-0.5">Expectancy</span>
+<                                 <span className={`font-black font-mono text-xs sm:text-sm ${parseFloat(cExpectancy) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>{parseFloat(cExpectancy) >= 0 ? '+' : ''}{cExpectancy}%</span>
+---
+>                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 shiny-card rounded-2xl p-2.5 border border-primary/20 bg-secondary/20 shadow-lg backdrop-blur-xl mb-1 text-primary">
+>                               <div className="flex flex-col items-center justify-center p-2 rounded-xl border wc-card-blue transition-all duration-300 hover:scale-[1.02]">
+>                                 <span className="text-[7.5px] sm:text-[8px] uppercase tracking-widest text-blue-700 theme-gray:text-blue-800 dark:text-blue-400 theme-lion:text-[#38bdf8] font-bold mb-0.5">Win Rate</span>
+>                                 <span className="font-black font-mono text-xs sm:text-sm text-primary">{cWinRate}%</span>
+6044,6046c5935,5937
+<                               <div className="flex flex-col items-center justify-center p-1 rounded-lg bg-primary/[0.03]">
+<                                 <span className="text-[7.5px] sm:text-[8px] uppercase tracking-widest text-dim font-bold mb-0.5">Profit Factor</span>
+<                                 <span className={`font-black font-mono text-xs sm:text-sm ${parseFloat(cPF) >= 1.5 ? 'text-amber-600 dark:text-amber-400' : (parseFloat(cPF) >= 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}`}>{cPF}</span>
+---
+>                               <div className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-300 hover:scale-[1.02] ${parseFloat(cExpectancy) >= 0 ? 'wc-card-green' : 'wc-card-red'}`}>
+>                                 <span className={`text-[7.5px] sm:text-[8px] uppercase tracking-widest font-bold mb-0.5 ${parseFloat(cExpectancy) >= 0 ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f]' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56]'}`}>Expectancy</span>
+>                                 <span className={`font-black font-mono text-xs sm:text-sm ${parseFloat(cExpectancy) >= 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{parseFloat(cExpectancy) >= 0 ? '+' : ''}{cExpectancy}%</span>
+6048c5939,5943
+<                               <div className="flex flex-col items-center justify-center p-1 rounded-lg bg-primary/[0.03]">
+---
+>                               <div className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-300 hover:scale-[1.02] ${parseFloat(cPF) >= 1 ? 'wc-card-amber' : 'wc-card-red'}`}>
+>                                 <span className={`text-[7.5px] sm:text-[8px] uppercase tracking-widest font-bold mb-0.5 ${parseFloat(cPF) >= 1 ? 'text-amber-700 theme-gray:text-amber-800 dark:text-amber-400 theme-lion:text-[#f2c64b]' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56]'}`}>Profit Factor</span>
+>                                 <span className={`font-black font-mono text-xs sm:text-sm ${parseFloat(cPF) >= 1.5 ? 'text-amber-600 theme-gray:text-amber-700 dark:text-amber-300 glow-accent' : (parseFloat(cPF) >= 1 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger')}`}>{cPF}</span>
+>                               </div>
+>                               <div className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-300 hover:scale-[1.02] ${cCalmar !== '0.00' && (cCalmar === 'MAX' || parseFloat(cCalmar) >= 1) ? 'wc-card-green' : 'wc-card-neutral'}`}>
+6050c5945
+<                                 <span className={`font-black font-mono text-xs sm:text-sm ${cCalmar !== '0.00' && (cCalmar === 'MAX' || parseFloat(cCalmar) >= 1) ? 'text-emerald-600 dark:text-emerald-400' : (cCalmar === '0.00' ? 'text-dim' : 'text-rose-600 dark:text-rose-400')}`}>{cCalmar}</span>
+---
+>                                 <span className={`font-black font-mono text-xs sm:text-sm ${cCalmar !== '0.00' && (cCalmar === 'MAX' || parseFloat(cCalmar) >= 1) ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-dim'}`}>{cCalmar}</span>
+6052,6054c5947,5949
+<                               <div className="flex flex-col items-center justify-center p-1 rounded-lg bg-primary/[0.03]">
+<                                 <span className="text-[7.5px] sm:text-[8px] uppercase tracking-widest text-dim font-bold mb-0.5">Half-Kelly %</span>
+<                                 <span className={`font-black font-mono text-xs sm:text-sm ${parseFloat(cKelly) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>{parseFloat(cKelly) >= 0 ? '+' : ''}{cKelly}%</span>
+---
+>                               <div className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-300 hover:scale-[1.02] ${parseFloat(cKelly) >= 0 ? 'wc-card-green' : 'wc-card-red'}`}>
+>                                 <span className={`text-[7.5px] sm:text-[8px] uppercase tracking-widest font-bold mb-0.5 ${parseFloat(cKelly) >= 0 ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f]' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56]'}`}>Half-Kelly %</span>
+>                                 <span className={`font-black font-mono text-xs sm:text-sm ${parseFloat(cKelly) >= 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{parseFloat(cKelly) >= 0 ? '+' : ''}{cKelly}%</span>
+6056,6058c5951,5953
+<                               <div className="flex flex-col items-center justify-center p-1 rounded-lg bg-primary/[0.03]">
+<                                 <span className="text-[7.5px] sm:text-[8px] uppercase tracking-widest text-dim font-bold mb-0.5">Avg Profit</span>
+<                                 <span className={`font-black font-mono text-xs sm:text-sm ${parseFloat(cAvgFinal) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>{parseFloat(cAvgFinal) >= 0 ? '+' : ''}{cAvgFinal}%</span>
+---
+>                               <div className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-300 hover:scale-[1.02] ${parseFloat(cAvgFinal) >= 0 ? 'wc-card-green' : 'wc-card-red'}`}>
+>                                 <span className={`text-[7.5px] sm:text-[8px] uppercase tracking-widest font-bold mb-0.5 ${parseFloat(cAvgFinal) >= 0 ? 'text-green-700 theme-gray:text-green-800 dark:text-green-400 theme-lion:text-[#27c93f]' : 'text-red-700 theme-gray:text-red-800 dark:text-red-400 theme-lion:text-[#ff5f56]'}`}>Avg Profit</span>
+>                                 <span className={`font-black font-mono text-xs sm:text-sm ${parseFloat(cAvgFinal) >= 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{parseFloat(cAvgFinal) >= 0 ? '+' : ''}{cAvgFinal}%</span>
+6060,6062c5955,5957
+<                               <div className="flex flex-col items-center justify-center p-1 rounded-lg bg-primary/[0.03]">
+<                                 <span className="text-[7.5px] sm:text-[8px] uppercase tracking-widest text-dim font-bold mb-0.5">Total Trades</span>
+<                                 <span className="font-black font-mono text-xs sm:text-sm text-slate-900 dark:text-slate-100 theme-gray:text-slate-900">{totalTrades}</span>
+---
+>                               <div className="flex flex-col items-center justify-center p-2 rounded-xl border wc-card-neutral transition-all duration-300 hover:scale-[1.02]">
+>                                 <span className="text-[7.5px] sm:text-[8px] uppercase tracking-widest text-dim font-bold mb-0.5">Total Trades</span>
+>                                 <span className="font-black font-mono text-xs sm:text-sm text-primary">{totalTrades}</span>
+6064,6065c5959,5960
+<                               <div className="flex flex-col items-center justify-center p-1 rounded-lg bg-primary/[0.03]">
+<                                 <span className="text-[7.5px] sm:text-[8px] uppercase tracking-widest text-dim font-bold mb-0.5">Wins / Losses</span>
+---
+>                               <div className="flex flex-col items-center justify-center p-2 rounded-xl border wc-card-neutral transition-all duration-300 hover:scale-[1.02]">
+>                                 <span className="text-[7.5px] sm:text-[8px] uppercase tracking-widest text-dim font-bold mb-0.5">Wins / Losses / BE</span>
+6067c5962
+<                                   <span className="text-emerald-600 dark:text-emerald-400">{cWins}</span><span className="text-dim font-normal">/</span><span className="text-rose-600 dark:text-rose-400">{cLosses}</span><span className="text-dim font-normal">/</span><span className="text-blue-500 text-[10px]">{cBreakevens}</span>
+---
+>                                   <span className="text-green-600 theme-gray:text-green-700 dark:text-green-400 font-bold">{cWins}</span><span className="text-dim/40 font-normal"> / </span><span className="text-red-600 theme-gray:text-red-700 dark:text-red-400 font-bold">{cLosses}</span><span className="text-dim/40 font-normal"> / </span><span className="text-blue-500 font-bold text-[10px]">{cBreakevens}</span>
+6070c5965
+<                             </div>
+---
+>                             </div></div>
+6101c5996
+<                                 <div className="w-full rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 theme-gray:border-slate-400/30 shadow-sm bg-white/70 dark:bg-slate-900/60 theme-gray:bg-slate-200/60 backdrop-blur-md">
+---
+>                                 <div className="w-full rounded-2xl overflow-hidden wc-table-card">
+6103c5998
+<                                     <thead className="border-b border-black/10 dark:border-white/10 bg-slate-100/90 dark:bg-slate-800/90 theme-gray:bg-slate-300/90 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 font-mono font-black text-[8.5px] sm:text-[10px] uppercase tracking-wider">
+---
+>                                     <thead className="wc-table-thead text-primary font-mono font-black text-[8.5px] sm:text-[10px] uppercase tracking-wider">
+6289c6184
+<                             <div className="w-full rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 theme-gray:border-slate-400/30 shadow-sm bg-white/70 dark:bg-slate-900/60 theme-gray:bg-slate-200/60 backdrop-blur-md">
+---
+>                             <div className="w-full rounded-2xl overflow-hidden wc-table-card">
+6291c6186
+<                                 <thead className="border-b border-black/10 dark:border-white/10 bg-slate-100/90 dark:bg-slate-800/90 theme-gray:bg-slate-300/90 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 font-mono font-black text-[8.5px] sm:text-[10px] uppercase tracking-wider">
+---
+>                                 <thead className="wc-table-thead text-primary font-mono font-black text-[8.5px] sm:text-[10px] uppercase tracking-wider">
+6385c6280
+<                       <div className="shiny-card rounded-2xl p-3 flex flex-col min-h-[380px] shrink-0 relative overflow-hidden bg-white/90 theme-gray:bg-slate-200/50 dark:bg-[#090e17]/95 shadow-sm backdrop-blur-xl">
+---
+>                       <div className="wc-table-card rounded-2xl p-3 flex flex-col min-h-[380px] shrink-0 relative overflow-hidden shadow-xl">
+6395c6290
+<                       <div className="shiny-card rounded-2xl p-3 flex flex-col min-h-[1100px] shrink-0 relative overflow-hidden bg-white/90 theme-gray:bg-slate-200/50 dark:bg-[#090e17]/95 shadow-sm backdrop-blur-xl">
+---
+>                       <div className="wc-table-card rounded-2xl p-3 flex flex-col min-h-[1100px] shrink-0 relative overflow-hidden shadow-xl">
+6554c6449
+<                                 glassStyle = 'bg-white/60 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 theme-gray:text-slate-800 border-slate-300/70 dark:border-white/10 hover:bg-white/90 dark:hover:bg-slate-800/70 hover:border-slate-400 dark:hover:border-white/20 hover:text-slate-950 dark:hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]';
+---
+>                                 glassStyle = 'wc-card-neutral text-primary/80 border-primary/20 hover:border-accent/40 hover:border-slate-400 dark:hover:border-white/20 hover:text-slate-950 dark:hover:text-white shadow-[0_2px_8px_rgba(0,0,0,0.04)]';
