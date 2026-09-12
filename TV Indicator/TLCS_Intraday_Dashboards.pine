@@ -905,5 +905,13 @@ if array.size(symArr) > 0
 json_array := json_array + "]"
 string webhook_payload = "{\"type\": \"PivotBossScan\", \"secret\": \"" + webhook_secret + "\", \"scan_data\": " + json_array + "}"
 
-if barstate.isrealtime and barstate.islast
+bool isDailyClose = false
+if timeframe.isdaily
+    isDailyClose := barstate.isconfirmed
+else if timeframe.isintraday
+    isDailyClose := (session.islastbar_regular and barstate.isconfirmed) or (ta.change(time("D")) != 0 and barstate.isconfirmed)
+else
+    isDailyClose := barstate.isconfirmed
+
+if isDailyClose and has_any_alerts
     alert(webhook_payload, alert.freq_once_per_bar_close)

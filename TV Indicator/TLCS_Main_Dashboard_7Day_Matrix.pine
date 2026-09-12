@@ -1366,7 +1366,7 @@ if barstate.islast
     else
         isDailyClose := barstate.isconfirmed
 
-    if (isDailyClose or barstate.islast) and enable_alerts
+    if isDailyClose and enable_alerts
         string daysJson = "["
         for col = 0 to 6
             bM = str.replace_all(matrix.get(bullMissile, col, 0), "
