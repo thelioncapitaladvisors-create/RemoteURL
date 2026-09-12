@@ -1919,6 +1919,7 @@ isfros(level) =>
 
 isbreakfailure() =>
     issfp(sup01) ? true : issfp(sup02) ? true : issfp(sup03) ? true : issfp(sup04) ? true : issfp(sup05) ? true : issfp(sup06) ? true : issfp(sup07) ? true : issfp(sup08) ? true : issfp(sup09) ? true : issfp(sup10) ? true : issfp(sup11) ? true : issfp(sup12) ? true : issfp(sup13) ? true : issfp(sup14) ? true : issfp(sup15) ? true : issfp(res01) ? true : issfp(res02) ? true : issfp(res03) ? true : issfp(res04) ? true : issfp(res05) ? true : issfp(res06) ? true : issfp(res07) ? true : issfp(res08) ? true : issfp(res09) ? true : issfp(res10) ? true : issfp(res11) ? true : issfp(res12) ? true : issfp(res13) ? true : issfp(res14) ? true : issfp(res15) ? true : isfros(sup01) ? true : isfros(sup02) ? true : isfros(sup03) ? true : isfros(sup04) ? true : isfros(sup05) ? true : isfros(sup06) ? true : isfros(sup07) ? true : isfros(sup08) ? true : isfros(sup09) ? true : isfros(sup10) ? true : isfros(sup11) ? true : isfros(sup12) ? true : isfros(sup13) ? true : isfros(sup14) ? true : isfros(sup15) ? true : isfros(res01) ? true : isfros(res02) ? true : isfros(res03) ? true : isfros(res04) ? true : isfros(res05) ? true : isfros(res06) ? true : isfros(res07) ? true : isfros(res08) ? true : isfros(res09) ? true : isfros(res10) ? true : isfros(res11) ? true : isfros(res12) ? true : isfros(res13) ? true : isfros(res14) ? true : isfros(res15) ? true : false
+
 // Custom Pivot Function
 
 p = Top // Get pivot
@@ -2026,7 +2027,6 @@ if not na(q)
     else if na(sup15)
         l_sup15 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
         sup15 := q
-
 // Break Counter & Invalidation (Resistance)
 if open < res01 and close > res01 or open > res01 and close < res01
     br_res01 := br_res01 + 1
