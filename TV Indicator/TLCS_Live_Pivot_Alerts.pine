@@ -809,6 +809,15 @@ paintX = INRANGEINVALUE ? color.gray : INRANGEINVALUE and (close > dDH_ or close
 mX = INRANGEINVALUE and close > dDL_ and close < dDH_ and close > VAL and close < VAH ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEINVALUE and (close > Ytf_h and close > VAH or close < Ytf_l and close < VAL) or OO < Ytf_l and OO < VAL and OO < DBc or OO > Ytf_h and OO > VAH and OO > DTc ? 'BIG MOVE' : INRANGEOUTOFVALUE and close < Ytf_h and close > Ytf_l ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEOUTOFVALUE and (close > Ytf_h or close < Ytf_l) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL' : OUTOFRANGEVALUE and (close < Ytf_l or close > Ytf_h) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND' : OUTOFRANGEVALUE and close > Ytf_l and close < Ytf_h ? 'TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE' : 'DEBUG'
 paintmX = INRANGEINVALUE and close > dDL_ and close < dDH_ and close > VAL and close < VAH ? color.gray : INRANGEINVALUE and (close > Ytf_h and close > VAH or close < Ytf_l and close < VAL) or OO < Ytf_l and OO < VAL and OO < DBc or OO > Ytf_h and OO > VAH and OO > DTc ? color.fuchsia : INRANGEOUTOFVALUE and close < Ytf_h and close > Ytf_l ? color.black : INRANGEOUTOFVALUE and (close > Ytf_h or close < Ytf_l) ? color.orange : OUTOFRANGEVALUE and (close < Ytf_l or close > Ytf_h) ? color.purple : OUTOFRANGEVALUE and close > Ytf_l and close < Ytf_h ? color.black : color.silver
 
+bool isSidewaysDay = (mX == 'INRANGEINVALUE') or 
+                     (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or 
+                     str.contains(mX, "TRADING RANGE") or 
+                     str.contains(mX, "SIDEWAYS") or 
+                     str.contains(mX, "TYPICAL DAY") or 
+                     (dX == 'IN RANGE \n IN VALUE')
+
+bool dayAllowed = not isSidewaysDay or NCPR
+
 Dx = INRANGEINVALUE ? 'IN RANGE \n IN VALUE' : INRANGEOUTOFVALUE ? 'IN RANGE \n OUT OF VALUE' : OUTOFRANGEVALUE ? 'OUT OF RANGE \n OUT OF VALUE' : 'DEBUG'
 
 Mx = INRANGEINVALUE and close > dDL_ and close < dDH_ and close > VAL and close < VAH ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEINVALUE and (close > Ytf_h and close > VAH or close < Ytf_l and close < VAL) or OO < Ytf_l and OO < VAL and OO < DBc or OO > Ytf_h and OO > VAH and OO > DTc ? 'BIG MOVE' : INRANGEOUTOFVALUE and close < Ytf_h and close > Ytf_l ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEOUTOFVALUE and (close > Ytf_h or close < Ytf_l) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL' : OUTOFRANGEVALUE and (close < Ytf_l or close > Ytf_h) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND' : OUTOFRANGEVALUE and close > Ytf_l and close < Ytf_h ? 'TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE' : 'DEBUG'
@@ -3077,15 +3086,6 @@ bool ScalpSell = (emaCanSell and StepDn)
 // Suppress signal booleans AND their plotshapes on sideways days
 // NCPR exception preserved: narrow CPR compression days still allow signals
 
-bool isSidewaysDay = (mX == 'INRANGEINVALUE') or 
-                     (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or 
-                     str.contains(mX, "TRADING RANGE") or 
-                     str.contains(mX, "SIDEWAYS") or 
-                     str.contains(mX, "TYPICAL DAY") or 
-                     (dX == 'IN RANGE \n IN VALUE')
-
-bool dayAllowed = not isSidewaysDay or NCPR
-
 bool inValueArea = close > VAL and close < VAH
 bool inCamarillaZone = close > l3 and close < h3
 
@@ -3097,7 +3097,8 @@ bool shortAllowed = close > L4 and inValueArea and inCamarillaZone
 string z1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? 'LONG ZONE' : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? 'SHORT ZONE' : ANYDAY and close > DBc and close < DTc ? 'WAIT FOR SIGNAL' : 'WAITING'
 
 // ====================================================================
-// ── LIGHTNING & EXTREME REVERSAL SIGNALS (COMBINED) ───────────────────
+// ====================================================================
+// ── LIGHTNING, DIVERGENCE & EXTREME REVERSAL SIGNALS ──────────────────
 // ====================================================================
 
 // ── CPR BOUNDARIES FOR HIDDEN DIVERGENCE (Signal Bar [1]) ────────────
@@ -3113,66 +3114,77 @@ bool hBearInsideCPR = (ext_bearishHiddenDiv[1] == 1) and ((close[1] >= cprBottom
 bool hiddenBullishConfirmed = hBullInsideCPR and (close > open) and (close > close[1])
 bool hiddenBearishConfirmed = hBearInsideCPR and (close < open) and (close < close[1])
 
-// Regular Divergence (Standard rules, subject to standard day type filters)
+// Regular Divergence (Standard rules)
 bool regBullDiv = (ext_bullishDiv[1] == 1)
 bool regBearDiv = (ext_bearishDiv[1] == 1)
 
-// 1. Standard Lightning (Native Missile+Scalp OR Regular Divergence + Power Candle)
-// Gated by both longAllowed/shortAllowed AND dayAllowed (day types / NCPR)
-bool standardLightningBuy  = ((CanBuy and ScalpBuy)   or (regBullDiv and GrS)) and longAllowed and dayAllowed
-bool standardLightningSell = ((CanSell and ScalpSell) or (regBearDiv and ReS)) and shortAllowed and dayAllowed
+// 1. Standard Lightning (Pure Native Missile + Scalp Confluence)
+bool standardLightningBuy  = (CanBuy and ScalpBuy) and longAllowed and dayAllowed
+bool standardLightningSell = (CanSell and ScalpSell) and shortAllowed and dayAllowed
 
-// 2. Hidden Divergence Lightning (H within CPR + Confirmation + Power Candle)
-// EXEMPT from day types and NCPR! Only longAllowed / shortAllowed (H4/L4 boundary) applies
-bool hiddenDivLightningBuy  = (hiddenBullishConfirmed and GrS) and longAllowed
-bool hiddenDivLightningSell = (hiddenBearishConfirmed and ReS) and shortAllowed
+// 2. Regular Divergence Signals (Standalone Strategy - Exempt from day type / NCPR filter)
+bool DivergenceBuy  = ((regBullDiv or regBullDiv[1] or regBullDiv[2] or regBullDiv[3] or regBullDiv[4] or regBullDiv[5]) and GrS) and longAllowed
+bool DivergenceSell = ((regBearDiv  or regBearDiv[1] or regBearDiv[2] or regBearDiv[3] or regBearDiv[4] or regBearDiv[5]) and ReS) and shortAllowed
+
+// 3. Hidden Divergence Signals (Standalone Strategy - Exempt from day type / NCPR filter)
+bool HiddenDivBuy   = ((hiddenBullishConfirmed or hiddenBullishConfirmed[1] or hiddenBullishConfirmed[2] or hiddenBullishConfirmed[3] or hiddenBullishConfirmed[4] or hiddenBullishConfirmed[5]) and GrS) and longAllowed
+bool HiddenDivSell  = ((hiddenBearishConfirmed or hiddenBearishConfirmed[1] or hiddenBearishConfirmed[2] or hiddenBearishConfirmed[3] or hiddenBearishConfirmed[4] or hiddenBearishConfirmed[5]) and ReS) and shortAllowed
 
 // Combined Lightning Buy / Sell
-bool LightningBuy  = standardLightningBuy  or hiddenDivLightningBuy
-bool LightningSell = standardLightningSell or hiddenDivLightningSell
+bool LightningBuy   = standardLightningBuy
+bool LightningSell  = standardLightningSell
 
 // Flag to bypass day type / sideways filter inside initializeAndPushTrade when H triggers
-bool lightningBypassDayFilter = hiddenDivLightningBuy or hiddenDivLightningSell
+bool lightningBypassDayFilter = HiddenDivBuy or HiddenDivSell
 
-// 3. Extreme Reversal (independent signal, standard dayAllowed gate)
+// 4. Extreme Reversal (Independent signal, standard dayAllowed gate)
 bool ExtremeReversalBuy  = Elongsignal and longAllowed and dayAllowed
 bool ExtremeReversalSell = Eshortsignal and shortAllowed and dayAllowed
 
-// 4. Filter out individual trades so they don't fire when Lightning or Extreme Reversal fires
-bool JustMissileBuy  = CanBuy and not LightningBuy and not ExtremeReversalBuy and longAllowed and dayAllowed
-bool JustMissileSell = CanSell and not LightningSell and not ExtremeReversalSell and shortAllowed and dayAllowed
+// 5. Filter out individual trades so they don't fire when Lightning, Extreme Reversal, or Divergences fire
+bool JustMissileBuy  = CanBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
+bool JustMissileSell = CanSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
 
-bool JustScalpBuy  = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and longAllowed and dayAllowed
-bool JustScalpSell = ScalpSell and not LightningSell and not ExtremeReversalSell and shortAllowed and dayAllowed
+bool JustScalpBuy    = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
+bool JustScalpSell   = ScalpSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
 
 
 // ====================================================================
 // 7. DECLARE ARRAYS & INITIALIZE NEW TRADES 
 // ====================================================================
-var array<TradeLogic>   missileSessions   = array.new<TradeLogic>()
-var array<TradeVisuals> missileVisualsArr = array.new<TradeVisuals>()
+var array<TradeLogic>   missileSessions       = array.new<TradeLogic>()
+var array<TradeVisuals> missileVisualsArr     = array.new<TradeVisuals>()
 
-var array<TradeLogic>   scalpSessions     = array.new<TradeLogic>()
-var array<TradeVisuals> scalpVisualsArr   = array.new<TradeVisuals>()
+var array<TradeLogic>   scalpSessions         = array.new<TradeLogic>()
+var array<TradeVisuals> scalpVisualsArr       = array.new<TradeVisuals>()
 
-var array<TradeLogic>   currentSessions   = array.new<TradeLogic>()
-var array<TradeVisuals> currentVisualsArr = array.new<TradeVisuals>()
+var array<TradeLogic>   currentSessions       = array.new<TradeLogic>()
+var array<TradeVisuals> currentVisualsArr     = array.new<TradeVisuals>()
+
+var array<TradeLogic>   divergenceSessions   = array.new<TradeLogic>()
+var array<TradeVisuals> divergenceVisualsArr = array.new<TradeVisuals>()
+
+var array<TradeLogic>   hiddenDivSessions    = array.new<TradeLogic>()
+var array<TradeVisuals> hiddenDivVisualsArr  = array.new<TradeVisuals>()
 
 var array<TradeLogic>   extremeRevSessions   = array.new<TradeLogic>()
 var array<TradeVisuals> extremeRevVisualsArr = array.new<TradeVisuals>()
 
+// ── Initialize & Push Trades for All Decoupled Signal Categories ───
 initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message)
 initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message)
 initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, DivergenceBuy, DivergenceSell, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, HiddenDivBuy, HiddenDivSell, 'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE', hiddenDivSessions, hiddenDivVisualsArr, z1, dX, mX, d1_message)
 initializeAndPushTrade(settings, ExtremeReversalBuy, ExtremeReversalSell, 'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL', extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message)
 
+
 // ====================================================================
-// 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS ELEGANTLY)
+// 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS)
 // ====================================================================
 bool  triggerTrailingSL = false
 float rangeTrailingSL   = 0.0
 
-// This single powerful function handles ALL arrays perfectly, including deletions!
 processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool triggerTrailingSL, float rangeTrailingSL) =>
     if array.size(sessionsArr) > 0
         for i = array.size(sessionsArr) - 1 to 0
@@ -3185,12 +3197,9 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
                 trade.forceClosed := true
 
             float prevSL = trade.slLevel
-            bool wasUnfilled = not trade.hasHitEntry
             
-            // ✅ Evaluates TP, SL, and EMA Exit dynamically!
+            // Evaluates TP, SL, and Trailing Stop
             evaluateTradeProgress(settings, trade, triggerTrailingSL, rangeTrailingSL)
-
-
 
             if session.islastbar_regular and timeframe.isintraday and not trade.isClosed
                 terminateTrade(settings, trade)
@@ -3202,54 +3211,63 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
                 updateTradeVisuals(settings, trade, vis)
                 signalLabelUpdate(settings, trade, vis)
             else
-                // The split-second it mathematically closes, finalize and clean up!
+                // Finalize upon closure & delete visuals
                 string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
-
-                // ✅ DELETES VISUALS INSTANTLY
-                deleteTradeVisuals(vis)
-
+                deleteTradeVisuals(vis) 
                 array.remove(sessionsArr, i)
                 array.remove(visualsArr, i)
                 0
 
-// ✅ EXECUTE ALL 4 ARRAYS IN 4 CLEAN LINES
-processTradeArray(settings, missileSessions, missileVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, scalpSessions,   scalpVisualsArr,   z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, currentSessions, currentVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, missileSessions,    missileVisualsArr,    z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, scalpSessions,      scalpVisualsArr,      z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, currentSessions,    currentVisualsArr,    z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, hiddenDivSessions,  hiddenDivVisualsArr,  z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 
+// ====================================================================
+// 9. ON-CHART PLOTTINGS & VISUAL MARKERS
+// ====================================================================
 
-// ✅ MISSILE PLOTS (Now perfectly synced with the engine)
-plotshape(JustMissileBuy and dayAllowed and longAllowed,  title = 'Long Signal',  style = shape.triangleup,   location = location.belowbar, color = color.green, size = size.small)
-plotshape(JustMissileSell and dayAllowed and shortAllowed, title = 'Short Signal', style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
+// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS
+plotshape(DivergenceBuy,  title = "Bullish Regular Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "DIV", textcolor = color.black, size = size.small)
+plotshape(DivergenceSell, title = "Bearish Regular Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "DIV", textcolor = color.white, size = size.small)
 
-// ✅ SCALP PLOTS (Now perfectly synced with the engine)
-plotshape(JustScalpBuy and dayAllowed and longAllowed,  title = 'Long Scalp',  style = shape.diamond, location = location.belowbar, color = color.green,   size = size.small)
-plotshape(JustScalpSell and dayAllowed and shortAllowed, title = 'Short Scalp', style = shape.diamond, location = location.abovebar, color = color.red,  size = size.small)
+// 🔵 / 🟠 2. HIDDEN DIVERGENCE (CPR CONFLUENCE) PLOTS
+plotshape(HiddenDivBuy,  title = "Bullish Hidden Divergence (CPR)", style = shape.labelup,   location = location.belowbar, color = color.teal,   text = "HDIV", textcolor = color.white, size = size.small)
+plotshape(HiddenDivSell, title = "Bearish Hidden Divergence (CPR)", style = shape.labeldown, location = location.abovebar, color = color.orange, text = "HDIV", textcolor = color.black, size = size.small)
 
-// ⚡ LIGHTNING & BOUNCE PLOTS
-plotshape(BounceUp and not LightningBuy and dayAllowed and longAllowed,    title = 'Long Call',  style = shape.arrowup  ,   location = location.belowbar, color = color.green,  size = size.large)
-plotshape(BounceDown and not LightningSell and dayAllowed and shortAllowed, title = 'Long Put', style = shape.arrowdown, location = location.abovebar, color = color.red,  size = size.large)
+// ⚡ 3. LIGHTNING PLOTS
+plotchar(LightningBuy  and dayAllowed and longAllowed,  title = "Lightning Buy (Star)",  char = '★', location = location.belowbar, color = color.teal,   size = size.normal)
+plotchar(LightningSell and dayAllowed and shortAllowed, title = "Lightning Sell (Star)", char = '★', location = location.abovebar, color = color.maroon, size = size.normal)
+plotchar(LightningBuy  and dayAllowed and longAllowed,  title = "Lightning Buy (Bolt)",  char = '⚡', location = location.belowbar, color = color.lime,   size = size.normal)
+plotchar(LightningSell and dayAllowed and shortAllowed, title = "Lightning Sell (Bolt)", char = '⚡', location = location.abovebar, color = color.lime,   size = size.normal)
 
-plotchar(LightningBuy and dayAllowed and longAllowed,  title="Lightning Buy",  char='★', location=location.belowbar, color = color.teal,    size = size.normal)
-plotchar(LightningSell and dayAllowed and shortAllowed, title="Lightning Sell", char='★', location=location.abovebar, color = color.maroon, size = size.normal)
+// 🔥 4. EXTREME REVERSAL PLOTS
+plotshape(ExtremeReversalBuy,  title = "Bullish Extreme Reversal", style = shape.arrowup,   location = location.belowbar, color = color.aqua,    size = size.normal, text = "EXT REV", textcolor = color.aqua)
+plotshape(ExtremeReversalSell, title = "Bearish Extreme Reversal", style = shape.arrowdown, location = location.abovebar, color = color.fuchsia, size = size.normal, text = "EXT REV", textcolor = color.fuchsia)
 
-plotchar(LightningBuy and dayAllowed and longAllowed,  title="Lightning Buy",  char='⚡', location=location.belowbar, color=color.lime, size=size.normal)
-plotchar(LightningSell and dayAllowed and shortAllowed, title="Lightning Sell", char='⚡', location=location.abovebar, color=color.lime, size=size.normal)
+// 🚀 5. MISSILE PLOTS
+plotshape(JustMissileBuy  and dayAllowed and longAllowed,  title = "Long Missile",  style = shape.triangleup,   location = location.belowbar, color = color.green, size = size.small)
+plotshape(JustMissileSell and dayAllowed and shortAllowed, title = "Short Missile", style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
+
+// 💎 6. SCALP PLOTS
+plotshape(JustScalpBuy  and dayAllowed and longAllowed,  title = "Long Scalp",  style = shape.diamond, location = location.belowbar, color = color.green, size = size.small)
+plotshape(JustScalpSell and dayAllowed and shortAllowed, title = "Short Scalp", style = shape.diamond, location = location.abovebar, color = color.red,   size = size.small)
 
 // ====================================================================
 // SIGNAL FUNCTIONS 
 // ====================================================================
-LongSignalFunc() => CanBuy
-ShortSignalFunc() => CanSell
-MidSignalFunc() => ScalpBuy
-RejSignalFunc() => ScalpSell
+LongSignalFunc() => JustMissileBuy
+ShortSignalFunc() => JustMissileSell
+MidSignalFunc() => JustScalpBuy
+RejSignalFunc() => JustScalpSell
 CanSignalFunc() => LightningBuy
 ERSignalFunc() => LightningSell
 
 // AST OPTIMIZATION: Call the booleans directly instead of triggering 6 wrapper functions
 SignalFunc() =>
-    [CanBuy, CanSell, ScalpBuy, ScalpSell, LightningBuy, LightningSell]
+    [JustMissileBuy, JustMissileSell, JustScalpBuy, JustScalpSell, LightningBuy, LightningSell]
     
 // ====================================================================
 // TICKER PROCESSING ENGINE & SUBSCRIBER INPUTS

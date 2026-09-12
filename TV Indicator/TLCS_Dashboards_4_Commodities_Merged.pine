@@ -792,6 +792,15 @@ paintX = INRANGEINVALUE ? color.gray : INRANGEINVALUE and (close > dDH_ or close
 mX = INRANGEINVALUE and close > dDL_ and close < dDH_ and close > VAL and close < VAH ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEINVALUE and (close > Ytf_h and close > VAH or close < Ytf_l and close < VAL) or OO < Ytf_l and OO < VAL and OO < DBc or OO > Ytf_h and OO > VAH and OO > DTc ? 'BIG MOVE' : INRANGEOUTOFVALUE and close < Ytf_h and close > Ytf_l ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEOUTOFVALUE and (close > Ytf_h or close < Ytf_l) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL' : OUTOFRANGEVALUE and (close < Ytf_l or close > Ytf_h) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND' : OUTOFRANGEVALUE and close > Ytf_l and close < Ytf_h ? 'TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE' : 'DEBUG'
 paintmX = INRANGEINVALUE and close > dDL_ and close < dDH_ and close > VAL and close < VAH ? color.gray : INRANGEINVALUE and (close > Ytf_h and close > VAH or close < Ytf_l and close < VAL) or OO < Ytf_l and OO < VAL and OO < DBc or OO > Ytf_h and OO > VAH and OO > DTc ? color.fuchsia : INRANGEOUTOFVALUE and close < Ytf_h and close > Ytf_l ? color.black : INRANGEOUTOFVALUE and (close > Ytf_h or close < Ytf_l) ? color.orange : OUTOFRANGEVALUE and (close < Ytf_l or close > Ytf_h) ? color.purple : OUTOFRANGEVALUE and close > Ytf_l and close < Ytf_h ? color.black : color.silver
 
+bool isSidewaysDay = (mX == 'INRANGEINVALUE') or 
+                     (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or 
+                     str.contains(mX, "TRADING RANGE") or 
+                     str.contains(mX, "SIDEWAYS") or 
+                     str.contains(mX, "TYPICAL DAY") or 
+                     (dX == 'IN RANGE \n IN VALUE')
+
+bool dayAllowed = not isSidewaysDay or NCPR
+
 Dx = INRANGEINVALUE ? 'IN RANGE \n IN VALUE' : INRANGEOUTOFVALUE ? 'IN RANGE \n OUT OF VALUE' : OUTOFRANGEVALUE ? 'OUT OF RANGE \n OUT OF VALUE' : 'DEBUG'
 
 Mx = INRANGEINVALUE and close > dDL_ and close < dDH_ and close > VAL and close < VAH ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEINVALUE and (close > Ytf_h and close > VAH or close < Ytf_l and close < VAL) or OO < Ytf_l and OO < VAL and OO < DBc or OO > Ytf_h and OO > VAH and OO > DTc ? 'BIG MOVE' : INRANGEOUTOFVALUE and close < Ytf_h and close > Ytf_l ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEOUTOFVALUE and (close > Ytf_h or close < Ytf_l) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL' : OUTOFRANGEVALUE and (close < Ytf_l or close > Ytf_h) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND' : OUTOFRANGEVALUE and close > Ytf_l and close < Ytf_h ? 'TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE' : 'DEBUG'
@@ -3034,15 +3043,6 @@ bool ScalpSell = (emaCanSell and StepDn)
 // Suppress signal booleans AND their plotshapes on sideways days
 // NCPR exception preserved: narrow CPR compression days still allow signals
 
-bool isSidewaysDay = (mX == 'INRANGEINVALUE') or 
-                     (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or 
-                     str.contains(mX, "TRADING RANGE") or 
-                     str.contains(mX, "SIDEWAYS") or 
-                     str.contains(mX, "TYPICAL DAY") or 
-                     (dX == 'IN RANGE \n IN VALUE')
-
-bool dayAllowed = not isSidewaysDay or NCPR
-
 bool longAllowed  = close < H4
 bool shortAllowed = close > L4
 
@@ -3072,21 +3072,23 @@ bool regBullDiv = (ext_bullishDiv[1] == 1)
 bool regBearDiv = (ext_bearishDiv[1] == 1)
 
 // 1. Standard Lightning (Native Missile+Scalp OR Regular Divergence + Power Candle)
-// Gated by both longAllowed/shortAllowed AND dayAllowed (day types / NCPR)
-bool standardLightningBuy  = ((CanBuy and ScalpBuy)   or (regBullDiv and GrS)) and longAllowed and dayAllowed
-bool standardLightningSell = ((CanSell and ScalpSell) or (regBearDiv and ReS)) and shortAllowed and dayAllowed
+// Native Missile+Scalp requires dayAllowed (day types / NCPR).
+// Regular Divergence (regBullDiv / regBearDiv) is EXEMPT from day types and NCPR gating.
+bool trendLightningBuy      = (CanBuy and ScalpBuy) and dayAllowed
+bool trendLightningSell     = (CanSell and ScalpSell) and dayAllowed
+bool regDivLightningBuy     = (regBullDiv and GrS)
+bool regDivLightningSell    = (regBearDiv and ReS)
+bool standardLightningBuy   = (trendLightningBuy or regDivLightningBuy) and longAllowed
+bool standardLightningSell  = (trendLightningSell or regDivLightningSell) and shortAllowed
 
 // 2. Hidden Divergence Lightning (H within CPR + Confirmation + Power Candle)
-// EXEMPT from day types and NCPR! Only longAllowed / shortAllowed (H4/L4 boundary) applies
+// EXEMPT from day types and NCPR! Only longAllowed / shortAllowed applies
 bool hiddenDivLightningBuy  = (hiddenBullishConfirmed and GrS) and longAllowed
 bool hiddenDivLightningSell = (hiddenBearishConfirmed and ReS) and shortAllowed
 
 // Combined Lightning Buy / Sell
 bool LightningBuy  = standardLightningBuy  or hiddenDivLightningBuy
 bool LightningSell = standardLightningSell or hiddenDivLightningSell
-
-// Flag to bypass day type / sideways filter inside initializeAndPushTrade when H triggers
-bool lightningBypassDayFilter = hiddenDivLightningBuy or hiddenDivLightningSell
 
 // 3. Extreme Reversal (independent signal, standard dayAllowed gate)
 bool ExtremeReversalBuy  = Elongsignal and longAllowed and dayAllowed

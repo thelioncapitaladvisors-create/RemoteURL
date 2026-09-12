@@ -1436,108 +1436,111 @@ isfros(level) =>
 open[ln] < level and math.abs(level - high[ln]) / level * 100 < fo and close[ln] < level or open[ln] > level and math.abs(low[ln] - level) / level * 100 < fo and close[ln] > level or open[ln - 1] < level and math.abs(level - high[ln - 1]) / level * 100 < fo and close[ln - 1] < level or open[ln - 1] > level and math.abs(low[ln - 1] - level) / level * 100 < fo and close[ln - 1] > level
 // Check for level break failure (frontrun or sfp)
 isbreakfailure() =>
-issfp(sup01) ? true : issfp(sup02) ? true : issfp(sup03) ? true : issfp(sup04) ? true : issfp(sup05) ? true : issfp(sup06) ? true : issfp(sup07) ? true : issfp(sup08) ? true : issfp(sup09) ? true : issfp(sup10) ? true : issfp(sup11) ? true : issfp(sup12) ? true : issfp(sup13) ? true : issfp(sup14) ? true : issfp(sup15) ? true : issfp(res01) ? true : issfp(res02) ? true : issfp(res03) ? true : issfp(res04) ? true : issfp(res05) ? true : issfp(res06) ? true : issfp(res07) ? true : issfp(res08) ? true : issfp(res09) ? true : issfp(res10) ? true : issfp(res11) ? true : issfp(res12) ? true : issfp(res13) ? true : issfp(res14) ? true : issfp(res15) ? true : isfros(sup01) ? true : isfros(sup02) ? true : isfros(sup03) ? true : isfros(sup04) ? true : isfros(sup05) ? true : isfros(sup06) ? true : isfros(sup07) ? true : isfros(sup08) ? true : isfros(sup09) ? true : isfros(sup10) ? true : isfros(sup11) ? true : isfros(sup12) ? true : isfros(sup13) ? true : isfros(sup14) ? true : isfros(sup15) ? true : isfros(res01) ? true : isfros(res02) ? true : isfros(res03) ? true : isfros(res04) ? true : isfros(res05) ? true : isfros(res06) ? true : isfros(res07) ? true : isfros(res08) ? true : isfros(res09) ? true : isfros(res10) ? true : isfros(res11) ? true : isfros(res12) ? true : isfros(res13) ? true : isfros(res14) ? true : isfros(res15) ? true : false
+    issfp(sup01) ? true : issfp(sup02) ? true : issfp(sup03) ? true : issfp(sup04) ? true : issfp(sup05) ? true : issfp(sup06) ? true : issfp(sup07) ? true : issfp(sup08) ? true : issfp(sup09) ? true : issfp(sup10) ? true : issfp(sup11) ? true : issfp(sup12) ? true : issfp(sup13) ? true : issfp(sup14) ? true : issfp(sup15) ? true : issfp(res01) ? true : issfp(res02) ? true : issfp(res03) ? true : issfp(res04) ? true : issfp(res05) ? true : issfp(res06) ? true : issfp(res07) ? true : issfp(res08) ? true : issfp(res09) ? true : issfp(res10) ? true : issfp(res11) ? true : issfp(res12) ? true : issfp(res13) ? true : issfp(res14) ? true : issfp(res15) ? true : isfros(sup01) ? true : isfros(sup02) ? true : isfros(sup03) ? true : isfros(sup04) ? true : isfros(sup05) ? true : isfros(sup06) ? true : isfros(sup07) ? true : isfros(sup08) ? true : isfros(sup09) ? true : isfros(sup10) ? true : isfros(sup11) ? true : isfros(sup12) ? true : isfros(sup13) ? true : isfros(sup14) ? true : isfros(sup15) ? true : isfros(res01) ? true : isfros(res02) ? true : isfros(res03) ? true : isfros(res04) ? true : isfros(res05) ? true : isfros(res06) ? true : isfros(res07) ? true : isfros(res08) ? true : isfros(res09) ? true : isfros(res10) ? true : isfros(res11) ? true : isfros(res12) ? true : isfros(res13) ? true : isfros(res14) ? true : isfros(res15) ? true : false
+
 // Custom Pivot Function
 p = Top // Get pivot
 lt = ln // Offset of pivot line
 s = intraMid
 q = Bottom // Get pivot
 lb = ln // Offset of pivot line
+
 // Find an unused pivot level and use it
 // Find an unused resistance pivot level (p = Top)
 if not na(p)
-if na(res01)
-l_res01 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res01 := p
-else if na(res02)
-l_res02 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res02 := p
-else if na(res03)
-l_res03 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res03 := p
-else if na(res04)
-l_res04 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res04 := p
-else if na(res05)
-l_res05 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res05 := p
-else if na(res06)
-l_res06 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res06 := p
-else if na(res07)
-l_res07 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res07 := p
-else if na(res08)
-l_res08 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res08 := p
-else if na(res09)
-l_res09 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res09 := p
-else if na(res10)
-l_res10 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res10 := p
-else if na(res11)
-l_res11 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res11 := p
-else if na(res12)
-l_res12 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res12 := p
-else if na(res13)
-l_res13 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res13 := p
-else if na(res14)
-l_res14 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res14 := p
-else if na(res15)
-l_res15 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
-res15 := p
+    if na(res01)
+        l_res01 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res01 := p
+    else if na(res02)
+        l_res02 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res02 := p
+    else if na(res03)
+        l_res03 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res03 := p
+    else if na(res04)
+        l_res04 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res04 := p
+    else if na(res05)
+        l_res05 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res05 := p
+    else if na(res06)
+        l_res06 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res06 := p
+    else if na(res07)
+        l_res07 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res07 := p
+    else if na(res08)
+        l_res08 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res08 := p
+    else if na(res09)
+        l_res09 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res09 := p
+    else if na(res10)
+        l_res10 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res10 := p
+    else if na(res11)
+        l_res11 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res11 := p
+    else if na(res12)
+        l_res12 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res12 := p
+    else if na(res13)
+        l_res13 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res13 := p
+    else if na(res14)
+        l_res14 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res14 := p
+    else if na(res15)
+        l_res15 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res15 := p
+
 // Find an unused support pivot level (q = Bottom)
 if not na(q)
-if na(sup01)
-l_sup01 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup01 := q
-else if na(sup02)
-l_sup02 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup02 := q
-else if na(sup03)
-l_sup03 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup03 := q
-else if na(sup04)
-l_sup04 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup04 := q
-else if na(sup05)
-l_sup05 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup05 := q
-else if na(sup06)
-l_sup06 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup06 := q
-else if na(sup07)
-l_sup07 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup07 := q
-else if na(sup08)
-l_sup08 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup08 := q
-else if na(sup09)
-l_sup09 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup09 := q
-else if na(sup10)
-l_sup10 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup10 := q
-else if na(sup11)
-l_sup11 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup11 := q
-else if na(sup12)
-l_sup12 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup12 := q
-else if na(sup13)
-l_sup13 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup13 := q
-else if na(sup14)
-l_sup14 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup14 := q
-else if na(sup15)
-l_sup15 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
-sup15 := q
+    if na(sup01)
+        l_sup01 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup01 := q
+    else if na(sup02)
+        l_sup02 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup02 := q
+    else if na(sup03)
+        l_sup03 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup03 := q
+    else if na(sup04)
+        l_sup04 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup04 := q
+    else if na(sup05)
+        l_sup05 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup05 := q
+    else if na(sup06)
+        l_sup06 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup06 := q
+    else if na(sup07)
+        l_sup07 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup07 := q
+    else if na(sup08)
+        l_sup08 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup08 := q
+    else if na(sup09)
+        l_sup09 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup09 := q
+    else if na(sup10)
+        l_sup10 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup10 := q
+    else if na(sup11)
+        l_sup11 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup11 := q
+    else if na(sup12)
+        l_sup12 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup12 := q
+    else if na(sup13)
+        l_sup13 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup13 := q
+    else if na(sup14)
+        l_sup14 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup14 := q
+    else if na(sup15)
+        l_sup15 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup15 := q
 // Break Counter & Invalidation (Resistance)
 if open < res01 and close > res01 or open > res01 and close < res01
 br_res01 := br_res01 + 1
