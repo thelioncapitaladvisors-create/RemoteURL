@@ -208,10 +208,8 @@ function resolveOutcome(s) {
 - **Sorting Logic**:
   - **Losses (`lossTrades`)**: Sorted in ascending magnitude (`Math.abs(a) - Math.abs(b)`), starting with smallest losses on the far left tail and climbing steadily taller towards the central dividing axis.
   - **Wins (`winTrades`)**: Sorted in descending magnitude (`Math.abs(b) - Math.abs(a)`), starting with largest winners adjacent to the central dividing axis and tapering steadily down to smallest winners on the far right tail.
-  - **Breakevens (`beTrades`)**: Centered at the 0.00% dividing transition between losses and wins.
-  - Combined sequence: `[...lossesAscending, ...beTrades, ...winsDescending]`.
-- **Dynamic Central Vertical Dividing Line**: A dashed vertical line (`border-r border-dashed`) is dynamically anchored at the transition point `centerBoundaryPct = ((lossesAscending.length + beTrades.length / 2) / sorted.length) * 100`, providing clean visual symmetry.
-- **X-Axis Bounds**: Left tail displays `Min Loss`, center displays `0.00%` / `B/E`, right tail displays `Min Win`, with the inspection strip highlighting `↑ largest` winner and interactive hover inspections.
+- **Fixed Central 50-50 Split Alignment**: To guarantee maximum visibility across mobile screens and all timeframe selections (`TODAY`, `WEEK`, `MONTH`, `QUARTER`, `YEAR`), the histogram is split into two symmetrical 50% halves with the central vertical dashed line fixed at the exact 50% horizontal center (`left: 50%`), perfectly aligning with the `₹0` / `0.00%` central X-axis boundary.
+- **X-Axis Bounds**: Left tail displays `Min Loss`, center displays `0.00%` / `₹0`, right tail displays `Min Win`, with the inspection strip highlighting `↑ largest` winner and interactive hover inspections.
 
 ## UI Dynamic State Presentation
 - **Active Trade Targets**: When a trade is `ACTIVE`/`OPEN` and has no exit price, the UI MUST NOT display a blank or `---` "EXITED AT" box. Instead, dynamically flip the box to display the upcoming Take Profit level (labeled "TARGET" in amber styling). It should only flip to a green "EXITED AT" box upon trade closure.
