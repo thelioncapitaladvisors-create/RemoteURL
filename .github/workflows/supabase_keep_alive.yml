@@ -1,0 +1,42 @@
+name: Supabase 24/7 Keep-Alive Sentinel
+
+on:
+  schedule:
+    # Runs every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) every day
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  supabase-keep-alive:
+    name: Ping Supabase Database
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API (Active Project dwepduvhzuhzeehbeaaz)
+        run: |
+          echo "========================================================"
+          echo "⏰ Running 24/7 Supabase Keep-Alive Sentinel..."
+          echo "========================================================"
+          
+          SUPABASE_URL="https://dwepduvhzuhzeehbeaaz.supabase.co"
+          SUPABASE_ANON="sb_publishable_xl3kUBHckB0hTH8n4k3esA_m1qe0stu"
+          
+          START_TIME=$(date +%s%3N)
+          RESPONSE=$(curl -s -w "
+%{http_code}" -X GET             "${SUPABASE_URL}/rest/v1/signals?select=id&limit=1"             -H "apikey: ${SUPABASE_ANON}"             -H "Authorization: Bearer ${SUPABASE_ANON}")
+          
+          END_TIME=$(date +%s%3N)
+          LATENCY=$((END_TIME - START_TIME))
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Target: ${SUPABASE_URL}"
+          echo "HTTP Status Code: ${HTTP_CODE}"
+          echo "Latency: ${LATENCY}ms"
+          echo "Response Body: ${BODY}"
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 500 ]; then
+            echo "✅ Supabase project successfully pinged! Inactivity timer reset."
+          else
+            echo "⚠️ Unexpected response: ${HTTP_CODE}"
+          fi
