@@ -2808,7 +2808,21 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
     else if trade.divExitTriggered
         _outcome := 'Divergence Exit'
     else if trade.emaExitTriggered
-        _outcome := 'Hit EMA'
+        float _ep = trade.closeLevel
+        bool isTp4 = not na(trade.tp4Level) and (math.abs(trade.tp4Level - _ep) <= 0.001 or (trade.tp4Level > 0 and math.abs(trade.tp4Level - _ep) / trade.tp4Level <= 0.002))
+        bool isTp3 = not na(trade.tp3Level) and (math.abs(trade.tp3Level - _ep) <= 0.001 or (trade.tp3Level > 0 and math.abs(trade.tp3Level - _ep) / trade.tp3Level <= 0.002))
+        bool isTp2 = not na(trade.tp2Level) and (math.abs(trade.tp2Level - _ep) <= 0.001 or (trade.tp2Level > 0 and math.abs(trade.tp2Level - _ep) / trade.tp2Level <= 0.002))
+        bool isTp1 = not na(trade.tp1Level) and (math.abs(trade.tp1Level - _ep) <= 0.001 or (trade.tp1Level > 0 and math.abs(trade.tp1Level - _ep) / trade.tp1Level <= 0.002))
+        if isTp4
+            _outcome := 'Completed TP4'
+        else if isTp3
+            _outcome := 'Completed TP3'
+        else if isTp2
+            _outcome := 'Completed TP2'
+        else if isTp1
+            _outcome := 'Completed TP1'
+        else
+            _outcome := 'Hit EMA'
     else if trade.tp4Triggered
         _outcome := 'Completed TP4'
     else if trade.tp3Triggered

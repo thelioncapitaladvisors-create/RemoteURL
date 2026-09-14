@@ -2625,7 +2625,11 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
         bool isEmaCross = isLong_ ? close < trade.slLevel : close > trade.slLevel
         if isEmaCross
             trade.isClosed         := true
-            trade.emaExitTriggered := true
+            bool isEmaAdvanced     = isLong_ ? (not na(fMed_EMA) and fMed_EMA > trade.tp3Level) : (not na(fMed_EMA) and fMed_EMA < trade.tp3Level)
+            if isEmaAdvanced
+                trade.emaExitTriggered := true
+            else
+                trade.slTriggered      := true
             trade.closeLevel       := close
             profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, isLong_, trade.positionRemaining, false)
             trade.positionRemaining := 0
@@ -2798,9 +2802,11 @@ signalLabelUpdate(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
 
 finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
     string _outcome = 'Unknown'
-    if trade.slTriggered
+    if not trade.hasHitEntry
+        _outcome := 'Cancelled'
+    else if trade.slTriggered
         if trade.tp4Triggered
-            _outcome := 'Hit EMA'
+            _outcome := 'Hit TP3 Trailing'
         else if trade.tp3Triggered
             _outcome := 'Hit TP2 Trailing'
         else if trade.tp2Triggered
@@ -2813,6 +2819,8 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
         _outcome := 'Divergence Exit'
     else if trade.emaExitTriggered
         _outcome := 'Hit EMA'
+    else if trade.forceClosed
+        _outcome := 'EOD Exit'
     else if trade.tp4Triggered
         _outcome := 'Completed TP4'
     else if trade.tp3Triggered
@@ -2821,8 +2829,6 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
         _outcome := 'Completed TP2'
     else if trade.tp1Triggered
         _outcome := 'Completed TP1'
-    else if not trade.hasHitEntry
-        _outcome := 'Cancelled'
         
     
     // ✅ Single-line ternary operator prevents indentation syntax errors (CE10013)

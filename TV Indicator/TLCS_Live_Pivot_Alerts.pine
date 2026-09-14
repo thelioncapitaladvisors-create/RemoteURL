@@ -2635,41 +2635,33 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
         bool isEmaCross = isLong_ ? close < trade.slLevel : close > trade.slLevel
         if isEmaCross
             trade.isClosed         := true
-            trade.emaExitTriggered := true
+            bool isEmaAdvanced     = isLong_ ? (not na(fMed_EMA) and fMed_EMA > trade.tp3Level) : (not na(fMed_EMA) and fMed_EMA < trade.tp3Level)
+            if isEmaAdvanced
+                trade.emaExitTriggered := true
+            else
+                trade.slTriggered      := true
             trade.closeLevel       := close
             profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, isLong_, trade.positionRemaining, false)
             trade.positionRemaining := 0
 
-    // Divergence Exit (V1.1: Hidden Div Disabled + Price Action Confirmation)
-    // ─────────────────────────────────────────────────────────────────────
-    // RULE 1 (OR): Regular Divergence fires NOW → exit immediately
-    //   Regular divergences (Price LL + Osc HL, or Price HH + Osc LH) are
-    //   high-conviction reversal signals. No confirmation delay needed.
-    //
-    // RULE 2 (OR): ANY divergence (incl. Hidden) fired 1 bar ago
-    //   → exit ONLY if the NEXT candle confirms the reversal direction.
-    //   This prevents temporary hidden divergences (like the USDCAD case)
-    //   from prematurely closing profitable trades that resume trending.
-    //
-    // Combined: exit = (Regular Div NOW) OR (Any Div [1] + price confirms)
-    // ─────────────────────────────────────────────────────────────────────
-
-      // Divergence Exit (Requires 2 consecutive closed candles to confirm reversal)
+      // Divergence Exit
     if divExitActiveInput and not trade.isClosed and trade.hasHitEntry
 
-        // --- 2-Candle Confirmed Divergence Exit ---
-        // Prevents premature exits from repainting or 1-bar unconfirmed flashes.
-        // Requires divergence signal on bar [1] or [2] PLUS 2 consecutive closed candles of reversal.
-        bool anyBearishDivActive = (ext_bearishDiv[1] == 1) or (ext_bearishHiddenDiv[1] == 1) or (ext_bearishDiv[2] == 1) or (ext_bearishHiddenDiv[2] == 1)
-        bool anyBullishDivActive = (ext_bullishDiv[1] == 1) or (ext_bullishHiddenDiv[1] == 1) or (ext_bullishDiv[2] == 1) or (ext_bullishHiddenDiv[2] == 1)
+        // --- Filter 1: REGULAR Divergence fires NOW → immediate exit ---
+        bool regularBearishDivNow = (ext_bearishDiv == 1)
+        bool regularBullishDivNow = (ext_bullishDiv == 1)
+        bool isRegularDivExit = (isLong_ and regularBearishDivNow) or (not isLong_ and regularBullishDivNow)
 
-        // 2 consecutive closed candles confirming direction reversal
-        bool bearish2BarConfirm = anyBearishDivActive and (close < open) and (close[1] < open[1]) and (close < close[1])
-        bool bullish2BarConfirm = anyBullishDivActive and (close > open) and (close[1] > open[1]) and (close > close[1])
+        // --- Filter 2: ANY divergence (incl. hidden) fired 1 bar ago ---
+        //     Exit ONLY if the current candle confirms the direction shift
+        //     Confirmation = candle closes against the trade AND below/above prior close
+        bool anyBearishDiv1Ago = (ext_bearishDiv[1] == 1) or (ext_bearishHiddenDiv[1] == 1)
+        bool anyBullishDiv1Ago = (ext_bullishDiv[1] == 1) or (ext_bullishHiddenDiv[1] == 1)
+        bool bearishPriceConfirm = anyBearishDiv1Ago and (close < open) and (close < close[1])
+        bool bullishPriceConfirm = anyBullishDiv1Ago and (close > open) and (close > close[1])
+        bool isConfirmedDivExit = (isLong_ and bearishPriceConfirm) or (not isLong_ and bullishPriceConfirm)
 
-        bool isConfirmedDivExit = (isLong_ and bearish2BarConfirm) or (not isLong_ and bullish2BarConfirm)
-
-        if isConfirmedDivExit
+        if isRegularDivExit or isConfirmedDivExit
             trade.isClosed          := true
             trade.divExitTriggered  := true 
             trade.closeLevel        := close
@@ -2809,9 +2801,11 @@ signalLabelUpdate(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
 
 finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
     string _outcome = 'Unknown'
-    if trade.slTriggered
+    if not trade.hasHitEntry
+        _outcome := 'Cancelled'
+    else if trade.slTriggered
         if trade.tp4Triggered
-            _outcome := 'Hit EMA'
+            _outcome := 'Hit TP3 Trailing'
         else if trade.tp3Triggered
             _outcome := 'Hit TP2 Trailing'
         else if trade.tp2Triggered
@@ -2824,6 +2818,8 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
         _outcome := 'Divergence Exit'
     else if trade.emaExitTriggered
         _outcome := 'Hit EMA'
+    else if trade.forceClosed
+        _outcome := 'EOD Exit'
     else if trade.tp4Triggered
         _outcome := 'Completed TP4'
     else if trade.tp3Triggered
@@ -2832,8 +2828,6 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
         _outcome := 'Completed TP2'
     else if trade.tp1Triggered
         _outcome := 'Completed TP1'
-    else if not trade.hasHitEntry
-        _outcome := 'Cancelled'
         
     
     // ✅ Single-line ternary operator prevents indentation syntax errors (CE10013)

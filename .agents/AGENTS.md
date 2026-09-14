@@ -22,6 +22,8 @@
 - For arbitrary, continuous trailing stops that close between defined levels, do NOT mathematically guess the closest level. The Pine Script should explicitly send `"status": "Trailing Stop"`.
 - Both the Web and Mobile UIs have a dedicated `TRAIL` (or `Trailing Stop`) bucket to correctly categorize these dynamic, arbitrary exits without polluting the fixed `TP` buckets.
 - **Strict Level vs Outcome Alignment**: If `resolveOutcome(s) === 'LOSS'` (or `exact_pct < 0`), the trade level label MUST NEVER display `TP1`, `TP2`, `TP3`, or `TP4` (even if TradingView payload sent a mismatched `"Completed TP4"` string). If `resolveOutcome(s) === 'LOSS'`, the level label MUST be `SL` (or `EMA`/`DIV`/`EOD`). Conversely, if `resolveOutcome(s) === 'WIN'` (or `exact_pct > 0`), the level label MUST NEVER display `SL` or `B/E`. (Winning trades that hit a breakeven trailing stop should be labeled as `TRAIL`). Level resolution functions (`getExitLevel`, `getDisplayExitLevel`, `outcomePill`) must enforce canonical outcome validation.
+- **Pre-Generated Take Profit Priority over EMA Exits**: For winning trades, when TradingView triggers an EMA exit, the application checks if the `exit_price` matches a pre-generated TP level (`TP4`, `TP3`, `TP2`, `TP1`) within the $\pm 0.2\%$ proximity window. If matched, the exact exited level MUST be denoted (e.g. `TP3`, `TRAIL (TP3)`). ONLY when a winning trade exits on dynamic EMA without matching any pre-generated TP level may it be shown as `EMA`.
+- **Post-TP4 Trailing Stop Hierarchy**: Once TP4 is reached, the trailing stop is locked at TP3 (`trade.tp3Level`). If price pulls back and hits that stop loss, it evaluates cleanly to `Hit TP3 Trailing`. If price crosses the active EMA before hitting TP3, it evaluates to `Hit EMA`. If closed at regular session end, it evaluates to `EOD Exit`.
 
 ## Symbol Normalization and Market Categorization
 - ALWAYS normalize symbol names before performing market category checks (e.g., strip exchange prefixes like `NSE:`, `TVC:`, and continuous suffix `1!`). Use the normalized/cleaned symbol for list-based matching.
@@ -193,10 +195,42 @@ function resolveOutcome(s) {
 - To avoid Pine Script's inherent intra-candle high/low ambiguity, the script must check the candle's `close` price against the new breakeven SL (instead of checking `low` or `high`).
 - If the candle wicks TP1 and violently reverses to close below breakeven on the exact same bar, the engine forcefully terminates the trade.
 
-## Granular Exit Labeling (No Generic 'Hit SL')
+## Granular Exit Labeling & Canonical finalizeTrade Block
 - The Pine Script must definitively label the specific mechanism of exit in the `status` string instead of a generic "Hit SL".
-- The string should be mapped to precise conditions: e.g., `"Hit Initial SL"`, `"Hit B/E"`, `"Hit TP1 Trailing"`, `"Trailing Stop"`, `"Hit EMA"`, `"Divergence Exit"`, `"Invalidated"`, or `"EOD Exit (TP1)"`. 
+- The string should be mapped to precise conditions: e.g., `"Hit Initial SL"`, `"Hit B/E"`, `"Hit TP1 Trailing"`, `"Hit TP2 Trailing"`, `"Hit TP3 Trailing"`, `"Trailing Stop"`, `"Hit EMA"`, `"Divergence Exit"`, `"EOD Exit"`, `"Cancelled"`, or `"Completed TP1/2/3/4"`. 
 - This removes all ambiguity on the backend and ensures that the exact reason for the mathematically derived WIN/LOSS/BREAKEVEN categorization is explicitly recorded and displayed in the UI logs.
+- **Canonical Pine Script `finalizeTrade` Implementation**:
+  ```pine
+  finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
+      string _outcome = 'Unknown'
+      if not trade.hasHitEntry
+          _outcome := 'Cancelled'
+      else if trade.slTriggered
+          if trade.tp4Triggered
+              _outcome := 'Hit TP3 Trailing'
+          else if trade.tp3Triggered
+              _outcome := 'Hit TP2 Trailing'
+          else if trade.tp2Triggered
+              _outcome := 'Hit TP1 Trailing'
+          else if trade.tp1Triggered
+              _outcome := 'Hit B/E'
+          else
+              _outcome := 'Hit Initial SL'
+      else if trade.divExitTriggered
+          _outcome := 'Divergence Exit'
+      else if trade.emaExitTriggered
+          _outcome := 'Hit EMA'
+      else if trade.forceClosed
+          _outcome := 'EOD Exit'
+      else if trade.tp4Triggered
+          _outcome := 'Completed TP4'
+      else if trade.tp3Triggered
+          _outcome := 'Completed TP3'
+      else if trade.tp2Triggered
+          _outcome := 'Completed TP2'
+      else if trade.tp1Triggered
+          _outcome := 'Completed TP1'
+  ```
 
 ## Strict Prohibition on Artificial Logic (No Continuous Trailing SL)
 - The system must remain utterly rigid. NEVER introduce artificial backend logic to forcefully overrule definitively granular Pine Script strings (e.g., `"Hit B/E"`, `"Hit TP1 Trailing"`).
@@ -288,10 +322,11 @@ function resolveOutcome(s) {
 - ALL metric generators must strictly filter and group trades by calling `resolveOutcome(s) === 'WIN'` and `resolveOutcome(s) === 'LOSS'` FIRST, and only then applying `Math.abs(getExactPct(s))` to the appropriate numerator or denominator.
 
 ## UI Bifurcation (Filtering vs Badging)
-- **Bucket Filtering:** `getExitLevel(s)` MUST strictly prioritize dynamic exits (`TRAIL`, `EOD`, `EMA`, `DIV`, `B/E`) over fixed Take Profit buckets (`TP1`, `TP2`). If a trade hits a trailing stop at TP2, its bucket filter classification is rigorously **TRAIL**, ensuring it shows up when the user clicks the TRAIL filter.
+- **Bucket Filtering:** `getExitLevel(s)` MUST strictly prioritize dynamic exits (`TRAIL`, `EOD`, `EMA`, `DIV`, `B/E`) over fixed Take Profit buckets (`TP1`, `TP2`, `TP3`, `TP4`). If a trade hits a trailing stop at TP2 or TP3, its bucket filter classification is rigorously **TRAIL**, ensuring it shows up when the user clicks the TRAIL filter.
 - **UI Badging:** A separate `getDisplayExitLevel(s)` function MUST be used for generating the visual badge text (e.g., the badge next to the strategy name). This function extracts the *precise mathematical or mapped level* where the dynamic exit occurred.
-- For trailing stops: If `status="Hit TP2 Trailing"`, the badge must render as **`TRAIL (TP2)`**. If simply `"Trailing Stop"`, the badge renders as **`TRAIL`**.
-- For EOD Exits: If `status="EOD Exit (SL)"`, the badge explicitly extracts and renders **`SL`**. For `"EOD Exit (TP1)"`, the badge renders **`TP1`**. The trade still fundamentally belongs to the EOD filter bucket.
+- For trailing stops: If `status="Hit TP2 Trailing"`, the badge must render as **`TRAIL (TP2)`**. If `status="Hit TP3 Trailing"`, the badge must render as **`TRAIL (TP3)`**. If simply `"Trailing Stop"`, the badge renders as **`TRAIL`**.
+- For EMA exits: If a winning trade triggers an EMA exit but `exit_price` matches a pre-generated TP level (`TP4`, `TP3`, `TP2`, `TP1`), the badge MUST denote the exact matched level (e.g. **`TP3`**). Only when no pre-generated TP level is matched does it display **`EMA`**.
+- For EOD Exits: If `status="EOD Exit (SL)"`, the badge explicitly extracts and renders **`SL`**. For `"EOD Exit (TP1)"`, the badge renders **`TP1`**. If general EOD, renders **`EOD`**. The trade still fundamentally belongs to the EOD filter bucket.
 
 - The EOD Cron job (`eod-close/route.ts`) must never rely on a narrow, strict array of status strings (`['Active', 'OPEN', 'Open', 'Limit Order Placed']`) to fetch unexecuted limit orders, because UI re-labeling or slight webhook variations (e.g. `status="ACTIVE LIMIT"`) will cause those trades to be completely ignored by the cron, permanently inflating active counts.
 - The cron query must broadly fetch all potentially active signals by checking if `outcome` is `'OPEN'` (or null) or `status` contains 'active', 'limit', or 'open' (`.or('outcome.eq.OPEN,outcome.is.null,status.ilike.%active%,status.ilike.%limit%,status.ilike.%open%')`).
@@ -1095,6 +1130,17 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - Scalp: Green Diamond (`shape.diamond`) / Red Diamond (`shape.diamond`)
   - Bounce: Large Green Arrow Up (`BounceUp`) / Large Red Arrow Down (`BounceDown`)
   - Active Trade Level Visuals: Entry level (`⏳ ` when pending unfilled limit, flipping to `🔰 ` or `⚡ ` upon fill), Stop Loss level (`⛔ `), Target level (`🎯 `), and Trailing Diamond (`◆`).
+
+## Virtual Paper Portfolio Simulator & P&L Engine Architecture
+- **Dual P&L Modeling Principles**:
+  - **`NET P&L` (Logs / Edge Intelligence Tab)**: Evaluates a **Normalized Percentage Edge** (`(metadata.exact_pct / 100) × ₹1,00,000`). Standardizes strategy performance to an invariant ₹1 Lakh notional allocation per trade to isolate strategy quality from physical contract multiplier differences.
+  - **`REALIZED P&L` (Screener / Virtual Paper Portfolio Tab)**: Evaluates a **Physical Lot Multiplier Model** (`Points Diff × Contract/Share Multiplier × FX Rate`) across an account balance of ₹10,00,000. Accurately simulates cash returns using actual instrument contract quantities (e.g. 0.1 BTC for Crypto, 65 Qty for NIFTY, 100 Shares for Equities, 100 bbl for MCX/NYMEX Crude, 10,000 Units for Forex).
+- **Paper Portfolio Reset & Signal Integrity (`paperResetTs`)**:
+  - `paperResetTs` MUST default to `null` on mount. It must **NEVER** auto-initialize to `Date.now()` on page load, as doing so erroneously filters out all historical and intraday signals generated before the user opened the browser.
+  - The Paper Portfolio header includes a dedicated **`RESTORE`** button whenever `paperResetTs` is active, allowing users to restore full signal history and undo a previous reset.
+- **Harmonized 6-Metric KPI Tiles**:
+  - All 6 KPI cards across both heading rows in the Virtual Paper Portfolio (`Net Worth`, `Realized P&L`, `Win Rate`, `Expectancy`, `Calmar`, `Avg Win/Loss`) MUST share identical title styling (`text-blue-600 dark:text-blue-400 font-mono font-black uppercase`) and consistent glassmorphic container aesthetics.
+
 
 
 
