@@ -1112,8 +1112,10 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   5. `hiddenDivSessions`: `LONG HIDDEN DIVERGENCE` / `SHORT HIDDEN DIVERGENCE` (`HiddenDivBuy` / `HiddenDivSell`)
   6. `extremeRevSessions`: `LONG EXTREME REVERSAL` / `SHORT EXTREME REVERSAL` (`ExtremeReversalBuy` / `ExtremeReversalSell`)
 - **Divergence Strategies Exemption (Regular `D` & Hidden `H`)**:
-  - **Hidden Divergence (`H`)**: Initiated when candle structure is within CPR boundaries (`hBullInsideCPR` / `hBearInsideCPR`). Strictly EXEMPT from day types and NCPR gating (`dayAllowed`).
-  - **Regular Divergence (`D`)**: Decoupled standalone strategy. Strictly EXEMPT from day types and NCPR gating (`dayAllowed`), requiring only direction and boundary checks (`longAllowed = close < H4`, `shortAllowed = close > L4`).
+  - **No H4 / L4 Boundary Constraints**: Divergence signals do **NOT** follow any H4 / L4 level rules or Camarilla boundary gating. They are pure oscillator-to-price momentum divergence patterns.
+  - **Exempt from Day Types**: Strictly **EXEMPT** from day types, NCPR gating, and breakout level filters (`dayAllowed` / `longAllowed` / `shortAllowed`).
+  - **Hidden Divergence (`H`)**: Initiated when candle structure develops within CPR boundaries (`hBullInsideCPR` / `hBearInsideCPR`).
+  - **Regular Divergence (`D`)**: Decoupled standalone strategy triggered directly upon confirmed multi-swing momentum divergence.
 - **Power Candle Midpoint Bounce & Scalp Architecture**:
   - Power Candles (`GrS` / `ReS`) are discrete reaction candles triggered by momentum + support/resistance rejection (`Gr1..Gr15` / `Ra1..Ra15`).
   - Midpoints (`grsMid` / `resMid`) persist and can signal **multiple trades** on successive pullbacks/bounces until explicitly **invalidated**.
