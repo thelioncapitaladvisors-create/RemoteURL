@@ -172,10 +172,14 @@ function resolveOutcome(s) {
 ## Standard Strategy Filters
 - The 6 standard strategy filters (`LONG MISSILE`, `SHORT MISSILE`, `LONG SCALP`, `SHORT SCALP`, `LONG LIGHTNING`, `SHORT LIGHTNING`) are permanently hardcoded in the INSIGHTS tab of the mobile app to ensure they remain visible even on days with 0 active trades.
 
-## Strict Prohibition on Unilateral Logic & Fallback Changes
-- Do NOT introduce any "artificial fallback logic" (e.g., mathematically guessing exit prices, guessing missing parameters) unless explicitly requested by the user. If the data from the source (e.g., TradingView payload) is missing, fail gracefully or leave it blank, but do NOT write scripts to arbitrarily guess values.
-- Do NOT unilaterally alter established business logic, categorizations, or definitions (e.g., moving symbols like NIFTY out of the WORLD index if they were previously there) without explicit prior approval from the user.
-- If an optimization or feature request seems to require fundamentally changing how data is parsed, categorized, or handled, you MUST stop and ask the user for permission and explain the proposed architectural shift before writing the code.
+## Strict Prohibition on Unilateral Logic & Fallback Changes (Zero Artificial Fallbacks Rule)
+- **ZERO ARTIFICIAL / HEURISTIC FALLBACKS**: NEVER introduce artificial fallback logic, generic string catch-alls (e.g. `st.includes('TARGET')` mapping to TP1), or synthetic exit assumptions. Absolutely nothing beyond the user's explicit trade logic is permitted in the applications.
+- **NO UNILATERAL HEURISTIC ADDITIONS**: Never add heuristic fallbacks without the user's explicit prior permission and knowledge. If data from the source is missing or ambiguous, fail gracefully or leave it blank, but do NOT write scripts or heuristics to arbitrarily guess values or map generic keywords to specific target tiers.
+- **EXPLICIT TRADE LOGIC ONLY**: The application must strictly rely on:
+  1. Exact mathematical level matching (`exit_price` compared directly with pre-generated `tp4`, `tp3`, `tp2`, `tp1` within $\pm 0.2\%$).
+  2. The canonical, rigid Pine Script exit statuses (`Completed TP1..4`, `Hit Initial SL`, `Hit B/E`, `Hit TP1..3 Trailing`, `Hit EMA`, `Divergence Exit`, `EOD Exit`).
+- Do NOT unilaterally alter established business logic, categorizations, or definitions without explicit prior approval from the user.
+- If an optimization or feature request seems to require fundamentally changing how data is parsed, categorized, or handled, you MUST stop and ask the user for permission and explain the proposed architectural shift before writing any code.
 
 ## Hold Duration & "Real Trade" Timestamps
 - When calculating Hold Duration or displaying timestamps on the UIs, NEVER base calculations strictly on the limit trade entry time (`signal_ts` or `created_at`). Always prioritize `metadata.real_entry_time` (the exact millisecond the limit order filled). Only fall back to `created_at` if `real_entry_time` is missing.
