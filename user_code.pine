@@ -2949,8 +2949,8 @@ checkAnyBounceDown(r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r
 initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message) =>
     // ── H4/L4 HARD GATE (defensive safety net) ──
     // No new LONG trades at or above H4, no new SHORT trades at or below L4
-    bool _buy  = buyCond  and close < H4
-    bool _sell = sellCond and close > L4
+    bool _buy  = buyCond  and low < H4
+    bool _sell = sellCond and high > L4
     // ✅ Tick-Spam Protection: Ensures only 1 trade per bar per category!
     bool alreadyOpenedThisBar = false
     if array.size(sessionsArr) > 0
@@ -3109,8 +3109,8 @@ bool dayAllowed = not isSidewaysDay or NCPR
 bool inValueArea = close > VAL and close < VAH
 bool inCamarillaZone = close > l3 and close < h3
 
-bool longAllowed  = close < H4 and inValueArea and inCamarillaZone
-bool shortAllowed = close > L4 and inValueArea and inCamarillaZone
+bool longAllowed  = low < H4 and inValueArea and inCamarillaZone
+bool shortAllowed = high > L4 and inValueArea and inCamarillaZone
 
 // ── WEBHOOK ZONE STATUS (z1) ──────────────────────────────────
 
