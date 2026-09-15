@@ -1,3 +1,12 @@
+## Strict Fact-Backed Verification Mandate (Zero Speculation & Zero Unilateral Modification Rule)
+- **FACT-BACKED VERIFICATION ONLY**: The AI assistant MUST NEVER answer questions, diagnose trades, explain indicators, or evaluate conditions without first backing claims with verifiable facts (exact source code line inspection, live Supabase database queries, or deterministic mathematical proof).
+- **ZERO ASSUMPTIONS & SPECULATION**: Never assume or guess a trade status, concurrency state, day type, or indicator trigger. Every claim must be demonstrated step-by-step with raw data and exact mathematical calculations.
+- **ZERO UNILATERAL LOGIC ALTERATIONS**: The AI assistant is strictly forbidden from modifying, adding, or deleting Pine Script strategy triggers (`CanBuy`, `CanSell`, session arrays, or execution wrappers) without the user's explicit prior permission and direct instruction.
+- **H4 / L4 LIMIT TOUCH-POINT GATING**:
+  - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
+  - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
+  - Gating must NEVER rely on `close` for limit entry qualification.
+
 ## Version 1.0: System Architecture & Single Source of Truth Rules
 - As of Version 1.0, we have globally deprecated all `r_multiple` and TradingView-provided `outcome_pct` parsing.
 - **NEVER** attempt to extract, parse, or rely on `r_multiple` or `profit_pct` coming from the webhook body payload for performance metrics. 
