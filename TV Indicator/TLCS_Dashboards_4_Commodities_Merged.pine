@@ -3044,8 +3044,8 @@ bool BounceDown = (RangingDown and close < open) and ((high > VAH and open < VAH
 // ====================================================================
 // 6. DECLARE & UPDATE TREND STATES (MISSILE ➔ SCALP ➔ LIGHTNING)
 // ====================================================================
-bool CanBuy  = (emaCanBuy  and MissU) or (emaCanBuy and BounceUp)   or (emaCanBuy and Wlongsig)
-bool CanSell = (emaCanSell and MissD) or (emaCanSell and BounceDown) or (emaCanSell and Wshortsig)
+bool CanBuy  = (emaCanBuy  and MissU) or (emaCanBuy and BounceUp)
+bool CanSell = (emaCanSell and MissD) or (emaCanSell and BounceDown)
 
 // 👉 Update clean trend using strict ternary logic to avoid AST-heavy global if statements
 
