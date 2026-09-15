@@ -2903,6 +2903,12 @@ isValidBounceDown(float srLevel) =>
 isValidBounceUp(float srLevel) =>
     (not na(srLevel)) and low <= srLevel and open >= srLevel and high > srLevel and close > srLevel and close > open
 
+// Helper function to check green bounces across all 15 support levels
+checkAnyBounceUp(s01, s02, s03, s04, s05, s06, s07, s08, s09, s10, s11, s12, s13, s14, s15) => isValidBounceUp(s01) or isValidBounceUp(s02) or isValidBounceUp(s03) or isValidBounceUp(s04) or isValidBounceUp(s05) or isValidBounceUp(s06) or isValidBounceUp(s07) or isValidBounceUp(s08) or isValidBounceUp(s09) or isValidBounceUp(s10) or isValidBounceUp(s11) or isValidBounceUp(s12) or isValidBounceUp(s13) or isValidBounceUp(s14) or isValidBounceUp(s15)
+
+// Helper function to check red rejections across all 15 resistance levels
+checkAnyBounceDown(r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r13, r14, r15) => isValidBounceDown(r01) or isValidBounceDown(r02) or isValidBounceDown(r03) or isValidBounceDown(r04) or isValidBounceDown(r05) or isValidBounceDown(r06) or isValidBounceDown(r07) or isValidBounceDown(r08) or isValidBounceDown(r09) or isValidBounceDown(r10) or isValidBounceDown(r11) or isValidBounceDown(r12) or isValidBounceDown(r13) or isValidBounceDown(r14) or isValidBounceDown(r15)
+
 
 
 
@@ -2923,7 +2929,7 @@ initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string lo
     if (_buy or _sell) and not alreadyOpenedThisBar
         TradeLogic newTrade = initializeTradeSession(settings, _buy ? longName : shortName)
         TradeVisuals newVis = TradeVisuals.new()
-        sendAlert(settings, newTrade, dX, mX, z1, d1_message)
+        sendAlert(settings, newTrade, z1, dX, mX, d1_message)
         if settings.showTPSL
             generateTradeVisuals(settings, newTrade, newVis)
         array.push(sessionsArr, newTrade)
@@ -2947,29 +2953,30 @@ var int   resBar      = na
 var bool  grsExtended = false
 var bool  resExtended = false
 
-// 1. Check bounces on active Power Midpoints (can signal multiple trades)
+// 1. Check bounces on S&R levels using helper functions
+bool bouncedOffSR_Up   = checkAnyBounceUp(sup01, sup02, sup03, sup04, sup05, sup06, sup07, sup08, sup09, sup10, sup11, sup12, sup13, sup14, sup15)
+bool bouncedOffSR_Down = checkAnyBounceDown(res01, res02, res03, res04, res05, res06, res07, res08, res09, res10, res11, res12, res13, res14, res15)
+
+// 2. Check bounces on actual Power Midpoints
 bool bouncedOffActualGrsMid = isValidBounceUp(grsMid)
 bool bouncedOffActualResMid = isValidBounceDown(resMid)
 
-// 2. Invalidation: Clear Midpoints ONLY when price breaks/closes through the level or on new session
-bool grsInvalidated = (not na(grsMid)) and (close < grsMid)
-bool resInvalidated = (not na(resMid)) and (close > resMid)
-
-if grsInvalidated or new_day
+// 3. Clear Midpoints ONLY if the Midpoint itself was bounced on
+if bouncedOffActualGrsMid
     grsMid      := na
     grsBar      := na
     grsExtended := false
 
-if resInvalidated or new_day
+if bouncedOffActualResMid
     resMid      := na
     resBar      := na
     resExtended := false
 
-// 3. Define consolidated Power Candle triggers
-bool GrS = (Gr1 or Gr2 or Gr3 or Gr4 or Gr5 or Gr6 or Gr7 or Gr8 or Gr9 or Gr10 or Gr11 or Gr12 or Gr13 or Gr14 or Gr15)
-bool ReS = (Ra1 or Ra2 or Ra3 or Ra4 or Ra5 or Ra6 or Ra7 or Ra8 or Ra9 or Ra10 or Ra11 or Ra12 or Ra13 or Ra14 or Ra15)
+// 4. Define consolidated Power Candle triggers
+bool GrS = GREEN1 and bouncedOffSR_Up
+bool ReS = RED1 and bouncedOffSR_Down
 
-// 4. Update / establish Midpoints on fresh Power Candles
+// 5. Update / establish Midpoints on fresh Power Candles
 if GrS and not GrS[1]
     grsMid := (high + low) / 2
     grsBar := bar_index
@@ -3038,8 +3045,8 @@ bool CanSell = (emaCanSell and MissD) or (emaCanSell and BounceDown)
 cleanTrendBullish := CanBuy ? true : CanSell ? false : RisingUp ? true : false
 cleanTrendBearish := CanSell ? true : CanBuy ? false : FallingDown ? true : false
 
-bool bouncedOffGrsMid = bouncedOffActualGrsMid
-bool bouncedOffResMid = bouncedOffActualResMid
+bool bouncedOffGrsMid = bouncedOffSR_Up or bouncedOffActualGrsMid
+bool bouncedOffResMid = bouncedOffSR_Down or bouncedOffActualResMid
 
 // -- SCALP SIGNALS --
 StepUp = (cleanTrendBullish or GREEN1) and bouncedOffGrsMid
