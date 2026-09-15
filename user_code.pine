@@ -3025,14 +3025,14 @@ bool bullConds = (mX == 'BIG MOVE') or
      (dX == 'OUT OF RANGE \n OUT OF VALUE') or 
      (c1 == 'CONFIRMED BULLISH') or 
      (c1 == 'REJECTED BEARISH') or 
-     (c1 == 'WATCH')
+     (c1 == 'WATCH') or NCPR
 
 bool bearConds = (mX == 'BIG MOVE') or 
      (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or 
      (dX == 'OUT OF RANGE \n OUT OF VALUE') or 
      (c1 == 'CONFIRMED BEARISH') or 
      (c1 == 'REJECTED BULLISH') or 
-     (c1 == 'WATCH')
+     (c1 == 'WATCH') or NCPR
 
 bool RisingUP    = bullConds
 bool FallingDOWN = bearConds
