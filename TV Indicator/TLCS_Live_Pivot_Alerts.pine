@@ -3032,8 +3032,8 @@ barcolor(ReS ? color.new(#d90b91, 15) : GrS ? color.new(#1eecd8, 11) : na)
 // ====================================================================
 // 6. DECLARE & UPDATE TREND STATES (MISSILE ➔ SCALP ➔ LIGHTNING)
 // ====================================================================
-bool CanBuy  = (emaCanBuy  and MissU) or (emaCanBuy and BounceUp)
-bool CanSell = (emaCanSell and MissD) or (emaCanSell and BounceDown)
+bool CanBuy  = (emaCanBuy  and MissU) or (emaCanBuy and BounceUp)   or (emaCanBuy and Wlongsig)
+bool CanSell = (emaCanSell and MissD) or (emaCanSell and BounceDown) or (emaCanSell and Wshortsig)
 
 cleanTrendBullish := CanBuy ? true : CanSell ? false : RisingUp ? true : false
 cleanTrendBearish := CanSell ? true : CanBuy ? false : FallingDown ? true : false
