@@ -34,6 +34,12 @@
   - Web footers & script cachebusters: `v2.0` / `?v=2.0`.
   - Package versions across all projects: `2.0.0`.
 
+## Layout Integrity & Zero Overlap Mandate
+- **ZERO UI / TEXT OVERLAPPING**: No text, badges, headers, summary rows, or navigational chrome may ever visually collide, truncate unpredictably, or overlap anywhere across the web and mobile applications:
+  - **Bottom Navigation Clearance**: All main terminal scrolling containers (`page.tsx`) must strictly feature `pb-20 sm:pb-24` and `min-h-0` flex bounding to guarantee bottom table rows, status pills, and summary cards never scroll beneath or get obscured by floating bottom tab bars.
+  - **Horizontal Table Column Integrity**: Data tables on mobile with high column density (such as the Markets performance table) must be wrapped inside responsive horizontal scroll containers (`overflow-x-auto hide-scrollbar w-full`) with a defined minimum inner width (e.g., `min-w-[520px]`).
+  - **Consolidated Summary Row Spacing**: Table summary rows displaying both label (`∑ CONSOLIDATED`) and metrics must merge label and count columns (e.g., `col-span-2 flex justify-between`) or provide sufficient fractional grid width to avoid horizontal text collision.
+
 ## Strict Netlify Hosting & Single Infrastructure Rule
 - **NETLIFY ONLY**: The entire system infrastructure (Web Dashboard, Mobile App backend endpoints, Netlify background workers, and Telegram dispatchers) is hosted **EXCLUSIVELY on Netlify** (`thelioncapitalsolutions.com`).
 - **NO VERCEL DEPLOYMENTS EXIST**: Do NOT reference, configure, or troubleshoot Vercel hosting, Vercel routes, or Vercel environment variables. All backend functions (`process-webhook-background.js`, `test-telegram.js`, `cron-heal-outcomes.js`) run as Netlify functions on Netlify servers.

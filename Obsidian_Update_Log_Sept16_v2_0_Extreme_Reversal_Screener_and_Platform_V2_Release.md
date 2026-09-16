@@ -27,7 +27,12 @@ Version 2.0 establishes unified multi-platform filtering and visual recognition 
    - Resolves `Property 'trade_id' does not exist on type 'Signal'` (line 6075) and `Property 'stop_loss' does not exist on type 'Signal'` (line 6142).
    - Validated via local `next build`: 10/10 static pages compiled, 0 linting/type errors.
 
-4. **Platform-Wide Version 2.0 Standardization**:
+4. **Zero Layout & Text Overlap Resolution (Mobile Markets Tab)**:
+   - **Consolidated Summary Row Collision**: In `Tv-Alert-Mobile/src/app/page.tsx`, merged Col 1 and Col 2 into `col-span-2 flex items-center justify-between min-w-0 pr-2`. This prevents `∑ CONSOLIDATED` and `{totalClosed} ({totalWins}W/{totalLosses}L)` from horizontally overlapping on narrow mobile viewports.
+   - **Horizontal Overflow Card Protection**: Wrapped the Market Performance table in an `overflow-x-auto hide-scrollbar w-full` wrapper with a `min-w-[520px]` inner container so columns retain readable proportions on mobile screens without text crowding.
+   - **Bottom Navigation Bar Clearance**: Added `pb-20 sm:pb-24` and `min-h-0` flex bounding to the main terminal scroll container to ensure the floating bottom tab bar (`HUB`, `LOGS`, `SCREENER`, `INSIGHTS`, `MARKETS`, `ANALYTICS`) never obscures the bottom table rows or summary elements.
+
+5. **Platform-Wide Version 2.0 Standardization**:
    - **Mobile Terminal**: Updated header to `TLCS TERMINAL v2.0`, SIEM initialization log to `Terminal V2.0`, and bumped `package.json` to `2.0.0`.
    - **Web Platform**: Updated footers across `dashboard.html`, `metrics.html`, and `scanner.html` to `v2.0`, script cachebusters to `?v=2.0`, login debug badge to `v2.0`, and bumped `package.json` to `2.0.0`.
 
@@ -37,6 +42,7 @@ Version 2.0 establishes unified multi-platform filtering and visual recognition 
 - **Mobile Terminal Repo (`thelioncapital-alerts`)**:
   - `4059965` — `feat: Version 2.0 release - Extreme Reversal screener filter & UI badges`
   - `8bbd1d9` — `fix(types): add trade_id, stop_loss and entry_price to Signal interface`
+  - `559bd0f` — `fix(ui): eliminate text and nav bar overlapping in Markets tab`
 - **Web App Repo (`TLCS_Website`)**:
   - `526e713` — `feat: Version 2.0 release - Extreme Reversal screener matrix, webhook extraction & v2.0 footer bumps`
 - **Root Repo (`RemoteURL`)**:
