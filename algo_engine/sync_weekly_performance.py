@@ -138,12 +138,15 @@ def sweep_unclosed_trades(sb):
                 try: meta = json.loads(meta)
                 except: meta = {}
                 
-            is_limit = ('LIMIT' in st or 'OPEN' in st) and not s.get('updated_at')
+            has_real_entry = bool(meta.get('real_entry_time'))
+            is_limit = (not has_real_entry and ('LIMIT' in st or 'OPEN' in st or s.get('trigger') == 'TradeOpen')) or (('LIMIT' in st or 'OPEN' in st) and not s.get('updated_at'))
             if is_limit:
                 print(f"[SWEEP] Cancelling unexecuted limit order: {sym} ({s.get('id')})")
+                meta['exit_reason'] = 'EXPIRED_LIMIT'
                 sb.table('signals').update({
                     'status': 'CANCELLED',
                     'outcome': 'CANCELLED',
+                    'metadata': meta,
                     'updated_at': now_ist.isoformat()
                 }).eq('id', s.get('id')).execute()
                 swept_count += 1
