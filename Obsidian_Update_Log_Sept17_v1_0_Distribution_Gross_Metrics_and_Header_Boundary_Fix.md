@@ -15,17 +15,17 @@ Version 1.0 introduces enhanced mathematical transparency to the normalized trad
      Directly aligning the displayed numbers with user intuition without losing the mathematical derivation of net performance.
    - **Single-Trade Bounds Retained**: Individual trade extremes (**`Min Loss`**, **`Max Loss`**, **`Max Win`**, **`Min Win`**) remain clearly displayed along the X-axis bounds beneath the symmetric per-trade bell curve.
 
-2. **Screener & Paper Portfolio Header Overflow Fix**:
-   - **Zero Boundary Overflow**: In `Tv-Alert-Mobile/src/app/page.tsx`, updated the header control clusters for both the **TLCS Screener Matrix** and the **Virtual Paper Portfolio**:
-     - Applied `flex-wrap justify-end shrink-0 max-w-[50%] sm:max-w-none` to prevent `COLLAPSE` / `EXPAND` buttons from extending beyond card borders on narrow mobile devices.
-     - Scaled button padding to `px-1.5 sm:px-2.5 py-0.5 sm:py-1` and font size to `text-[10px] sm:text-xs` ensuring clean, responsive layout integrity.
+2. **Screener & Paper Portfolio Header Overflow Fix & Line Split**:
+   - **Dedicated Row Placement**: In `Tv-Alert-Mobile/src/app/page.tsx`, updated the header control clusters for both the **TLCS Screener Matrix** and the **Virtual Paper Portfolio**:
+     - Converted the header containers to `flex flex-col gap-2 pb-2`, bringing the action button controls (`START AFRESH`, `RESTORE`, `COLLAPSE`/`EXPAND`) down by one line onto their own dedicated row beneath the title and subtitle.
+     - With the controls occupying their own line, the title text is free to expand without awkward wrapping, and the action buttons have 100% card width with zero risk of collision, boundary overflow, or text truncation.
 
 ---
 
 ### 2. Files Modified
 - `Tv-Alert-Mobile/src/app/page.tsx`:
   - Lines 4805–4820: Updated interactive inspection bar to display `↓ gross loss` and `↑ gross win`.
-  - Lines 7118–7158: Responsive sizing & wrapping on Screener Matrix header buttons.
-  - Lines 7720–7746: Responsive sizing & wrapping on Paper Portfolio header buttons.
+  - Lines 7098–7159: Brought Screener Matrix header action buttons down by one line (`flex-col gap-2`).
+  - Lines 7702–7748: Brought Paper Portfolio header action buttons down by one line (`flex-col gap-2`).
 - `Obsidian_Update_Log_Sept17_v1_0_Distribution_Gross_Metrics_and_Header_Boundary_Fix.md`:
-  - Official release log documenting math formulas, responsive UI fixes, and commit history.
+  - Official release log documenting math formulas, dedicated header line split, and commit history.
