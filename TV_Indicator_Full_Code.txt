@@ -865,24 +865,29 @@ m1_col     := paintm
 
 // ──── FULLY RESPONSIVE HEADER BAR (DESKTOP & MOBILE COMPATIBLE) ─────
 // 3 Columns with strict percentage widths (35% Left | 30% Center | 35% Right)
-var table tbl_bias = table.new(position.top_center, 3, 2, border_width = 0, bgcolor = color.new(color.white, 100))
+var table tbl_bias = table.new(position.top_center, 3, 3, border_width = 0, bgcolor = color.new(color.white, 100))
 
 if barstate.islast
-    // --- ROW 0 (TOP LINE) ---
-    // Left (35% width, left aligned)
-    table.cell(tbl_bias, 0, 0, str.tostring(dX), width = 35.0, text_color = paintX, text_size = size.tiny, text_halign = text.align_left, bgcolor = color.new(color.white, 100))
-    // Center Top (Empty Spacer)
-    table.cell(tbl_bias, 1, 0, "", width = 30.0, bgcolor = color.new(color.white, 100))
-    // Right (35% width, right aligned)
-    table.cell(tbl_bias, 2, 0, str.tostring(mX), width = 35.0, text_color = paintmX, text_size = size.tiny, text_halign = text.align_right, bgcolor = color.new(color.white, 100))
+    // --- ROW 0 (BLANK SPACER ROW TO BRING DISPLAY DOWN BY ONE LINE) ---
+    table.cell(tbl_bias, 0, 0, " ", width = 35.0, text_size = size.small, bgcolor = color.new(color.white, 100))
+    table.cell(tbl_bias, 1, 0, " ", width = 30.0, text_size = size.small, bgcolor = color.new(color.white, 100))
+    table.cell(tbl_bias, 2, 0, " ", width = 35.0, text_size = size.small, bgcolor = color.new(color.white, 100))
 
-    // --- ROW 1 (LOWER LINE) ---
+    // --- ROW 1 (PREVIOUS TOP LINE - NOW BROUGHT DOWN BY ONE LINE) ---
+    // Left (35% width, left aligned)
+    table.cell(tbl_bias, 0, 1, str.tostring(dX), width = 35.0, text_color = paintX, text_size = size.tiny, text_halign = text.align_left, bgcolor = color.new(color.white, 100))
+    // Center Top (Empty Spacer)
+    table.cell(tbl_bias, 1, 1, "", width = 30.0, bgcolor = color.new(color.white, 100))
+    // Right (35% width, right aligned)
+    table.cell(tbl_bias, 2, 1, str.tostring(mX), width = 35.0, text_color = paintmX, text_size = size.tiny, text_halign = text.align_right, bgcolor = color.new(color.white, 100))
+
+    // --- ROW 2 (PREVIOUS LOWER LINE - NOW BROUGHT DOWN BY ONE LINE) ---
     // Left Bottom (Empty)
-    table.cell(tbl_bias, 0, 1, "", width = 35.0, bgcolor = color.new(color.white, 100))
+    table.cell(tbl_bias, 0, 2, "", width = 35.0, bgcolor = color.new(color.white, 100))
     // Center Bottom (30% width, centered)
-    table.cell(tbl_bias, 1, 1, str.tostring(c1), width = 30.0, text_color = paintc, text_size = size.normal, text_halign = text.align_center, bgcolor = color.new(color.white, 100))
+    table.cell(tbl_bias, 1, 2, str.tostring(c1), width = 30.0, text_color = paintc, text_size = size.normal, text_halign = text.align_center, bgcolor = color.new(color.white, 100))
     // Right Bottom (Empty)
-    table.cell(tbl_bias, 2, 1, "", width = 35.0, bgcolor = color.new(color.white, 100))
+    table.cell(tbl_bias, 2, 2, "", width = 35.0, bgcolor = color.new(color.white, 100))
 
 WCPRC = BULLISH ? color.teal : MODERATELYBULLISH ? color.green : BEARISH ? color.maroon : MODERATELYBEARISH ? color.red : color.gray
 

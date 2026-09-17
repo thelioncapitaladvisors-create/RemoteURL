@@ -1163,10 +1163,11 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **ANALYTICS & INSIGHTS Tab Parity**: All statistical summary bars, parameter filter buttons, and data tables bind directly to the canonical `.wc-card-*` and `.wc-table-*` definitions across all visual skins (`THE LION`, `DARK`, `LIGHT`, `GRAY`, `AUTO`).
 
 ## Version 1.0: Pine Script Indicator Architecture (`TLCS_Live_Pivot_Alerts.pine`) & Header Layout
-- **Single Unified Top Header Bar (`tbl_bias`)**: The top header text MUST use a single responsive 3-column table configured at `position.top_center` (2 rows, 0 border):
-  - **Top Left (35% width)**: `dX` (Market Position / Value Area Bias, e.g. `IN RANGE / OUT OF VALUE`) in `size.tiny` text, left-aligned (`text.align_left`).
-  - **Top Center (30% width)**: `c1` (Opening Bias, e.g. `REJECTED BEARISH`) in `size.normal` text, centered on lower row 1 (`text.align_center`).
-  - **Top Right (35% width)**: `mX` (Day Type Blueprint, e.g. `TREND DAY / DOUBLE DISTRIBUTION TREND / EXPANDED TYPICAL`) in `size.tiny` text, right-aligned (`text.align_right`).
+- **Single Unified Top Header Bar (`tbl_bias`)**: The top header text MUST use a single responsive 3-column table configured at `position.top_center` (3 rows, 0 border, with Row 0 as a 1-line blank spacer to prevent collision with top indicator status lines):
+  - **Row 0**: Blank spacer line (`" "` in `size.small`) shifting the entire display down by one line.
+  - **Row 1 Left (35% width)**: `dX` (Market Position / Value Area Bias, e.g. `IN RANGE / OUT OF VALUE`) in `size.tiny` text, left-aligned (`text.align_left`).
+  - **Row 1 Right (35% width)**: `mX` (Day Type Blueprint, e.g. `TREND DAY / DOUBLE DISTRIBUTION TREND / EXPANDED TYPICAL`) in `size.tiny` text, right-aligned (`text.align_right`).
+  - **Row 2 Center (30% width)**: `c1` (Opening Bias, e.g. `REJECTED BEARISH`) in `size.normal` text, centered (`text.align_center`).
 - **Prohibition on Duplicate Header Tables**: Standalone tables on `position.top_right` (e.g. `perfTablecX`) or `position.top_left` are strictly prohibited to prevent text overlay duplication on TradingView.
 - **6 Decoupled Trade Execution Arrays**: The indicator execution engine processes 6 decoupled strategy sessions:
   1. `missileSessions`: `LONG MISSILE` / `SHORT MISSILE` (`JustMissileBuy` / `JustMissileSell`)
