@@ -21,8 +21,7 @@ jobs:
           SUPABASE_ANON="sb_publishable_xl3kUBHckB0hTH8n4k3esA_m1qe0stu"
           
           START_TIME=$(date +%s%3N)
-          RESPONSE=$(curl -s -w "
-%{http_code}" -X GET             "${SUPABASE_URL}/rest/v1/signals?select=id&limit=1"             -H "apikey: ${SUPABASE_ANON}"             -H "Authorization: Bearer ${SUPABASE_ANON}")
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "${SUPABASE_URL}/rest/v1/signals?select=id&limit=1" -H "apikey: ${SUPABASE_ANON}" -H "Authorization: Bearer ${SUPABASE_ANON}")
           
           END_TIME=$(date +%s%3N)
           LATENCY=$((END_TIME - START_TIME))
