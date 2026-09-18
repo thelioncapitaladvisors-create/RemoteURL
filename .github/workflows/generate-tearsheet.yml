@@ -31,7 +31,9 @@ jobs:
         
       - name: Checkout website repository (if GH_PAT available)
         continue-on-error: true
-        if: "${{ secrets.GH_PAT != '' }}"
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        if: env.GH_PAT != ''
         uses: actions/checkout@v4
         with:
           repository: 'thelioncapitaladvisors-create/TLCS_Website'
