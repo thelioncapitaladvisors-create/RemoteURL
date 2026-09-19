@@ -5,3 +5,4 @@ numpy<2
 plotly<6
 vectorbt
 pandas
+pytest>=7.0.0

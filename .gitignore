@@ -4,3 +4,10 @@ Project Backup/
 .DS_Store
 __pycache__/
 *.pyc
+.env
+*.env
+**/.env
+algo_engine/.env
+algo_engine/data/
+algo_engine/daemon.log
+
