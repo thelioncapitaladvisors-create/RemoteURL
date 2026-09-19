@@ -1,0 +1,54 @@
+# ==============================================================================
+# TLCS Black Box Signal Engine Daemon - Systemd Service Unit File
+# ==============================================================================
+# Installation on Ubuntu / Debian VPS:
+#   1. Copy to systemd: sudo cp algo_engine.service /etc/systemd/system/
+#   2. Reload daemon:   sudo systemctl daemon-reload
+#   3. Enable on boot:  sudo systemctl enable algo_engine
+#   4. Start service:   sudo systemctl start algo_engine
+#   5. View live logs:  sudo journalctl -u algo_engine -f
+# ==============================================================================
+
+[Unit]
+Description=TLCS Black Box Signal Engine Daemon v2.0
+Documentation=https://thelioncapitalsolutions.com
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# System User (Adjust to your VPS username, e.g., 'ubuntu', 'root', or 'debian')
+User=ubuntu
+Group=ubuntu
+
+# Working Directory & Environment
+WorkingDirectory=/opt/tlcs/algo_engine
+EnvironmentFile=/opt/tlcs/algo_engine/.env
+Environment=PYTHONPATH=/opt/tlcs
+Environment=PYTHONUNBUFFERED=1
+Environment=TZ=Asia/Kolkata
+
+# Execution Command (using dedicated virtualenv)
+ExecStart=/opt/tlcs/algo_engine/venv/bin/python3 /opt/tlcs/algo_engine/run_daemon.py --markets ALL
+
+# Lifecycle Management & Auto-Restart
+Restart=always
+RestartSec=5s
+KillMode=mixed
+TimeoutStopSec=30
+
+# File descriptor limits for high-throughput WebSocket streaming
+LimitNOFILE=65536
+
+# Security & Sandboxing
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging to system journal (accessible via journalctl)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tlcs-daemon
+
+[Install]
+WantedBy=multi-user.target

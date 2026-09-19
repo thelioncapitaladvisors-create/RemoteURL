@@ -1,0 +1,49 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local sensitive files & environments
+.env
+.env.local
+
+# Database, data & logs cache
+data/*.db
+data/*.json
+logs/*.log
+
+# Reports & HTML tearsheets
+*.html
+nymex_comex_1yr_backtest_results.json
+
+# System & IDE files
+.DS_Store
+.vscode/
+.idea/
+.git/
+.gitignore

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  blackbox-daemon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tlcs-blackbox-daemon:2.0
+    container_name: tlcs-blackbox-daemon
+    restart: unless-stopped
+    
+    # Load credentials & Supabase endpoints
+    env_file:
+      - .env
+      
+    # Mount persistent state and log storage
+    volumes:
+      - ./data:/app/algo_engine/data
+      - ./logs:/app/algo_engine/logs
+      
+    # Environment overrides
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TZ=Asia/Kolkata
+      
+    # Prevent disk exhaustion via structured log rotation
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "5"
+        
+    # Safety resource allocation for budget cloud VPS ($5-$10/mo)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.50'
+          memory: 1024M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+    # Default execution command (overridable)
+    command: ["--markets", "ALL"]
