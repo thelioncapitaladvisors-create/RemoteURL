@@ -312,18 +312,18 @@ def run_returns_backtest():
     # By strictly converting to 1-based index and calculating cumprod, we avoid vectorbt's raw return plotting anomaly
     cum_returns = (1 + df_resampled).cumprod() - 1
     fig_equity = cum_returns.vbt.plot(title="Cumulative Equity Curve")
-    fig_equity.update_layout(width=None, height=300, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
+    fig_equity.update_layout(width=None, height=310, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=48, r=25, t=30, b=75), yaxis_tickformat='.1%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.22, xanchor="center", x=0.5, font=dict(size=9.5)))
     
     # 2. Drawdowns
     wealth_index = (1 + df_resampled).cumprod()
     peak = wealth_index.cummax()
     drawdown = (wealth_index - peak) / peak
     fig_dd = drawdown.vbt.plot(title="Drawdowns (%)")
-    fig_dd.update_layout(width=None, height=300, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
+    fig_dd.update_layout(width=None, height=310, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=48, r=25, t=30, b=75), yaxis_tickformat='.1%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.22, xanchor="center", x=0.5, font=dict(size=9.5)))
     
     # 3. Raw Returns
     fig_ret = df_resampled.vbt.plot(title="Raw Returns (%)")
-    fig_ret.update_layout(width=None, height=300, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=10, r=25, t=40, b=60), yaxis_tickformat='.2%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5))
+    fig_ret.update_layout(width=None, height=310, autosize=True, template="plotly_dark", paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=48, r=25, t=30, b=75), yaxis_tickformat='.1%', dragmode=False, legend=dict(orientation="h", yanchor="top", y=-0.22, xanchor="center", x=0.5, font=dict(size=9.5)))
     
     # Universal Plotly bdata Glitch Fix
     # iOS/Android WebViews fail to decode Plotly's base64 bdata strings.
@@ -613,7 +613,25 @@ def run_returns_backtest():
                     'xaxis.zerolinecolor': isLightOrGray ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
                     'yaxis.zerolinecolor': isLightOrGray ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
                     'xaxis.linecolor': isLightOrGray ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
-                    'yaxis.linecolor': isLightOrGray ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'
+                    'yaxis.linecolor': isLightOrGray ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
+                    'margin.l': 48,
+                    'margin.r': 25,
+                    'margin.t': 30,
+                    'margin.b': 75,
+                    'xaxis.automargin': true,
+                    'xaxis.showticklabels': true,
+                    'xaxis.tickfont.size': 10,
+                    'xaxis.tickformat': '%b %d',
+                    'yaxis.automargin': true,
+                    'yaxis.showticklabels': true,
+                    'yaxis.tickfont.size': 10,
+                    'yaxis.tickformat': '.1%',
+                    'legend.orientation': 'h',
+                    'legend.yanchor': 'top',
+                    'legend.y': -0.22,
+                    'legend.xanchor': 'center',
+                    'legend.x': 0.5,
+                    'legend.font.size': 9.5
                 }});
             }} else {{
                 allUpdated = false;
