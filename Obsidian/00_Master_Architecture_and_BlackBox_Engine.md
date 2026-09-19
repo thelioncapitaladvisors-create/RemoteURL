@@ -2,10 +2,10 @@
 title: "TLCS Master System Architecture: Standalone Black Box Engine & Shadow Mode Verification"
 project: "TLCS Quantitative Trading Ecosystem"
 engine_version: "v1.0-BlackBox"
-status: "Planned / In Development"
+status: "Implemented / Shadow Verification"
 author: "The Lion Capital Advisors"
 date_created: 2026-09-18
-last_updated: 2026-09-18
+last_updated: 2026-09-19
 tags:
   - architecture
   - blackbox
@@ -111,3 +111,16 @@ To maintain zero downtime and avoid production trade disruption, the Black Box w
 - **Parallel Logging**: The Black Box streams identical signals to `shadow_signals`.
 - **Side-by-Side Audit**: The terminal surfaces a real-time comparison view auditing trigger latency, price precision, level fidelity, and win/loss parity.
 - **Production Cutover**: Once $>99\%$ parity is sustained over live market trading sessions, the primary data source will switch to the Black Box engine.
+
+---
+
+## 5. Admin-Only Security Gating & Control Plane
+
+To protect proprietary research, internal engine parity metrics, and shadow execution streams:
+- **Zero Subscriber / Visitor Exposure**:
+  - The Engine Source Selector (`⚡ TV PROD`, `🔲 BLACK BOX LIVE`, `⚖️ PARITY AUDIT`), Shadow Mode banner, and Parity Audit Screen are **completely hidden** from public users and standard subscribers.
+- **Admin Verification Protocol**:
+  - Requires authenticated session with `role === 'admin' | 'developer'`, `subscription_type === 'owner'`, or verified admin emails (`owner@tlcs.com`, `vishantmeshram@gmail.com`, and `@thelioncapitaladvisors.com`).
+- **Defensive Client Enforcement**:
+  - Default hidden styling (`display: none;` on web, conditional React rendering on mobile).
+  - Client state watcher automatically resets non-admin users to the canonical `TV` production feed if any unauthorized state attempt occurs.

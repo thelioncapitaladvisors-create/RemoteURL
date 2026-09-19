@@ -1208,6 +1208,51 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Harmonized 6-Metric KPI Tiles**:
   - All 6 KPI cards across both heading rows in the Virtual Paper Portfolio (`Net Worth`, `Realized P&L`, `Win Rate`, `Expectancy`, `Calmar`, `Avg Win/Loss`) MUST share identical title styling (`text-blue-600 dark:text-blue-400 font-mono font-black uppercase`) and consistent glassmorphic container aesthetics.
 
+## Standalone Black Box Signal Engine & Parity Verification Protocol
+- **Autonomous Python Core (`algo_engine/`)**: The system includes a fully standalone, tick-by-tick Python algorithmic engine operating independently of TradingView webhook dependencies:
+  - **Pivots & CPR Core (`pivots.py`)**: Camarilla $H_1\text{–}H_5, L_1\text{–}L_5$, Central Pivot Range (Pivot, TC, BC, NCPR), and triple Typical Price EMAs (8, 21, 34).
+  - **Day Type Classifier (`day_types.py`)**: Port of all 5 Day Type Blueprints (*Rejection Day, Absorption Day, Failed New Low, Outside Day, Stop Run Day*) and 4 Trade Sequences.
+  - **12 Strategy Triggers (`strategies.py`)**: All 6 Long and 6 Short setups with strict touch-point gating (`low < H4` for buy / `high > L4` for sell).
+  - **Stateful Trade Manager (`trade_manager.py`)**: Immutable limit order level locking, fill gating on subsequent bars (`bar_index > signal_bar_index`), TP1 break-even stop shifts, step trailing to TP3, dynamic EMA exits, and EOD session closures.
+- **Institutional Shadow Mode Protocol**:
+  - Parallel execution: TradingView alerts remain the primary production stream on the `signals` table.
+  - Shadow execution: The standalone engine streams signals in real time to the `shadow_signals` table in Supabase.
+  - Zero subscriber disruption: Regular users receive uninterrupted production data while internal auditing occurs simultaneously.
+- **Parity Benchmarking Criteria (`parity_audit.py`)**:
+  - Parity Score target: $\ge 99.0\%$ overall match across triggers, timestamps, and outcomes.
+  - Level Fidelity target: $\ge 99.0\%$ within a $\pm 0.1\%$ pricing error bound.
+  - Exact Percentage Single Source of Truth: Injected directly to `metadata.exact_pct` upon signal resolution.
+
+## Admin-Only Gating Protocol for Engine Controls & Parity Tooling
+- **Strict Public / Subscriber Isolation**:
+  - The Engine Source Selector (`⚡ TV PROD`, `🔲 BLACK BOX LIVE`, `⚖️ PARITY AUDIT`), Shadow Mode telemetry banner, and Parity Audit Screen must **NEVER be visible to regular subscribers, public visitors, or unauthenticated users**.
+  - Access is restricted exclusively to administrators and platform owners.
+- **Canonical Admin Authorization Model**:
+  - Evaluated on mobile (`page.tsx`) and web (`dashboard.html`):
+    - `profile?.role === 'admin' || profile?.role === 'developer'`
+    - `profile?.subscription_type === 'owner'`
+    - Authorized admin emails: `owner@tlcs.com`, `vishantmeshram@gmail.com`, or any address ending in `@thelioncapitaladvisors.com`.
+- **Zero UI Leakage & Client-Side Fail-Safe**:
+  - **Web Dashboard**: `#engine-source-selector` MUST have default CSS `style="display: none;"`. It is revealed via `display: flex;` only after async Supabase authentication verifies admin status.
+  - **Mobile App**: UI elements are wrapped inside `{isAdmin && ( ... )}` guards.
+  - **Automated Client Fallback**: Both clients must enforce an automatic reset back to `'TV'` feed if a non-admin client state is tampered with or resolves with `engineSource !== 'TV'`.
+
+## Cumulative Equity Curve & Tearsheet Container Standards
+- **Plotly Axis & Margin Padding**:
+  - To prevent X-axis time labels and Y-axis equity percentages from clipping into table headers or bottom navigation bars, charts must enforce:
+    - Minimum height: `min-h-[440px] sm:min-h-[460px]` with matching explicit height `h-[440px] sm:h-[460px]`.
+    - Margins: `margin: { l: 48, r: 24, t: 36, b: 75, pad: 4 }`.
+    - Automargin: `xaxis: { automargin: true }` and `yaxis: { automargin: true }`.
+    - Legend position: `y: -0.22` with horizontal orientation to stay well below X-axis tick labels.
+
+## Market Filter Pills Visual Standards
+- **Zero Ghost Vertical Spacing**:
+  - Market filter buttons across Analytics, Screener, and Paper Portfolio must eliminate line-height inflation:
+    - Container line height: `leading-none`.
+    - Icon emoji and title labels: explicit `leading-none`.
+    - Subtitle badge wrapper: `flex items-center w-full min-w-0 overflow-hidden` without margin-top (`mt-0`).
+    - Subtitle badge padding: `py-[1px]` with `leading-none`.
+
 
 
 
