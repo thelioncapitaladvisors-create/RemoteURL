@@ -514,7 +514,7 @@ if barstate.islast
         rIdx += 1
         
     if c_fB > 0 or c_fS > 0
-        table.cell(dash1, 0, rIdx, "Failed New Low/High", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
+        table.cell(dash1, 0, rIdx, "Failed New High/Low Blueprint", bgcolor=color.rgb(19, 13, 230, 87), text_color=color.rgb(10, 230, 226), text_size=txtSize)
         table.cell(dash1, 1, rIdx, c_fB > 0 ? "▲ " + str.tostring(c_fB) + "\n" + r_fB : "-", bgcolor=c_fB > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=c_fB > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize)
         table.cell(dash1, 2, rIdx, c_fS > 0 ? "▼ " + str.tostring(c_fS) + "\n" + r_fS : "-", bgcolor=c_fS > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=c_fS > 0 ? color.red : color.gray, text_size=txtSize)
         rIdx += 1

@@ -15,7 +15,7 @@ blueprints:
   - Rejection Day Blueprint
   - Stop Run Day Blueprint
   - Absorption Day Blueprint
-  - Failed New Low/High Blueprint
+  - Failed New High/Low Blueprint
   - Outside Day Blueprint
 sequences:
   - Rejection Day Sequence
@@ -55,9 +55,9 @@ Signals passive institutional limit order absorption where high volume fails to 
 - **Balanced Profile**: Close prints near the midpoint ($\text{Close} \in [45\%, 55\%]$ of daily range).
 - **Narrow CPR Convergence**: CPR width falls in bottom quartile.
 
-### D. Failed New Low (FNL) / Failed New High (FNH) Blueprint
-- **FNL**: Low breaches yesterday's low ($L < L_y$), but candle rallies to close above the prior day's midpoint ($\text{Close} > \text{yMid}$).
-- **FNH**: High breaches yesterday's high ($H > H_y$), but candle sells off to close below the prior day's midpoint ($\text{Close} < \text{yMid}$).
+### D. Failed New High/Low Blueprint (FNL / FNH)
+- **FNL (Bullish)**: Low breaches yesterday's low ($L < L_y$), but candle rallies to close above the prior day's midpoint ($\text{Close} > \text{yMid}$).
+- **FNH (Bearish)**: High breaches yesterday's high ($H > H_y$), but candle sells off to close below the prior day's midpoint ($\text{Close} < \text{yMid}$).
 - **ADR Minimum**: Daily range must meet at least $75\%$ of $\text{ADR}_{10}$.
 
 ### E. Outside Day Blueprint

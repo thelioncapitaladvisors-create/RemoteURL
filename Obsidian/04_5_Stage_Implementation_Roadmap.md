@@ -37,7 +37,7 @@ Stage 5: Live Market Shadow Auditing   [IN PROGRESS] ▓▓▓▓▓▓▓▓░
 
 ### Stage 1: Mathematical Engine & Strategy Porting (Completed)
 - [x] **Pivots & CPR Core**: Implemented `algo_engine/pivots.py` calculating Camarilla $H_1\text{–}H_5, L_1\text{–}L_5$, Central Pivot Range (TC, P, BC, NCPR), and triple Typical Price EMAs (8, 21, 34).
-- [x] **Day Type Classifier**: Implemented `algo_engine/day_types.py` porting the 5 Day Type Blueprints (*Rejection Day, Absorption Day, Failed New Low, Outside Day, Stop Run Day*) and 4 Trade Sequences.
+- [x] **Day Type Classifier**: Implemented `algo_engine/day_types.py` porting the 5 Day Type Blueprints (*Rejection Day, Absorption Day, Failed New High/Low, Outside Day, Stop Run Day*) and 4 Trade Sequences.
 - [x] **12 Strategy Triggers**: Implemented `algo_engine/strategies.py` with strict touch-point gating (`low < H4` for buy / `high > L4` for sell).
 - [x] **State Machine**: Implemented `algo_engine/trade_manager.py` with immutable limit order levels, TP1 break-even adjustment, TP3 trailing stops, dynamic EMA exits, and EOD closures.
 - [x] **Unit Tests**: 56 unit tests passed with 100% mathematical parity against historical Pine Script outputs (`algo_engine/tests/`).

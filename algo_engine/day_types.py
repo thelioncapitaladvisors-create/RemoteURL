@@ -12,7 +12,7 @@ Source Reference:
 Day Type Blueprints (Canonical Names — DO NOT ALTER):
     1. Rejection Day Blueprint
     2. Absorption Day Blueprint
-    3. Failed New Low Blueprint
+    3. Failed New High/Low Blueprint
     4. Outside Day Blueprint
     5. Stop Run Day Blueprint
 
@@ -134,9 +134,9 @@ class DayTypeResult:
         if self.bear_absorption:
             result.append("Absorption Day Blueprint (Bearish)")
         if self.bull_fnl:
-            result.append("Failed New Low Blueprint (Bullish)")
+            result.append("Failed New High/Low Blueprint (Bullish)")
         if self.bear_fnh:
-            result.append("Failed New Low Blueprint (Bearish)")
+            result.append("Failed New High/Low Blueprint (Bearish)")
         if self.bull_outside_day:
             result.append("Outside Day Blueprint (Bullish)")
         if self.bear_outside_day:

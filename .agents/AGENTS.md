@@ -75,7 +75,7 @@
 ## Strict Prohibition on Scanner & Day Type Name Alterations
 - **NEVER** introduce extra, fictitious, or variant terminology (e.g. `"Failed Breakout"`, `"Retest"`, `"Fade"`, `"Continuation"`) into scanner headers, subtitles, card descriptions, or table labels.
 - The ONLY valid, canonical names for Day Type Blueprints and Sequences across the entire Web & Mobile platform are:
-  - **Day Type Blueprints**: `Rejection Day Blueprint`, `Absorption Day Blueprint`, `Failed New Low Blueprint`, `Outside Day Blueprint`, `Stop Run Day Blueprint`.
+  - **Day Type Blueprints**: `Rejection Day Blueprint`, `Absorption Day Blueprint`, `Failed New High/Low Blueprint`, `Outside Day Blueprint`, `Stop Run Day Blueprint`.
   - **Trade Sequences**: `Rejection Day Sequence`, `Stop Run Sequence`, `Failed Absorption Sequence`, `Accumulation / Distribution Sequence`.
 - Always keep the original names strictly intact without any alterations or variations.
 
@@ -752,7 +752,7 @@ function resolveOutcome(s) {
 - **Day Type Blueprints (5 Categories)**:
   1. Rejection Day Blueprint
   2. Absorption Day Blueprint
-  3. Failed New Low Blueprint
+  3. Failed New High/Low Blueprint
   4. Outside Day Blueprint
   5. Stop Run Day Blueprint
 - **Trade Sequences (4 Sequences)**:
@@ -783,7 +783,7 @@ function resolveOutcome(s) {
 - **Version 3.0 Standardization**:
   - Global Version 3.0 release for both the Web Application (`TLCS_Website_Deploy`, package version `3.0.0`) and Mobile Application (`Tv-Alert-Mobile`, package version `3.0.0`, header `TLCS TERMINAL v3.0`).
 - **PivotBoss Blueprint & Sequence Unified Architecture**:
-  - Complete integration of 5 Day Type Blueprints (Rejection, Absorption, Failed New Low, Outside, Stop Run) and 4 Trade Sequences (Rejection, Stop Run, Failed Absorption, Accumulation).
+  - Complete integration of 5 Day Type Blueprints (Rejection, Absorption, Failed New High/Low, Outside, Stop Run) and 4 Trade Sequences (Rejection, Stop Run, Failed Absorption, Accumulation).
 - **Timeframe & Resolution Agnostic Pine Engine**:
   - Pine Script `TLCS Dashboards` engine is 100% timeframe and symbol independent via `ta.barssince` state evaluation.
 - **Fast-Relayer & Multi-Market Alignment**:
@@ -1211,7 +1211,7 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 ## Standalone Black Box Signal Engine & Parity Verification Protocol
 - **Autonomous Python Core (`algo_engine/`)**: The system includes a fully standalone, tick-by-tick Python algorithmic engine operating independently of TradingView webhook dependencies:
   - **Pivots & CPR Core (`pivots.py`)**: Camarilla $H_1\text{–}H_5, L_1\text{–}L_5$, Central Pivot Range (Pivot, TC, BC, NCPR), and triple Typical Price EMAs (8, 21, 34).
-  - **Day Type Classifier (`day_types.py`)**: Port of all 5 Day Type Blueprints (*Rejection Day, Absorption Day, Failed New Low, Outside Day, Stop Run Day*) and 4 Trade Sequences.
+  - **Day Type Classifier (`day_types.py`)**: Port of all 5 Day Type Blueprints (*Rejection Day, Absorption Day, Failed New High/Low, Outside Day, Stop Run Day*) and 4 Trade Sequences.
   - **12 Strategy Triggers (`strategies.py`)**: All 6 Long and 6 Short setups with strict touch-point gating (`low < H4` for buy / `high > L4` for sell).
   - **Stateful Trade Manager (`trade_manager.py`)**: Immutable limit order level locking, fill gating on subsequent bars (`bar_index > signal_bar_index`), TP1 break-even stop shifts, step trailing to TP3, dynamic EMA exits, and EOD session closures.
 - **Institutional Shadow Mode Protocol**:
@@ -1228,10 +1228,13 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - The Engine Source Selector (`⚡ TV PROD`, `🔲 BLACK BOX LIVE`, `⚖️ PARITY AUDIT`), Shadow Mode telemetry banner, and Parity Audit Screen must **NEVER be visible to regular subscribers, public visitors, or unauthenticated users**.
   - Access is restricted exclusively to administrators and platform owners.
 - **Canonical Admin Authorization Model**:
-  - Evaluated on mobile (`page.tsx`) and web (`dashboard.html`):
-    - `profile?.role === 'admin' || profile?.role === 'developer'`
-    - `profile?.subscription_type === 'owner'`
-    - Authorized admin emails: `owner@tlcs.com`, `vishantmeshram@gmail.com`, or any address ending in `@thelioncapitaladvisors.com`.
+  - Evaluated on mobile (`page.tsx`) and web (`dashboard.html`, `auth.js`, `admin.html`):
+    - Whitelisted strictly to the **exactly 3 registered authorized admin user accounts**:
+      1. `owner@tlcs.com`
+      2. `vishantmeshram@gmail.com`
+      3. `thelioncapitaladvisors@gmail.com`
+    - No other user or email domain (including `@thelioncapitaladvisors.com` or `admin@thelioncapitaladvisors.com`) may EVER be granted admin status without explicit prior owner instruction.
+    - All Menu / Admin Panel options, clear alerts controls, database sentinels, autonomous repair agents, and parity tools are strictly restricted to these 3 approved admin users.
 - **Zero UI Leakage & Client-Side Fail-Safe**:
   - **Web Dashboard**: `#engine-source-selector` MUST have default CSS `style="display: none;"`. It is revealed via `display: flex;` only after async Supabase authentication verifies admin status.
   - **Mobile App**: UI elements are wrapped inside `{isAdmin && ( ... )}` guards.
@@ -1251,10 +1254,38 @@ When a trade exits but its `exit_price` or canonical exit level was not register
     - Container line height: `leading-none`.
     - Icon emoji and title labels: explicit `leading-none`.
     - Subtitle badge wrapper: `flex items-center w-full min-w-0 overflow-hidden` without margin-top (`mt-0`).
-    - Subtitle badge padding: `py-[1px]` with `leading-none`.
 
-
-
-
-
-
+## Version 2.0 Security Hardening, Menu Gating & Canonical Baseline (20 Sept 2026)
+- **Strict 3-Admin Whitelist Mandate**:
+  - The entire platform across Web (`TLCS_Website_Deploy`), Mobile (`Tv-Alert-Mobile`), and Netlify serverless functions recognizes **strictly and exclusively 3 authorized admin accounts**:
+    1. `owner@tlcs.com`
+    2. `vishantmeshram@gmail.com`
+    3. `thelioncapitaladvisors@gmail.com`
+  - **Zero Wildcard or Unregistered Admins**: All wildcard domain checks (e.g. `@thelioncapitaladvisors.com` or `admin@thelioncapitaladvisors.com`) are strictly eliminated.
+  - **No Admin Self-Registration**: `AuthGuard.tsx` enforces `role: 'user'` for all non-approved accounts upon registration or login, preventing unauthorized privilege escalation.
+- **Top Header Menu & Admin Panel Gating**:
+  - **Mobile Terminal (`page.tsx`)**: The top header `<Target /> Menu` button is rendered **exclusively** when `isAdmin === true`. Standard subscribers and public users see only the Logout button.
+  - **Web Dashboard (`auth.js`)**: The desktop header `⚙️ Admin Panel` button and mobile drawer `Admin Panel` / `🗑 Clear Alerts` links are rendered **exclusively** when `isAdmin === true`.
+  - **Settings Drawer Internal Gating**: Within the settings drawer, sensitive maintenance controls (`24/7 Database Sentinel`, `Autonomous Audit Agent`, and `Clear All Alerts`) are wrapped inside `{isAdmin && ( ... )}`.
+- **Backend Netlify & Next.js API Route Security**:
+  - All administrative and mutating endpoints (`system-audit`, `test-telegram`, `test-instagram`, `admin-clear-signals`, `admin-delete-item`, and their Next.js API routes) verify that the authenticated caller's email strictly matches `APPROVED_ADMIN_EMAILS`.
+  - All automated scheduled crons (`cron-heal-outcomes`, `cron-eod-close`, `cron-weekly-logs`, `cron-keep-alive`) require a valid `CRON_SECRET` bearer token in the `Authorization` header.
+  - Error messages rendered in HTML or alerts are strictly sanitized against cross-site scripting (XSS).
+  - Security headers are enforced in `_headers` (Content-Security-Policy, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`).
+- **Canonical Day Type Blueprint Standardization (`Failed New High/Low Blueprint`)**:
+  - The 5 Day Type Blueprints across Pine Script, Web Dashboard, Mobile PWA, and Python Algo Engine are strictly:
+    1. `Rejection Day Blueprint`
+    2. `Absorption Day Blueprint`
+    3. `Failed New High/Low Blueprint`
+    4. `Outside Day Blueprint`
+    5. `Stop Run Day Blueprint`
+  - **Unification of FNL and FNH**: "Failed New Low Blueprint" and "Failed New High Blueprint" are permanently merged into the single canonical row **`Failed New High/Low Blueprint`**:
+    - Pine Script (`TLCS_Main_Dashboard_7Day_Matrix.pine`): `f_render_matrix_row(dash1, currentRow, "Failed New High/Low Blueprint", bullFnl, bearFnh, txtSize)` displays green ▲ for Bullish FNL and red ▼ for Bearish FNH.
+    - Web Dashboard (`screener.js`, `dashboard.html`, `blog.html`): `blueprintCategories` `FNH_FNL` label is `'Failed New High/Low Blueprint'`.
+    - Mobile Terminal (`page.tsx`): 7-Day Matrix and Alerts Dashboard label is `'Failed New High/Low Blueprint'` (short badge: `FNH/L`).
+    - Black Box Engine (`day_types.py`): Returns `"Failed New High/Low Blueprint (Bullish)"` and `"Failed New High/Low Blueprint (Bearish)"`.
+  - **Zero Terminology Alterations**: Variant terminology (`Failed Breakout`, `Retest`, `Fade`, `Continuation`) is strictly prohibited.
+- **Platform Version 2.0 Baseline**:
+  - All project packages standardized to Version `2.0.0` (`TLCS_Website_Deploy/package.json` and `Tv-Alert-Mobile/package.json`).
+  - Terminal header: `TLCS TERMINAL v2.0`.
+  - Script cachebusters and web footers: `v2.0` / `?v=2.0`.

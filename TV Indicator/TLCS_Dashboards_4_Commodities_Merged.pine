@@ -4625,7 +4625,7 @@ if barstate.islast
             curR += 1
 
         if bullFnlCount > 0 or bearFnhCount > 0
-            table.cell(dash1, 0, curR, "Failed New Low/High", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize_dt, text_halign=text.align_right)
+            table.cell(dash1, 0, curR, "Failed New High/Low Blueprint", bgcolor=color.rgb(249, 226, 23, 87), text_color=color.rgb(10, 65, 230), text_size=txtSize_dt, text_halign=text.align_right)
             table.cell(dash1, 1, curR, bullFnlCount > 0 ? "▲ " + str.tostring(bullFnlCount) + "\n" + bullFnlList : "-", bgcolor=bullFnlCount > 0 ? color.new(color.lime, 78) : color.new(color.gray, 85), text_color=bullFnlCount > 0 ? color.rgb(19, 65, 43) : color.gray, text_size=txtSize_dt, text_halign=text.align_right)
             table.cell(dash1, 2, curR, bearFnhCount > 0 ? "▼ " + str.tostring(bearFnhCount) + "\n" + bearFnhList : "-", bgcolor=bearFnhCount > 0 ? color.new(color.red, 78) : color.new(color.gray, 85), text_color=bearFnhCount > 0 ? color.red : color.gray, text_size=txtSize_dt, text_halign=text.align_right)
             curR += 1

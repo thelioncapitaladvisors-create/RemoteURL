@@ -1334,9 +1334,7 @@ if barstate.islast
         currentRow += 1
     if f_render_matrix_row(dash1, currentRow, "Absorption Day Blueprint", bullAbs, bearAbs, txtSize)
         currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Failed New Low Blueprint", bullFnl, matrix.new<string>(7, 1, ""), txtSize)
-        currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Failed New High Blueprint", matrix.new<string>(7, 1, ""), bearFnh, txtSize)
+    if f_render_matrix_row(dash1, currentRow, "Failed New High/Low Blueprint", bullFnl, bearFnh, txtSize)
         currentRow += 1
     if f_render_matrix_row(dash1, currentRow, "Outside Day Blueprint", bullOd, bearOd, txtSize)
         currentRow += 1
