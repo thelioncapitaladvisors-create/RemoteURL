@@ -14,12 +14,14 @@
 - The entire web dashboard (`index.html`, `scanner.js`, `commodity-scanner.js`) and the mobile app (`page.tsx`) rely strictly on this `exact_pct`.
 - When calculating Profit Factor, Expectancy, Win Rate, Best Trade, and Max Drawdown, base ALL metrics strictly off the Exact Percentage values, regardless of whether the user is in "Novice Mode" or "Pro Mode".
 - **CANONICAL WIN RATE & SUCCESS RATE FORMULA**: Win Rate / Success Rate across ALL tabs (`HUB`, `MARKETS`, `ANALYTICS`, `Research`, `Dashboard`) MUST ALWAYS use total realized closed trades (`wins.length / totalClosed.length * 100`) in the denominator. Breakeven trades MUST NOT be omitted from the closed trades denominator. `(Wins + Losses)` denominator is strictly prohibited.
-## Version 2.0: Platform Baseline & Extreme Reversal Screener Architecture
-- **Version 2.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) is standardized to Version 2.0.
+## Version 3.0: Platform Baseline & Information Architecture
+- **Version 3.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) is standardized to Version 3.0.
+- **Unified Global Signal Feed (LOGS Tab)**: The signals view consolidates active limit orders, live active trades, trailing stop adjustments, and target/SL completions into a single unified chronological execution feed (`GLOBAL SIGNAL FEED & EXECUTION LOG`), eliminating feed fragmentation.
+- **HUB Tab Operational Command Center**: The `TLCS ALERTS DASHBOARD` (Parameter Matrix, Trade Sequences, Extreme Reversal, Breakaway) is positioned directly below the `TRADE GUIDANCE` section on the HUB tab, creating a unified daily command overview.
 - **Extreme Reversal Multi-Platform Screener Parity**: Extreme Reversal trades (`LONG EXTREME REVERSAL` / `SHORT EXTREME REVERSAL`) are fully recognized and filtered across all surfaces:
   - **Mobile Terminal (`page.tsx`)**:
     - `signalCategories` in 7-Day Screener Matrix (`id: 'EXTREME_REV'`, matching `EXTREME` and `REVERSAL`).
-    - `parameterCategories` in ANALYTICS Alerts Dashboard (`id: 'EXTREME_REVERSAL'`).
+    - `parameterCategories` in HUB Alerts Dashboard (`id: 'EXTREME_REVERSAL'`).
     - `StrategyBadge`: 🔥 `Flame` icon with Fuchsia styling (`text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/30`).
     - Interface Type Safety: `Signal` interface strictly includes `trade_id?: string;`, `stop_loss?: number;`, and `entry_price?: number;` to ensure strict TypeScript compilation during Netlify CI builds.
   - **Web Dashboard (`dashboard.html` & `screener.js`)**:
@@ -28,11 +30,12 @@
   - **Backend Webhook Scanner Parsing (`process-webhook-background.js`)**:
     - Format 1 (7-Day Matrix): extracts `dayItem.bExt` -> `extRev: 'Bullish'` and `dayItem.sExt` -> `extRev: 'Bearish'`.
     - Format 2 (SessionOpenMatrix): extracts `sigs.bullExt || sigs.bullExtRev` -> `extRev: 'Bullish'` and `sigs.bearExt || sigs.bearExtRev` -> `extRev: 'Bearish'`.
-- **Global Version 2.0 Branding**:
-  - Mobile terminal header: `TLCS TERMINAL v2.0`.
-  - SIEM app init log: `Terminal V2.0 initialized`.
-  - Web footers & script cachebusters: `v2.0` / `?v=2.0`.
-  - Package versions across all projects: `2.0.0`.
+- **Global Version 3.0 Branding**:
+  - Mobile terminal header: `TLCS TERMINAL v3.0`.
+  - SIEM app init log: `Terminal V3.0 initialized`.
+  - Daemon status pill: `Active Daemon v3.0`.
+  - Web footers & script cachebusters: `v3.0` / `?v=3.0`.
+  - Package versions across all projects: `3.0.0`.
 
 ## Layout Integrity & Zero Overlap Mandate
 - **ZERO UI / TEXT OVERLAPPING**: No text, badges, headers, summary rows, or navigational chrome may ever visually collide, truncate unpredictably, or overlap anywhere across the web and mobile applications:
@@ -119,12 +122,12 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
 ## Web Parameter Matrix & Time Boundaries
 - All daily parameter performance matrices on web and mobile MUST use the strict 0 Hrs local day boundary (`new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()`). Never use UTC ISO string splitting (`toISOString().split('T')[0]`) which misaligns timezone shifts. Web matrix loaders MUST implement client-readiness retry loops to prevent race conditions during initial page load.
 
-## Version 2.0: Platform Baseline & Extreme Reversal Screener Architecture
-- **Version 2.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) is standardized to Version 2.0.
+## Version 3.0: Platform Baseline & Extreme Reversal Screener Architecture
+- **Version 3.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) is standardized to Version 3.0.
 - **Extreme Reversal Multi-Platform Screener Parity**: Extreme Reversal trades (`LONG EXTREME REVERSAL` / `SHORT EXTREME REVERSAL`) are fully recognized and filtered across all surfaces:
   - **Mobile Terminal (`page.tsx`)**:
     - `signalCategories` in 7-Day Screener Matrix (`id: 'EXTREME_REV'`, matching `EXTREME` and `REVERSAL`).
-    - `parameterCategories` in ANALYTICS Alerts Dashboard (`id: 'EXTREME_REVERSAL'`).
+    - `parameterCategories` in HUB Alerts Dashboard (`id: 'EXTREME_REVERSAL'`).
     - `StrategyBadge`: 🔥 `Flame` icon with Fuchsia styling (`text-fuchsia-400 bg-fuchsia-500/10 border-fuchsia-500/30`).
     - Interface Type Safety: `Signal` interface strictly includes `trade_id?: string;`, `stop_loss?: number;`, and `entry_price?: number;` to ensure strict TypeScript compilation during Netlify CI builds.
   - **Web Dashboard (`dashboard.html` & `screener.js`)**:
@@ -133,11 +136,12 @@ This is the definitive truth for symbol-to-market mappings. ALWAYS refer to thes
   - **Backend Webhook Scanner Parsing (`process-webhook-background.js`)**:
     - Format 1 (7-Day Matrix): extracts `dayItem.bExt` -> `extRev: 'Bullish'` and `dayItem.sExt` -> `extRev: 'Bearish'`.
     - Format 2 (SessionOpenMatrix): extracts `sigs.bullExt || sigs.bullExtRev` -> `extRev: 'Bullish'` and `sigs.bearExt || sigs.bearExtRev` -> `extRev: 'Bearish'`.
-- **Global Version 2.0 Branding**:
-  - Mobile terminal header: `TLCS TERMINAL v2.0`.
-  - SIEM app init log: `Terminal V2.0 initialized`.
-  - Web footers & script cachebusters: `v2.0` / `?v=2.0`.
-  - Package versions across all projects: `2.0.0`.
+- **Global Version 3.0 Branding**:
+  - Mobile terminal header: `TLCS TERMINAL v3.0`.
+  - SIEM app init log: `Terminal V3.0 initialized`.
+  - Daemon status pill: `Active Daemon v3.0`.
+  - Web footers & script cachebusters: `v3.0` / `?v=3.0`.
+  - Package versions across all projects: `3.0.0`.
 
 ## "Today's Trades" and Scanner Time Boundaries
 - ALWAYS use the `0 Hrs` strict local boundary (e.g. `startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()`) to determine "Today's trades" across all dashboards, metrics, and scanners.
@@ -1289,3 +1293,19 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - All project packages standardized to Version `2.0.0` (`TLCS_Website_Deploy/package.json` and `Tv-Alert-Mobile/package.json`).
   - Terminal header: `TLCS TERMINAL v2.0`.
   - Script cachebusters and web footers: `v2.0` / `?v=2.0`.
+
+## Version 3.0 Unified Signal Architecture & Platform Baseline (22 Sept 2026)
+- **Unified Global Signal Feed on LOGS Tab**:
+  - The previous split between "LIVE ACTIVE TRADES" and "DISPATCHED SIGNALS & ALERTS" on the LOGS tab is consolidated into a single unified `GLOBAL SIGNAL FEED & EXECUTION LOG` stream.
+  - Active trades, filled limits, pending limit orders, and closed executions are unified into a single chronological feed with clear status badges, eliminating fragmentation and improving mobile user experience.
+- **Relocation of TLCS Alerts Dashboard to HUB Tab**:
+  - The `TLCS ALERTS DASHBOARD` section (showing today's Parameter Matrix, Trade Sequence matrix, Extreme Reversal, and Breakaway metrics) has been moved from the ANALYTICS tab to the HUB tab, placed directly below the `TRADE GUIDANCE` section.
+  - The HUB tab now serves as the primary operational command center: Trade Guidance at top, followed by the Daily Alerts Dashboard & Matrices.
+  - The ANALYTICS tab is streamlined to focus on performance analytics, historical metrics, and Day Type scanner matrices.
+- **Global Version 3.0 Branding**:
+  - Mobile terminal header: `TLCS TERMINAL v3.0`.
+  - SIEM app init log: `Terminal V3.0 initialized`.
+  - Daemon indicator: `Active Daemon v3.0`.
+  - Web footers & script cachebusters: `v3.0` / `?v=3.0`.
+  - Package versions across all projects: `3.0.0` (`TLCS_Website_Deploy/package.json` and `Tv-Alert-Mobile/package.json`).
+
