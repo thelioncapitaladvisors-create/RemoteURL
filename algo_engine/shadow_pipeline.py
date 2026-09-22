@@ -38,12 +38,27 @@ class ShadowPipeline:
     def __init__(self,
                  supabase_url: Optional[str] = None,
                  supabase_key: Optional[str] = None,
-                 table_name: str = "shadow_signals",
-                 local_fallback_path: str = "algo_engine/data/local_shadow_signals.json"):
-        self.supabase_url = supabase_url or os.getenv("SUPABASE_URL")
-        self.supabase_key = supabase_key or os.getenv("SUPABASE_KEY")
-        self.table_name = table_name
-        self.local_fallback_path = local_fallback_path
+                 table_name: Optional[str] = None,
+                 dual_write: Optional[bool] = None,
+                 local_fallback_path: Optional[str] = None,
+                 disable_supabase: bool = False):
+        if disable_supabase:
+            self.supabase_url = None
+            self.supabase_key = None
+        else:
+            self.supabase_url = supabase_url or os.getenv("SUPABASE_URL")
+            self.supabase_key = supabase_key or os.getenv("SUPABASE_KEY")
+
+        self.table_name = table_name or os.getenv("SHADOW_TARGET_TABLE", "shadow_signals")
+        
+        if dual_write is not None:
+            self.dual_write = dual_write
+        else:
+            self.dual_write = os.getenv("SHADOW_DUAL_WRITE", "false").lower() in ("true", "1", "yes")
+
+        self.local_fallback_path = local_fallback_path or os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "data", "local_shadow_signals.json"
+        )
 
         self._sb = None
         self._table_available: Optional[bool] = None
@@ -204,12 +219,11 @@ class ShadowPipeline:
     # ── Underlying Persistence Handlers ──────────────────────────
 
     def _execute_insert(self, trade_id: str, payload: Dict[str, Any]) -> None:
-        """Insert into Supabase shadow table or local fallback."""
+        """Insert into Supabase shadow table (and signals if dual_write) or local fallback."""
         if self._sb and self._table_available is not False:
             try:
                 res = self._sb.from_(self.table_name).insert(payload).execute()
                 self._table_available = True
-                return
             except Exception as e:
                 err_msg = str(e)
                 if "Could not find the table" in err_msg or "PGRST205" in err_msg:
@@ -220,7 +234,18 @@ class ShadowPipeline:
                         f"Buffering to local storage."
                     )
                 else:
-                    logger.error(f"[ShadowPipeline] Error inserting into Supabase: {e}")
+                    logger.error(f"[ShadowPipeline] Error inserting into {self.table_name}: {e}")
+
+            # Dual-write to signals table so mobile app & web dashboard see live trades
+            if self.dual_write and self.table_name != "signals":
+                try:
+                    self._sb.from_("signals").insert(payload).execute()
+                    logger.info(f"[ShadowPipeline] Dual-write: inserted {trade_id} into public.signals")
+                except Exception as e2:
+                    logger.error(f"[ShadowPipeline] Dual-write to signals failed: {e2}")
+
+            if self._table_available:
+                return
 
         # Local storage fallback
         payload["id"] = trade_id
@@ -228,16 +253,22 @@ class ShadowPipeline:
         self._save_local_fallback()
 
     def _execute_update(self, trade_id: str, payload: Dict[str, Any]) -> None:
-        """Update existing row in Supabase shadow table or local fallback."""
+        """Update existing row in Supabase shadow table (and signals if dual_write) or local fallback."""
         if self._sb and self._table_available is not False:
             try:
-                # Merge metadata if needed
                 self._sb.from_(self.table_name).update(payload).eq("metadata->>trade_id", trade_id).execute()
-                return
             except Exception as e:
-                logger.error(f"[ShadowPipeline] Error updating Supabase: {e}")
+                logger.error(f"[ShadowPipeline] Error updating {self.table_name}: {e}")
 
-        # Local fallback update
+            # Dual-write update to signals table
+            if self.dual_write and self.table_name != "signals":
+                try:
+                    self._sb.from_("signals").update(payload).eq("metadata->>trade_id", trade_id).execute()
+                    logger.info(f"[ShadowPipeline] Dual-write: updated {trade_id} in public.signals")
+                except Exception as e2:
+                    logger.error(f"[ShadowPipeline] Dual-write update to signals failed: {e2}")
+
+            return
         for row in self._local_records:
             meta = row.get("metadata", {})
             if meta.get("trade_id") == trade_id or row.get("id") == trade_id:

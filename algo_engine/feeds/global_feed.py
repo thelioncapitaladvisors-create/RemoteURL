@@ -58,11 +58,13 @@ class GlobalFeed(BaseFeed):
 
     def __init__(self,
                  symbols: Optional[List[str]] = None,
-                 poll_interval: float = 0.1):
+                 poll_interval: float = 0.1,
+                 mock_mode: bool = False):
         super().__init__(name="GlobalFeed")
         default_all = NYMEX_SYMBOLS + FOREX_SYMBOLS[:5] + WORLD_INDICES[:5]
         self.subscribed_symbols = set(symbols or default_all)
         self.poll_interval = poll_interval
+        self.mock_mode = mock_mode
 
         self._prices = dict(DEFAULT_GLOBAL_PRICES)
         self._thread: Optional[threading.Thread] = None
@@ -80,6 +82,12 @@ class GlobalFeed(BaseFeed):
             return
 
         self._stop_event.clear()
+
+        if not self.mock_mode and not self._replay_mode:
+            logger.info("[GlobalFeed] Live external broker adapter not configured. Feed idle.")
+            self._set_status(FeedStatus.DISCONNECTED, "Feed idle")
+            return
+
         self._set_status(FeedStatus.CONNECTED, "Global feed active")
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()

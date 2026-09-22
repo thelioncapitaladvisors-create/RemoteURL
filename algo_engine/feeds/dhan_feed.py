@@ -66,7 +66,7 @@ class DhanFeed(BaseFeed):
         super().__init__(name="DhanFeed")
         self.client_id = client_id or os.getenv("DHAN_CLIENT_ID", "")
         self.access_token = access_token or os.getenv("DHAN_ACCESS_TOKEN", "")
-        self.mock_mode = mock_mode or (not self.client_id or not self.access_token)
+        self.mock_mode = mock_mode
 
         # {symbol: (exchange_segment, security_id)}
         self.symbol_map: Dict[str, Tuple[int, str]] = dict(DEFAULT_SYMBOL_MAP)
@@ -106,12 +106,16 @@ class DhanFeed(BaseFeed):
         self._set_status(FeedStatus.CONNECTING, "Starting connection")
 
         if self.mock_mode:
-            logger.info("[DhanFeed] Running in MOCK SIMULATION mode (no live broker credentials).")
+            logger.info("[DhanFeed] Running in explicit MOCK SIMULATION mode.")
             self._thread = threading.Thread(target=self._run_mock_loop, daemon=True)
+            self._thread.start()
+        elif not self.client_id or not self.access_token:
+            logger.warning("[DhanFeed] DHAN_CLIENT_ID or DHAN_ACCESS_TOKEN not configured. Live feed idle.")
+            self._set_status(FeedStatus.DISCONNECTED, "Missing credentials")
+            return
         else:
             self._thread = threading.Thread(target=self._run_live_loop, daemon=True)
-
-        self._thread.start()
+            self._thread.start()
 
     def stop(self) -> None:
         """Stop feed thread."""

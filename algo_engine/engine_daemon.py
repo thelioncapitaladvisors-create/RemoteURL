@@ -28,7 +28,10 @@ from .pivots import (
 from .day_types import DayTypeClassifier, DayTypeResult
 from .strategies import StrategyEngine, StrategySignal, MarketContext
 from .trade_manager import TradeManager, Trade, TradeStatus
-from .feeds import FeedManager, CandleAggregator, Tick, normalize_symbol, get_market_category
+from .feeds import (
+    FeedManager, CandleAggregator, Tick, normalize_symbol,
+    get_market_category, is_market_open, HistoricalBootstrapper
+)
 from .shadow_pipeline import ShadowPipeline
 from .telegram_dispatcher import TelegramDispatcher
 
@@ -60,6 +63,7 @@ class EngineDaemon:
 
         # Core Engines
         self.aggregator = CandleAggregator(timeframes=["1m", "5m", "15m", "1d"])
+        self.bootstrapper = HistoricalBootstrapper()
         self.feed_manager = FeedManager(aggregator=self.aggregator, mock_mode=mock_mode)
         self.strategy_engine = StrategyEngine()
         self.trade_manager = TradeManager()
@@ -87,6 +91,9 @@ class EngineDaemon:
         Evaluates active trades in TradeManager for limit fills and stops.
         """
         sym = tick.symbol
+        if not self.mock_mode and not is_market_open(sym):
+            return
+
         active_trades = [t for t in self.trade_manager.active_trades if t.symbol == sym]
 
         if not active_trades:
@@ -168,6 +175,10 @@ class EngineDaemon:
         if not bars_daily:
             # Bootstrap with current 15m bar if daily history is not yet populated
             prev_high, prev_low, prev_close = bar.high, bar.low, bar.close
+        elif len(bars_daily) >= 2:
+            # Use the completed prior day bar
+            prev_day = bars_daily[-2]
+            prev_high, prev_low, prev_close = prev_day.high, prev_day.low, prev_day.close
         else:
             prev_day = bars_daily[-1]
             prev_high, prev_low, prev_close = prev_day.high, prev_day.low, prev_day.close
@@ -214,6 +225,11 @@ class EngineDaemon:
             session_lowest=min((b.low for b in bars_15m[-10:]), default=bar.low),
         )
 
+        # Check market hours: Never evaluate or trigger trades for closed markets (unless explicit mock simulation)
+        if not self.mock_mode and not is_market_open(symbol):
+            logger.debug(f"[EngineDaemon] Market closed for {symbol}. Skipping strategy evaluation.")
+            return
+
         # 4. Evaluate Strategy Triggers (with H4/L4 Touch-Point Gating)
         new_signals = self.strategy_engine.evaluate(ctx)
 
@@ -245,6 +261,12 @@ class EngineDaemon:
         # Subscribe markets
         for mkt in self.active_markets:
             self.feed_manager.subscribe_market(mkt)
+
+        # Preload historical candles via REST to eliminate cold-start delay
+        all_symbols = self.feed_manager.get_all_subscribed_symbols()
+        if all_symbols and not self.mock_mode:
+            logger.info(f"[EngineDaemon] Preloading historical bars for {len(all_symbols)} symbols...")
+            self.bootstrapper.bootstrap_all(all_symbols, self.aggregator)
 
         # Start ingestion feeds
         self.feed_manager.start()

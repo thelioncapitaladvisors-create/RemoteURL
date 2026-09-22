@@ -201,8 +201,10 @@ class CandleAggregator:
         """
         with self._lock:
             if symbol not in self._history:
-                self._developing[sym] = {}
+                self._developing[symbol] = {}
                 self._history[symbol] = {tf: [] for tf in self.timeframes}
+            elif timeframe not in self._history[symbol]:
+                self._history[symbol][timeframe] = []
             
             max_len = self.max_daily_bars if timeframe == "1d" else self.max_intraday_bars
             self._history[symbol][timeframe] = list(bars[-max_len:])

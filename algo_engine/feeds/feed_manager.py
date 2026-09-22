@@ -87,6 +87,54 @@ def get_market_category(symbol: str) -> str:
     return "UNKNOWN"
 
 
+def is_market_open(symbol: str, dt: Optional[datetime] = None) -> bool:
+    """
+    Determine if the market for a given symbol is currently open for trading.
+    Prevents strategy evaluation and trade generation outside market hours.
+    
+    Rules:
+        - CRYPTO: 24/7/365 (Always open)
+        - NIFTY: Monday through Friday, 09:15 to 15:30 IST
+        - MCX: Monday through Friday, 09:00 to 23:30 IST
+        - FOREX: Sunday 22:00 UTC to Friday 22:00 UTC
+        - Other: Monday through Friday
+    """
+    from datetime import datetime, timezone, timedelta
+
+    mkt = get_market_category(symbol)
+    if mkt == "CRYPTO":
+        return True
+
+    now_utc = datetime.now(timezone.utc) if dt is None else dt
+    ist_offset = timedelta(hours=5, minutes=30)
+    now_ist = now_utc + ist_offset
+    weekday = now_ist.weekday()  # 0 = Monday, 4 = Friday, 5 = Sat, 6 = Sun
+    time_minutes = now_ist.hour * 60 + now_ist.minute
+
+    if mkt == "NIFTY":
+        if weekday >= 5:
+            return False
+        return (9 * 60 + 15) <= time_minutes <= (15 * 60 + 30)
+
+    if mkt == "MCX":
+        if weekday >= 5:
+            return False
+        return (9 * 60) <= time_minutes <= (23 * 60 + 30)
+
+    if mkt == "FOREX":
+        utc_weekday = now_utc.weekday()
+        utc_minutes = now_utc.hour * 60 + now_utc.minute
+        if utc_weekday == 5:
+            return False
+        if utc_weekday == 6:
+            return utc_minutes >= 22 * 60
+        if utc_weekday == 4:
+            return utc_minutes < 22 * 60
+        return True
+
+    return weekday < 5
+
+
 class FeedManager:
     """
     Master Feed Orchestrator.
@@ -104,7 +152,7 @@ class FeedManager:
         # Instantiate adapters
         self.dhan_feed = DhanFeed(mock_mode=mock_mode)
         self.binance_feed = BinanceFeed(mock_mode=mock_mode)
-        self.global_feed = GlobalFeed()
+        self.global_feed = GlobalFeed(mock_mode=mock_mode)
 
         self._all_feeds: List[BaseFeed] = [
             self.dhan_feed,
@@ -204,3 +252,12 @@ class FeedManager:
         """Fetch current incomplete developing candle."""
         clean = normalize_symbol(symbol)
         return self.aggregator.get_developing_bar(clean, timeframe)
+
+    def get_all_subscribed_symbols(self) -> List[str]:
+        """Return a sorted unique list of all subscribed symbols across all feed adapters."""
+        symbols: Set[str] = set()
+        symbols.update(getattr(self.dhan_feed, "subscribed_symbols", []))
+        symbols.update(getattr(self.binance_feed, "subscribed_symbols", []))
+        symbols.update(getattr(self.global_feed, "subscribed_symbols", []))
+        return sorted(list(symbols))
+

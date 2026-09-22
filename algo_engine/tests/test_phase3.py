@@ -40,6 +40,7 @@ class TestShadowPipeline(unittest.TestCase):
         self.pipeline = ShadowPipeline(
             supabase_url=None,
             supabase_key=None,
+            disable_supabase=True,
             local_fallback_path=self.fallback_file,
         )
 
