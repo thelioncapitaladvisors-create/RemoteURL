@@ -42,6 +42,11 @@
   - **Bottom Navigation Clearance**: All main terminal scrolling containers (`page.tsx`) must strictly feature `pb-20 sm:pb-24` and `min-h-0` flex bounding to guarantee bottom table rows, status pills, and summary cards never scroll beneath or get obscured by floating bottom tab bars.
   - **Horizontal Table Column Integrity**: Data tables on mobile with high column density (such as the Markets performance table) must be wrapped inside responsive horizontal scroll containers (`overflow-x-auto hide-scrollbar w-full`) with a defined minimum inner width (e.g., `min-w-[520px]`).
   - **Consolidated Summary Row Spacing**: Table summary rows displaying both label (`∑ CONSOLIDATED`) and metrics must merge label and count columns (e.g., `col-span-2 flex justify-between`) or provide sufficient fractional grid width to avoid horizontal text collision.
+  - **Equalized Section Heading Typography Mandate**: Major section headings across all mobile terminal tabs (specifically `TRADE GUIDANCE`, `TLCS ALERTS DASHBOARD`, and `GLOBAL SIGNAL FEED`) must maintain strictly equal typography:
+    - Heading tag & font sizing: `h2` with `text-xl sm:text-2xl font-bold italic tracking-tighter uppercase leading-[1.1] text-primary flex items-center gap-2`.
+    - Section Icon parity: Accent-colored icon (`text-accent shrink-0` with `size={22}`) paired directly with heading title.
+    - Subtitle formatting: `text-[10px] sm:text-[11px] font-mono font-bold text-dim uppercase tracking-wider block mt-1`.
+    - Centered miniature captions (`h3 text-xs sm:text-sm tracking-widest`) are strictly prohibited for top-level operational sections.
 
 ## Strict Netlify Hosting & Single Infrastructure Rule
 - **NETLIFY ONLY**: The entire system infrastructure (Web Dashboard, Mobile App backend endpoints, Netlify background workers, and Telegram dispatchers) is hosted **EXCLUSIVELY on Netlify** (`thelioncapitalsolutions.com`).
@@ -1298,9 +1303,10 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Unified Global Signal Feed on LOGS Tab**:
   - The previous split between "LIVE ACTIVE TRADES" and "DISPATCHED SIGNALS & ALERTS" on the LOGS tab is consolidated into a single unified `GLOBAL SIGNAL FEED & EXECUTION LOG` stream.
   - Active trades, filled limits, pending limit orders, and closed executions are unified into a single chronological feed with clear status badges, eliminating fragmentation and improving mobile user experience.
-- **Relocation of TLCS Alerts Dashboard to HUB Tab**:
+- **Relocation of TLCS Alerts Dashboard to HUB Tab & Equalized Section Typography**:
   - The `TLCS ALERTS DASHBOARD` section (showing today's Parameter Matrix, Trade Sequence matrix, Extreme Reversal, and Breakaway metrics) has been moved from the ANALYTICS tab to the HUB tab, placed directly below the `TRADE GUIDANCE` section.
   - The HUB tab now serves as the primary operational command center: Trade Guidance at top, followed by the Daily Alerts Dashboard & Matrices.
+  - **Equalized Section Headings**: Standardized both `TRADE GUIDANCE` and `TLCS ALERTS DASHBOARD` to identical `h2 text-xl sm:text-2xl font-bold italic tracking-tighter uppercase leading-[1.1]` typography with `size={22}` accent icons and matching monospace subtitles, eliminating typography disparity.
   - The ANALYTICS tab is streamlined to focus on performance analytics, historical metrics, and Day Type scanner matrices.
 - **Global Version 3.0 Branding**:
   - Mobile terminal header: `TLCS TERMINAL v3.0`.

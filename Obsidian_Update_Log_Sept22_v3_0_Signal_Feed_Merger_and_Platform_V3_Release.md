@@ -11,8 +11,13 @@ Version 3.0 introduces a major architectural refinement to the TLCS trading term
    - **Single Cohesive Execution Stream**: Merged into `GLOBAL SIGNAL FEED & EXECUTION LOG` containing all live active trades, filled limits, pending limit orders, trailing stop updates, and finalized target/SL exits in strict reverse chronological order.
    - **Unified Contextual Badges**: Every entry features unified strategy badges (`BREAKAWAY`, `EXTREME_REVERSAL`, `DIVERGENCE`, `DAY_TYPE_BLUEPRINT`), outcome pills, live P&L percentage, and timestamp parity.
 
-2. **HUB Tab Operational Command Center**:
+2. **HUB Tab Operational Command Center & Equalized Section Headings**:
    - **Relocation of TLCS Alerts Dashboard**: The `TLCS ALERTS DASHBOARD` section (featuring the daily Parameter Matrix, Trade Sequence matrix, Extreme Reversal, and Breakaway metrics) was moved from the ANALYTICS tab to the HUB tab, positioned directly below the `TRADE GUIDANCE` section.
+   - **Equalized Section Heading Typography**: Standardized both `TRADE GUIDANCE` and `TLCS ALERTS DASHBOARD` to strictly equal font size and styling:
+     - Heading tag & typography: `h2` with `text-xl sm:text-2xl font-bold italic tracking-tighter uppercase leading-[1.1] text-primary flex items-center gap-2`.
+     - Icon parity: Added `<SlidersHorizontal className="text-accent shrink-0" size={22} />` to match `<LayoutGrid className="text-accent shrink-0" size={22} />`.
+     - Monospace subtitle parity: Aligned to `text-[10px] sm:text-[11px] font-mono font-bold text-dim uppercase tracking-wider block mt-1`.
+     - Cross-Tab Uniformity: Aligned `GLOBAL SIGNAL FEED` in the LOGS tab to the same `text-xl sm:text-2xl` heading standard.
    - **Unified Daily Command Center**: Traders can now open the HUB tab and immediately review Trade Guidance alongside today's active alert distributions without having to toggle between tabs.
    - **Streamlined Analytics Tab**: The ANALYTICS tab is now dedicated exclusively to deep performance metrics, historical distribution analytics, and Day Type scanner matrices.
 
