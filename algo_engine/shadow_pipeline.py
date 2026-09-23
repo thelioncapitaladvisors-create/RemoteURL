@@ -147,6 +147,40 @@ class ShadowPipeline:
         logger.info(f"[ShadowPipeline] Recorded new signal: {signal.name} for {clean_sym} at {signal.entry_price}")
         return trade_id
 
+    def sync_signal(self, sig: dict) -> None:
+        """
+        Record a scanner-detected active signal into shadow_signals.
+        """
+        sym = normalize_symbol(sig.get("symbol", ""))
+        now_iso = datetime.now(timezone.utc).isoformat()
+        trade_id = f"SCAN_{sym}_{int(time.time() * 1000)}_{sig.get('type', 'SIG')}"
+
+        payload = {
+            "symbol": sym,
+            "type": sig.get("type", "ACTIVE"),
+            "entry": round(float(sig.get("entry_price", 0.0)), 4) if sig.get("entry_price") else None,
+            "stop": round(float(sig.get("stop_loss", 0.0)), 4) if sig.get("stop_loss") else None,
+            "target": round(float(sig.get("tp1", 0.0)), 4) if sig.get("tp1") else None,
+            "tp2": round(float(sig.get("tp2", 0.0)), 4) if sig.get("tp2") else None,
+            "tp3": round(float(sig.get("tp3", 0.0)), 4) if sig.get("tp3") else None,
+            "tp4": round(float(sig.get("tp4", 0.0)), 4) if sig.get("tp4") else None,
+            "status": "ACTIVE",
+            "outcome": "OPEN",
+            "trigger": sig.get("trigger", "ScannerAlert"),
+            "pricing_type": "SHADOW",
+            "source": "blackbox_dhan",
+            "exchange": "nifty",
+            "signal_ts": sig.get("created_at", now_iso),
+            "created_at": sig.get("created_at", now_iso),
+            "updated_at": now_iso,
+            "metadata": {
+                "trade_id": trade_id,
+                **(sig.get("metadata") or {}),
+                "engine_version": "3.0.0"
+            }
+        }
+        self._execute_insert(trade_id, payload)
+
     def record_fill(self, trade: Trade) -> None:
         """Record limit order execution / fill."""
         now_iso = datetime.now(timezone.utc).isoformat()

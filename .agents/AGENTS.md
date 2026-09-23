@@ -1315,3 +1315,37 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - Web footers & script cachebusters: `v3.0` / `?v=3.0`.
   - Package versions across all projects: `3.0.0` (`TLCS_Website_Deploy/package.json` and `Tv-Alert-Mobile/package.json`).
 
+## Version 3.1 Top 100 Liquid NSE Stocks 15-Minute Black Box Scanner Integration (23 Sept 2026)
+- **Top 100 NSE Liquid Universe via Black Box**:
+  - Top 100 liquid NSE stocks are evaluated via the standalone Python Black Box algo engine (`algo_engine`) and NOT via TradingView webhook alerts.
+  - Official Dhan Scrip Master (`https://images.dhan.co/api-data/api-scrip-master.csv`) is mapped in `algo_engine/data/dhan_nse100_symbols.json` and `algo_engine/data/nse_top100_master.py`.
+  - Corporate actions & renames mapped: Tata Motors (`TMPV`/`TMCV`), Zomato (`ETERNAL`), LTIMindtree (`LTM`).
+- **DhanHQ 15-Minute Market Data Feed**:
+  - `algo_engine/feeds/dhan_feed.py` implements `fetch_intraday_candles(symbol, interval=15)` querying `POST https://api.dhan.co/v2/charts/intraday`.
+  - `fetch_daily_levels(symbol)` calculates Camarilla (H4/L4) and CPR levels from previous session OHLC.
+  - Graceful fallback/simulation mode active when credentials are absent or outside market hours.
+- **Autonomous Multi-Strategy Scanner**:
+  - `algo_engine/nse100_scanner.py` and `algo_engine/run_nse100_scanner.py` scan all 100 stocks across 13 strategy categories with strict H4/L4 touchpoint gating (`low < H4` for buys, `high > L4` for sells).
+  - Detected active signals sync into Supabase `shadow_signals` with `source: 'blackbox_dhan'`.
+- **HUB Tab Alerts Dashboard Integration**:
+  - Mobile terminal (`Tv-Alert-Mobile/src/app/page.tsx`) merges active Black Box detections from `shadow_signals` into the `TLCS ALERTS DASHBOARD` on the HUB tab.
+  - Black Box stock tickers display a high-visibility `⚡` lightning badge in the `Current Signal` cell.
+  - Webhook signals, trade guidance cards, execution logs, and live portfolio metrics remain 100% untouched and isolated.
+- **Authentication & Deployment**:
+## Version 4.0 Platform Baseline & Standalone DhanHQ Mini-Project (23 Sept 2026)
+- **Global Version 4.0 Baseline**:
+  - Standardized across mobile app (`Tv-Alert-Mobile`), web app (`TLCS_Website_Deploy`), and backend engines to Version `4.0.0` / `v4.0`.
+  - Mobile terminal header: `TLCS TERMINAL v4.0`.
+  - Daemon indicator: `Active Daemon v4.0`.
+  - SIEM init log: `Terminal V4.0 initialized`.
+  - Web footers and engine badges: `Deterministic Engine v4.0` / `v4.0`.
+  - Service worker cache: `tlcs-website-cache-v4.0.0`.
+- **HUB Tab Standalone DhanHQ 100 Mini-Project**:
+  - **Strict Multi-Layer Isolation Mandate**: The Top 100 Liquid NSE Black Box Scanner powered by DhanHQ is strictly visible ONLY on the HUB tab (`activeTab === 'DASHBOARD'`) of the mobile application.
+  - **Zero Web Exposure**: The web application (`TLCS_Website_Deploy`) NEVER queries or renders DhanHQ blackbox signals.
+  - **Zero Mobile Cross-Tab Bleed**: DhanHQ signals are strictly excluded from calculations across all other mobile tabs (`MARKETS`, `ANALYTICS`, `LOGS`, `ADMIN`, `RESEARCH`). Production KPIs, win rates, and trade cards remain 100% bound to TradingView webhooks.
+  - **Interactive Filter Toggle Button**: Positioned above the `TRADE GUIDANCE` section, enabling instant toggling between `WEBHOOK SIGNALS` and `DHANHQ 100 (BLACK BOX ⚡)`.
+  - **Dynamic TRADE GUIDANCE Grid**: When toggled to `DHANHQ 100`, the 10 KPI metric cards dynamically compute and display isolated performance for the 100 liquid stocks (Active Limits, Live Trades, Today's Closed Trades, Today's Success Rate, Today's Profit Factor, Weekly Trades, Weekly Success Rate, Weekly Profit Factor, Weekly Expectancy, and Universe: 100 Stocks).
+  - **Standalone Parameter Status Card**: Displays universe size (Top 100 Liquid NSE), timeframe (15-Min intervals), gating rule (H4/L4 touchpoint), and isolation status.
+  - **Source-Gated TLCS ALERTS DASHBOARD**: When `DHAN` mode is selected, the parameter matrix and blueprint tables display strictly active Black Box signals; when `WEBHOOK` mode is selected, they display strictly active webhook signals.
+

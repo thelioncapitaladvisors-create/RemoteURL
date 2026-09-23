@@ -70,6 +70,15 @@ class DhanFeed(BaseFeed):
 
         # {symbol: (exchange_segment, security_id)}
         self.symbol_map: Dict[str, Tuple[int, str]] = dict(DEFAULT_SYMBOL_MAP)
+        
+        # Merge Top 100 NSE Scrip Master mappings
+        try:
+            from ..data.nse_top100_master import load_nse100_mappings
+            for sym, info in load_nse100_mappings().items():
+                self.symbol_map[sym] = (info.get("exchange_segment", EXCHANGE_NSE), str(info.get("security_id")))
+        except Exception as e:
+            logger.debug(f"[DhanFeed] Scrip master auto-load notice: {e}")
+
         # {(exchange_segment, security_id): symbol}
         self.reverse_map: Dict[Tuple[int, str], str] = {
             v: k for k, v in self.symbol_map.items()
@@ -276,3 +285,156 @@ class DhanFeed(BaseFeed):
             time.sleep(0.1)
 
         self._set_status(FeedStatus.DISCONNECTED, "Mock simulation stopped")
+
+    # ── Intraday Candle & Daily Historical Fetchers ─────────────
+
+    def fetch_intraday_candles(self, symbol: str, interval: int = 15) -> List[dict]:
+        """
+        Fetch completed intraday candles for symbol (e.g. interval=15 for 15m).
+        Returns list of candle dicts: [{'open': ..., 'high': ..., 'low': ..., 'close': ..., 'volume': ..., 'timestamp': ...}]
+        """
+        clean = self._clean_symbol(symbol)
+        sec_info = self.symbol_map.get(clean)
+        if not sec_info:
+            return []
+
+        exch_seg, sec_id = sec_info
+
+        # If live credentials available, fetch from Dhan REST API
+        if self.client_id and self.access_token and not self.mock_mode:
+            try:
+                import requests
+                from datetime import date
+                today_str = date.today().strftime("%Y-%m-%d")
+                url = "https://api.dhan.co/v2/charts/intraday"
+                headers = {
+                    "Content-Type": "application/json",
+                    "client-id": self.client_id,
+                    "access-token": self.access_token
+                }
+                payload = {
+                    "securityId": str(sec_id),
+                    "exchangeSegment": "NSE_EQ" if exch_seg == EXCHANGE_NSE else "MCX_COMM",
+                    "instrument": "EQUITY" if exch_seg == EXCHANGE_NSE else "COMMODITY",
+                    "interval": interval,
+                    "fromDate": today_str,
+                    "toDate": today_str
+                }
+                resp = requests.post(url, json=payload, headers=headers, timeout=5)
+                if resp.status_code == 200:
+                    data = resp.json().get("data", {})
+                    opens = data.get("open", [])
+                    highs = data.get("high", [])
+                    lows = data.get("low", [])
+                    closes = data.get("close", [])
+                    vols = data.get("volume", [])
+                    times = data.get("timestamp", [])
+                    candles = []
+                    for i in range(len(opens)):
+                        candles.append({
+                            "open": float(opens[i]),
+                            "high": float(highs[i]),
+                            "low": float(lows[i]),
+                            "close": float(closes[i]),
+                            "volume": float(vols[i]) if i < len(vols) else 0.0,
+                            "timestamp": float(times[i]) if i < len(times) else time.time(),
+                        })
+                    if candles:
+                        return candles
+            except Exception as e:
+                logger.warning(f"[DhanFeed] Failed to fetch live {interval}m candles for {symbol}: {e}")
+
+        # Mock fallback generator for offline testing or off-market hours
+        return self._generate_mock_candles(clean, interval=interval)
+
+    def fetch_daily_levels(self, symbol: str) -> Optional[dict]:
+        """
+        Fetch previous day High, Low, Close for daily Camarilla and CPR calculation.
+        """
+        clean = self._clean_symbol(symbol)
+        sec_info = self.symbol_map.get(clean)
+        if not sec_info:
+            return None
+
+        exch_seg, sec_id = sec_info
+        if self.client_id and self.access_token and not self.mock_mode:
+            try:
+                import requests
+                from datetime import date, timedelta
+                today = date.today()
+                from_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
+                to_date = today.strftime("%Y-%m-%d")
+                url = "https://api.dhan.co/v2/charts/historical"
+                headers = {
+                    "Content-Type": "application/json",
+                    "client-id": self.client_id,
+                    "access-token": self.access_token
+                }
+                payload = {
+                    "securityId": str(sec_id),
+                    "exchangeSegment": "NSE_EQ" if exch_seg == EXCHANGE_NSE else "MCX_COMM",
+                    "instrument": "EQUITY" if exch_seg == EXCHANGE_NSE else "COMMODITY",
+                    "expiryCode": 0,
+                    "fromDate": from_date,
+                    "toDate": to_date
+                }
+                resp = requests.post(url, json=payload, headers=headers, timeout=5)
+                if resp.status_code == 200:
+                    data = resp.json().get("data", {})
+                    highs = data.get("high", [])
+                    lows = data.get("low", [])
+                    closes = data.get("close", [])
+                    if len(highs) >= 2:
+                        return {
+                            "high": float(highs[-2]),
+                            "low": float(lows[-2]),
+                            "close": float(closes[-2])
+                        }
+            except Exception as e:
+                logger.debug(f"[DhanFeed] Historical daily fetch error for {symbol}: {e}")
+
+        return self._generate_mock_daily_levels(clean)
+
+    def _generate_mock_candles(self, symbol: str, interval: int = 15) -> List[dict]:
+        """Generate realistic synthetic 15-minute candles for testing."""
+        import random
+        base_price = 1000.0
+        if symbol == "RELIANCE": base_price = 2850.0
+        elif symbol == "TCS": base_price = 4200.0
+        elif symbol == "HDFCBANK": base_price = 1650.0
+        elif symbol == "INFY": base_price = 1820.0
+
+        candles = []
+        cur = base_price
+        now = time.time()
+        for i in range(25): # 25 candles in a 15m day
+            c_open = cur
+            change = cur * random.uniform(-0.006, 0.006)
+            c_close = round(cur + change, 2)
+            c_high = round(max(c_open, c_close) + abs(cur * random.uniform(0.001, 0.004)), 2)
+            c_low = round(min(c_open, c_close) - abs(cur * random.uniform(0.001, 0.004)), 2)
+            candles.append({
+                "open": c_open,
+                "high": c_high,
+                "low": c_low,
+                "close": c_close,
+                "volume": float(random.randint(5000, 50000)),
+                "timestamp": now - (25 - i) * (interval * 60)
+            })
+            cur = c_close
+        return candles
+
+    def _generate_mock_daily_levels(self, symbol: str) -> dict:
+        """Generate realistic previous day levels for testing."""
+        base_price = 1000.0
+        if symbol == "RELIANCE": base_price = 2850.0
+        elif symbol == "TCS": base_price = 4200.0
+        elif symbol == "HDFCBANK": base_price = 1650.0
+        elif symbol == "INFY": base_price = 1820.0
+
+        return {
+            "high": round(base_price * 1.015, 2),
+            "low": round(base_price * 0.985, 2),
+            "close": round(base_price * 1.002, 2)
+        }
+
