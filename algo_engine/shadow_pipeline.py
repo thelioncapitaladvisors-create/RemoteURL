@@ -133,7 +133,7 @@ class ShadowPipeline:
             "exchange": mkt,
             "signal_ts": now_iso,
             "created_at": now_iso,
-            "updated_at": now_iso,
+            "updated_at": None,
             "metadata": {
                 "trade_id": trade_id,
                 "zone": signal.zone,
@@ -172,7 +172,7 @@ class ShadowPipeline:
             "exchange": "nifty",
             "signal_ts": sig.get("created_at", now_iso),
             "created_at": sig.get("created_at", now_iso),
-            "updated_at": now_iso,
+            "updated_at": None,
             "metadata": {
                 "trade_id": trade_id,
                 **(sig.get("metadata") or {}),

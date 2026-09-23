@@ -332,8 +332,8 @@ class NSE100Scanner:
             is_live_trade = (
                 "TRADE ACTIVE" in st or 
                 "⚡" in st or 
-                (r.get("updated_at") and r.get("updated_at") != r.get("created_at")) or 
-                meta.get("real_entry_time")
+                meta.get("real_entry_time") is not None or
+                r.get("trigger") == "TradeFill"
             )
 
             if not is_live_trade:
