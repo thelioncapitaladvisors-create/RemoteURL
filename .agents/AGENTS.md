@@ -1348,4 +1348,7 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - **Dynamic TRADE GUIDANCE Grid**: When toggled to `DHANHQ 100`, the 10 KPI metric cards dynamically compute and display isolated performance for the 100 liquid stocks (Active Limits, Live Trades, Today's Closed Trades, Today's Success Rate, Today's Profit Factor, Weekly Trades, Weekly Success Rate, Weekly Profit Factor, Weekly Expectancy, and Universe: 100 Stocks).
   - **Standalone Parameter Status Card**: Displays universe size (Top 100 Liquid NSE), timeframe (15-Min intervals), gating rule (H4/L4 touchpoint), and isolation status.
   - **Source-Gated TLCS ALERTS DASHBOARD**: When `DHAN` mode is selected, the parameter matrix and blueprint tables display strictly active Black Box signals; when `WEBHOOK` mode is selected, they display strictly active webhook signals.
+  - **Light Theme Contrast & Lucid Readability Mandate**: All standalone DhanHQ cards, info banners, and KPI labels strictly enforce dual-theme high contrast (`text-fuchsia-800 dark:text-fuchsia-300`, `bg-fuchsia-50 dark:bg-fuchsia-950/40`, `border-fuchsia-300 dark:border-fuchsia-800`, `text-slate-900 dark:text-white`), completely eliminating washed-out or low-contrast text in Light Mode.
+  - **Quant Strategy Pipeline Ingestion**: `algo_engine/nse100_scanner.py` streams 15m OHLC candles from DhanHQ, evaluates Camarilla H4/L4 touchpoints, CPR, EMAs, ATR, and Value Area, and streams detections into Supabase `shadow_signals` with `source: 'blackbox_dhan'` and full metadata.
+
 
