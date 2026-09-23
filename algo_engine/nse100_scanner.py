@@ -17,7 +17,8 @@ from .data.nse_top100_master import get_all_nse100_symbols, clean_symbol
 from .feeds.dhan_feed import DhanFeed
 from .pivots import (
     OHLC, compute_daily_levels, compute_emas_from_bars,
-    compute_atr, compute_pivot_trend_emas
+    compute_atr, compute_pivot_trend_emas, compute_value_area_from_bars,
+    compute_opening_bias
 )
 from .day_types import DayTypeClassifier
 from .strategies import StrategyEngine, StrategySignal, MarketContext
@@ -74,64 +75,99 @@ class NSE100Scanner:
         # 3. Compute indicators on 15m bars
         emas = compute_emas_from_bars(bars)
         trend_emas = compute_pivot_trend_emas(bars)
-        atr = compute_atr(bars)
+        atr_vals = compute_atr(bars)
+        va = compute_value_area_from_bars(bars)
+        opening_bias = compute_opening_bias(bars[0].open, daily['high'], daily['low'], va.vah, va.val)
 
-        # 4. Classify Day Type
-        if clean not in self.day_type_classifiers:
-            self.day_type_classifiers[clean] = DayTypeClassifier(levels)
-        
-        day_type_res = self.day_type_classifiers[clean].update(bars[-1])
-
-        # 5. Build Market Context for Strategy Engine
-        context = MarketContext(
-            symbol=clean,
-            market='NIFTY',
-            current_bar=bars[-1],
-            previous_bar=bars[-2] if len(bars) >= 2 else bars[-1],
-            levels=levels,
-            emas=emas,
-            trend_emas=trend_emas,
-            atr=atr,
-            day_type=day_type_res.blueprint.value if day_type_res.blueprint else 'TYPICAL',
-            opening_bias=day_type_res.opening_bias.value if day_type_res.opening_bias else 'IN_RANGE_IN_VALUE'
+        # 4. Classify Day Type using daily aggregated bar
+        daily_bar = OHLC(
+            open=bars[0].open,
+            high=max(b.high for b in bars),
+            low=min(b.low for b in bars),
+            close=bars[-1].close,
+            volume=sum(b.volume for b in bars),
+            timestamp=bars[-1].timestamp
         )
+
+        if clean not in self.day_type_classifiers:
+            self.day_type_classifiers[clean] = DayTypeClassifier()
+        
+        day_type_res = self.day_type_classifiers[clean].evaluate(daily_bar)
+        active_blueprints = day_type_res.get_active_blueprints()
+        active_sequences = day_type_res.get_active_sequences()
+
+        primary_day_type = active_blueprints[0] if active_blueprints else 'TYPICAL DAY'
 
         signals: List[dict] = []
 
-        # Evaluate standard strategies (Missile, Scalp, Lightning, Extreme Reversal, Divergence)
-        strat_sigs = self.strategy_engine.evaluate(context)
-        for sig in strat_sigs:
-            signals.append({
-                'symbol': clean,
-                'type': sig.signal_type.value,
-                'trigger': sig.trigger_reason,
-                'market': 'nifty',
-                'entry_price': sig.entry_price,
-                'stop_loss': sig.stop_loss,
-                'tp1': sig.tp1,
-                'tp2': sig.tp2,
-                'tp3': sig.tp3,
-                'tp4': sig.tp4,
-                'status': 'ACTIVE',
-                'source': 'blackbox_dhan',
-                'created_at': datetime.now(timezone.utc).isoformat(),
-                'metadata': {
-                    'timeframe': '15m',
-                    'day_type': day_type_res.blueprint.value if day_type_res.blueprint else '',
-                    'opening_bias': day_type_res.opening_bias.value if day_type_res.opening_bias else '',
-                    'source_feed': 'DhanHQ',
-                    'h4': levels.h4,
-                    'l4': levels.l4
-                }
-            })
+        # 5. Evaluate strategy engine across completed bars of the session
+        # Check latest bars for active trading signals
+        eval_window = min(len(bars), 10)
+        for i in range(len(bars) - eval_window, len(bars)):
+            cur_bar = bars[i]
+            prev_b = bars[i - 1] if i > 0 else cur_bar
 
-        # Also register blueprint and sequence tags if active
-        if day_type_res.blueprint:
-            bp_val = day_type_res.blueprint.value.upper()
+            ctx = MarketContext(
+                bar=cur_bar,
+                bar_index=i,
+                H4=levels.H4,
+                L4=levels.L4,
+                H3=levels.H3,
+                L3=levels.L3,
+                cpr_pivot=levels.pivot,
+                cpr_tc=levels.tc,
+                cpr_bc=levels.bc,
+                is_ncpr=levels.is_narrow,
+                vah=va.vah,
+                val=va.val,
+                short_ema=emas[0][i],
+                med_ema=emas[1][i],
+                pivot_trend_fast=trend_emas[0][i],
+                pivot_trend_slow=trend_emas[1][i],
+                atr=atr_vals[i],
+                opening_bias=opening_bias,
+                day_type_label=primary_day_type,
+                session_highest=max(b.high for b in bars[:i + 1]),
+                session_lowest=min(b.low for b in bars[:i + 1]),
+                prev_bar=prev_b,
+                plus=1.0 if cur_bar.is_green else 0.0,
+                minus=1.0 if cur_bar.is_red else 0.0,
+            )
+
+            strat_sigs = self.strategy_engine.evaluate(ctx)
+            for sig in strat_sigs:
+                signals.append({
+                    'symbol': clean,
+                    'type': sig.name,
+                    'trigger': f'{sig.name} Trigger',
+                    'market': 'nifty',
+                    'entry_price': round(float(sig.entry_price), 2),
+                    'stop_loss': round(float(sig.stop_loss), 2),
+                    'tp1': round(float(sig.tp1), 2),
+                    'tp2': round(float(sig.tp2), 2),
+                    'tp3': round(float(sig.tp3), 2),
+                    'tp4': round(float(sig.tp4), 2),
+                    'status': 'ACTIVE',
+                    'source': 'blackbox_dhan',
+                    'created_at': datetime.now(timezone.utc).isoformat(),
+                    'metadata': {
+                        'timeframe': '15m',
+                        'day_type': primary_day_type,
+                        'opening_bias': opening_bias,
+                        'source_feed': 'DhanHQ',
+                        'h4': levels.H4,
+                        'l4': levels.L4
+                    }
+                })
+
+        # Also register blueprint signals if active
+        for bp in active_blueprints:
+            is_bull = 'Bullish' in bp
+            bp_type = f'BUY {bp.upper()}' if is_bull else f'SELL {bp.upper()}'
             signals.append({
                 'symbol': clean,
-                'type': f'BLUEPRINT_{bp_val}',
-                'trigger': day_type_res.blueprint.value,
+                'type': bp_type,
+                'trigger': bp,
                 'market': 'nifty',
                 'entry_price': bars[-1].close,
                 'status': 'ACTIVE',
@@ -139,9 +175,31 @@ class NSE100Scanner:
                 'created_at': datetime.now(timezone.utc).isoformat(),
                 'metadata': {
                     'timeframe': '15m',
-                    'day_type': day_type_res.blueprint.value,
-                    'opening_bias': day_type_res.opening_bias.value if day_type_res.opening_bias else '',
-                    'source_feed': 'DhanHQ'
+                    'day_type': bp,
+                    'opening_bias': opening_bias,
+                    'source_feed': 'DhanHQ',
+                    'h4': levels.H4,
+                    'l4': levels.L4
+                }
+            })
+
+        for seq in active_sequences:
+            signals.append({
+                'symbol': clean,
+                'type': f'BUY {seq.upper()}',
+                'trigger': seq,
+                'market': 'nifty',
+                'entry_price': bars[-1].close,
+                'status': 'ACTIVE',
+                'source': 'blackbox_dhan',
+                'created_at': datetime.now(timezone.utc).isoformat(),
+                'metadata': {
+                    'timeframe': '15m',
+                    'day_type': seq,
+                    'opening_bias': opening_bias,
+                    'source_feed': 'DhanHQ',
+                    'h4': levels.H4,
+                    'l4': levels.L4
                 }
             })
 

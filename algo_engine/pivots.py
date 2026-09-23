@@ -84,6 +84,57 @@ class DailyLevels:
     prev_close: float
     prev_range: float
 
+    @property
+    def H5(self) -> float: return self.camarilla.H5
+    @property
+    def H4(self) -> float: return self.camarilla.H4
+    @property
+    def H3(self) -> float: return self.camarilla.H3
+    @property
+    def H2(self) -> float: return self.camarilla.H2
+    @property
+    def H1(self) -> float: return self.camarilla.H1
+    @property
+    def L1(self) -> float: return self.camarilla.L1
+    @property
+    def L2(self) -> float: return self.camarilla.L2
+    @property
+    def L3(self) -> float: return self.camarilla.L3
+    @property
+    def L4(self) -> float: return self.camarilla.L4
+    @property
+    def L5(self) -> float: return self.camarilla.L5
+
+    @property
+    def h5(self) -> float: return self.camarilla.H5
+    @property
+    def h4(self) -> float: return self.camarilla.H4
+    @property
+    def h3(self) -> float: return self.camarilla.H3
+    @property
+    def h2(self) -> float: return self.camarilla.H2
+    @property
+    def h1(self) -> float: return self.camarilla.H1
+    @property
+    def l1(self) -> float: return self.camarilla.L1
+    @property
+    def l2(self) -> float: return self.camarilla.L2
+    @property
+    def l3(self) -> float: return self.camarilla.L3
+    @property
+    def l4(self) -> float: return self.camarilla.L4
+    @property
+    def l5(self) -> float: return self.camarilla.L5
+
+    @property
+    def pivot(self) -> float: return self.cpr.pivot
+    @property
+    def tc(self) -> float: return self.cpr.tc
+    @property
+    def bc(self) -> float: return self.cpr.bc
+    @property
+    def is_narrow(self) -> bool: return self.cpr.is_narrow
+
 
 @dataclass
 class OHLC:
