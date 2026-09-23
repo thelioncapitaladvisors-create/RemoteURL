@@ -1332,23 +1332,37 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - Black Box stock tickers display a high-visibility `⚡` lightning badge in the `Current Signal` cell.
   - Webhook signals, trade guidance cards, execution logs, and live portfolio metrics remain 100% untouched and isolated.
 - **Authentication & Deployment**:
-## Version 4.0 Platform Baseline & Standalone DhanHQ Mini-Project (23 Sept 2026)
+## Version 4.0 Platform Baseline: Standalone DhanHQ Mini-Project & Dual-Feed Synchronization (23 Sept 2026)
 - **Global Version 4.0 Baseline**:
-  - Standardized across mobile app (`Tv-Alert-Mobile`), web app (`TLCS_Website_Deploy`), and backend engines to Version `4.0.0` / `v4.0`.
+  - Standardized across mobile app (`Tv-Alert-Mobile`), web app (`TLCS_Website_Deploy`), and quant algo engine (`algo_engine`) to Version `4.0.0` / `v4.0`.
   - Mobile terminal header: `TLCS TERMINAL v4.0`.
-  - Daemon indicator: `Active Daemon v4.0`.
+  - Daemon status pill: `Active Daemon v4.0`.
   - SIEM init log: `Terminal V4.0 initialized`.
   - Web footers and engine badges: `Deterministic Engine v4.0` / `v4.0`.
   - Service worker cache: `tlcs-website-cache-v4.0.0`.
+  - Algo engine version tag: `"engine_version": "4.0.0"` in `algo_engine/shadow_pipeline.py`.
 - **HUB Tab Standalone DhanHQ 100 Mini-Project**:
-  - **Strict Multi-Layer Isolation Mandate**: The Top 100 Liquid NSE Black Box Scanner powered by DhanHQ is strictly visible ONLY on the HUB tab (`activeTab === 'DASHBOARD'`) of the mobile application.
+  - **Strict Multi-Layer Isolation Mandate**: The Top 100 Liquid NSE Black Box Scanner powered by DhanHQ is strictly visible on the HUB tab (`activeTab === 'DASHBOARD'`) and LOGS tab of the mobile application.
   - **Zero Web Exposure**: The web application (`TLCS_Website_Deploy`) NEVER queries or renders DhanHQ blackbox signals.
-  - **Zero Mobile Cross-Tab Bleed**: DhanHQ signals are strictly excluded from calculations across all other mobile tabs (`MARKETS`, `ANALYTICS`, `LOGS`, `ADMIN`, `RESEARCH`). Production KPIs, win rates, and trade cards remain 100% bound to TradingView webhooks.
-  - **Interactive Filter Toggle Button**: Positioned above the `TRADE GUIDANCE` section, enabling instant toggling between `WEBHOOK SIGNALS` and `DHANHQ 100 (BLACK BOX ⚡)`.
-  - **Dynamic TRADE GUIDANCE Grid**: When toggled to `DHANHQ 100`, the 10 KPI metric cards dynamically compute and display isolated performance for the 100 liquid stocks (Active Limits, Live Trades, Today's Closed Trades, Today's Success Rate, Today's Profit Factor, Weekly Trades, Weekly Success Rate, Weekly Profit Factor, Weekly Expectancy, and Universe: 100 Stocks).
+  - **Zero Cross-Tab Bleed on Webhook Production Tabs**: DhanHQ signals are strictly excluded from calculations in `MARKETS`, `ANALYTICS`, `ADMIN`, and `RESEARCH`. Production portfolio KPIs, win rates, and trade cards remain 100% bound to TradingView webhooks.
+  - **Interactive Filter Toggle Button**: Positioned above the `TRADE GUIDANCE` section on the HUB tab, enabling instant toggling between `📡 WEBHOOK SIGNALS` and `⚡ DHANHQ 100 (BLACK BOX ⚡)`.
+  - **Dynamic TRADE GUIDANCE 10-KPI Performance Grid**:
+    - When `WEBHOOK SIGNALS` is active: displays canonical TradingView webhook performance.
+    - When `DHANHQ 100` is active: the 10 KPI metric cards dynamically compute isolated performance for the 100 liquid stocks (Active Limits, Live Trades, Today's Closed Trades, Today's Success Rate, Today's Profit Factor, Weekly Trades, Weekly Success Rate, Weekly Profit Factor, Weekly Expectancy, and Weekly Calmar).
+    - **Weekly Calmar Ratio Parity**: The 10th card displays `WEEKLY CALMAR` across both data sources (`Weekly Gain % / Max Drawdown %`), replacing arbitrary static universe counts with a mathematically rigorous risk-adjusted performance metric.
   - **Standalone Parameter Status Card**: Displays universe size (Top 100 Liquid NSE), timeframe (15-Min intervals), gating rule (H4/L4 touchpoint), and isolation status.
   - **Source-Gated TLCS ALERTS DASHBOARD**: When `DHAN` mode is selected, the parameter matrix and blueprint tables display strictly active Black Box signals; when `WEBHOOK` mode is selected, they display strictly active webhook signals.
   - **Light Theme Contrast & Lucid Readability Mandate**: All standalone DhanHQ cards, info banners, and KPI labels strictly enforce dual-theme high contrast (`text-fuchsia-800 dark:text-fuchsia-300`, `bg-fuchsia-50 dark:bg-fuchsia-950/40`, `border-fuchsia-300 dark:border-fuchsia-800`, `text-slate-900 dark:text-white`), completely eliminating washed-out or low-contrast text in Light Mode.
-  - **Quant Strategy Pipeline Ingestion**: `algo_engine/nse100_scanner.py` streams 15m OHLC candles from DhanHQ, evaluates Camarilla H4/L4 touchpoints, CPR, EMAs, ATR, and Value Area, and streams detections into Supabase `shadow_signals` with `source: 'blackbox_dhan'` and full metadata.
+- **LOGS Tab Dual-System Global Signal Feed & Histogram Synchronization**:
+  - **Dual-System Interactive Toggle**: Integrated directly atop the `GLOBAL SIGNAL FEED & EXECUTION LOG` on the LOGS tab: `[ 📡 TV PROD | ⚡ BLACK BOX LIVE ]`.
+  - **Synchronized Global Signal Feed**: Dynamically filters signal cards, execution badges, and status counters strictly based on the chosen system toggle (`dhanFeedMode === 'DHAN' ? isBlackBox : !isBlackBox`).
+  - **Interactive Normal Distribution Toggle**: Toggle between live execution trade feeds and statistical bell-curve distribution data for both TV Prod and DhanHQ Black Box engines.
+  - **Enhanced Typography on Distribution Histogram**: Category headers formatted with `text-[11px] font-black uppercase tracking-wider text-slate-800 dark:text-white` and metric values with `text-xs font-black tracking-tight` for lucid readability across desktop and mobile.
+- **Quantitative Execution Safeguards & Mathematical Rigor**:
+  - **2:00 PM IST (14:00 IST) Entry Cutoff Mandate**: The autonomous DhanHQ Black Box scanner (`algo_engine/nse100_scanner.py`) strictly halts signal generation at 14:00 IST to prevent late-session gamma whipsaws and liquidity decay. No new limit orders or active trades may be initiated after 14:00 IST.
+  - **Automated Market Close (15:30 IST) Limit Order Cancellation**: All unexecuted limit orders remaining open at 15:30 IST are transitioned to `status: 'CANCELLED'`, `outcome: 'CANCELLED'`. Unexecuted limits MUST NEVER count as breakeven or closed trades in win rate calculations.
+  - **Strict Fill Verification Mandate**: Only signals that recorded an actual fill (`TRADE ACTIVE`, `⚡`, `real_entry_time`, or `TradeFill`) qualify as live active or closed trades.
+  - **Canonical Win Rate Formula**: Total realized closed trades (`wins.length / totalClosed.length * 100`) MUST ALWAYS be used in the denominator across both Webhook and DhanHQ metrics. Fictitious breakevens from unfilled orders are strictly prohibited.
+- **Quant Strategy Pipeline Ingestion**: `algo_engine/nse100_scanner.py` streams 15m OHLC candles from DhanHQ, evaluates Camarilla H4/L4 touchpoints, CPR, EMAs, ATR, and Value Area, and streams detections into Supabase `shadow_signals` with `source: 'blackbox_dhan'` and full metadata.
 
 

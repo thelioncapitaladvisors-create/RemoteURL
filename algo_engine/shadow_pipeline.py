@@ -139,7 +139,7 @@ class ShadowPipeline:
                 "zone": signal.zone,
                 "opening_bias": signal.opening_bias,
                 "day_type": signal.day_type,
-                "engine_version": "2.0.0",
+                "engine_version": "4.0.0",
             }
         }
 
@@ -176,7 +176,7 @@ class ShadowPipeline:
             "metadata": {
                 "trade_id": trade_id,
                 **(sig.get("metadata") or {}),
-                "engine_version": "3.0.0"
+                "engine_version": "4.0.0"
             }
         }
         self._execute_insert(trade_id, payload)
