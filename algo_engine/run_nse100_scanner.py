@@ -57,6 +57,7 @@ def main():
     parser.add_argument("--mock", action="store_true", help="Force mock data mode without live API calls")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of symbols to scan (for testing)")
     parser.add_argument("--interval", type=int, default=900, help="Scan loop interval in seconds (default: 900s / 15m)")
+    parser.add_argument("--sweep-close", action="store_true", help="Run market close exit sweep on shadow_signals and exit immediately")
     args = parser.parse_args()
 
     # Determine mock mode: explicit flag or absence of credentials
@@ -69,6 +70,12 @@ def main():
         logger.info("[NSE100Runner] Live Dhan credentials found. Ingesting live 15m candles from DhanHQ.")
 
     scanner = NSE100Scanner(mock_mode=mock_mode)
+
+    if args.sweep_close:
+        logger.info("[NSE100Runner] Manual --sweep-close flag detected. Sweeping all live trades to exit...")
+        closed = scanner.exit_all_live_trades_at_market_close()
+        logger.info(f"[NSE100Runner] Market close sweep completed. Settled {closed} trades.")
+        return
 
     running = True
 
