@@ -1375,4 +1375,30 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - **Ab-Initio Limit Invalidation Protection Rule**: When a limit order is placed, if the price immediately opens or gaps beyond the stop loss on the subsequent bar without an execution fill (`TradeFill`, `TradeUpdate`, or `real_entry_time`), the limit is invalidated ab-initio. The backend and frontend must treat such signals as `CANCELLED` and purge them under the ghost-trade cleanup rule, strictly preventing phantom losses from penalizing portfolio win rates.
 - **Quant Strategy Pipeline Ingestion**: `algo_engine/nse100_scanner.py` streams 15m OHLC candles from DhanHQ, evaluates Camarilla H4/L4 touchpoints, CPR, EMAs, ATR, and Value Area, and streams detections into Supabase `shadow_signals` with `source: 'blackbox_dhan'` and full metadata.
 
+## Version 4.0 Platform Baseline: Complete UI Source Synchronization & DhanHQ Safe Simulation Architecture (24 Sept 2026)
+- **Bidirectional Engine & UI Source Synchronization Mandate**:
+  - The top Stage 4 Engine Selector (`TV PROD` vs `BLACK BOX` vs `PARITY AUDIT`) and the HUB / LOGS data source filters (`hubDataSource` and `distDataSource`) MUST operate in complete, atomic synchronization.
+  - When the user selects `TV PROD`, `hubDataSource` and `distDataSource` must immediately flip to `'WEBHOOK'`.
+  - When the user selects `BLACK BOX`, `hubDataSource` and `distDataSource` must immediately flip to `'DHAN'`.
+  - Decoupled or divergent state that displays 0 trades on the HUB tab while `TV PROD` is highlighted is strictly prohibited.
+- **Strict Safe Simulation & Paper Trading Rule (Zero Financial Risk)**:
+  - `DHAN_SIMULATION_MODE=true` (in `Tv-Alert-Mobile/.env.local` and Netlify environment variables) and `PAPER_TRADING=True` (in `algo_engine/.env`) are strictly locked ON.
+  - The AI assistant and developers are strictly forbidden from disabling simulation mode or executing live orders without explicit instruction.
+  - In simulation mode, order IDs are generated as virtual identifiers (`SIM_XXXXXX`), filled at real-time LTP, and tracked through their full mathematical lifecycle without sending live broker orders.
+- **Dynamic Active MCX Contract Binding**:
+  - MCX Commodity contract security IDs must never rely on stale, hardcoded numbers. Active monthly contract IDs must be queried or bound dynamically via Dhan's Scrip Master (`api-scrip-master.csv`):
+    - `CRUDEOIL`: `569900`
+    - `GOLD`: `483079`
+    - `SILVER`: `495214`
+    - `NATURALGAS`: `568245`
+- **DhanHQ Market Feed & Integer Security ID Standard**:
+  - DhanHQ `/marketfeed/ltp` payloads require numeric integer security IDs (e.g. `[569900]`, not `["569900"]`).
+  - Response parsing in `lib/dhan.ts` must defensively support both `data.data[segment][id].last_price` and `data.data.data[segment][id].last_price`.
+- **Platform Version 4.0 Branding Standard**:
+  - Mobile terminal header: `TLCS TERMINAL v4.0`.
+  - SIEM initialization log: `Terminal V4.0 initialized`.
+  - Daemon status indicator: `Active Daemon v4.0`.
+  - Package versions across all repositories: `4.0.0`.
+
+
 
