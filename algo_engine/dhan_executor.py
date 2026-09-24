@@ -38,10 +38,10 @@ except Exception as e:
 # MCX Security ID Mapping (Example Mapping - Need actual IDs from Dhan's Security List)
 # Users must update these with the correct current contract IDs
 MCX_SYMBOLS = {
-    "CRUDEOIL": {"security_id": "426307", "lot_size": 100},
-    "GOLD": {"security_id": "426308", "lot_size": 1},
-    "SILVER": {"security_id": "426309", "lot_size": 30},
-    "NATURALGAS": {"security_id": "426310", "lot_size": 1250},
+    "CRUDEOIL": {"security_id": "569900", "lot_size": 100},
+    "GOLD": {"security_id": "483079", "lot_size": 1},
+    "SILVER": {"security_id": "495214", "lot_size": 30},
+    "NATURALGAS": {"security_id": "568245", "lot_size": 1250},
     "COPPER": {"security_id": "426311", "lot_size": 2500},
     "ZINC": {"security_id": "426312", "lot_size": 5000}
 }
