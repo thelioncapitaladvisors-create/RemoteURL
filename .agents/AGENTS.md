@@ -1394,11 +1394,25 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **DhanHQ Market Feed & Integer Security ID Standard**:
   - DhanHQ `/marketfeed/ltp` payloads require numeric integer security IDs (e.g. `[569900]`, not `["569900"]`).
   - Response parsing in `lib/dhan.ts` must defensively support both `data.data[segment][id].last_price` and `data.data.data[segment][id].last_price`.
+- **Trade Distribution Histogram Bounds & Summary Hierarchy Mandate**:
+  - **Row-Wise Pill Categorization (Similar Kinds on the Same Row)**:
+    - **Top Row (Extreme Bounds)**: `Max Loss` (left) and `Max Win` (right). Both metrics represent the strategy's extreme peak outcomes and must strictly share the top row.
+    - **Bottom Row (Baseline Bounds & Zero Line)**: `Min Loss` (left), `₹0` / `0.00%` (center), and `Min Win` (right). All smallest-magnitude outcomes adjacent to the zero baseline must strictly share the bottom row.
+    - Mixed configurations (e.g. `Min Loss` paired with `Max Win` on the same row) are strictly prohibited.
+  - **Typography & Touch Target Standard**:
+    - Bounds Pills (`Max Loss`, `Min Loss`, `₹0`, `Max Win`, `Min Win`): Strictly `text-xs sm:text-[13px] md:text-sm font-black` with `px-2.5 py-0.5 sm:py-1` padding.
+    - Summary Distribution Pills (`WINS`, `LOSSES`, `B/E`, `TOTAL`): Strictly `text-[11px] sm:text-xs md:text-[13px] font-mono font-black` with `w-2.5 h-2.5` status dot indicators.
+    - Synchronized with 100% parity across `Tv-Alert-Mobile/src/app/page.tsx` and `TLCS_Website_Deploy/blog.html`.
+- **GIFT NIFTY Continuous Futures Protection in Automated EOD Sweeps**:
+  - Symbols containing `1!` (such as `NIFTY1!`, `BANKNIFTY1!`) represent continuous international futures contracts operating under GIFT NIFTY market hours (06:30 AM to 02:45 AM IST next morning).
+  - Automated EOD close workers (`cron-eod-close.js` and mobile cron `/api/cron/eod-close`) MUST NOT collapse `NIFTY1!` into domestic `NIFTY` or force-close active positions at 15:30 IST.
+  - Continuous GIFT contracts remain protected and live through the entire European and US evening trading windows, and are only eligible for EOD closure if `hoursAgo > 22` or during the daily maintenance break (02:45 AM to 06:30 AM IST).
 - **Platform Version 4.0 Branding Standard**:
   - Mobile terminal header: `TLCS TERMINAL v4.0`.
   - SIEM initialization log: `Terminal V4.0 initialized`.
   - Daemon status indicator: `Active Daemon v4.0`.
   - Package versions across all repositories: `4.0.0`.
+
 
 
 
