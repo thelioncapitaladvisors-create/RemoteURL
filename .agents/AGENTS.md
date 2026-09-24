@@ -1362,7 +1362,16 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - **2:00 PM IST (14:00 IST) Entry Cutoff Mandate**: The autonomous DhanHQ Black Box scanner (`algo_engine/nse100_scanner.py`) strictly halts signal generation at 14:00 IST to prevent late-session gamma whipsaws and liquidity decay. No new limit orders or active trades may be initiated after 14:00 IST.
   - **Automated Market Close (15:30 IST) Limit Order Cancellation**: All unexecuted limit orders remaining open at 15:30 IST are transitioned to `status: 'CANCELLED'`, `outcome: 'CANCELLED'`. Unexecuted limits MUST NEVER count as breakeven or closed trades in win rate calculations.
   - **Strict Fill Verification Mandate**: Only signals that recorded an actual fill (`TRADE ACTIVE`, `⚡`, `real_entry_time`, or `TradeFill`) qualify as live active or closed trades.
-  - **Canonical Win Rate Formula**: Total realized closed trades (`wins.length / totalClosed.length * 100`) MUST ALWAYS be used in the denominator across both Webhook and DhanHQ metrics. Fictitious breakevens from unfilled orders are strictly prohibited.
+- **Strict Trade Lifecycle Timestamping & Anti-Future Datestamp Mandate (24 Sept 2026)**:
+  - **Deterministic Lifecycle Milestones**: Every trade across both Webhook and Black Box pipelines MUST be strictly time- and date-stamped across every state transition:
+    1. **Genesis / Signal Trigger**: `signal_ts` (ISO string from Pine Script `timenow` / engine bar timestamp).
+    2. **Order Placement**: `created_at` (Supabase insertion timestamp).
+    3. **Execution Fill**: `metadata.real_entry_time` (recorded upon `TradeFill`, `TradeUpdate`, or active fill confirmation).
+    4. **Trailing SL Adjustments**: `updated_at` / `metadata.trail_sl_updated_at` (recorded upon each dynamic trailing ratchet).
+    5. **Target Touches**: `metadata.tp1_hit_at`, `metadata.tp2_hit_at`, etc.
+    6. **Realized Exit**: `exit_at` / `metadata.closeDate` (exact timestamp of exit fill).
+  - **Zero Future Timestamps Rule**: Under NO circumstances may an exit timestamp (`exit_at`) or status update be stamped in the future (`> Date.now()`). Fabricating future session close datestamps (e.g. stamping `15:30 IST` on a trade when the current time is `07:35 AM IST`) is strictly prohibited. If an automated script processes a trade, its timestamp must be capped strictly at `Date.now()`.
+  - **Early Morning Session Protection (GIFT NIFTY & MCX)**: Continuous contracts such as `NIFTY1!` (GIFT NIFTY / NSE IX) initiate trades as early as `06:30 AM IST`. EOD market closure sweeps (`cron-eod-close.js`) MUST verify that any trade created on the current calendar day (`isCreatedToday`) is NEVER force-closed during morning hours (`istHours < 9.0`). Trades created today may ONLY be closed after their official session close (`istHours >= 15.5` for NSE, `istHours >= 23.5` for MCX).
 - **Quant Strategy Pipeline Ingestion**: `algo_engine/nse100_scanner.py` streams 15m OHLC candles from DhanHQ, evaluates Camarilla H4/L4 touchpoints, CPR, EMAs, ATR, and Value Area, and streams detections into Supabase `shadow_signals` with `source: 'blackbox_dhan'` and full metadata.
 
 
