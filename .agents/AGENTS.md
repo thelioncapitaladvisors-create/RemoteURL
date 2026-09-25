@@ -1413,6 +1413,34 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - Daemon status indicator: `Active Daemon v4.0`.
   - Package versions across all repositories: `4.0.0`.
 
+## Version 5.0 Platform Baseline: Autonomous Zero-Touch DhanHQ Engine, Live Option Chain & Intraday Performance Trajectory (25 Sept 2026)
+- **Autonomous Zero-Touch DhanHQ Token Engine (RFC 6238 TOTP Handshake)**:
+  - 24-hour DhanHQ access tokens are generated and renewed autonomously via `dhan-auth.js` (Netlify serverless) and `dhan_auth.py` (Python `algo_engine`).
+  - Uses Client ID (`1100428069`), 6-digit Dhan PIN (`871346`), and Base32 TOTP Secret Key (`N5ZUIALJCBGJ63YS2DUB3BLW7EEPBJU2`) via standard HMAC-SHA1 RFC 6238 cryptographic calculation.
+  - In-memory caching with a 5-minute safety threshold eliminates redundant auth calls.
+  - **401 Self-Healing Auto-Retry**: If DhanHQ ever returns `401 Unauthorized` during any scan or option chain request, the engine automatically forces dynamic token regeneration and transparently retries the request once. Manual daily token logins and Netlify environment variable editing are globally eliminated.
+- **Live Real-Time Option Chain on HUB Tab**:
+  - Embedded directly below `TLCS ALERTS DASHBOARD` on the **HUB** tab (`Tv-Alert-Mobile/src/app/page.tsx`).
+  - Asset filters: `NIFTY 50` (NSE Index), `CRUDE OIL` (MCX), `NATURAL GAS` (MCX), `GOLD` (MCX), and `SILVER` (MCX).
+  - Strictly locked to **current expiry only** (`currentExpiry`). Displays ATM strike spotlighting, real-time Put-Call Ratio (PCR), Max Pain, and Total OI.
+  - Multi-tier reliability: Direct Dhan API call $\rightarrow$ live Netlify proxy (`/.netlify/functions/dhan-option-chain`) $\rightarrow$ high-fidelity synthesized mathematical fallback for zero downtime.
+- **Consolidated & Market-Wise Intraday Equity Trajectory Curves**:
+  - Injected into the System-Wide Performance Grid, Consolidated Market-Wide Performance Table, and Today's Signal Performance Table.
+  - Vector SVG rendering with interactive crosshairs, cumulative P&L percentage, 0.00% baseline, high-watermark, and max drawdown indicators.
+- **Dual-Session Market Coverage & Pine Script Exit Hierarchy Parity**:
+  - **NSE Equities**: Active session 09:15 to 15:30 IST; new entries cut off strictly at 14:00 IST.
+  - **MCX Commodities**: Active session 09:00 to 23:30 IST; new entries cut off strictly at 22:00 IST.
+  - Full exit hierarchy parity for trades post TP4 (`Hit EMA`, `Hit TP3 Trailing`, `EOD Exit`, `Hit Initial SL`).
+- **Strict Table Separation (Black Box Shadow Parity)**:
+  - TradingView alerts write to `signals`; DhanHQ Black Box scanner writes to `shadow_signals`.
+  - Side-by-side verification enabled via `SHADOW` engine toggle and `PARITY` audit mode on the mobile terminal (`market-store.online`).
+- **Platform Version 5.0 Branding Standard**:
+  - Mobile terminal header: `TLCS TERMINAL v5.0`.
+  - SIEM initialization log: `Terminal V5.0 initialized`.
+  - Daemon status indicator: `Active Daemon v5.0`.
+  - Package versions across all repositories: `5.0.0`.
+
+
 
 
 

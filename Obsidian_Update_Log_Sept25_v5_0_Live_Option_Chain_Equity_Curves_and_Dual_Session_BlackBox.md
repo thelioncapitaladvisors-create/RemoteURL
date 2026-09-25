@@ -87,3 +87,18 @@ A high-performance, responsive SVG **`PerformanceEquityCurve`** component was bu
   - Localization Engine: `v5.0.0`
   - Scanner Engine: `v5.0.0`
   - Footers & Badges across `dashboard.html`, `login.html`, `metrics.html`, `scanner.html`: `v5.0`
+
+---
+
+### 6. Autonomous Zero-Touch DhanHQ Token Engine (RFC 6238 TOTP)
+1. **Dynamic Programmatic Handshake**:
+   - Deployed `dhan-auth.js` (Netlify) and `dhan_auth.py` (Python) to generate 24-hour DhanHQ access tokens on the fly using Client ID (`1100428069`), 6-digit Dhan PIN (`871346`), and Base32 TOTP Secret Key (`N5ZUIALJCBGJ63YS2DUB3BLW7EEPBJU2`).
+   - Uses native RFC 6238 HMAC-SHA1 cryptographic hashing with zero external dependencies.
+2. **Autonomous Daily Renewal & 401 Self-Healing**:
+   - In-memory token caching with 5-minute safety threshold.
+   - Any 401 Unauthorized error automatically triggers dynamic token regeneration and transparent single-retry.
+   - Eliminates manual daily login to Dhan Web and environment variable updates forever.
+3. **Live Handshake Verification**:
+   - Verified live with DhanHQ authentication server returning 200 OK and generating 24-hour token valid through `2026-09-26 22:20:48 IST`.
+   - Verified live NSE quote retrieval on Security ID `1333` returning 200 OK with real-time LTP and OHLC data.
+
