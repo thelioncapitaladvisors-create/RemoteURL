@@ -37,6 +37,24 @@
   - Web footers & script cachebusters: `v3.0` / `?v=3.0`.
   - Package versions across all projects: `3.0.0`.
 
+## Version 5.0: Platform Baseline & Day Type Indicator Architecture
+- **Version 5.0 Platform Baseline**: The Pine Script indicator infrastructure (`TLCS AIO INDICAOR v5.0`), standalone text backups (`TV_Indicator_Full_Code.txt`), and trading engines are standardized to Version 5.0.
+- **Zero DEBUG Guarantee**:
+  - The Day Type (`mX`), Opening Bias (`dX`), and Institutional Bias (`c1`) ternary logic must never surface `"DEBUG"` on chart displays, labels, or webhook dispatches.
+  - The on-chart table displays buffered persistent variables (`dX_message`, `mX_message`, and `c1_message`) initialized via `var string`.
+  - The `mX_message` and `c1_message` update ladders specifically check for canonical status strings (for `c1_message`: `CONFIRMED \n BULLISH`, `CONFIRMED \n BEARISH`, `REJECTED \n BULLISH`, `REJECTED \n BEARISH`, `SIDEWAYS`, `SIDEWAYS/ BREAKOUT`, `BREAKOUT`). Whenever price fluctuates inside the CPR (`close < DTc and close > DBc`), `c1_message` updates to `"WATCH"`. Because there is no assignment branch for `"DEBUG"`, `mX_message` and `c1_message` are immune to transient bar-state fallthroughs and always maintain the verified active status.
+- **Single Global Declaration Mandate (CE10095 Prevention)**:
+  - `dX_message`, `mX_message`, `c1_message`, `dX_col`, `mX_col`, and `c1_col` must be declared exactly ONCE in the global scope (lines 812–817).
+  - Redundant or duplicate re-declarations (e.g., downstream in section 5) are strictly prohibited to prevent Pine Script compiler error `CE10095`.
+- **Responsive Table Header Alignment & Typography Standard**:
+  - The top header table (`tbl_bias`) must strictly adhere to the following alignment and sizing standard:
+    - **Leftmost Text (`dX_message`)**: Right-aligned (`text_halign = text.align_right`, `text_size = size.tiny`).
+    - **Middle Text (`c1`)**: Centered and tiny (`text_halign = text.align_center`, `text_size = size.tiny`).
+    - **Rightmost Text (`mX_message`)**: Left-aligned (`text_halign = text.align_left`, `text_size = size.tiny`).
+- **Pine Script v6 Bold Formatting Parameter Rule**:
+  - In Pine Script v6 (`//@version=6`), bold formatting on table cells or labels must strictly use the named parameter syntax: `text_formatting = text.format_bold`.
+  - Unnamed positional arguments following named arguments are forbidden by the Pine compiler (`CE10157`).
+
 ## Layout Integrity & Zero Overlap Mandate
 - **ZERO UI / TEXT OVERLAPPING**: No text, badges, headers, summary rows, or navigational chrome may ever visually collide, truncate unpredictably, or overlap anywhere across the web and mobile applications:
   - **Bottom Navigation Clearance**: All main terminal scrolling containers (`page.tsx`) must strictly feature `pb-20 sm:pb-24` and `min-h-0` flex bounding to guarantee bottom table rows, status pills, and summary cards never scroll beneath or get obscured by floating bottom tab bars.
