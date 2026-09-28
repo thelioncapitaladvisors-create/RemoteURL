@@ -2871,13 +2871,14 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
     else if trade.tp1Triggered
         _outcome := 'Completed TP1'
         
-    if trade.closeLevel == 0.0 or na(trade.closeLevel)
-        trade.closeLevel := trade.slTriggered ? trade.slLevel : (not na(close) and close > 0 ? close : trade.entryLevel)
+    if na(trade.closeLevel) or trade.closeLevel <= 0.0
+        trade.closeLevel := (trade.slTriggered and not na(trade.slLevel) and trade.slLevel > 0) ? trade.slLevel : (not na(close) and close > 0 ? close : trade.entryLevel)
         
     // ✅ Single-line ternary operator prevents indentation syntax errors (CE10013)
     bool isShort = str.contains(str.upper(trade.tradeDirection), 'SHORT')
     float exact_pct = isShort ? ((trade.entryLevel - trade.closeLevel) / trade.entryLevel) * 100 : ((trade.closeLevel - trade.entryLevel) / trade.entryLevel) * 100
     float rMult = riskToReward(trade.entryLevel, trade.slLevel, trade.closeLevel, trade.tradeDirection)
+    float safeClosePrice = (na(trade.closeLevel) or trade.closeLevel <= 0.0) ? (not na(close) and close > 0 ? close : trade.entryLevel) : trade.closeLevel
     
     // Format human-readable UTC datestamps for both entry and exit
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
@@ -2888,7 +2889,7 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
     string _oPay = '{' + str.format(
          '"trigger":"TradeClose","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","closePrice":"{5}","slLevel":"{6}","tpLevel":"{7}","pnlAmount":"{8}","pnlPercent":"{9}","rMultiple":"{10}","zone":"{11}","opening_bias":"{12}","day_type":"{13}","dayType":"{12}","marketType":"{13}","tradeMessage":"{14}","entryTime":"{15}","closeTime":"{16}","rawText":"{17}","entryDate":"{18}","closeDate":"{19}","trade_id":"{20}"',
          webhook_secret, syminfo.ticker, trade.tradeDirection, _outcome, 
-         str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.closeLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
+         str.tostring(trade.entryLevel, format.mintick), str.tostring(safeClosePrice, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
          str.tostring(trade.profit, '#.##'), str.tostring(exact_pct, '#.##'), str.tostring(rMult, '#.##'), 
          z1_zone, dX, mX, d1_message, 
          str.tostring(trade.entryTime), str.tostring(time), _outcome + ' | ' + str.tostring(trade.profit, '#.##'),
@@ -3215,7 +3216,7 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
             if isPastDay
                 trade.isClosed    := true
                 trade.forceClosed := true
-                trade.closeLevel  := close
+                trade.closeLevel  := not na(close) and close > 0 ? close : trade.entryLevel
 
             float prevSL = trade.slLevel
             

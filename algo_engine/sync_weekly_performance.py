@@ -25,7 +25,7 @@ MARKETS = {
     'nymex': ['CL', 'GC', 'HG', 'HO', 'NG', 'PA', 'PL', 'RB', 'SI'],
     'crypto': ['ADAUSDT', 'APTUSDT', 'ARBUSDT', 'ATOMUSDT', 'AVAXUSDT', 'BCHUSDT', 'BNBUSDT', 'BTCUSDT', 'DOGEUSDT', 'DOTUSDT', 'ETHUSDT', 'FILUSDT', 'ICPUSDT', 'LINKUSDT', 'LTCUSDT', 'NEARUSDT', 'POLUSDT', 'SHIBUSDT', 'SOLUSDT', 'STXUSDT', 'TONUSDT', 'TRXUSDT', 'UNIUSDT', 'XLMUSDT', 'XRPUSDT'],
     'forex': ['AUDCAD', 'AUDINR', 'AUDJPY', 'AUDNZD', 'AUDUSD', 'CADJPY', 'EURAUD', 'EURCAD', 'EURCHF', 'EURGBP', 'EURINR', 'EURJPY', 'EURUSD', 'GBPAUD', 'GBPCAD', 'GBPCHF', 'GBPINR', 'GBPJPY', 'GBPUSD', 'JPYINR', 'NZDUSD', 'USDCAD', 'USDCHF', 'USDINR', 'USDJPY'],
-    'world': ['AU200', 'DE40', 'EU50', 'FR40', 'HK50', 'JP225', 'NAS100', 'SPX500', 'UK100', 'US2000', 'US30', 'UKX', 'NI225']
+    'world': ['AU200', 'DE40', 'EU50', 'FR40', 'HK50', 'JP225', 'NAS100', 'SPX500', 'UK100', 'US2000', 'US30', 'UKX', 'NI225', 'SX5E', 'NDQ', 'DAX']
 }
 
 def get_supabase_client():
@@ -224,6 +224,9 @@ def sync_weekly_performance():
     print(f"[SYNC] Retrieved {len(all_signals)} closed trades.")
     
     # 3. Group by (week_start_date, market_type)
+    now_ist = datetime.now(ist_tz)
+    current_mon = (now_ist.date() - timedelta(days=now_ist.weekday())).strftime('%Y-%m-%d')
+
     weeks = {}
     for s in all_signals:
         out, pct = resolve_outcome(s)
@@ -234,7 +237,8 @@ def sync_weekly_performance():
         if mkt == 'unknown':
             continue
             
-        ts_str = s.get('exit_at') or s.get('updated_at') or s.get('created_at')
+        # Group by signal genesis timestamp to ensure 100% data sanity with Day-Wise table D1-D7
+        ts_str = s.get('signal_ts') or s.get('created_at')
         if not ts_str:
             continue
             
@@ -243,6 +247,11 @@ def sync_weekly_performance():
             # Monday of the week in IST
             mon = (dt.date() - timedelta(days=dt.weekday())).strftime('%Y-%m-%d')
         except Exception:
+            continue
+            
+        # Strict guard: Weekly logs only store completed historical weeks finalized every Sunday at 0Hrs.
+        # Active in-progress week (mon == current_mon) is never upserted into weekly_performance_logs.
+        if mon == current_mon:
             continue
             
         if mon not in weeks:
