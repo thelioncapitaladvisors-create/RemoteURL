@@ -40,12 +40,16 @@ DEFAULT_SYMBOL_MAP: Dict[str, Tuple[int, str]] = {
     "KOTAKBANK": (EXCHANGE_NSE, "1922"),
     "LT": (EXCHANGE_NSE, "11483"),
     "CRUDEOIL": (EXCHANGE_MCX, "569900"),
+    "CRUDEOILM": (EXCHANGE_MCX, "569901"),
     "GOLD": (EXCHANGE_MCX, "483079"),
+    "GOLDM": (EXCHANGE_MCX, "569003"),
     "SILVER": (EXCHANGE_MCX, "495214"),
-    "NATURALGAS": (EXCHANGE_MCX, "568245"),
-    "COPPER": (EXCHANGE_MCX, "426311"),
-    "ZINC": (EXCHANGE_MCX, "426312"),
-    "ALUMINIUM": (EXCHANGE_MCX, "426313"),
+    "SILVERM": (EXCHANGE_MCX, "483080"),
+    "NATURALGAS": (EXCHANGE_MCX, "570750"),
+    "COPPER": (EXCHANGE_MCX, "571298"),
+    "ZINC": (EXCHANGE_MCX, "571303"),
+    "ALUMINIUM": (EXCHANGE_MCX, "571297"),
+    "ALUMINI": (EXCHANGE_MCX, "571296"),
 }
 
 
@@ -64,8 +68,14 @@ class DhanFeed(BaseFeed):
                  access_token: Optional[str] = None,
                  mock_mode: bool = False):
         super().__init__(name="DhanFeed")
-        self.client_id = client_id or os.getenv("DHAN_CLIENT_ID", "")
+        self.client_id = client_id or os.getenv("DHAN_CLIENT_ID", "1100428069")
         self.access_token = access_token or os.getenv("DHAN_ACCESS_TOKEN", "")
+        if not self.access_token:
+            try:
+                from ..dhan_auth import get_valid_dhan_token
+                self.access_token = get_valid_dhan_token()
+            except Exception:
+                pass
         self.mock_mode = mock_mode
 
         # {symbol: (exchange_segment, security_id)}
@@ -315,12 +325,13 @@ class DhanFeed(BaseFeed):
                 payload = {
                     "securityId": str(sec_id),
                     "exchangeSegment": "NSE_EQ" if exch_seg == EXCHANGE_NSE else "MCX_COMM",
-                    "instrument": "EQUITY" if exch_seg == EXCHANGE_NSE else "COMMODITY",
+                    "instrument": "EQUITY" if exch_seg == EXCHANGE_NSE else "FUTCOM",
                     "interval": interval,
                     "fromDate": today_str,
                     "toDate": today_str
                 }
                 resp = requests.post(url, json=payload, headers=headers, timeout=5)
+                time.sleep(0.15)  # Throttle to avoid rate limits
                 if resp.status_code == 200:
                     data = resp.json().get("data", {})
                     opens = data.get("open", [])
@@ -373,12 +384,13 @@ class DhanFeed(BaseFeed):
                 payload = {
                     "securityId": str(sec_id),
                     "exchangeSegment": "NSE_EQ" if exch_seg == EXCHANGE_NSE else "MCX_COMM",
-                    "instrument": "EQUITY" if exch_seg == EXCHANGE_NSE else "COMMODITY",
+                    "instrument": "EQUITY" if exch_seg == EXCHANGE_NSE else "FUTCOM",
                     "expiryCode": 0,
                     "fromDate": from_date,
                     "toDate": to_date
                 }
                 resp = requests.post(url, json=payload, headers=headers, timeout=5)
+                time.sleep(0.15)  # Throttle to avoid rate limits
                 if resp.status_code == 200:
                     data = resp.json().get("data", {})
                     highs = data.get("high", [])
@@ -403,6 +415,13 @@ class DhanFeed(BaseFeed):
         elif symbol == "TCS": base_price = 4200.0
         elif symbol == "HDFCBANK": base_price = 1650.0
         elif symbol == "INFY": base_price = 1820.0
+        elif symbol.startswith("CRUDEOIL"): base_price = 6400.0
+        elif symbol.startswith("GOLD"): base_price = 75000.0
+        elif symbol.startswith("SILVER"): base_price = 90000.0
+        elif symbol.startswith("NATURALGAS"): base_price = 220.0
+        elif symbol == "COPPER": base_price = 840.0
+        elif symbol.startswith("ZINC"): base_price = 270.0
+        elif symbol.startswith("ALUMINI"): base_price = 240.0
 
         candles = []
         cur = base_price
@@ -431,6 +450,13 @@ class DhanFeed(BaseFeed):
         elif symbol == "TCS": base_price = 4200.0
         elif symbol == "HDFCBANK": base_price = 1650.0
         elif symbol == "INFY": base_price = 1820.0
+        elif symbol.startswith("CRUDEOIL"): base_price = 6400.0
+        elif symbol.startswith("GOLD"): base_price = 75000.0
+        elif symbol.startswith("SILVER"): base_price = 90000.0
+        elif symbol.startswith("NATURALGAS"): base_price = 220.0
+        elif symbol == "COPPER": base_price = 840.0
+        elif symbol.startswith("ZINC"): base_price = 270.0
+        elif symbol.startswith("ALUMINI"): base_price = 240.0
 
         return {
             "high": round(base_price * 1.015, 2),

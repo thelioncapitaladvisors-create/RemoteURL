@@ -27,8 +27,33 @@ from .shadow_pipeline import ShadowPipeline
 logger = logging.getLogger('NSE100Scanner')
 
 # ════════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════
 # IST TIME & MARKET HOURS HELPERS
 # ════════════════════════════════════════════════════════════════════
+
+MCX_COMMODITIES: List[str] = [
+    'CRUDEOIL', 'GOLD', 'SILVER', 'NATURALGAS', 'COPPER', 'ZINC', 'ALUMINIUM',
+    'CRUDEOILM', 'GOLDM', 'SILVERM', 'NATURALGASM', 'ZINCM', 'ALUMINI'
+]
+
+
+def clean_symbol(sym: str) -> str:
+    """Normalize symbol string."""
+    s = sym.upper().strip()
+    if s.startswith('NSE:'): s = s[4:]
+    if s.startswith('MCX:'): s = s[4:]
+    if s.endswith('1!'): s = s[:-2]
+    if s.endswith('!'): s = s[:-1]
+    return s
+
+
+def is_mcx_symbol(sym: str) -> bool:
+    """Check if symbol belongs to MCX commodity market."""
+    clean = clean_symbol(sym)
+    return clean in MCX_COMMODITIES or any(
+        clean.startswith(c) for c in ['GOLD', 'SILVER', 'CRUDEOIL', 'NATURALGAS', 'COPPER', 'ZINC', 'ALUMINI']
+    )
+
 
 def get_ist_time(dt: Optional[datetime] = None) -> datetime:
     """Return datetime in Indian Standard Time (UTC+5:30)."""
@@ -39,10 +64,27 @@ def get_ist_time(dt: Optional[datetime] = None) -> datetime:
     return dt.astimezone(timezone(timedelta(hours=5, minutes=30)))
 
 
-def is_after_2pm_ist(timestamp: Optional[float] = None) -> bool:
+def is_nse_entry_allowed_now() -> bool:
+    """Check if trade entry is allowed for NSE Equities (09:15 to 14:00 IST)."""
+    ist = get_ist_time()
+    if ist.weekday() >= 5: return False
+    mins = ist.hour * 60 + ist.minute
+    return 555 <= mins < 840
+
+
+def is_mcx_entry_allowed_now() -> bool:
+    """Check if trade entry is allowed for MCX Commodities (09:00 to 22:00 IST)."""
+    ist = get_ist_time()
+    if ist.weekday() >= 5: return False
+    mins = ist.hour * 60 + ist.minute
+    return 540 <= mins < 1320
+
+
+def is_trade_entry_allowed_for_bar(sym: str, timestamp: Optional[float] = None) -> bool:
     """
-    Check if the given timestamp (or current time if None) is at or after 14:00 (2:00 PM) IST.
-    DhanHQ Rule: Do not generate new trades after 2:00 PM IST.
+    Check if trade entry is allowed for a specific symbol and candle timestamp.
+    - NSE: 09:15 to 14:00 IST (2:00 PM cutoff)
+    - MCX: 09:00 to 22:00 IST (10:00 PM cutoff)
     """
     if timestamp is not None:
         t = timestamp / 1000.0 if timestamp > 1e11 else timestamp
@@ -50,51 +92,57 @@ def is_after_2pm_ist(timestamp: Optional[float] = None) -> bool:
         ist = get_ist_time(dt_utc)
     else:
         ist = get_ist_time()
-    
-    # 2:00 PM IST is 14:00 (840 minutes from midnight IST)
-    return (ist.hour > 14) or (ist.hour == 14 and (ist.minute > 0 or ist.second > 0))
 
-
-def is_dhan_trade_entry_allowed_now() -> bool:
-    """
-    Check if new trade generation is currently allowed for DhanHQ signals.
-    Window: Monday-Friday, 09:15 to 14:00 IST (2:00 PM IST cutoff).
-    No new trade generation is permitted after 2:00 PM IST.
-    """
-    ist = get_ist_time()
-    if ist.weekday() >= 5:  # Saturday or Sunday
-        return False
+    if ist.weekday() >= 5: return False
     mins = ist.hour * 60 + ist.minute
-    # 09:15 is 555 mins, 14:00 (2:00 PM) is 840 mins
+
+    if is_mcx_symbol(sym):
+        return 540 <= mins < 1320
     return 555 <= mins < 840
 
 
 def is_nse_market_open_now() -> bool:
-    """
-    Check if the current time is within official NSE trading hours (09:15 to 15:30 IST, Mon-Fri).
-    """
+    """Check if official NSE trading hours are active (09:15 to 15:30 IST, Mon-Fri)."""
     ist = get_ist_time()
-    if ist.weekday() >= 5:
-        return False
+    if ist.weekday() >= 5: return False
     mins = ist.hour * 60 + ist.minute
     return 555 <= mins < 930
 
 
+def is_mcx_market_open_now() -> bool:
+    """Check if official MCX trading hours are active (09:00 to 23:30 IST, Mon-Fri)."""
+    ist = get_ist_time()
+    if ist.weekday() >= 5: return False
+    mins = ist.hour * 60 + ist.minute
+    return 540 <= mins < 1410
+
+
 class NSE100Scanner:
     """
-    Autonomous 15-minute multi-asset scanner for the Top 100 NSE liquid universe.
+    Autonomous 15-minute multi-asset scanner for Top 100 NSE stocks and MCX commodities.
     """
 
     def __init__(self,
                  dhan_feed: Optional[DhanFeed] = None,
                  shadow_pipeline: Optional[ShadowPipeline] = None,
-                 mock_mode: bool = False):
+                 mock_mode: bool = False,
+                 market: str = "all"):
         self.dhan_feed = dhan_feed or DhanFeed(mock_mode=mock_mode)
         self.shadow_pipeline = shadow_pipeline or ShadowPipeline()
         self.strategy_engine = StrategyEngine()
         self.day_type_classifiers: Dict[str, DayTypeClassifier] = {}
         self.mock_mode = mock_mode
-        self.symbols = get_all_nse100_symbols()
+        self.market = market.lower()
+
+        nse_symbols = get_all_nse100_symbols()
+        mcx_symbols = list(MCX_COMMODITIES)
+
+        if self.market == "mcx":
+            self.symbols = mcx_symbols
+        elif self.market == "nse":
+            self.symbols = nse_symbols
+        else:
+            self.symbols = nse_symbols + mcx_symbols
 
     def scan_symbol(self, sym: str) -> List[dict]:
         """
@@ -151,10 +199,12 @@ class NSE100Scanner:
 
         primary_day_type = active_blueprints[0] if active_blueprints else 'TYPICAL DAY'
 
-        # Rule: Do not generate new trades after 2:00 PM IST (14:00)
-        if not is_dhan_trade_entry_allowed_now():
+        # Check if trade entry allowed for this symbol right now
+        if not self.mock_mode and not is_trade_entry_allowed_for_bar(clean):
             return []
 
+        market_name = 'mcx' if is_mcx_symbol(clean) else 'nifty'
+        market_category = 'MCX' if market_name == 'mcx' else 'NIFTY'
         signals: List[dict] = []
 
         # 5. Evaluate strategy engine across completed bars of the session
@@ -163,8 +213,8 @@ class NSE100Scanner:
         for i in range(len(bars) - eval_window, len(bars)):
             cur_bar = bars[i]
 
-            # Rule: Don't generate new trades from bars completed after 2:00 PM IST (14:00)
-            if is_after_2pm_ist(cur_bar.timestamp):
+            # Rule: Don't generate new trades from bars completed after cutoff
+            if not self.mock_mode and not is_trade_entry_allowed_for_bar(clean, cur_bar.timestamp):
                 continue
 
             prev_b = bars[i - 1] if i > 0 else cur_bar
@@ -202,7 +252,7 @@ class NSE100Scanner:
                     'symbol': clean,
                     'type': sig.name,
                     'trigger': f'{sig.name} Trigger',
-                    'market': 'nifty',
+                    'market': market_name,
                     'entry_price': round(float(sig.entry_price), 2),
                     'stop_loss': round(float(sig.stop_loss), 2),
                     'tp1': round(float(sig.tp1), 2),
@@ -216,14 +266,15 @@ class NSE100Scanner:
                         'timeframe': '15m',
                         'day_type': primary_day_type,
                         'opening_bias': opening_bias,
+                        'market_category': market_category,
                         'source_feed': 'DhanHQ',
                         'h4': levels.H4,
                         'l4': levels.L4
                     }
                 })
 
-        # Also register blueprint signals if active (only before 2:00 PM IST)
-        if not is_after_2pm_ist(bars[-1].timestamp):
+        # Also register blueprint signals if active and before entry cutoff
+        if self.mock_mode or is_trade_entry_allowed_for_bar(clean, bars[-1].timestamp):
             for bp in active_blueprints:
                 is_bull = 'Bullish' in bp
                 bp_type = f'BUY {bp.upper()}' if is_bull else f'SELL {bp.upper()}'
@@ -231,7 +282,7 @@ class NSE100Scanner:
                     'symbol': clean,
                     'type': bp_type,
                     'trigger': bp,
-                    'market': 'nifty',
+                    'market': market_name,
                     'entry_price': bars[-1].close,
                     'status': 'ACTIVE',
                     'source': 'blackbox_dhan',
@@ -240,6 +291,7 @@ class NSE100Scanner:
                         'timeframe': '15m',
                         'day_type': bp,
                         'opening_bias': opening_bias,
+                        'market_category': market_category,
                         'source_feed': 'DhanHQ',
                         'h4': levels.H4,
                         'l4': levels.L4
@@ -251,7 +303,7 @@ class NSE100Scanner:
                     'symbol': clean,
                     'type': f'BUY {seq.upper()}',
                     'trigger': seq,
-                    'market': 'nifty',
+                    'market': market_name,
                     'entry_price': bars[-1].close,
                     'status': 'ACTIVE',
                     'source': 'blackbox_dhan',
@@ -260,6 +312,7 @@ class NSE100Scanner:
                         'timeframe': '15m',
                         'day_type': seq,
                         'opening_bias': opening_bias,
+                        'market_category': market_category,
                         'source_feed': 'DhanHQ',
                         'h4': levels.H4,
                         'l4': levels.L4
@@ -268,9 +321,11 @@ class NSE100Scanner:
 
         return signals
 
-    def exit_all_live_trades_at_market_close(self) -> int:
+    def exit_all_live_trades_at_market_close(self, target_market: str = 'ALL') -> int:
         """
-        Ensure all DhanHQ live trades in shadow_signals are exited at market close (15:30 IST).
+        Ensure all DhanHQ live trades in shadow_signals are exited at market close.
+        - NSE Equities market close: 15:30 IST
+        - MCX Commodities market close: 23:30 IST
         - Unexecuted limits (ACTIVE without fill) -> CANCELLED
         - Live active trades (⚡ TRADE ACTIVE or with real entry) -> EOD Exit with realized exact_pct
         """
@@ -278,21 +333,26 @@ class NSE100Scanner:
             logger.info("[NSE100Scanner] No active Supabase client for market close sweep.")
             return 0
 
-        logger.info("[NSE100Scanner] Sweeping open DhanHQ trades for market close exit (15:30 IST)...")
+        logger.info(f"[NSE100Scanner] Sweeping open DhanHQ trades for market close exit ({target_market})...")
         sb = self.shadow_pipeline._sb
         table = self.shadow_pipeline.table_name
 
         try:
-            res = sb.from_(table).select("*").eq("source", "blackbox_dhan").or_(
+            query = sb.from_(table).select("*").eq("source", "blackbox_dhan").or_(
                 "outcome.eq.OPEN,outcome.eq.Open,outcome.is.null,status.ilike.%active%,status.ilike.%open%"
-            ).execute()
+            )
+            if target_market.upper() == 'NSE':
+                query = query.eq("exchange", "nifty")
+            elif target_market.upper() == 'MCX':
+                query = query.eq("exchange", "mcx")
+            res = query.execute()
             rows = res.data or []
         except Exception as e:
             logger.error(f"[NSE100Scanner] Failed fetching active DhanHQ signals: {e}")
             return 0
 
         if not rows:
-            logger.info("[NSE100Scanner] No open DhanHQ signals to exit.")
+            logger.info(f"[NSE100Scanner] No open DhanHQ signals to exit for market {target_market}.")
             return 0
 
         now_iso = datetime.now(timezone.utc).isoformat()
@@ -387,30 +447,49 @@ class NSE100Scanner:
             except Exception as e:
                 logger.error(f"[NSE100Scanner] Error closing trade {sig_id}: {e}")
 
-        logger.info(f"[NSE100Scanner] Market close sweep complete. Settled {closed_count} DhanHQ trades.")
+        logger.info(f"[NSE100Scanner] Market close sweep complete. Settled {closed_count} DhanHQ trades ({target_market}).")
         return closed_count
 
     def run_scan_cycle(self, limit: Optional[int] = None) -> List[dict]:
         """
-        Execute one full scan cycle across the Top 100 NSE basket.
-        Enforces 2:00 PM cutoff (no new trades generated after 14:00 IST)
-        and market close sweep (all live trades exited at 15:30 IST).
+        Execute one full scan cycle across active assets (NSE stocks and/or MCX commodities).
+        Enforces dual-market cutoff hours and dual-market close sweeps:
+        - NSE: cutoff 14:00 IST, close sweep 15:30 IST
+        - MCX: cutoff 22:00 IST, close sweep 23:30 IST
         """
         ist = get_ist_time()
+        mins = ist.hour * 60 + ist.minute
 
-        # If market is closed (>= 15:30 IST or weekend), sweep all live trades to exit
-        if (ist.hour > 15) or (ist.hour == 15 and ist.minute >= 30) or ist.weekday() >= 5:
-            logger.info(f'[NSE100Scanner] Market is closed ({ist.strftime("%H:%M:%S")} IST). Running market close exit sweep...')
-            self.exit_all_live_trades_at_market_close()
+        # Check market close exit sweeps
+        if mins >= 930 and mins < 945:
+            # At 15:30 IST: Sweep NSE Equities
+            self.exit_all_live_trades_at_market_close("NSE")
+        if mins >= 1410 or ist.weekday() >= 5:
+            # At 23:30 IST or weekend: Sweep MCX Commodities
+            self.exit_all_live_trades_at_market_close("MCX")
+            if ist.weekday() >= 5:
+                logger.info(f'[NSE100Scanner] Weekend detected. Indian markets are closed.')
+                return []
+
+        nse_open = is_nse_market_open_now()
+        mcx_open = is_mcx_market_open_now()
+
+        # Filter target symbols based on currently open market sessions
+        active_symbols = [
+            sym for sym in self.symbols
+            if (is_mcx_symbol(sym) and mcx_open) or (not is_mcx_symbol(sym) and nse_open)
+        ]
+
+        # In mock mode, allow scanning all symbols for offline testing
+        if self.mock_mode and not active_symbols:
+            active_symbols = self.symbols
+
+        if not active_symbols:
+            logger.info(f'[NSE100Scanner] No markets open ({ist.strftime("%H:%M:%S")} IST). Status: NSE={nse_open}, MCX={mcx_open}.')
             return []
 
-        # If past 2:00 PM IST (14:00), do not generate new trades
-        if is_after_2pm_ist():
-            logger.info(f'[NSE100Scanner] Past 2:00 PM IST cutoff ({ist.strftime("%H:%M:%S")} IST). No new trades will be generated for DhanHQ signals.')
-            return []
-
-        target_symbols = self.symbols[:limit] if limit else self.symbols
-        logger.info(f'[NSE100Scanner] Starting 15m scan cycle across {len(target_symbols)} symbols at {ist.strftime("%H:%M:%S")} IST...')
+        target_symbols = active_symbols[:limit] if limit else active_symbols
+        logger.info(f'[NSE100Scanner] Starting 15m scan cycle across {len(target_symbols)} symbols at {ist.strftime("%H:%M:%S")} IST (NSE: {nse_open}, MCX: {mcx_open})...')
         
         all_signals: List[dict] = []
         start_t = time.time()

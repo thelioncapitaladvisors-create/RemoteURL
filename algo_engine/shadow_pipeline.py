@@ -133,7 +133,7 @@ class ShadowPipeline:
             "exchange": mkt,
             "signal_ts": now_iso,
             "created_at": now_iso,
-            "updated_at": None,
+            "updated_at": now_iso,
             "metadata": {
                 "trade_id": trade_id,
                 "zone": signal.zone,
@@ -169,10 +169,10 @@ class ShadowPipeline:
             "trigger": sig.get("trigger", "ScannerAlert"),
             "pricing_type": "SHADOW",
             "source": "blackbox_dhan",
-            "exchange": "nifty",
+            "exchange": sig.get("market") or sig.get("exchange") or ("mcx" if get_market_category(sym) == "MCX" else "nifty"),
             "signal_ts": sig.get("created_at", now_iso),
             "created_at": sig.get("created_at", now_iso),
-            "updated_at": None,
+            "updated_at": now_iso,
             "metadata": {
                 "trade_id": trade_id,
                 **(sig.get("metadata") or {}),

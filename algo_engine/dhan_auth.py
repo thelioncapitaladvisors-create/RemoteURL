@@ -25,8 +25,24 @@ DHAN_CLIENT_ID = os.getenv("DHAN_CLIENT_ID", "1100428069")
 DHAN_PIN = os.getenv("DHAN_PIN", "871346")
 DHAN_TOTP_SECRET = os.getenv("DHAN_TOTP_SECRET", "N5ZUIALJCBGJ63YS2DUB3BLW7EEPBJU2")
 
+TOKEN_CACHE_FILE = "/tmp/dhan_token_cache.json"
+
 _cached_token = os.getenv("DHAN_ACCESS_TOKEN", "")
-_token_expires_at = 1790441448.0  # 2026-09-26 22:20:48 IST
+_token_expires_at = 0.0
+
+# Try loading persisted token from disk on module load
+try:
+    if os.path.exists(TOKEN_CACHE_FILE):
+        import json
+        with open(TOKEN_CACHE_FILE, "r") as f:
+            file_data = json.load(f)
+            exp_sec = file_data.get("expires_at", 0) / 1000.0
+            if file_data.get("token") and exp_sec > time.time():
+                _cached_token = file_data["token"]
+                _token_expires_at = exp_sec
+                logger.info(f"[DhanAuth] Loaded persisted token from disk. Valid until {exp_sec}")
+except Exception:
+    pass
 
 
 def generate_totp(secret: str = DHAN_TOTP_SECRET) -> str:
@@ -70,6 +86,15 @@ def fetch_fresh_token() -> str:
                 _token_expires_at = time.time() + 86400
 
             logger.info(f"[DhanAuth] Successfully generated fresh Dhan access token (valid until {_token_expires_at}).")
+            try:
+                import json
+                with open(TOKEN_CACHE_FILE, "w") as f:
+                    json.dump({
+                        "token": _cached_token,
+                        "expires_at": int(_token_expires_at * 1000)
+                    }, f)
+            except Exception:
+                pass
             return _cached_token
         else:
             err_msg = data.get("message", f"HTTP {res.status_code}")
@@ -88,5 +113,19 @@ def get_valid_dhan_token(force_refresh: bool = False) -> str:
 
     if not force_refresh and _cached_token and (_token_expires_at - now > safety_buffer):
         return _cached_token
+
+    # Check disk cache before making network request
+    if not force_refresh and os.path.exists(TOKEN_CACHE_FILE):
+        try:
+            import json
+            with open(TOKEN_CACHE_FILE, "r") as f:
+                file_data = json.load(f)
+                exp_sec = file_data.get("expires_at", 0) / 1000.0
+                if file_data.get("token") and (exp_sec - now > safety_buffer):
+                    _cached_token = file_data["token"]
+                    _token_expires_at = exp_sec
+                    return _cached_token
+        except Exception:
+            pass
 
     return fetch_fresh_token()

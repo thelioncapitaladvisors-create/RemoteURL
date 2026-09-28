@@ -52,29 +52,33 @@ from algo_engine.nse100_scanner import NSE100Scanner
 
 
 def main():
-    parser = argparse.ArgumentParser(description="TLCS Top 100 NSE 15-Minute Black Box Scanner")
+    parser = argparse.ArgumentParser(description="TLCS 15-Minute Black Box Scanner (NSE Equities + MCX Commodities)")
     parser.add_argument("--once", action="store_true", help="Run one scan cycle and exit")
     parser.add_argument("--mock", action="store_true", help="Force mock data mode without live API calls")
+    parser.add_argument("--market", type=str, default="all", choices=["all", "nse", "mcx"], help="Market universe to scan: 'all' (NSE + MCX), 'nse', or 'mcx'")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of symbols to scan (for testing)")
     parser.add_argument("--interval", type=int, default=900, help="Scan loop interval in seconds (default: 900s / 15m)")
-    parser.add_argument("--sweep-close", action="store_true", help="Run market close exit sweep on shadow_signals and exit immediately")
+    parser.add_argument("--sweep-close", type=str, nargs="?", const="ALL", default=None, help="Run market close exit sweep on shadow_signals (NSE, MCX, or ALL) and exit immediately")
     args = parser.parse_args()
 
     # Determine mock mode: explicit flag or absence of credentials
-    has_creds = bool(os.getenv("DHAN_CLIENT_ID") and os.getenv("DHAN_ACCESS_TOKEN"))
+    from algo_engine.dhan_auth import get_valid_dhan_token
+    token = get_valid_dhan_token()
+    has_creds = bool((os.getenv("DHAN_CLIENT_ID") or "1100428069") and token)
     mock_mode = args.mock or (not has_creds)
 
     if mock_mode and not args.mock:
-        logger.info("[NSE100Runner] No Dhan credentials found in .env. Running in simulation/mock mode.")
+        logger.info("[NSE100Runner] No valid Dhan credentials available. Running in simulation/mock mode.")
     elif not mock_mode:
-        logger.info("[NSE100Runner] Live Dhan credentials found. Ingesting live 15m candles from DhanHQ.")
+        logger.info(f"[NSE100Runner] Live Dhan credentials verified. Ingesting live 15m candles from DhanHQ ({args.market.upper()}).")
 
-    scanner = NSE100Scanner(mock_mode=mock_mode)
+    scanner = NSE100Scanner(mock_mode=mock_mode, market=args.market)
 
     if args.sweep_close:
-        logger.info("[NSE100Runner] Manual --sweep-close flag detected. Sweeping all live trades to exit...")
-        closed = scanner.exit_all_live_trades_at_market_close()
-        logger.info(f"[NSE100Runner] Market close sweep completed. Settled {closed} trades.")
+        target_mkt = args.sweep_close.upper()
+        logger.info(f"[NSE100Runner] Manual --sweep-close flag detected ({target_mkt}). Sweeping open trades to exit...")
+        closed = scanner.exit_all_live_trades_at_market_close(target_mkt)
+        logger.info(f"[NSE100Runner] Market close sweep completed ({target_mkt}). Settled {closed} trades.")
         return
 
     running = True
@@ -87,7 +91,7 @@ def main():
     signal.signal(signal.SIGINT, _sig_handler)
     signal.signal(signal.SIGTERM, _sig_handler)
 
-    logger.info(f"[NSE100Runner] Initialized. Universe: {len(scanner.symbols)} stocks. Interval: {args.interval}s.")
+    logger.info(f"[NSE100Runner] Initialized. Market: {args.market.upper()}. Universe: {len(scanner.symbols)} assets. Interval: {args.interval}s.")
 
     while running:
         cycle_start = time.time()
