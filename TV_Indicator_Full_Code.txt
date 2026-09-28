@@ -2722,7 +2722,7 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
 terminateTrade(Settings settings, TradeLogic trade) =>
     trade.forceClosed := true
     if not trade.slTriggered
-        trade.closeLevel := close
+        trade.closeLevel := not na(close) and close > 0 ? close : trade.entryLevel
         trade.isClosed := true
         trade.profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, str.contains(str.upper(trade.tradeDirection), 'LONG'), trade.positionRemaining)
 
