@@ -2871,7 +2871,9 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
     else if trade.tp1Triggered
         _outcome := 'Completed TP1'
         
-    
+    if trade.closeLevel == 0.0 or na(trade.closeLevel)
+        trade.closeLevel := trade.slTriggered ? trade.slLevel : (not na(close) and close > 0 ? close : trade.entryLevel)
+        
     // ✅ Single-line ternary operator prevents indentation syntax errors (CE10013)
     bool isShort = str.contains(str.upper(trade.tradeDirection), 'SHORT')
     float exact_pct = isShort ? ((trade.entryLevel - trade.closeLevel) / trade.entryLevel) * 100 : ((trade.closeLevel - trade.entryLevel) / trade.entryLevel) * 100
@@ -3213,6 +3215,7 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
             if isPastDay
                 trade.isClosed    := true
                 trade.forceClosed := true
+                trade.closeLevel  := close
 
             float prevSL = trade.slLevel
             
