@@ -1458,7 +1458,54 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - Daemon status indicator: `Active Daemon v5.0`.
   - Package versions across all repositories: `5.0.0`.
 
+## Version 5.0 Architecture: MCX Commodities DhanHQ Binding, Weekly Performance Edge Schedule & Zero Exit Price Invariance (28 Sept 2026)
+- **Zero Exit Price Invariance in Pine Script**:
+  - Intraday expired trades or force-closed trades (`isPastDay`) MUST always set `trade.closeLevel := close` upon closure.
+  - Any trade closed by the indicator MUST NEVER dispatch an `exit_price` of `0.00`. An exit price of `0.00` corrupts `exact_pct = ((Exit - Entry) / Entry) * 100` into `-100.0%`, distorting Win Rate, Profit Factor, Expectancy, and Drawdown across all surfaces.
+  - Defensive fallbacks inside `terminateTrade`, `finalizeTrade`, and `processTradeArray` across all indicator codebases (`TV_Indicator_Full_Code.txt`, `TLCS_Live_Pivot_Alerts.pine`) must assign current candle `close` if `trade.closeLevel == 0.0 or na(trade.closeLevel)`.
 
+- **Weekly Performance Edge Schedule & Sunday 00:00 IST Boundary Mandate**:
+  - The Weekly Performance Edge reflects **completed historical weekly performance**. The ongoing/active current week must NEVER be evaluated, aggregated, or inserted into `weekly_performance_edge` until that week has officially closed (Sunday 23:59:59 IST).
+  - Netlify scheduled cron expression is anchored strictly to: `30 18 * * 0` (Sunday 18:30 UTC = Monday 00:00:00 IST).
+  - All backend crons (`cron-heal-outcomes.js`, `cron-weekly-logs.js`, `system-audit.js`), mobile Next.js app (`page.tsx`, `api/system-audit`), and Python scripts (`sync_weekly_performance.py`) must enforce:
+    ```javascript
+    const currentWeekStartISO = getStartOfWeekISO(now);
+    if (weekStartISO === currentWeekStartISO) return; // Skip in-progress week
+    ```
+  - Premature current week rows (e.g. `2026-09-28`) and legacy invalid `market_type: 'stocks'` rows are strictly prohibited in `weekly_performance_edge`.
 
+- **MCX Commodities Ingestion via DhanHQ Black Box Engine**:
+  - **Mandatory Instrument & Segment API Binding**:
+    - For MCX commodity futures, DhanHQ API requires `instrument: 'FUTCOM'` and `exchangeSegment: 'MCX_COMM'`. Passing `'COMMODITY'` triggers Dhan HTTP 400 `DH-905 Input_Exception`.
+  - **Verified Scrip Master Security IDs for MCX Futures**:
+    - `GOLD`: `483079` | `GOLDM`: `569003`
+    - `SILVER`: `495214` | `SILVERM`: `483080`
+    - `CRUDEOIL`: `569900` | `CRUDEOILM`: `569901`
+    - `NATURALGAS`: `570750`
+    - `COPPER`: `571298`
+    - `ZINC`: `571303`
+    - `ALUMINIUM`: `571297` | `ALUMINI`: `571296`
+  - **Cross-Runtime Token Persistence via Disk Cache**:
+    - Token cache location: `/tmp/dhan_token_cache.json`.
+    - Python engine (`algo_engine/dhan_auth.py`) and Node.js serverless functions (`netlify/functions/dhan-auth.js`) must share this disk cache.
+    - Prevents Dhan's strict 2-minute token regeneration limit (`DH-901 Multiple IP or Rapid Auth`) and guarantees seamless 24-hour token reuse across independent execution runtimes.
+  - **Supabase `shadow_signals` Schema Integrity Mandate**:
+    - The market column in `shadow_signals` is strictly named **`exchange`** (values: `'mcx'`, `'nifty'`).
+    - Querying or inserting with `market` column triggers PostgREST error `42703: column shadow_signals.market does not exist`. All filters and writes must use `exchange`.
+    - Column `updated_at` has a `NOT NULL` database constraint and must always be provided (`new Date().toISOString()`).
+  - **Dual-Market Operating Sessions & Sweeps**:
+    - **NSE Equities**: Active session `09:15` to `15:30 IST`; new entries cut off strictly at `14:00 IST` (`mins < 840`); session close sweep at `15:30 IST`.
+    - **MCX Commodities**: Active session `09:00` to `23:30 IST`; new entries cut off strictly at `22:00 IST` (`mins < 1320`); session close sweep at `23:30 IST`.
+
+## Version 5.0 Production Baseline: DhanHQ Black Box Multi-Session Invariance & Background Dispatch Mandate (29 Sept 2026)
+- **Netlify Cron Worker Execution Mandate**:
+  - Scheduled Netlify crons (e.g. `cron-dhan-scanner.js`) that dispatch work to background functions (`*-background.js`) MUST NEVER use un-awaited "fire-and-forget" HTTP requests.
+  - In serverless / AWS Lambda environments, exiting the handler immediately tears down runtime execution and closes open sockets, dropping the connection before the background worker receives the payload.
+  - All cron dispatchers MUST wrap the HTTP request in a Promise, provide explicit headers (`Content-Type`, `Content-Length`, `User-Agent`), handle timeouts defensively, and explicitly `await` the HTTP 202 Accepted response from the background function before returning `statusCode: 200`.
+- **Multi-Session Market Hours Invariance for Black Box Engine**:
+  - The UI and log filters across the mobile terminal (`page.tsx`) and web dashboard MUST NEVER enforce a single blanket market hours check (such as `isNseMarketHours()` / `nseOpen`) across multi-market engines.
+  - Active limit orders, live active trades, and log feeds for DhanHQ Black Box signals must evaluate market hours on a per-symbol basis using `isDhanSignalMarketOpen(signal)`.
+  - While Indian equities close at 15:30 IST, MCX commodity instruments (`CRUDEOILM`, `SILVERM`, `GOLDM`, `NATURALGAS`, `COPPER`, `ZINC`, `ALUMINIUM`, `LEAD`, `NICKEL`) operate until 23:30 IST. Applying `nseOpen` to MCX instruments falsely hides active limits or marks active trades as premature `EOD CLOSE`.
+  - Level and outcome badges for unclosed MCX trades during MCX hours (09:00 to 23:30 IST) MUST remain `ACTIVE LIMIT` or `OPEN` until official market close.
 
 
