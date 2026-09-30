@@ -544,7 +544,9 @@ class StrategyEngine:
 
 def detect_extreme_reversal(bars: List[OHLC],
                              config: Optional[StrategyConfig] = None,
-                             pivot_trend_slow: Optional[List[float]] = None
+                             pivot_trend_slow: Optional[List[float]] = None,
+                             green_zone: Optional[List[bool]] = None,
+                             red_zone: Optional[List[bool]] = None
                              ) -> Tuple[List[bool], List[bool]]:
     """
     Detect Extreme Reversal signals across a series of bars.
@@ -563,6 +565,8 @@ def detect_extreme_reversal(bars: List[OHLC],
         bars: List of OHLC bars
         config: Strategy configuration
         pivot_trend_slow: fPivotPDEMAS values (optional, for slope check)
+        green_zone: List of booleans indicating GREENZONE
+        red_zone: List of booleans indicating REDZONE
     
     Returns:
         Tuple of (long_signals, short_signals) boolean lists
@@ -604,14 +608,17 @@ def detect_extreme_reversal(bars: List[OHLC],
             ema_rising = pivot_trend_slow[i] > pivot_trend_slow[i - 1]
             ema_falling = pivot_trend_slow[i] < pivot_trend_slow[i - 1]
 
-        # Elongsignal = rising slope + bearish exhaustion prev + green current
+        gz_ok = green_zone[i] if green_zone is not None and i < len(green_zone) else True
+        rz_ok = red_zone[i] if red_zone is not None and i < len(red_zone) else True
+
+        # Elongsignal = rising slope + bearish exhaustion prev + green current + GREENZONE
         if (body_ratio_ok and range_ok and body_ok and
-                is_prev_bearish_exhaust and curr.is_green and ema_rising):
+                is_prev_bearish_exhaust and curr.is_green and ema_rising and gz_ok):
             long_signals[i] = True
 
-        # Eshortsignal = falling slope + bullish exhaustion prev + red current
+        # Eshortsignal = falling slope + bullish exhaustion prev + red current + REDZONE
         if (body_ratio_ok and range_ok and body_ok and
-                is_prev_bullish_exhaust and curr.is_red and ema_falling):
+                is_prev_bullish_exhaust and curr.is_red and ema_falling and rz_ok):
             short_signals[i] = True
 
     return long_signals, short_signals
