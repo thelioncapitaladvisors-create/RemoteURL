@@ -221,6 +221,12 @@ class ShadowPipeline:
         # Map TradeOutcome to string
         outcome_str = trade.outcome.value
 
+        # Invalidated / Cancelled Limit Order -> Immediate Hard Deletion (TradingView Zero-Ghost Parity)
+        if outcome_str == "CANCELLED" or trade.status.value == "CANCELLED":
+            self._execute_delete(trade.trade_id)
+            logger.info(f"[ShadowPipeline] Deleted invalidated limit order: {trade.symbol} {trade.name} ({trade.trade_id})")
+            return
+
         # Status label
         if outcome_str == "WIN":
             status_str = f"Hit {trade.exit_level}" if trade.exit_level.startswith("TP") else "Hit Target"
@@ -228,8 +234,6 @@ class ShadowPipeline:
             status_str = "Hit Initial SL" if trade.exit_level == "SL" else f"Hit {trade.exit_level}"
         elif outcome_str == "BREAKEVEN":
             status_str = "Hit B/E"
-        elif outcome_str == "CANCELLED":
-            status_str = "CANCELLED"
         else:
             status_str = trade.exit_level or "Closed"
 
@@ -311,6 +315,29 @@ class ShadowPipeline:
                     row["metadata"].update(payload["metadata"])
                 self._save_local_fallback()
                 return
+
+    def _execute_delete(self, trade_id: str) -> None:
+        """Delete invalidated/cancelled limit order from Supabase shadow table (and signals if dual_write) or local fallback."""
+        if self._sb and self._table_available is not False:
+            try:
+                self._sb.from_(self.table_name).delete().eq("metadata->>trade_id", trade_id).execute()
+                logger.info(f"[ShadowPipeline] Hard-deleted invalidated trade {trade_id} from {self.table_name}")
+            except Exception as e:
+                logger.error(f"[ShadowPipeline] Error deleting {trade_id} from {self.table_name}: {e}")
+
+            # Dual-write delete from signals table
+            if self.dual_write and self.table_name != "signals":
+                try:
+                    self._sb.from_("signals").delete().eq("metadata->>trade_id", trade_id).execute()
+                except Exception as e2:
+                    logger.error(f"[ShadowPipeline] Dual-write delete from signals failed: {e2}")
+
+            return
+        self._local_records = [
+            row for row in self._local_records
+            if row.get("metadata", {}).get("trade_id") != trade_id and row.get("id") != trade_id
+        ]
+        self._save_local_fallback()
 
     def get_recent_signals(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Fetch recent signals for parity audit display."""

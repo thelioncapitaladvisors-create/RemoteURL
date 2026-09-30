@@ -397,14 +397,14 @@ class NSE100Scanner:
             )
 
             if not is_live_trade:
-                # Unexecuted limit order -> CANCELLED
-                meta["exit_reason"] = "MARKET_CLOSE_EXPIRED_LIMIT"
-                update_payload = {
-                    "status": "CANCELLED",
-                    "outcome": "CANCELLED",
-                    "updated_at": now_iso,
-                    "metadata": meta
-                }
+                # Unexecuted limit order -> Immediately delete (TradingView Zero-Ghost Parity)
+                try:
+                    sb.from_(table).delete().eq("id", sig_id).execute()
+                    closed_count += 1
+                    logger.info(f"[NSE100Scanner] Deleted expired unexecuted limit at market close: {clean} ({sig_id})")
+                except Exception as e:
+                    logger.error(f"[NSE100Scanner] Error deleting expired limit {sig_id}: {e}")
+                continue
             else:
                 # Executed Live trade -> EOD Exit
                 entry = float(r.get("entry") or r.get("entry_price") or exit_price)

@@ -74,6 +74,17 @@
 - **MARKET-WISE ROUTING**: Telegram channel notifications are distributed dynamically based on the market category of the symbol (NIFTY, MCX, NYMEX, Crypto, Forex, World Indices). The backend resolves the market and looks up the corresponding environment variable for the Chat ID (e.g., `TELEGRAM_CHAT_ID_NIFTY`, `TELEGRAM_CHAT_ID_CRYPTO`, etc.).
 - **ACTIVE TRADES ONLY (No Active Limits)**: Telegram alerts must **NEVER** fire for unexecuted limit orders (`ACTIVE LIMIT` / `OPEN`). Telegram alerts fire **ONLY** when a limit trade actually fills and transitions to a **LIVE ACTIVE** executed trade (`⚡ TRADE ACTIVE`), or when an active trade updates trailing stop / closes (`TARGET` / `SL`).
 
+## DhanHQ Black Box & Shadow Signals Zero-Ghost Invalidation Mandate
+- **ZERO GHOST POLICY PARITY**: Just like TradingView signals in `signals` (where invalidated limit orders are hard-deleted via `.delete().eq('id', ...)` in `process-webhook-background.js`), DhanHQ Black Box signals (`shadow_signals`) MUST immediately be hard-deleted upon invalidation or expiry.
+- **Immediate Invalidation Gating**:
+  - For unexecuted LONG limit orders: If the candle's touch-point/wick breaks the stop loss (`latestCandle.low <= stopPrice`), the pending limit order is invalidated immediately. The backend scanner (`dhan-scanner-background.js`) and engine (`shadow_pipeline.py`) must call `.delete().eq('id', trade.id)` rather than setting status to `CANCELLED`.
+  - For unexecuted SHORT limit orders: If the candle's touch-point/wick breaks the stop loss (`latestCandle.high >= stopPrice`), the pending limit order is invalidated immediately and hard-deleted.
+  - Zero-ghost gating must evaluate the stop breach BEFORE checking whether `low <= entryPrice` or `high >= entryPrice` to ensure a candle that plunges straight through SL never fills the trade.
+- **Market Close Expiry Purge**:
+  - At market close (`sweepMarketCloseExits` or `exit_all_live_trades_at_market_close`), unexecuted limit orders must be hard-deleted via `.delete()` from `shadow_signals`. Only executed live trades receive market close/EOD exits.
+- **Frontend Active Signal & Limit Filtering**:
+  - In `page.tsx` and all dashboards, unexecuted limit orders must never be treated as executed live trades simply because `updated_at` exists in the database. Use `isExecutedTrade(s)` to strictly check for `TRADE ACTIVE`, `⚡`, `real_entry_time`, or `TradeFill`.
+  - Unexecuted limit orders outside active session hours or invalidated must never be displayed in active counts (`dhanActiveLimitsCount`), `HUB Alerts Dashboard`, or active signal feeds.
 
 ## Exit Categorization (Rigid vs Dynamic Exits)
 - Do NOT bucket trades into static levels (e.g., "TP3" or "TP4") based on the highest level they *touched*. This corrupts the data because it hides the actual realized exit.
