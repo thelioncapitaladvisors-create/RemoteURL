@@ -1405,10 +1405,10 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - In simulation mode, order IDs are generated as virtual identifiers (`SIM_XXXXXX`), filled at real-time LTP, and tracked through their full mathematical lifecycle without sending live broker orders.
 - **Dynamic Active MCX Contract Binding**:
   - MCX Commodity contract security IDs must never rely on stale, hardcoded numbers. Active monthly contract IDs must be queried or bound dynamically via Dhan's Scrip Master (`api-scrip-master.csv`):
-    - `CRUDEOIL`: `569900`
-    - `GOLD`: `483079`
-    - `SILVER`: `495214`
-    - `NATURALGAS`: `568245`
+    - `CRUDEOIL`: `569900` (rollovers: `[569900, 573422, 576264, 580377]`)
+    - `GOLD`: `483079` (rollovers: `[483079, 495213, 559933, 569424]`)
+    - `SILVER`: `495214` (rollovers: `[495214, 564619, 572772, 579304]`)
+    - `NATURALGAS`: `570750` (rollovers: `[570750, 574319, 578249, 581135]`)
 - **DhanHQ Market Feed & Integer Security ID Standard**:
   - DhanHQ `/marketfeed/ltp` payloads require numeric integer security IDs (e.g. `[569900]`, not `["569900"]`).
   - Response parsing in `lib/dhan.ts` must defensively support both `data.data[segment][id].last_price` and `data.data.data[segment][id].last_price`.
