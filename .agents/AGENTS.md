@@ -1519,4 +1519,41 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - While Indian equities close at 15:30 IST, MCX commodity instruments (`CRUDEOILM`, `SILVERM`, `GOLDM`, `NATURALGAS`, `COPPER`, `ZINC`, `ALUMINIUM`, `LEAD`, `NICKEL`) operate until 23:30 IST. Applying `nseOpen` to MCX instruments falsely hides active limits or marks active trades as premature `EOD CLOSE`.
   - Level and outcome badges for unclosed MCX trades during MCX hours (09:00 to 23:30 IST) MUST remain `ACTIVE LIMIT` or `OPEN` until official market close.
 
+## Version 5.0 Production Baseline: DhanHQ Black Box Master Pine Script Engine Alignment & Zero-Ghost Architecture (30 Sept 2026)
+- **Master Pine Script Indicator Parity Mandate**:
+  - The DhanHQ serverless Black Box engine (`dhan-scanner-background.js`) must strictly mirror the mathematical logic and indicator definitions of `TLCS PivotBoss Indicator v6.0` (3,539 lines).
+  - Approximations, synthetic pivots, or arbitrary level calculations are strictly prohibited.
+- **Dual CPR & Normalized NCPR (< 5.0%) Mandate**:
+  - Daily historical levels must extract both D-1 (Today's CPR) and D-2 (Yesterday's CPR).
+  - Central Pivot: $\text{DP} = (H + L + C) / 3.0$, $\text{Bcy} = (H + L) / 2.0$, $\text{Tcy} = 2 \cdot \text{DP} - \text{Bcy}$.
+  - Bounds: $\text{DTc} = \max(\text{Tcy}, \text{Bcy})$, $\text{DBc} = \min(\text{Tcy}, \text{Bcy})$.
+  - Yesterday's CPR: $\text{YP}, \text{YTc}, \text{YBc}$ derived identically from D-2 daily bar.
+  - Normalized CPR Width: $\text{ncprPct} = (|\text{DTc} - \text{DBc}| / (H_{d1} - L_{d1})) \times 100 < 5.0\%$.
+- **TPO 68% Value Area Profile Mandate**:
+  - Constructed using a 20-bin frequency distribution across previous session 15-minute intraday candles.
+  - $\text{POC}$ is the highest-frequency bin. Outward expansion until cumulative frequency $\ge 68\%$ of total TPO sum defines $\text{VAH}$ (Value Area High) and $\text{VAL}$ (Value Area Low).
+- **Market Profile Range States & Biases Mandate**:
+  - Range States: $\text{INRANGEINVALUE}$ ($OO \in [VAL, VAH]$ within prior day range), $\text{INRANGEOUTOFVALUE}$, $\text{OUTOFRANGEVALUE}$.
+  - Opening Bias ($\text{dX}$): `IN RANGE IN VALUE`, `IN RANGE OUT OF VALUE`, `OUT OF RANGE OUT OF VALUE`, `BULLISH`, `BEARISH`.
+  - Institutional Bias ($\text{c1}$): Inside CPR evaluates to `"WATCH"`. Confirmed extremes evaluate to `"CONFIRMED BULLISH"`, `"CONFIRMED BEARISH"`, `"REJECTION"`, `"SIDEWAYS"`, or `"BREAKOUT"`.
+  - Day Type ($\text{mX}$): Evaluates `TYPICAL DAY, TRADING RANGE, SIDEWAYS`, `BIG MOVE`, `TREND DAY, DOUBLE DISTRIBUTION TREND, EXPANDED TYPICAL`, etc.
+  - `isSidewaysDay` & `dayAllowed`: NCPR overrides sideways day filter for trend strategies; Divergence strategies are exempt from `dayAllowed`.
+- **Technical Subsystems & Dynamic Pivot S/R Swings**:
+  - Dual Exponential Moving Averages: DEMA 5 and DEMA 13 calculated on typical price $(H+L+C)/3$.
+  - 14-period DMI (+DI / -DI) using Wilder's RMA.
+  - 92-bar normalized oscillator with 21-bar EMA ($m0$) and 96-bar SMA ($m10$).
+  - Up to 15 pivot high and low swings for bounce validation (`isValidBounceUp`, `isValidBounceDown`).
+  - Extreme Reversal System (L02): Previous candle range $> 2.0 \times \text{avgCandle}$, body $\ge 0.75 \times \text{range}$, body $> \text{avgBody}$, opposite close, gated by DEMA slope.
+- **Decoupled 6-Strategy Priority Ladder**:
+  - Strict priority order: `LIGHTNING` $\rightarrow$ `EXTREME REVERSAL` $\rightarrow$ `DIVERGENCE` $\rightarrow$ `HIDDEN DIVERGENCE` $\rightarrow$ `MISSILE BREAKOUT` $\rightarrow$ `SCALP`.
+  - Canonical touch-point gating: Long trades strictly require **`low < H4`**, Short trades strictly require **`high > L4`**.
+- **Session Midpoint Limit Pricing & ATR Risk-Reward Grid**:
+  - Limit entry order placed deterministically at active session midpoint: $\text{trendLine} = (\text{highestHigh} + \text{lowestLow}) / 2.0$.
+  - Multipliers: Stop $0.75 \times \text{ATR}$, TP1 $2.5 \times \text{ATR}$, TP2 $4.0 \times \text{ATR}$, TP3 $6.5 \times \text{ATR}$, TP4 $8.0 \times \text{ATR}$.
+- **Zero-Ghost Parity Mandate for Shadow Signals**:
+  - Evaluated pending limit orders MUST test stop-loss breach BEFORE checking entry fill.
+  - If a pending Long limit order sees $\text{low} \le \text{stopPrice}$ or Short limit order sees $\text{high} \ge \text{stopPrice}$, the order is invalidated immediately and hard-deleted via `.delete().eq('id', trade.id)`.
+  - Market close sweeps (`sweepMarketCloseExits` and `cron-eod-close.js`) MUST hard-delete unexecuted limit orders from `shadow_signals`. Unexecuted limit orders must never persist as cancelled or ghost rows.
+
+
 
