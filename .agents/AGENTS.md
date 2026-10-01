@@ -1134,8 +1134,8 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 ## Version 1.0 Mobile Terminal: Analytics Hierarchy & Market Filters Standards
 - **Analytics Tab Scroll Hierarchy (`activeTab === 'ANALYTICS'`)**:
   1. **Daily Signal Dashboard Matrix (Apex Position)**: Today's active parameter signals (`MISSILE`, `SCALP`, `LIGHTNING`, Day Type Blueprints, Trade Sequences) across active symbols MUST be positioned at the very top of the scrollable Analytics view (`space-y-3`) for immediate visibility without scrolling.
-  2. **Market Filters Header**: An institutional section header directly precedes the 7 market selection buttons:
-     - **Title**: `MARKET FILTERS` (rendered with canonical theme heading: `text-xs sm:text-sm font-black uppercase tracking-widest text-primary`).
+  2. **TLCS Signal Performance Metrics (EDGE) Header**: An institutional section header directly precedes the 7 market selection buttons:
+     - **Title**: `TLCS Signal Performance Metrics (EDGE)` (rendered with canonical theme heading: `text-xs sm:text-sm font-black uppercase tracking-widest text-primary`).
      - **Subtitle**: `Filter active signals, win rates & performance metrics across markets.` (`text-[10px] sm:text-[11px] font-mono text-dim leading-tight`).
   3. **Market Filter Grid**: 3-row glassmorphic buttons for market segment filtering (`SYSTEM-WIDE`, `NIFTY 50`, `MCX COMMODITIES`, `NYMEX & COMEX`, `CRYPTO TOP 25`, `FOREX PAIRS`, `WORLD INDICES`).
   4. **Summary Stats Bar**: Realized performance KPI cards (Win Rate, Expectancy, Profit Factor, Calmar, Half-Kelly, Total Trades, W/L/BE).
