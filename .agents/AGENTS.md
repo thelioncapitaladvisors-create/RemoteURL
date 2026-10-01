@@ -99,6 +99,15 @@
   - In `page.tsx` and all dashboards, unexecuted limit orders must never be treated as executed live trades simply because `updated_at` exists in the database. Use `isExecutedTrade(s)` to strictly check for `TRADE ACTIVE`, `⚡`, `real_entry_time`, or `TradeFill`.
   - Unexecuted limit orders outside active session hours or invalidated must never be displayed in active counts (`dhanActiveLimitsCount`), `HUB Alerts Dashboard`, or active signal feeds.
 
+## DhanHQ Live Feed API & Parity Audit Matching Standards
+- **DhanHQ API v2 Unnested Payload Handling**: DhanHQ v2 endpoints (`/v2/charts/intraday`) return OHLC arrays directly on `res.data` (`res.data.open`, `res.data.high`, etc.), not wrapped under `res.data.data`. All background scanners (`dhan-scanner-background.js`) and engines (`dhan_feed.py`) must parse `(res.data && res.data.data && res.data.data.open) ? res.data.data : (res.data && res.data.open ? res.data : null)` to guarantee that real live candles are ingested without silent fallback failures.
+- **Intraday Bar Aggregation for Daily Levels**: Since `/v2/charts/historical` returns 400 for certain equity security IDs, daily high, low, and close levels are derived by aggregating completed 15-minute intraday bars grouped by calendar date (`YYYY-MM-DD`). Fallback to synthetic constants (e.g. `1500.0` or `1527.75/1478.25`) is strictly prohibited. If live candles cannot be retrieved, the engine returns `null` and skips the symbol cleanly.
+- **Session-Aware 1-to-1 Parity Audit Telemetry**:
+  - In `page.tsx`, signals between TradingView and Black Box Shadow engines must be matched using session-aware, 1-to-1 matching.
+  - Matches must be bounded to the same trading day (IST) or within 4 hours (`deltaSec <= 14400`), matching exact normalized symbols (`replace(/^NSE:|^MCX:/, '').replace(/1!$/, '')`) and strategy triggers (`tvType === bbType`).
+  - Matched Black Box IDs are tracked via a `Set` to prevent cross-day duplicate comparisons.
+  - Dynamic status indicators in the Parity Audit screen must dynamically display `PASS` (≥99.0%), `EVAL` (≥90.0%), or `AUDIT` (<90.0%) with corresponding semantic badge colors.
+
 ## Exit Categorization (Rigid vs Dynamic Exits)
 - Do NOT bucket trades into static levels (e.g., "TP3" or "TP4") based on the highest level they *touched*. This corrupts the data because it hides the actual realized exit.
 - A trade belongs in a `TP` bucket ONLY if it *actually closed* at that exact level (e.g., via a limit order, or a step-based trailing stop that precisely locked in that previous level).

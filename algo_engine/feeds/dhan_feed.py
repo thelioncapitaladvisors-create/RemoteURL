@@ -333,7 +333,8 @@ class DhanFeed(BaseFeed):
                 resp = requests.post(url, json=payload, headers=headers, timeout=5)
                 time.sleep(0.15)  # Throttle to avoid rate limits
                 if resp.status_code == 200:
-                    data = resp.json().get("data", {})
+                    raw = resp.json()
+                    data = raw.get("data") if isinstance(raw.get("data"), dict) and "open" in raw.get("data") else raw
                     opens = data.get("open", [])
                     highs = data.get("high", [])
                     lows = data.get("low", [])
@@ -392,7 +393,8 @@ class DhanFeed(BaseFeed):
                 resp = requests.post(url, json=payload, headers=headers, timeout=5)
                 time.sleep(0.15)  # Throttle to avoid rate limits
                 if resp.status_code == 200:
-                    data = resp.json().get("data", {})
+                    raw = resp.json()
+                    data = raw.get("data") if isinstance(raw.get("data"), dict) and "high" in raw.get("data") else raw
                     highs = data.get("high", [])
                     lows = data.get("low", [])
                     closes = data.get("close", [])
@@ -404,6 +406,21 @@ class DhanFeed(BaseFeed):
                         }
             except Exception as e:
                 logger.debug(f"[DhanFeed] Historical daily fetch error for {symbol}: {e}")
+
+            # Fallback to computing daily levels from intraday candles
+            try:
+                intra_candles = self.fetch_intraday_candles(symbol, interval=15)
+                if intra_candles and len(intra_candles) >= 3:
+                    highs = [c["high"] for c in intra_candles]
+                    lows = [c["low"] for c in intra_candles]
+                    closes = [c["close"] for c in intra_candles]
+                    return {
+                        "high": float(max(highs)),
+                        "low": float(min(lows)),
+                        "close": float(closes[-1])
+                    }
+            except Exception as e_intra:
+                logger.debug(f"[DhanFeed] Intraday daily fallback error for {symbol}: {e_intra}")
 
         return self._generate_mock_daily_levels(clean)
 
