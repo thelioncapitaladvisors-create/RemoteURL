@@ -14,10 +14,23 @@
 - The entire web dashboard (`index.html`, `scanner.js`, `commodity-scanner.js`) and the mobile app (`page.tsx`) rely strictly on this `exact_pct`.
 - When calculating Profit Factor, Expectancy, Win Rate, Best Trade, and Max Drawdown, base ALL metrics strictly off the Exact Percentage values, regardless of whether the user is in "Novice Mode" or "Pro Mode".
 - **CANONICAL WIN RATE & SUCCESS RATE FORMULA**: Win Rate / Success Rate across ALL tabs (`HUB`, `MARKETS`, `ANALYTICS`, `Research`, `Dashboard`) MUST ALWAYS use total realized closed trades (`wins.length / totalClosed.length * 100`) in the denominator. Breakeven trades MUST NOT be omitted from the closed trades denominator. `(Wins + Losses)` denominator is strictly prohibited.
-## Version 3.0: Platform Baseline & Information Architecture
-- **Version 3.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) is standardized to Version 3.0.
+## Version 6.0: Platform Baseline & Repository Standardization
+- **Version 6.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) and Pine Script indicator suite (`TLCS AIO INDICAOR v6.0`, `TV_Indicator_Full_Code.txt`) are standardized to Version 6.0.
 - **HUB Tab Operational Command Center**: The `TLCS ALERTS DASHBOARD` (Parameter Matrix, Trade Sequences, Extreme Reversal, Breakaway) is positioned at the top of the **HUB** tab, followed directly by `NORMALIZED TRADE PERFORMANCE` (P&L per trade distribution, asymmetric frequency bell curve histogram, and 8 institutional KPIs) and `TLCS LIVE OPTION CHAIN`.
 - **LOGS Tab Execution Command Center**: The `TRADE GUIDANCE` section (Execution metrics, 2-row performance grid, and Data Source toggle) is positioned at the top of the **LOGS** tab, directly above the `GLOBAL SIGNAL FEED` (unified chronological execution and audit log).
+- **Global Version 6.0 Branding Standard**:
+  - Mobile terminal header: `TLCS TERMINAL v6.0`.
+  - SIEM app init log: `Terminal V6.0 initialized`.
+  - Daemon status pill: `Active Daemon v6.0`.
+  - User-Agent headers: `TLCS-Mobile/6.0` (Mobile PWA) and `TLCS-Autonomous-Daemon/6.0` (Netlify background functions).
+  - Web footers & script cachebusters: `v6.0` / `?v=6.0` across `dashboard.html`, `login.html`, `metrics.html`, `scanner.html`.
+  - Service Worker Cache: `tlcs-website-cache-v6.0.0`.
+  - Localization & Scanner Engines: `v6.0.0` in `localization.js` and `scanner.js`.
+  - Package versions across all repositories: `6.0.0` in `Tv-Alert-Mobile/package.json` and `TLCS_Website_Deploy/package.json`.
+  - Pine Script Indicator: `indicator('TLCS AIO INDICAOR v6.0', ...)` in `TV Indicator/TLCS_Live_Pivot_Alerts.pine` and `TV_Indicator_Full_Code.txt`.
+
+## Version 3.0: Platform Baseline & Information Architecture
+- **Version 3.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) was historically standardized to Version 3.0.
 - **Extreme Reversal Multi-Platform Screener Parity**: Extreme Reversal trades (`LONG EXTREME REVERSAL` / `SHORT EXTREME REVERSAL`) are fully recognized and filtered across all surfaces:
   - **Mobile Terminal (`page.tsx`)**:
     - `signalCategories` in 7-Day Screener Matrix (`id: 'EXTREME_REV'`, matching `EXTREME` and `REVERSAL`).
@@ -1463,11 +1476,11 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Strict Table Separation (Black Box Shadow Parity)**:
   - TradingView alerts write to `signals`; DhanHQ Black Box scanner writes to `shadow_signals`.
   - Side-by-side verification enabled via `SHADOW` engine toggle and `PARITY` audit mode on the mobile terminal (`market-store.online`).
-- **Platform Version 5.0 Branding Standard**:
-  - Mobile terminal header: `TLCS TERMINAL v5.0`.
-  - SIEM initialization log: `Terminal V5.0 initialized`.
-  - Daemon status indicator: `Active Daemon v5.0`.
-  - Package versions across all repositories: `5.0.0`.
+- **Platform Version 6.0 Branding Standard**:
+  - Mobile terminal header: `TLCS TERMINAL v6.0`.
+  - SIEM initialization log: `Terminal V6.0 initialized`.
+  - Daemon status indicator: `Active Daemon v6.0`.
+  - Package versions across all repositories: `6.0.0`.
 
 ## Version 5.0 Architecture: MCX Commodities DhanHQ Binding, Weekly Performance Edge Schedule & Zero Exit Price Invariance (28 Sept 2026)
 - **Zero Exit Price Invariance in Pine Script**:
