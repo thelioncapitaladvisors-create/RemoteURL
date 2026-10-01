@@ -16,8 +16,8 @@
 - **CANONICAL WIN RATE & SUCCESS RATE FORMULA**: Win Rate / Success Rate across ALL tabs (`HUB`, `MARKETS`, `ANALYTICS`, `Research`, `Dashboard`) MUST ALWAYS use total realized closed trades (`wins.length / totalClosed.length * 100`) in the denominator. Breakeven trades MUST NOT be omitted from the closed trades denominator. `(Wins + Losses)` denominator is strictly prohibited.
 ## Version 3.0: Platform Baseline & Information Architecture
 - **Version 3.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) is standardized to Version 3.0.
-- **Unified Global Signal Feed (LOGS Tab)**: The signals view consolidates active limit orders, live active trades, trailing stop adjustments, and target/SL completions into a single unified chronological execution feed (`GLOBAL SIGNAL FEED & EXECUTION LOG`), eliminating feed fragmentation.
-- **HUB Tab Operational Command Center**: The `TLCS ALERTS DASHBOARD` (Parameter Matrix, Trade Sequences, Extreme Reversal, Breakaway) is positioned directly below the `TRADE GUIDANCE` section on the HUB tab, creating a unified daily command overview.
+- **HUB Tab Operational Command Center**: The `TLCS ALERTS DASHBOARD` (Parameter Matrix, Trade Sequences, Extreme Reversal, Breakaway) is positioned at the top of the **HUB** tab, followed directly by `NORMALIZED TRADE PERFORMANCE` (P&L per trade distribution, asymmetric frequency bell curve histogram, and 8 institutional KPIs) and `TLCS LIVE OPTION CHAIN`.
+- **LOGS Tab Execution Command Center**: The `TRADE GUIDANCE` section (Execution metrics, 2-row performance grid, and Data Source toggle) is positioned at the top of the **LOGS** tab, directly above the `GLOBAL SIGNAL FEED` (unified chronological execution and audit log).
 - **Extreme Reversal Multi-Platform Screener Parity**: Extreme Reversal trades (`LONG EXTREME REVERSAL` / `SHORT EXTREME REVERSAL`) are fully recognized and filtered across all surfaces:
   - **Mobile Terminal (`page.tsx`)**:
     - `signalCategories` in 7-Day Screener Matrix (`id: 'EXTREME_REV'`, matching `EXTREME` and `REVERSAL`).
@@ -1332,11 +1332,11 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Unified Global Signal Feed on LOGS Tab**:
   - The previous split between "LIVE ACTIVE TRADES" and "DISPATCHED SIGNALS & ALERTS" on the LOGS tab is consolidated into a single unified `GLOBAL SIGNAL FEED & EXECUTION LOG` stream.
   - Active trades, filled limits, pending limit orders, and closed executions are unified into a single chronological feed with clear status badges, eliminating fragmentation and improving mobile user experience.
-- **Relocation of TLCS Alerts Dashboard to HUB Tab & Equalized Section Typography**:
-  - The `TLCS ALERTS DASHBOARD` section (showing today's Parameter Matrix, Trade Sequence matrix, Extreme Reversal, and Breakaway metrics) has been moved from the ANALYTICS tab to the HUB tab, placed directly below the `TRADE GUIDANCE` section.
-  - The HUB tab now serves as the primary operational command center: Trade Guidance at top, followed by the Daily Alerts Dashboard & Matrices.
-  - **Equalized Section Headings**: Standardized both `TRADE GUIDANCE` and `TLCS ALERTS DASHBOARD` to identical `h2 text-xl sm:text-2xl font-bold italic tracking-tighter uppercase leading-[1.1]` typography with `size={22}` accent icons and matching monospace subtitles, eliminating typography disparity.
-  - The ANALYTICS tab is streamlined to focus on performance analytics, historical metrics, and Day Type scanner matrices.
+- **Platform Information Architecture & Reorganization (HUB & LOGS Tabs)**:
+  - The `TLCS ALERTS DASHBOARD` section (showing today's Parameter Matrix, Trade Sequence matrix, Extreme Reversal, and Breakaway metrics) is positioned at the top of the **HUB** tab.
+  - The `NORMALIZED TRADE PERFORMANCE` section (P&L per trade distribution, asymmetric frequency bell curve histogram, and institutional KPI strip) is positioned directly below `TLCS ALERTS DASHBOARD` on the **HUB** tab, followed by `TLCS LIVE OPTION CHAIN`.
+  - The `TRADE GUIDANCE` section (Execution metrics, 2-row performance grid, and Data Source toggle) is positioned at the top of the **LOGS** tab, directly above the `GLOBAL SIGNAL FEED`.
+  - **Equalized Section Headings**: Standardized `TRADE GUIDANCE`, `TLCS ALERTS DASHBOARD`, and `GLOBAL SIGNAL FEED` to identical `h2 text-xl sm:text-2xl font-bold italic tracking-tighter uppercase leading-[1.1]` typography with `size={22}` accent icons and matching monospace subtitles, eliminating typography disparity.
 - **Global Version 3.0 Branding**:
   - Mobile terminal header: `TLCS TERMINAL v3.0`.
   - SIEM app init log: `Terminal V3.0 initialized`.
