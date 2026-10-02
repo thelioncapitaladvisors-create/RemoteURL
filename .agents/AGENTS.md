@@ -72,6 +72,19 @@
   - Localization & Scanner Engines: `v7.0.0` in `localization.js` and `scanner.js`.
   - Package versions across all repositories: `7.0.0` in `Tv-Alert-Mobile/package.json` and `TLCS_Website_Deploy/package.json`.
   - Pine Script Indicator: `indicator('TLCS AIO INDICAOR v7.0', ...)` in `TV Indicator/TLCS_Live_Pivot_Alerts.pine` and `TV_Indicator_Full_Code.txt`.
+- **macOS Golden Gate 27.0.1 Light (Non-Dark) Theme & RISK ISHQ Sound Theme**:
+  - **Golden Gate Light Skin**: Liquid glass specular refraction with frosted 24px blur (`saturate(180%)`), California daylight pearlescent canvas (`#F8F9FC`), frosted white glass surfaces (`#FFFFFF`), high-contrast California slate typography (`#0F172A`), International Orange (`#FF5E3A`) accents. Visual Skins picker features 7 themes (`DARK`, `SLATE`, `LIGHT`, `THE LION`, `GG DARK`, `GG LIGHT`, `AUTO`).
+  - **RISK ISHQ Sound Signature**: Themed after Harshad Mehta's iconic *"Risk Hai Toh Ishq Hai"* dialogue from *Scam 1992*, synthesizing the 7-note D-minor blues hook ($\text{D4} \rightarrow \text{F4} \rightarrow \text{G4} \rightarrow \text{G}\sharp\text{4} \rightarrow \text{G4} \rightarrow \text{F4} \rightarrow \text{D4}$) via resonant sawtooth brass oscillator and 146.83 Hz sub-bass sine wave.
+- **Universal "BLACK BOX" Autonomous Engine Label Parity**:
+  - Legacy `DhanHQ 100 (Black Box)` / `DHANHQ 100 (BLACK BOX ⚡)` naming is globally deprecated across all UI tabs (`HUB`, `LOGS`, `MARKETS`, `INSIGHTS`, `ANALYTICS`, `SCREENER`). The autonomous engine is referenced exclusively as **`BLACK BOX`** (with subtitle `⚡ Standalone Black Box`).
+- **Application Window Title & PWA App Name Standard**:
+  - Standalone PWA and macOS window title must strictly render **`The Lion Capital Solutions TERMINAL`** (enforced in `layout.tsx` metadata title and `manifest.json` name/short_name).
+- **Authorized Admin Whitelist Expansion**:
+  - `APPROVED_ADMIN_EMAILS` across Web, Mobile, and Netlify serverless functions strictly recognizes:
+    1. `owner@tlcs.com`
+    2. `vishantmeshram@gmail.com`
+    3. `thelioncapitaladvisors@gmail.com`
+    4. `connect@thelioncapitalsolutions.com`
 
 ## Strategic Roadmap: Standalone DhanHQ Engine Migration & TradingView Sunset Plan
 - **Phase 1: Dual-Engine Comparative Parity (Current Baseline v7.0)**:
