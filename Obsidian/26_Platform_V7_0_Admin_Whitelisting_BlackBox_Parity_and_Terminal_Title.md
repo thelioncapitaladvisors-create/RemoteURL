@@ -66,5 +66,17 @@
 ### "RISK ISHQ" Sound Theme
 * **Cultural Reference**: Harshad Mehta's iconic dialogue *"Risk Hai Toh Ishq Hai"* from the *Scam 1992* soundtrack (composed by Achint Thakkar).
 * **Audio Synthesis Hook**: 7-note D-minor blues hook:
-  16424	ext{D4 (293.66 Hz)} \longrightarrow 	ext{F4} \longrightarrow 	ext{G4} \longrightarrow \mathbf{G\sharp 4\ (415.30\ Hz)} \longrightarrow 	ext{G4} \longrightarrow 	ext{F4} \longrightarrow 	ext{D4}16424
-* **Tone**: Low-pass filtered resonant sawtooth synth wave with sub-bass sine oscillator (.83	ext{ Hz}$).
+  $$\text{D4 (293.66 Hz)} \longrightarrow \text{F4} \longrightarrow \text{G4} \longrightarrow \mathbf{G\sharp 4\ (415.30\ Hz)} \longrightarrow \text{G4} \longrightarrow \text{F4} \longrightarrow \text{D4}$$
+* **Tone**: Low-pass filtered resonant sawtooth synth wave with sub-bass sine oscillator ($146.83\text{ Hz}$).
+
+---
+
+## 5. Markets Performance Table Summary Row: `ALL` (No `∑` / Zero Truncation)
+
+### Objective & Implementation
+* **Zero Truncation on Mobile Summary Row**: Previously, the sticky summary row on the Today's Signal Performance table rendered `∑ CONSOLIDATED`, which on narrower mobile viewports truncated horizontally as `∑ CONSOLIDAT...`.
+* **Standardized `ALL` Label**:
+  * Removed mathematical summation prefix `∑`.
+  * Renamed the label when `todayTableMarket === 'ALL'` to strictly **`ALL`**, achieving 1:1 visual parity with the `ALL` market filter pill above it.
+  * Retained dynamic market uppercase display (`NIFTY`, `BANKNIFTY`, etc.) when filtered to a specific market.
+  * Completely eliminates string truncation and cleanly displays the full trade count and outcome breakdown (`totalClosed (totalWinsW/totalLossesL/totalBEB)`).

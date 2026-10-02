@@ -39,7 +39,7 @@
 - **Canonical UI Section Terminology**:
   - **HUB Tab Operational Command Center**: The `LIVE OPPORTUNITIES DASHBOARD` (Parameter Matrix, Trade Sequences, Extreme Reversal, Breakaway) is positioned at the top of the **HUB** tab, followed directly by `NORMALIZED TRADE PERFORMANCE` (P&L per trade distribution, asymmetric frequency bell curve histogram, and 8 institutional KPIs) and `OPTION CHAIN`.
   - **LOGS Tab Execution Command Center**: The `TODAY'S SIGNAL PERFORMANCE` section (Execution metrics, 2-row performance grid, and Data Source toggle) is positioned at the top of the **LOGS** tab, directly above `TRADE FILTERS` (unified chronological execution and audit log).
-  - **MARKETS Tab Streamlined Performance**: The top redundant `Markets Today` section (duplicate scope filter, duplicate 8-card metric grid, duplicate equity curve) is permanently removed; the **MARKETS** tab opens directly with `Today's Signal Performance` table, sticky `∑ CONSOLIDATED` row, `CONSOLIDATED INTRADAY TRAJECTORY`, and trade audit feed.
+  - **MARKETS Tab Streamlined Performance**: The top redundant `Markets Today` section (duplicate scope filter, duplicate 8-card metric grid, duplicate equity curve) is permanently removed; the **MARKETS** tab opens directly with `Today's Signal Performance` table, sticky `ALL` summary row, `CONSOLIDATED INTRADAY TRAJECTORY`, and trade audit feed.
 - **Mobile Terminal Clean Hardening**:
   - The redundant in-memory evaluation instruction banner (`Viewing Black Box Shadow Engine (Local In-Memory Evaluation • shadow_signals) [SHADOW DB]`) is completely removed from `page.tsx` for cleaner, uninterrupted signal monitoring.
 - **Terminal Menu & Autonomous Engine Isolation Mandate**:
@@ -58,7 +58,7 @@
     - **HUB Tab (`DASHBOARD`)**: Parameter Matrix, Trade Sequences, and Normalized Trade Performance toggle between Webhook and DhanHQ engines.
     - **LOGS Tab (`ALERTS`)**: Data source toggle routes execution metrics, 2-row performance grid, and Trade Filters feed to `dhanBlackboxSignals`.
     - **SCREENER Tab (`SCREENER`)**: Screener Matrix and Paper Portfolio provide dedicated sub-views (`DHAN_SCREENER`, `DHAN_PAPER`).
-    - **MARKETS Tab (`ANALYSIS`)**: When `engineSource === 'SHADOW'`, Today's Signal Performance table, sticky `∑ CONSOLIDATED` row, Intraday Trajectory equity curve, and trade audit feed evaluate DhanHQ executed trades.
+    - **MARKETS Tab (`ANALYSIS`)**: When `engineSource === 'SHADOW'`, Today's Signal Performance table, sticky `ALL` summary row, Intraday Trajectory equity curve, and trade audit feed evaluate DhanHQ executed trades.
     - **INSIGHTS Tab (`INSIGHTS`)**: Evaluates DhanHQ opening prints (`IN RANGE IN VALUE`, `IN RANGE OUT OF VALUE`), day types, and Strategy Trigger performance matrix.
     - **ANALYTICS Tab (`ANALYTICS`)**: Macro KPIs (Win Rate, PF, Net Edge, Best Trade, Max Drawdown) and Weekly Performance Edge table (with CAGR and Kelly) dynamically synthesize completed historical weeks from `dhanBlackboxSignals`.
   - **Zero Additional Load Standard**: The full 6-tab parity leverages the existing in-memory client-side cache (`shadowSignals` / `dhanBlackboxSignals`) with zero additional database queries, zero backend API calls, and zero frontend frame-rate degradation.
@@ -154,7 +154,7 @@
 - **ZERO UI / TEXT OVERLAPPING**: No text, badges, headers, summary rows, or navigational chrome may ever visually collide, truncate unpredictably, or overlap anywhere across the web and mobile applications:
   - **Bottom Navigation Clearance**: All main terminal scrolling containers (`page.tsx`) must strictly feature `pb-20 sm:pb-24` and `min-h-0` flex bounding to guarantee bottom table rows, status pills, and summary cards never scroll beneath or get obscured by floating bottom tab bars.
   - **Horizontal Table Column Integrity**: Data tables on mobile with high column density (such as the Markets performance table) must be wrapped inside responsive horizontal scroll containers (`overflow-x-auto hide-scrollbar w-full`) with a defined minimum inner width (e.g., `min-w-[520px]`).
-  - **Consolidated Summary Row Spacing**: Table summary rows displaying both label (`∑ CONSOLIDATED`) and metrics must merge label and count columns (e.g., `col-span-2 flex justify-between`) or provide sufficient fractional grid width to avoid horizontal text collision.
+  - **Summary Row Spacing & Zero Truncation**: Table summary rows displaying both label (`ALL` or filtered market name) and metrics must merge label and count columns (e.g., `col-span-2 flex justify-between`) and omit redundant symbol prefixes (such as `∑`) to prevent horizontal text collision or ellipsis truncation.
   - **Equalized Section Heading Typography Mandate**: Major section headings across all mobile terminal tabs (specifically `TODAY'S SIGNAL PERFORMANCE`, `LIVE OPPORTUNITIES DASHBOARD`, and `TRADE FILTERS`) must maintain strictly equal typography:
     - Heading tag & font sizing: `h2` with `text-xl sm:text-2xl font-bold italic tracking-tighter uppercase leading-[1.1] text-primary flex items-center gap-2`.
     - Section Icon parity: Accent-colored icon (`text-accent shrink-0` with `size={22}`) paired directly with heading title.
