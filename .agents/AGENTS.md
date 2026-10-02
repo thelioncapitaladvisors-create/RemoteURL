@@ -53,6 +53,15 @@
   - Package versions across all repositories: `7.0.0` in `Tv-Alert-Mobile/package.json` and `TLCS_Website_Deploy/package.json`.
   - Pine Script Indicator: `indicator('TLCS AIO INDICAOR v7.0', ...)` in `TV Indicator/TLCS_Live_Pivot_Alerts.pine` and `TV_Indicator_Full_Code.txt`.
 
+## Strategic Roadmap: Standalone DhanHQ Engine Migration & TradingView Sunset Plan
+- **Phase 1: Dual-Engine Comparative Parity (Current Baseline v7.0)**:
+  - Both TradingView Webhook Engine and DhanHQ Black Box Shadow Engine operate concurrently across all 6 mobile application tabs (`HUB`, `LOGS`, `SCREENER`, `MARKETS`, `INSIGHTS`, `ANALYTICS`).
+  - Zero additional database load: leverages the in-memory React state cache (`shadowSignals` / `dhanBlackboxSignals`) to deliver real-time mathematical parity audits and comparative performance without extra queries or API overhead.
+  - Multi-week observation window: rigorously verify execution parity, trigger timing, trailing stop behavior, and zero-ghost invalidation across both live market environments (NSE and MCX) with zero bugs.
+- **Phase 2: Autonomous Engine Consolidation & TradingView Sunset (Scheduled: Next Month)**:
+  - Following the bug-free parity verification period, the TradingView Webhook ingestion layer will be permanently sunsetted and retired.
+  - The architecture will consolidate exclusively around the high-performance **DhanHQ Autonomous Shadow Engine** (`dhan-scanner-background.js` and direct DhanHQ Market Feed API) writing directly to Supabase.
+  - **Single Cloud Footprint & Cost Elimination**: TradingView enterprise/premium subscription dependencies and recurrent webhook costs will be eliminated 100%. The entire production platform will run lean on **Netlify** (hosting, serverless background workers, edge CDN) and **Supabase** (PostgreSQL real-time database, auth, storage) exclusively.
 
 ## Version 6.0: Platform Baseline & Repository Standardization
 - **Version 6.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) and Pine Script indicator suite (`TLCS AIO INDICAOR v6.0`, `TV_Indicator_Full_Code.txt`) are standardized to Version 6.0.
