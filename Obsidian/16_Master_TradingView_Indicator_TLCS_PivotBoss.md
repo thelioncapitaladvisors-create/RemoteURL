@@ -1,0 +1,3538 @@
+# Master TradingView Indicator - TLCS PivotBoss v6.0
+
+**Repository Baseline**: `TLCS PivotBoss Indicator` (@version=6)
+**Synchronized Date**: 2026-10-01
+
+## Source Code
+
+```pinescript
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TheLionCapitalsolutions.com and market-store.online
+
+//@version=6
+
+indicator('TLCS PivotBoss Indicator', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
+// ──── INPUTS ────────────────────────────────────────────────────────
+
+
+webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
+enable_alerts = input.bool(false, 'Enable Automated Webhook Alerts')
+
+//======================
+    
+
+//======================
+    
+daily_cpr = input.int(title = ' Logic for Daily CPR ', defval = 7, minval = 0)
+//
+new_bar(res) =>
+    ta.change(time(res)) != 0
+new_period(condition, src) =>
+    result = 0.0
+    result := condition ? src : result[1]
+    result
+
+OO = open
+CL = close
+// ✅ OPTIMIZATION 1: Grouped Daily MTF
+[DH, DL, CC] = request.security(syminfo.tickerid, 'D', [high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+
+one_day = 1000 * 60 * 60 * 24
+new_day = daily_cpr > 0 and timenow - time < one_day * daily_cpr and new_bar('D')
+
+
+//dDC_ = new_period(new_day, CL)
+dDH_ = new_period(new_day, DH)
+dDL_ = new_period(new_day, DL)
+OO_ = new_period(new_day, OO)
+CL_ = new_period(new_day, CC)
+
+Pi = (dDH_ + dDL_ + CL_) / 3.0
+Bcy = (dDH_ + dDL_) / 2
+Tcy = Pi - Bcy + Pi
+DP = new_period(new_day, Pi)
+
+DTC = math.max(Tcy, Bcy)
+DBC = math.min(Tcy, Bcy)
+
+//CPR = DP or DTC or DBC
+
+DTc1 = math.max(Tcy, Bcy)
+DBc1 = math.min(Tcy, Bcy)
+
+Ttf_high = new_period(new_day, DH)
+Ttf_low = new_period(new_day, DL)
+
+Ptf_high1 = new_period(new_day, DH[1])
+Ptf_low1 = new_period(new_day, DL[1])
+Ptf_close1 = new_period(new_day, CC[1])
+
+RY = Ptf_high1 - Ptf_low1
+YP = (Ptf_high1 + Ptf_low1 + Ptf_close1) / 3.0
+BcY = (Ptf_high1 + Ptf_low1) / 2
+TcY = YP - BcY + YP
+
+YTC = math.max(TcY, BcY)
+YBC = math.min(TcY, BcY)
+
+INSIDEDAY = DTC < YTC and DBC > YBC
+
+YH3 = Ptf_close1 + RY * 1.1 / 4.0
+YL3 = Ptf_close1 - RY * 1.1 / 4.0
+
+YH4 = Ptf_close1 + RY * 1.1 / 2.0
+YL4 = Ptf_close1 - RY * 1.1 / 2.0
+
+//plot(dDC_, title='PEMA', style=plot.style_line, color=color.new(#d35811, 0), linewidth=3)
+//plot(CL, title='PEMA', style=plot.style_line, color=color.new(#2e02f3, 0), linewidth=3)
+
+R = DH - DL
+DP1 = (DH + DL + CC) / 3.0
+DPI = new_period(new_day, DP1)
+
+UpPrice = close > DPI ? 1 : 0
+DownPrice = close < DPI ? 1 : 0
+
+Price = close > DPI ? close < DPI ? 1 : 0 : 0
+Priceg = close > DPI ? 0 : 100
+Pricer = close < DPI ? 0 : 100
+
+DPi = (DH + DL + CC) / 3.0
+DPIV = new_period(new_day, DP1)
+
+DBCn = (DH + DL) / 2
+DTCn = DPI - DBCn + DPI
+
+DTcf = math.max(DTCn, DBCn)
+DBcf = math.min(DTCn, DBCn)
+
+//========================================
+
+
+session_timeframe = input.string(title = 'Value Area Resolution', defval = 'D', options = ['D', 'W', 'M'])
+percent_of_tpo    = input(0.68)
+
+tf_high  = high
+tf_low   = low
+tf_close = close
+
+session_bar_counter = bar_index - ta.valuewhen(ta.change(time(session_timeframe)) != 0, bar_index, 0)
+
+// Safe counter — guards against na on bar 0
+_safe_counter = nz(session_bar_counter, 0)
+
+var float session_high  = na
+var float session_low   = na
+var float session_close = na
+var float session_range = na
+
+session_high  := nz(session_high[1],  tf_high)
+session_low   := nz(session_low[1],   tf_low)
+session_close := nz(session_close[1], tf_close)
+session_range := nz(session_high - session_low, 0.0)
+
+// Recalculate session high, low and range
+if session_bar_counter == 0
+    session_high  := tf_high
+    session_low   := tf_low
+    session_range := tf_high - tf_low
+
+if tf_high > session_high[1]
+    session_high  := tf_high
+    session_range := session_high - session_low
+
+if tf_low < session_low[1]
+    session_low   := tf_low
+    session_range := session_high - session_low
+
+if tf_close < session_close[1] or tf_close > session_close[1]
+    session_close := tf_close
+    session_range := session_high - session_low
+
+// Define tpo section range
+tpo_section_range = session_range / 20
+
+// Function to get the frequency a specified range is visited
+f_frequency_of_range(_src, _upper_range, _lower_range, _length) =>
+    _adjusted_length = na(_length) or _length < 1 ? 1 : math.min(int(_length), 500)
+    _frequency = 0
+    for _i = 0 to int(_adjusted_length) - 1 by 1
+        if _src[_i] >= _lower_range and _src[_i] < _upper_range
+            _frequency := _frequency + 1
+    nz(_frequency, 0)
+
+// ✅ OPTIMIZATION 2: TPO Arrays (Replaces 100+ lines of duplicate code!)
+tpo_array = array.new_float(21, 0)
+for i = 0 to 20
+    array.set(tpo_array, i, f_frequency_of_range(tf_close, session_high - tpo_section_range * i, session_high - tpo_section_range * (i + 1), _safe_counter))
+
+f_get_tpo_count(_tpo_array, _value) =>
+    array.get(_tpo_array, int(_value))
+
+
+tpo_sum              = 0.0
+current_poc_position = 0.0
+current_poc_value    = 0.0
+
+for _i = 0 to 20 by 1
+    _get_tpo_value = f_get_tpo_count(tpo_array, _i)
+    tpo_sum := tpo_sum + _get_tpo_value
+    if _get_tpo_value >= current_poc_value
+        current_poc_position := _i
+        current_poc_value    := _get_tpo_value
+
+poc_upper = session_high - tpo_section_range *  current_poc_position
+poc_lower = session_high - tpo_section_range * (current_poc_position + 1)
+
+// Get value area high/low
+vah_position = current_poc_position
+val_position = current_poc_position
+current_sum  = current_poc_value
+
+for _i = 0 to 20 by 1
+    if current_sum < tpo_sum * percent_of_tpo
+        vah_position := math.max(0,  vah_position - 1)
+        current_sum  := current_sum + f_get_tpo_count(tpo_array, math.round(vah_position))
+    if current_sum < tpo_sum * percent_of_tpo
+        val_position := math.min(20, val_position + 1)
+        current_sum  := current_sum + f_get_tpo_count(tpo_array, math.round(val_position))
+
+vah_value = session_high - tpo_section_range *  vah_position
+val_value = session_high - tpo_section_range * (val_position + 1)
+
+f_gapper(_return_value) =>
+    _return = _return_value
+    if session_bar_counter == 0
+        _return := na
+    _return
+
+VAH = new_period(new_day, vah_value[1])
+VAL = new_period(new_day, val_value[1])
+
+//plot(VAH, title = 'VAH', color = color.green,  linewidth = 1, style = plot.style_line)
+//plot(VAL, title = 'VAL', color = color.red,    linewidth = 1, style = plot.style_line)
+
+//===================================================================================================
+
+get_colors_from_tf(_tf, _cM, _cW, _cD) =>
+
+    if _tf == 'M'
+        _cM
+    else if _tf == 'W'
+        _cW
+    else
+        _cD
+
+// Subroutinethat calculates and filters standard pivot points
+getPivots(_pivots, _p_labels, _close, _open, _low, _high, _open_curr, _pivot_type, _tf, _rangeHL, _cY, _cM, _cW, _cD) =>
+
+    _pivot_p = 0.0
+    _bc = 0.0
+    _tc = 0.0
+    _DBc = 0.0
+    _DTc = 0.0
+    _s1 = 0.0
+    _r1 = 0.0
+
+
+    if _pivot_type == 'Traditional'
+        _pivot_p := (_high + _low + _close) / 3
+        _s1 := 2 * _pivot_p - _high
+        _r1 := 2 * _pivot_p - _low
+        _r1
+
+
+    array.push(_pivots, _pivot_p)
+    array.push(_p_labels, _tf + 'P')
+    array.push(_pivots, _s1)
+    array.push(_p_labels, _tf + 'S1' + '')
+    array.push(_pivots, _r1)
+    array.push(_p_labels, _tf + 'R1' + '')
+
+
+sort_pivots(_pivots, _p_labels, _p_colors, _D) =>
+    // INOUT, array :: _pivots, _p_labels
+    // IN, int :: _D
+    _N = array.size(_pivots)
+    if _N > 1
+        for i = 0 to _N - 2 by 1
+            for j = i + 1 to _N - 1 by 1
+                _a1 = array.get(_pivots, i)
+                _a2 = array.get(_pivots, j)
+                _toSwap = math.abs(_a1 - close) > math.abs(_a2 - close) or na(_a1)
+                array.set(_pivots, i, _toSwap ? _a2 : _a1)
+                array.set(_pivots, j, _toSwap ? _a1 : _a2)
+                _b1 = array.get(_p_labels, i)
+                _b2 = array.get(_p_labels, j)
+                array.set(_p_labels, i, _toSwap ? _b2 : _b1)
+                array.set(_p_labels, j, _toSwap ? _b1 : _b2)
+
+// Declare filtering criterium 
+isWithinRange(_value, _range) =>
+    // IN, float :: _value, _range
+    // OUT, bool
+    if barstate.islast and _value < close + _range and _value > close - _range
+        true
+    else
+        false
+
+// Get linestyle
+get_linestyle(_linestyle) =>
+    // IN, string :: _linestyle
+    // OUT, line style
+    if _linestyle == 'Solid'
+        line.style_solid
+    else if _linestyle == 'Dotted'
+        line.style_dotted
+    else
+        line.style_dashed
+
+// Truncate a float to a certain number of decimals
+trnc(_value, _decimals) =>
+    int(_value * math.pow(10, _decimals)) / math.pow(10, _decimals)
+
+handle_label_overlaps(_i, _labels, _range) =>
+    if _i > 0
+        _y1 = label.get_y(array.get(_labels, _i))
+        _y2 = label.get_y(array.get(_labels, _i - 1))
+        _text1 = label.get_text(array.get(_labels, _i))
+        _text2 = label.get_text(array.get(_labels, _i - 1))
+        if math.abs(_y1 - _y2) < 0.05 * _range and _text1 != '' and _text2 != ''
+            label.set_text(array.get(_labels, _i - 1), '')
+            label.set_text(array.get(_labels, _i), _text1 + '/' + _text2)
+
+/// --- main ---
+
+rangeMult = input(title = 'Filtering window width', defval = 0.5)
+MAXN = input(title = 'Max number of levels plotted', defval = 5)
+pivot_type = input.string(title = 'Type of pivot points', defval = 'Traditional', options = ['Traditional', 'Fibonacci', 'Woodie', 'Classic', 'DeMark', 'Camarilla', 'CPR'])
+//
+showY = input(title = 'Show Yearly Pivots', defval = false)
+showM = input(title = 'Show Monthly Pivots', defval = true)
+showW = input(title = 'Show Weekly Pivots', defval = true)
+showD = input(title = 'Show Daily Pivots', defval = true)
+//
+showprc = input(title = 'Print Values', defval = false)
+//
+windowsize2 = input.int(title = 'Line Length Forward', defval = 2, minval = 1)
+windowsize1 = input.int(title = 'Line Length Back', defval = 25, minval = 1)
+pv_linestyle = input.string(title = 'Line Style', defval = 'Dashed', options = ['Dashed', 'Solid', 'Dotted'])
+lw = input.int(title = 'Line Width', defval = 1, minval = 0, maxval = 10)
+labelsize = input.string(title = 'Label Font Size', defval = 'Small', options = ['Small', 'Large'])
+//
+//pivline = mad>src ?  color.teal : color.red
+
+colLabel = input(title = 'Label Font Color', defval = color.new(color.black, 0))
+colY = input(title = 'Line Color Yearly', defval = color.new(color.navy, 70))
+colM = input(title = 'Line Color Monthly', defval = color.new(color.purple, 70))
+colW = input(title = 'Line Color Weekly', defval = color.new(color.orange, 70))
+colD = input(title = 'Line Color Daily', defval = color.new(color.silver, 70))
+//
+
+// ✅ OPTIMIZATION 3: Grouped MTF Pivot Array Calls
+// Price data for different timeframes
+//[Cy, Oy, Ly, Hy] = request.security(syminfo.tickerid, '12M', [close[1], open[1], low[1], high[1]], lookahead=barmerge.lookahead_on)
+//OyC = request.security(syminfo.tickerid, '12M', open[0], lookahead=barmerge.lookahead_on)
+
+[Cm, Om, Lm, Hm, OmC] = request.security(syminfo.tickerid, 'M', [close[1], open[1], low[1], high[1], open[0]], lookahead = barmerge.lookahead_on)
+[Cw, Ow, Lw, Hw, OwC] = request.security(syminfo.tickerid, 'W', [close[1], open[1], low[1], high[1], open[0]], lookahead = barmerge.lookahead_on)
+[Cd, Od, Ld, Hd, OdC] = request.security(syminfo.tickerid, 'D', [close[1], open[1], low[1], high[1], open[0]], lookahead = barmerge.lookahead_on)
+
+///
+// Adjust visualization to given timeframe
+
+float rangeHL = math.abs(Hd - Ld) * rangeMult //minutes and seconds resolution
+if timeframe.isminutes and timeframe.multiplier >= 60
+    showD := true
+    rangeHL := math.abs(Hm - Lm) * rangeMult
+    rangeHL
+else if timeframe.isdaily
+    showD := false
+    rangeHL := math.abs(Hm - Lm) * rangeMult
+    rangeHL
+else if timeframe.isweekly
+    showD := false
+    showW := true
+    rangeHL := math.abs(Hm - Lm) * rangeMult
+    rangeHL
+
+
+// Calculate pivot levels
+
+pivots = array.new_float(0)
+p_labels = array.new_string(0)
+p_colors = array.new_color(0)
+
+//if showY == false
+//    getPivots(pivots, p_labels, Cy, Oy, Ly, Hy, OyC, pivot_type, 'Y', rangeHL, colY, colM, colW, color.new(color.black, 0))
+if showM == true
+    getPivots(pivots, p_labels, Cm, Om, Lm, Hm, OmC, pivot_type, 'M', rangeHL, colY, colM, colW, color.new(color.black, 0))
+if showW == true
+    getPivots(pivots, p_labels, Cw, Ow, Lw, Hw, OwC, pivot_type, 'W', rangeHL, colY, colM, colW, color.new(color.black, 0))
+if showD == true
+    getPivots(pivots, p_labels, Cd, Od, Ld, Hd, OdC, pivot_type, 'D', rangeHL, colY, colM, colW, color.new(color.black, 0))
+    //
+    // Sort pivot points, keep only MAXN nearest ones and update arrays
+sort_pivots(pivots, p_labels, p_colors, MAXN)
+//
+// Time variable defining line and label positions
+
+int dt = time - time[1]
+int period_start = timestamp(syminfo.timezone, year, month, dayofmonth, 0, 0, 0)
+int period_end = timestamp(syminfo.timezone, year, month, dayofmonth, 24, 0, 0)
+if timeframe.isweekly or timeframe.isdaily or timeframe.multiplier >= 30
+    period_start := timestamp(syminfo.timezone, year, month, 0, 0, 0, 0)
+    period_end := timestamp(syminfo.timezone, year, month + 1, 0, 0, 0, 0)
+    period_end
+if timeframe.ismonthly
+    period_start := timestamp(syminfo.timezone, year, 0, 1, 0, 0, 0)
+    period_end := timestamp(syminfo.timezone, year, 11, 31, 0, 0, 0)
+    period_end
+    //
+int x1 = math.max(period_start, time - windowsize1 * dt)
+int x2 = math.min(period_end, time + windowsize2 * dt)
+//
+var float y1 = 0.0
+var float y2 = 0.0
+var string labtext = ''
+var string prclabtext = ''
+var color plt_col = color.blue
+//
+// Declare arrays containing lines and labels
+var array<line> lines = array.new_line(MAXN)
+var array<label> labels = array.new_label(MAXN)
+var array<label> prclabels = array.new_label(MAXN)
+//
+for i = 0 to MAXN - 1 by 1
+    if isWithinRange(array.get(pivots, i), rangeHL)
+        y1 := array.get(pivots, i)
+        y2 := array.get(pivots, i)
+        labtext := array.get(p_labels, i)
+        prclabtext := showprc ? str.tostring(trnc(y2, 2)) : ''
+        tflab = array.get(str.split(array.get(p_labels, i), ''), 1)
+        plt_col := get_colors_from_tf(tflab, colM, colW, colD)
+        plt_col
+    else
+        y1 := na
+        y2 := na
+        labtext := ''
+        prclabtext := ''
+        plt_col := color.blue
+        plt_col
+    array.push(lines, line.new(x1, y1, x2, y2,
+     xloc  = xloc.bar_time,
+     color = plt_col,
+     width = lw,
+     style = get_linestyle(pv_linestyle)))
+    array.push(labels, label.new(x2 + 6, y2, labtext, xloc = xloc.bar_time, textcolor = colLabel, size = labelsize == 'Small' ? size.small : size.normal, style = label.style_none))
+    array.push(prclabels, label.new(x1 + 6, y2, prclabtext, xloc = xloc.bar_time, textcolor = colLabel, size = labelsize == 'Small' ? size.small : size.normal, style = label.style_none))
+    line.delete(array.shift(lines))
+    label.delete(array.shift(labels))
+    label.delete(array.shift(prclabels))
+    //
+for i = 0 to MAXN - 1 by 1
+    handle_label_overlaps(i, labels, rangeHL)
+    handle_label_overlaps(i, prclabels, rangeHL)
+
+
+//=====================================================
+
+FastEMA = input.int(1, minval = 1, title = 'Fast EMA')
+SlowEMA = input.int(3, minval = 1, title = 'Slow EMA')
+TrendEMA = input.int(21, minval = 1, title = 'Trend Line')
+
+fFastEMA1 = input.int(5, minval = 1, title = 'fFastEMA')
+fSlowEMA1 = input.int(13, minval = 1, title = 'fSlowEMA')
+
+fPivot = (high + low + close) / 3
+
+fFastEMA = ta.ema(fPivot, FastEMA)
+fSlowEMA = ta.ema(fPivot, SlowEMA)
+fTrendEMA = ta.ema(fPivot, TrendEMA)
+
+fPivotEMAF1 = ta.ema(fPivot, fFastEMA1)
+fPivotEMAF2 = ta.ema(fPivotEMAF1, fFastEMA1)
+fPivotEMAS1 = ta.ema(fPivot, fSlowEMA1)
+fPivotEMAS2 = ta.ema(fPivotEMAS1, fSlowEMA1)
+
+PDEMAF = fPivotEMAF1 * 2 - fPivotEMAF2
+PDEMAS = fPivotEMAS1 * 2 - fPivotEMAS2
+
+fPivotPDEMAF = ta.ema(PDEMAF, fFastEMA1)
+fPivotPDEMAS = ta.ema(PDEMAS, fSlowEMA1)
+
+ShortEMA = input.int(13, minval = 1, title = 'Short EMA')
+MedEMA = input.int(32, minval = 1, title = 'Medium EMA')
+LongEMA = input.int(55, minval = 1, title = 'Long EMA')
+
+fShortEMA = ta.ema(fPivot, ShortEMA)
+fMedEMA = ta.ema(fPivot, MedEMA)
+fLongEMA = ta.ema(fPivot, LongEMA)
+
+spanColorx = fPivotPDEMAF > fPivotPDEMAS ? color.green : color.red
+
+floor_pivot_timeframe = input.string('D', options = ['1H', '2H', '4H', 'D', 'W', 'M', '12M'], title = 'Floor Pivot Timeframe', group = 'Floor Pivots')
+show_floor_pivots = input.bool(true, title = 'Show Floor Pivots', group = 'Floor Pivots')
+show_cpr = input.bool(true, title = 'Show CPR', group = 'Floor Pivots')
+show_labels = input.bool(true, title = 'Show Pivot Lables', group = 'Floor Pivots')
+show_next_day_pivot = input.bool(false, title = 'Show Next Time Period Pivots', group = 'Floor Pivots')
+floor_pivots_cpr_color = spanColorx
+
+
+pivot = (high + low + close) / 3.0
+
+// Central Pivot Range 
+temp_bc = (high + low) / 2
+temp_tc = pivot - temp_bc + pivot
+
+tc = temp_tc > temp_bc ? temp_tc : temp_bc
+bc = temp_bc < temp_tc ? temp_bc : temp_tc
+
+
+floor_pivot_resolution = floor_pivot_timeframe == '1H' ? '60' : floor_pivot_timeframe == '2H' ? '120' : floor_pivot_timeframe == '4H' ? '240' : floor_pivot_timeframe
+
+daily_tbc = request.security(syminfo.tickerid, floor_pivot_resolution, show_next_day_pivot ? temp_bc : temp_bc[1], barmerge.gaps_off, barmerge.lookahead_on)
+daily_ttc = request.security(syminfo.tickerid, floor_pivot_resolution, show_next_day_pivot ? temp_tc : temp_tc[1], barmerge.gaps_off, barmerge.lookahead_on)
+
+daily_tc = daily_ttc > daily_tbc ? daily_ttc : daily_tbc
+daily_bc = daily_tbc < daily_ttc ? daily_tbc : daily_ttc
+
+var bool show_daily_pivot = true
+
+tcline = plot(show_cpr and show_daily_pivot and timeframe.isintraday ? daily_tc : show_cpr and show_daily_pivot  and timeframe.isintraday ? daily_tc  : show_cpr and show_daily_pivot and not timeframe.isintraday ? daily_tc : na, title = 'TC', color = color.new(floor_pivots_cpr_color,  show_cpr and timeframe.isintraday ? 98 : 100), linewidth = 1, style = plot.style_circles)
+bcline = plot(show_cpr and show_daily_pivot and timeframe.isintraday ? daily_bc : show_cpr and show_daily_pivot  and timeframe.isintraday ? daily_bc : show_cpr and show_daily_pivot and not timeframe.isintraday  ? daily_bc : na, title = 'BC', color = color.new(floor_pivots_cpr_color,  show_cpr and timeframe.isintraday ? 98 : 100), linewidth = 1, style = plot.style_circles)
+fill(tcline, bcline, color = color.new(floor_pivots_cpr_color, show_cpr and show_daily_pivot ? 98 : 100))
+
+//====================================
+
+upper = ta.highest(92)
+lower = ta.lowest(92)
+out = 100 * (close - upper) / (upper - lower)
+
+len0 = input.int(21, minval = 1, title = 'EMA Short Length')
+len1 = input.int(96, minval = 1, title = 'SMA Long Length ')
+
+m0 = ta.ema(out, len0)
+m10 = ta.sma(out, len1)
+
+greenline = m0 > m10
+redline = m0 < m10
+
+len = input.int(14, minval = 1, title = 'DI Length')
+lensig = input.int(14, title = 'ADX Smoothing', minval = 1, maxval = 50)
+
+up = ta.change(high)
+down = -ta.change(low)
+
+plusDM = na(up) ? na : up > down and up > 0 ? up : 0
+minusDM = na(down) ? na : down > up and down > 0 ? down : 0
+
+trur = ta.rma(ta.tr, len)
+plus = fixnan(100 * ta.rma(plusDM, len) / trur)
+minus = fixnan(100 * ta.rma(minusDM, len) / trur)
+sum = plus + minus
+
+spanColor = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.green : color.red
+spanColor1A = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10)? color.green : color.red
+spanColor2A = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m0) ? color.maroon : color.teal
+
+col1 = m0 > m10 and m10 < -60 and plus > minus and fShortEMA > fMedEMA and close > fMedEMA ? color.teal : m0 > m10 and m10 < -50 and minus > plus and fShortEMA > fMedEMA and close > fMedEMA ? color.teal : m0 > m10 and m10 < -50 and minus > plus and fShortEMA > fMedEMA ? color.green : m0 > m10 and m10 > -70 and plus > minus ? color.teal : m0 < m10 and m10 > -40 and minus > plus and fShortEMA < fMedEMA ? color.maroon : m0 > m10 and m10 > -50 and minus < plus and fShortEMA < fMedEMA and close < fMedEMA ? color.red : m0 < m10 and m10 > -40 and plus > minus and fShortEMA < fMedEMA and close < fMedEMA ? color.maroon : m0 < m10 and m10 < -30 and minus > plus and fShortEMA < fMedEMA ? color.maroon : color.blue
+
+AdxCol = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.green : (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.red : color.new(color.white, 0)
+AdxCol1 = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.teal : (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.maroon : color.new(color.white, 0)
+
+twilight= (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.new(AdxCol,0) : color.new(AdxCol,0)
+twilight1= (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.new(AdxCol,0) : color.new(AdxCol,0)
+
+twilightr= (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? 0 : 0
+twilightr1= (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? 0 : 0
+
+twilightr2= (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? 25 : 25
+twilightr3= (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? 25 : 25
+
+AdxCol2 = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.rgb(25, 139, 84) : (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.rgb(160, 47, 180) : color.new(#887c12, 0)
+
+plot(fMedEMA, title = 'PEMAMed', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
+plot(fShortEMA, title = 'PEMASlow', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
+
+
+//====================================
+
+risingX = fShortEMA > fMedEMA
+fallingX = fShortEMA < fMedEMA
+
+buyerzone = plus > minus
+sellerzone = minus > plus
+
+GREENy = ((plus > minus) and (fShortEMA > fMedEMA))
+REDy = ((minus > plus) and (fShortEMA < fMedEMA))
+
+GREEN = ((plus > minus) and (m0 > m10))
+RED = ((minus > plus) and (m0 < m10))
+
+GREENZONE = GREEN
+REDZONE = RED
+
+
+//====================================
+
+pivotlbar = input(defval = 10, title = 'Length to Highest/Lowest')
+highleftempty = ta.pivothigh(pivotlbar, 0)
+lowleftempty = ta.pivotlow(pivotlbar, 0)
+
+// Wick Reversal System
+
+L01 = input(true, title = 'Enable Wick Reversal System')
+wick_multiplier = input.float(title = 'Wick Multiplier', defval = 3.25, step = 0.5, maxval = 20)
+body_percentage = input.float(title = 'Body Percentage', defval = 0.35, step = 0.1, maxval = 1)
+WBarMultiplier = input.float(title = 'Body Multiplier', defval = 1.1, step = 0.05, maxval = 3.5)
+Wbarsback = input.int(title = 'Bars Back', defval = 50, maxval = 50)
+
+O = open
+C = close
+H = high
+L = low
+
+Wmybodysize = math.abs(C - O)
+WAverageBody = ta.sma(Wmybodysize, Wbarsback)
+Wmycandlesize = H - L
+WAverageCandle = ta.sma(Wmycandlesize, Wbarsback)
+
+Wlong = C > O and O - L >= (C - O) * wick_multiplier and H - C <= (H - L) * body_percentage or C < O and C - L >= (O - C) * wick_multiplier and H - C <= (H - L) * body_percentage or C == O and C != H and H - L >= (H - C) * wick_multiplier and H - C <= (H - L) * body_percentage or O == H and C == H and H - L >= ta.sma(H - L, 50)
+Wshort = C < O and H - O >= (O - C) * wick_multiplier and C - L <= (H - L) * body_percentage or C > O and H - C >= (C - O) * wick_multiplier and C - L <= (H - L) * body_percentage or C == O and C != L and H - L >= (C - L) * wick_multiplier and C - L <= (H - L) * body_percentage or O == L and C == L and H - L >= ta.sma(H - L, 50)
+
+Wlongsig = GREENZONE and bool(lowleftempty) and L01 and Wlong and H - L >= WAverageCandle * WBarMultiplier
+Wshortsig = REDZONE and bool(highleftempty) and L01 and Wshort and H - L >= WAverageCandle * WBarMultiplier
+
+Wlongsignal = ta.rising(fPivotPDEMAS, 1) and Wlongsig
+Wshortsignal = ta.falling(fPivotPDEMAS, 1) and Wshortsig
+
+plotshape(Wlongsig, color = color.new(color.navy, 0), location = location.belowbar, style = shape.triangleup, size = size.small)
+plotshape(Wshortsig, color = color.new(color.navy, 0), location = location.abovebar, style = shape.triangledown, size = size.small)
+
+// Exteme Reversal System
+
+L02 = input(true, title = 'Enable Exteme Reversal System')
+bodysize = input.float(title = 'Body Size', defval = 0.75, step = 0.05, maxval = 1)
+barsback = input.int(title = 'Bars Back', defval = 50, maxval = 50)
+bodymultiplier = input.float(title = 'Body Multiplier', defval = 2, step = 0.25, maxval = 5)
+
+mybodysize = math.abs(C - O)
+AverageBody = ta.sma(mybodysize, barsback)
+mycandlesize = H - L
+AverageCandle = ta.sma(mycandlesize, barsback)
+
+Elongsig = GREENZONE and O[1] - C[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and O[1] - C[1] > AverageBody and C > O
+Eshortsig = REDZONE and C[1] - O[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and C[1] - O[1] > AverageBody and O > C
+
+Elongsignal = ta.rising(fPivotPDEMAS, 1) and Elongsig
+Eshortsignal = ta.falling(fPivotPDEMAS, 1) and Eshortsig
+
+plotshape(Elongsig, color = color.new(color.fuchsia, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
+plotshape(Eshortsig, color = color.new(color.fuchsia, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
+
+// outside Reversal System
+
+L03 = input(true, title = 'Enable Outside Reversal System')
+BarMultiplier = input.float(title = 'Body Multiplier', defval = 1.25, step = 0.05, maxval = 3.5)
+BarsBack = input.int(title = 'Bars Back', defval = 50, maxval = 250)
+AverageCandle1 = ta.sma(mycandlesize, BarsBack)
+
+Olongsig = GREENZONE and L < L[1] and C > H[1] and H - L >= AverageCandle1 * BarMultiplier
+Oshortsig = REDZONE and H > H[1] and C < L[1] and H - L >= AverageCandle1 * BarMultiplier
+
+Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
+Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
+
+plotshape(Olongsig, color = color.new(color.orange, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
+plotshape(Oshortsig, color = color.new(color.orange, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
+
+// Doji Reversal System
+
+L04 = input(true, title = 'Enable Doji Reversal System')
+DBarMultiplier = input.float(title = 'Body Multiplier', defval = 0.65, step = 0.05, maxval = 3.5)
+percentage = input.float(title = 'Body Percentage', defval = 0.10, step = 0.1, minval = 0.1)
+
+frangehl = H[1] - L[1]
+frangeco = math.abs(C[1] - O[1])
+sma10 = ta.sma(close, 10)
+
+Dmybodysize = math.abs(C - O)
+DAverageBody = ta.sma(Dmybodysize, Wbarsback)
+Dmycandlesize = H - L
+DAverageCandle = ta.sma(Dmycandlesize, Wbarsback)
+
+Dshort = frangeco <= frangehl * percentage and C < L[1] and L[1] > sma10 and C < O or C < L[2] and C[1] >= L[2] and frangeco <= frangeco * percentage and C < O and L[2] > sma10
+Dlong = frangeco <= frangehl * percentage and C > H[1] and H[1] < sma10 and C > O or C > H[2] and C[1] <= H[2] and frangeco <= frangeco * percentage and C > O and H[2] < sma10
+
+Dlongsig = GREENZONE and bool(lowleftempty) and L04 and Dlong and H - L >= WAverageCandle * DBarMultiplier
+Dshortsig = REDZONE and bool(highleftempty) and L04 and Dshort and H - L >= WAverageCandle * DBarMultiplier
+
+Dlongsignal = ta.rising(fPivotPDEMAS, 1) and Dlongsig
+Dshortsignal = ta.falling(fPivotPDEMAS, 1) and Dshortsig
+
+plotshape(Dlongsig, color = color.new(color.blue, 0), location = location.belowbar, style = shape.cross, size = size.small)
+plotshape(Dshortsig, color = color.new(color.blue, 0), location = location.abovebar, style = shape.cross, size = size.small)
+
+//Candle = Dlongsignal or Dshortsignal or Olongsignal or Oshortsignal or Elongsignal or Eshortsignal or Wlongsignal or Wshortsignal
+
+GreenCandle = Wlongsig[1] or Olongsig[1] or Elongsig[1] or Dlongsig[1]
+RedCandle = Wshortsig[1] or Oshortsig[1] or Eshortsig[1] or Dshortsig[1]
+
+
+//====================================================================================================================
+
+barcolor(open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? color.rgb(5, 220, 12, 31) :na :na : na : na : na)
+barcolor(close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? #ee282897 :na :na : na : na : na)
+
+bullpower = open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? 1 : na : na : na : na : na
+bearpower = close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? 1 : na : na : na : na : na
+
+k = time('1') == time(timeframe.period)
+intraHigh = ta.highest(high, ta.barssince(k) + 1)
+intraLow = ta.lowest(low, ta.barssince(k) + 1)
+intraMid = (intraHigh - intraLow) / 2 + intraLow
+TriggerMid = (intraHigh - intraLow) / 2 + intraLow
+
+intraMidc = bool(bullpower) or bool(bearpower) ? 0 : 100
+
+//plot(intraMid, title='Mid Point', color=color.new(color.yellow, intraMidc), style=plot.style_circles, linewidth=1)
+
+midcolor = bool(bullpower) or bool(bearpower) ? 0 : 100
+
+plot(intraMid, title = 'Mid Point', color = color.new(color.white, midcolor), style = plot.style_circles, linewidth = 1)
+
+Top = ta.highest(bool(bearpower) ? intraMid : na, ta.barssince(k) + 100)
+Bottom = ta.lowest(bool(bullpower) ? intraMid : na, ta.barssince(k) + 100)
+
+
+//====================================================================================================================
+
+
+Range = dDH_ - dDL_
+
+h3 = CL_ + Range * 1.1 / 4.0
+l3 = CL_ - Range * 1.1 / 4.0
+
+h4 = CL_ + Range * 1.1 / 2.0
+l4 = CL_ - Range * 1.1 / 2.0
+
+
+new_bar1(res) =>
+    ta.change(time(res)) != 0
+new_period1(condition, src) =>
+    result = 0.0
+    result := condition ? src : result[1]
+    result
+
+DM = (dDH_ + dDL_) / 2
+DS = 2 * DP - dDH_
+DR = 2 * DP - dDL_
+
+CPR = DP
+//NCPR = 0.2 > math.abs(DPi - DBcf + DPi - DBcf) / DPi * 100
+
+// ====================================================================
+// NORMALIZED NARROW CPR (NCPR) CHECK
+// ====================================================================
+// Instead of dividing by the asset price (DPi), we normalize the CPR width
+// against the Previous Day's High-Low Range. This scales perfectly across
+// Forex, Indices, and Crypto.
+// Threshold: CPR width must be < 5.0% of yesterday's total range.
+
+float prevDayRange = math.max(DH - DL, syminfo.mintick)
+float cprWidth     = math.abs(DTcf - DBcf)
+bool  NCPR         = 5.0 > (cprWidth / prevDayRange) * 100
+
+getSeries(e, timeFrame) =>
+    request.security(syminfo.tickerid, timeFrame, e, lookahead=barmerge.lookahead_on)
+
+Ytf_h = getSeries(high[1], 'D')
+Ytf_l = getSeries(low[1], 'D')
+Ytf_c = getSeries(close[1], 'D')
+
+TP = (Ytf_h + Ytf_l + Ytf_c) / 3.0
+BOTTOM = (Ytf_h + Ytf_l) / 2
+TOP = TP - BOTTOM + TP
+
+DTc = math.max(TOP, BOTTOM)
+DBc = math.min(TOP, BOTTOM)
+
+Ytf_h1 = getSeries(high[2], 'D')
+Ytf_l1 = getSeries(low[2], 'D')
+Ytf_c1 = getSeries(close[2], 'D')
+
+TP1 = (Ytf_h1 + Ytf_l1 + Ytf_c1) / 3.0
+BOTTOM1 = (Ytf_h1 + Ytf_l1) / 2
+TOP1 = TP1 - BOTTOM1 + TP1
+
+YTc = math.max(TOP1, BOTTOM1)
+YBc = math.min(TOP1, BOTTOM1)
+
+OP = OO_
+
+INRANGEINVALUE = (((OO_ > dDL_) and (OO_ < dDH_)) and ((OO_ > VAL) and (OO_ < VAH)))
+INRANGEOUTOFVALUE = (((OO_ > dDL_) and (OO_ < dDH_)) and ((OO_ < VAL) or (OO_ > VAH)))
+OUTOFRANGEVALUE = (((OO_ < dDL_) and (OO_ < VAL)) or ((OO_ > dDH_) and (OO_ > VAH)))
+
+BIGDAY = (INRANGEINVALUE and ((close > dDH_) or (close < dDL_)))
+
+
+//Opening Bias/Print
+
+BULLISH = ((DTc > YTc) and (DBc > YTc))
+BEARISH = ((DTc < YBc) and (DBc < YBc))
+MODERATELYBULLISH = ((DTc > YTc) and (DBc > YBc))
+MODERATELYBEARISH = ((DTc < YTc) and (DBc < YBc))
+INSIDE = ((DTc < YTc) and (DBc > YBc))
+OUTSIDE = ((DTc > YTc) and (DBc < YBc))
+UNCHANGED = ((DP == TP) and (DBc == YBc) and (DTc == YTc))
+
+BREAKOUTDAY = (INSIDE or UNCHANGED)
+OTHERDAYS = OUTSIDE or BREAKOUTDAY
+
+//Day day_type
+
+CONFIRMEDBULLISH = (((BULLISH or MODERATELYBULLISH or OTHERDAYS) and ((CC > YTc) or (CC < YTc))) and (OO_ > DBc))
+CONFIRMEDBEARISH = (((BEARISH or MODERATELYBEARISH or OTHERDAYS) and ((CC < YBc) or (CC > YBc))) and (OO_ < DTc))
+
+REJECTEDBULLISH = (((BULLISH or MODERATELYBULLISH or OTHERDAYS) and ((CC > YTc) or (CC < YTc))) and (OO_ < DBc))
+REJECTEDBEARISH = (((BEARISH or MODERATELYBEARISH or OTHERDAYS) and ((CC < YBc) or (CC > YBc))) and (OO_ > DTc))
+
+ANYDAY = (BULLISH or MODERATELYBULLISH or BEARISH or MODERATELYBEARISH or INSIDE or OUTSIDE or UNCHANGED)
+
+
+// ──── INSTITUTIONAL BIAS LOGIC ───────────────────────────────────
+
+paint = BULLISH ? color.gray : BEARISH ? color.gray : MODERATELYBULLISH ? color.silver : MODERATELYBEARISH ? color.silver : INSIDE ? color.black : UNCHANGED ? color.black : OUTSIDE ? color.black : color.gray
+
+c1 = ANYDAY and (close < DTc and close > DBc) ? "WATCH" : CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" :CONFIRMEDBULLISH and (close < DBc) ? "REJECTION" : CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" : CONFIRMEDBEARISH and (close > DTc)  ? "REJECTION" : REJECTEDBULLISH and (close < DBc) ? "REJECTED \n BULLISH" : REJECTEDBULLISH and (close < DBc) ? "REJECTION" : REJECTEDBEARISH and (close > DTc)? "REJECTED \n BEARISH" : REJECTEDBEARISH and (close > DTc) ? "REJECTION" : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "DEBUG"
+paintc = ANYDAY and (close < DTc and close > DBc) ? color.gray : CONFIRMEDBULLISH and (close > DTc) ? color.green :CONFIRMEDBULLISH and (close < DBc) ? color.rgb(211, 39, 110) : CONFIRMEDBEARISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close > DTc) ? color.rgb(9, 130, 47) :  REJECTEDBULLISH and (close < DBc)? color.maroon : REJECTEDBULLISH and (close < DBc) ? color.rgb(210, 28, 28) : REJECTEDBEARISH and (close > DTc)? color.teal : REJECTEDBEARISH and (close > DTc) ? color.rgb(15, 131, 60) : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? color.fuchsia : color.black
+
+m1 = ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close > h3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close > h3))) or (ANYDAY and ((close > DBc) and (close > DTc)))) ? "LONG \n ZONE" : ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close < l3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close < l3))) or (ANYDAY and (close < DTc) and (close < DBc))) ? "SHORT \n ZONE" : (ANYDAY and (close > DBc) and (close < DTc)) ? "WAIT FOR \n SIGNAL" : na
+paintm = ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close > h3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close > h3))) or (ANYDAY and ((close > DBc) and (close > DTc)))) ? color.black : ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close < l3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close < l3))) or (ANYDAY and (close < DTc) and (close < DBc))) ? color.black : (ANYDAY and (close > DBc) and (close < DTc)) ? color.silver : na
+
+dX = INRANGEINVALUE ? "IN RANGE \n IN VALUE" : INRANGEOUTOFVALUE ? "IN RANGE \n OUT OF VALUE" : OUTOFRANGEVALUE ? "OUT OF RANGE \n OUT OF VALUE" : "DEBUG"
+paintX = INRANGEINVALUE ? color.gray :(INRANGEINVALUE and ((close > dDH_) or (close < dDL_))) ? color.fuchsia : INRANGEOUTOFVALUE ? color.black : ((INRANGEOUTOFVALUE) and ((close > dDH_) or (close < dDL_))) ? color.orange : OUTOFRANGEVALUE ? color.purple : (OUTOFRANGEVALUE and ((close > dDL_) and (close < dDH_))) ? color.black : color.silver
+
+mX = INRANGEINVALUE and (((close > dDL_) and (close < dDH_)) and ((close > VAL) and (close < VAH))) ? "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS" : (INRANGEINVALUE and (((close > Ytf_h) and (close > VAH)) or ((close < Ytf_l) and (close < VAL)))) or ((OP < Ytf_l and OP < VAL and OP < DBc) or (OP > Ytf_h and OP > VAH and OP > DTc)) ? "BIG MOVE" : (INRANGEOUTOFVALUE and ((close < Ytf_h) and (close > Ytf_l))) ? "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS" : ((INRANGEOUTOFVALUE) and ((close > Ytf_h) or (close < Ytf_l))) ? "TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL" : (OUTOFRANGEVALUE and ((close < Ytf_l) or (close > Ytf_h))) ? "TREND DAY, \n DOUBLE DISTRIBUTION TREND" : (OUTOFRANGEVALUE and ((close > Ytf_l) and (close < Ytf_h))) ? "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE"  : "DEBUG"
+paintmX = INRANGEINVALUE and (((close > dDL_) and (close < dDH_)) and ((close > VAL) and (close < VAH))) ? color.gray : (INRANGEINVALUE and (((close > Ytf_h) and (close > VAH)) or ((close < Ytf_l) and (close < VAL)))) or ((OP < Ytf_l and OP < VAL and OP < DBc) or (OP > Ytf_h and OP > VAH and OP > DTc)) ? color.fuchsia : (INRANGEOUTOFVALUE and ((close < Ytf_h) and (close > Ytf_l))) ? color.black : ((INRANGEOUTOFVALUE) and ((close > Ytf_h) or (close < Ytf_l))) ? color.orange  : (OUTOFRANGEVALUE and ((close < Ytf_l) or (close > Ytf_h))) ? color.purple : (OUTOFRANGEVALUE and ((close > Ytf_l) and (close < Ytf_h))) ? color.black : color.silver
+
+Dx = dX
+Mx = mX
+
+var string dX_message = ""
+var string mX_message = ""
+var string c1_message = ""
+var color dX_col = paintX
+var color mX_col = paintmX
+var color c1_col = paintc
+
+if c1 == 'WATCH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'REJECTION'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'CONFIRMED \n BULLISH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'CONFIRMED \n BEARISH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'REJECTED \n BULLISH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'REJECTED \n BEARISH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'SIDEWAYS'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'SIDEWAYS/ BREAKOUT'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'BREAKOUT'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+
+if (dX == "IN RANGE \n IN VALUE")
+    dX_message := str.tostring(dX)
+    dX_col := paintX
+else if (dX == "IN RANGE \n OUT OF VALUE")
+    dX_message := str.tostring(dX)
+    dX_col := paintX
+else if (dX == "OUT OF RANGE \n OUT OF VALUE")
+    dX_message := str.tostring(dX)
+    dX_col := paintX
+
+if (mX == "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+else if (mX == "TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+else if (mX == "TREND DAY, \n DOUBLE DISTRIBUTION TREND")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+if (mX == "BIG MOVE")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+if (mX == "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+if (mX == "TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+if (mX == "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+if (mX == "TREND DAY, \n DOUBLE DISTRIBUTION TREND")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+
+HTFx = input.timeframe('D', title="Higher Timeframe for EMA")
+
+smooth1 = input(defval=true, title="EMA1 Smooth")
+smooth2 = input(defval=true, title="EMA2 Smooth")
+smooth3 = input(defval=true, title="EMA3 Smooth")
+smooth4 = input(defval=true, title="EMA4 Smooth")
+
+// Grouped EMA Arrays
+[emaSmooth1, emaSmooth2, emaSmooth3, emaSmooth4] = request.security(syminfo.tickerid, HTFx, [fMedEMA, fShortEMA, fPivotPDEMAF, fPivotPDEMAS], barmerge.gaps_on, barmerge.lookahead_on)
+[emaStep1, emaStep2, emaStep3, emaStep4] = request.security(syminfo.tickerid, HTFx, [fMedEMA, fShortEMA, fPivotPDEMAF, fPivotPDEMAS], barmerge.gaps_off, barmerge.lookahead_on)
+
+GREENEMAx = emaSmooth3 > emaSmooth4 and emaSmooth2 > emaSmooth1
+REDEMAx   = emaSmooth3 < emaSmooth4 and emaSmooth2 < emaSmooth1
+
+GREENx = ((plus > minus) and (fShortEMA > fMedEMA)) or ((fShortEMA > fMedEMA) and ((low < fShortEMA) and ((low < fMedEMA)) and ((close > fMedEMA) and (close > fShortEMA))))
+REDx   = ((minus > plus) and (fShortEMA < fMedEMA)) or ((fShortEMA < fMedEMA) and (((high > fShortEMA) and (high > fMedEMA)) and ((close < fMedEMA) and (close < fShortEMA))))
+
+TopSwingZ    = (REDx or REDEMAx) and minus > plus and open < fShortEMA and open < fMedEMA and high > fShortEMA and high > fMedEMA and (close < fMedEMA and close < fShortEMA or low < fShortEMA and low < fMedEMA)
+BottomSwingZ = (GREENx or GREENEMAx) and plus > minus and open > fShortEMA and open > fMedEMA and low < fShortEMA and low < fMedEMA and (close > fMedEMA and close > fShortEMA or high > fShortEMA and high > fMedEMA)
+
+BULLS = ((fShortEMA > fMedEMA) and ((low < fShortEMA) and (low < fMedEMA)) and ((close > fMedEMA) and (close > fShortEMA)))
+BEARS = ((fShortEMA < fMedEMA) and ((high > fShortEMA) and (high > fMedEMA)) and ((close < fMedEMA) and (close < fShortEMA)))
+
+d1 = TopSwingZ[1] or BEARS[1] ? 'TOP SWING' : BottomSwingZ[1] or BULLS[1] ? 'BOTTOM SWING' : 'NO SWING'
+paintd = TopSwingZ[1] or BEARS[1] ? color.red : BottomSwingZ[1] or BULLS[1] ? color.green : color.gray
+
+// ──── CHANGE-TRIGGERED PIVOT WEBHOOK ────────────────────────────────────────
+_c1 = str.replace_all(c1_message, '\n', ' ')
+_mX = str.replace_all(mX_message, '\n', ' ')
+_dX = str.replace_all(dX_message, '\n', ' ')
+_d1 = str.replace_all(d1, '\n', ' ')
+
+var string _prev_c1 = ''
+var string _prev_mX = ''
+
+bool _pivotChanged = (_c1 != _prev_c1) or (_mX != _prev_mX)
+
+var string d1_message = ''
+var string m1_message = ''
+var string n1_message = ''
+
+var color d1_col = paintd
+var color m1_col = paintm
+
+d1_message := str.tostring(d1)
+d1_col     := paint
+
+m1_message := str.tostring(m1)
+m1_col     := paintm
+
+// ──── FULLY RESPONSIVE HEADER BAR (DESKTOP & MOBILE COMPATIBLE) ─────
+// 3 Columns with strict percentage widths (35% Left | 30% Center | 35% Right)
+var table tbl_bias = table.new(position.top_center, 3, 3, border_width = 0, bgcolor = color.new(color.white, 100))
+
+if barstate.islast
+    // --- ROW 0 (BLANK SPACER ROW TO BRING DISPLAY DOWN BY ONE LINE) ---
+    table.cell(tbl_bias, 0, 0, " ", width = 35.0, text_size = size.small, bgcolor = color.new(color.white, 100))
+    table.cell(tbl_bias, 1, 0, " ", width = 30.0, text_size = size.small, bgcolor = color.new(color.white, 100))
+    table.cell(tbl_bias, 2, 0, " ", width = 35.0, text_size = size.small, bgcolor = color.new(color.white, 100))
+
+    // --- ROW 1 (PREVIOUS TOP LINE - NOW BROUGHT DOWN BY ONE LINE) ---
+    // Left (35% width, right aligned)
+    table.cell(tbl_bias, 0, 1, dX_message, width = 35.0, text_color = dX_col, text_size = size.tiny, text_halign = text.align_right, bgcolor = color.new(color.white, 100))
+    // Center Top (Empty Spacer)
+    table.cell(tbl_bias, 1, 1, "", width = 30.0, bgcolor = color.new(color.white, 100))
+    // Right (35% width, left aligned)
+    table.cell(tbl_bias, 2, 1, mX_message, width = 35.0, text_color = mX_col, text_size = size.tiny, text_halign = text.align_left, bgcolor = color.new(color.white, 100))
+
+    // --- ROW 2 (PREVIOUS LOWER LINE - NOW BROUGHT DOWN BY ONE LINE) ---
+    // Left Bottom (Empty)
+    table.cell(tbl_bias, 0, 2, "", width = 35.0, bgcolor = color.new(color.white, 100))
+    // Center Bottom (30% width, centered)
+    table.cell(tbl_bias, 1, 2, c1_message, width = 30.0, text_color = c1_col, text_size = size.tiny, text_halign = text.align_center, bgcolor = color.new(color.white, 100))
+    // Right Bottom (Empty)
+    table.cell(tbl_bias, 2, 2, "", width = 35.0, bgcolor = color.new(color.white, 100))
+
+WCPRC = BULLISH ? color.teal : MODERATELYBULLISH ? color.green : BEARISH ? color.maroon : MODERATELYBEARISH ? color.red : color.gray
+
+// ──── ZONE DEFINITIONS & BOUNCE CONDITIONS ────────────────────────────────
+bool Redzone   = (minus > plus) and (fShortEMA < fMedEMA) and (fPivotPDEMAF < fPivotPDEMAS)
+bool Greenzone = (plus > minus) and (fShortEMA > fMedEMA) and (fPivotPDEMAF > fPivotPDEMAS)
+
+bool emaCanBuy  = Greenzone or not Redzone
+bool emaCanSell = Redzone or not Greenzone
+
+//===================================
+
+// 1. OPTIMIZED SECURITY FUNCTION
+f_sec_D(_src) => request.security(syminfo.tickerid, 'D', _src, barmerge.gaps_off, barmerge.lookahead_on)
+
+HI  = f_sec_D(high)
+LO  = f_sec_D(low)
+CLo = f_sec_D(close)
+OP := f_sec_D(open)
+
+Op = open
+Hi = high
+Lo = low
+Cl = close
+
+//===========================================================================================================================================================
+
+mode = input.string(title = 'HTF Method', defval = 'Auto', options = ['Auto', 'User Defined'])
+HTFm = input.timeframe('D', title = 'Time Frame (if HTF Method=User Defined)')
+showlast = input(title = 'Show Only Last Period', defval = true)
+showlabels = input(title = 'Show Labels', defval = true)
+llstyle = input.string(title = 'Line Style', options = ['Solid', 'Circles', 'Cross'], defval = 'Solid')
+showhl1 = input(defval = false, title = 'Show H1/L1')
+showhl2 = input(defval = false, title = 'Show H2/L2')
+
+v = ta.valuewhen(session.isfirstbar_regular, bar_index, 0)
+new_session = timeframe.change('D')
+start_bar = ta.valuewhen(new_session, bar_index, 0)
+no_of_bars = start_bar - ta.valuewhen(new_session, bar_index, 1) - 1
+var lln = line.new(na, na, na, na, width = 0)
+if new_session
+    line.set_xy1(lln, bar_index, na)
+    line.set_xy2(lln, bar_index + no_of_bars, na)
+
+m = last_bar_index + no_of_bars
+V = ta.valuewhen(session.isfirstbar_regular, bar_index, 0)
+M = last_bar_index + 30
+
+//auto higher time frame
+HTFo = timeframe.period == '1' ? 'D' : timeframe.period == '3' ? 'D' : timeframe.period == '5' ? 'D' : timeframe.period == '15' ? 'D' : timeframe.period == '30' ? 'D' : timeframe.period == '45' ? 'D' : timeframe.period == '60' ? 'D' : 'D'
+HTF = mode == 'Auto' ? HTFo : HTFm
+
+Ptf_hi = new_period(new_day, DH)
+Ptf_lo =  new_period(new_day, DL)
+Ptf_cl = new_period(new_day, CC)
+
+highhtf = new_period(new_day, Ptf_hi)
+lowhtf = new_period(new_day, Ptf_lo)
+closehtf = new_period(new_day, Ptf_cl)
+
+PIV = (highhtf + lowhtf + closehtf) / 3.0
+RANGE = Ptf_hi - Ptf_lo
+DPD = (highhtf + lowhtf + closehtf) / 3.0
+
+// is this last bar for HTF?
+islast = showlast ? request.security(syminfo.tickerid, HTF, barstate.islast, lookahead = barmerge.lookahead_on) : true
+
+// Line Style
+llinestyle = llstyle == 'Solid' ? plot.style_line : llstyle == 'Circle' ? plot.style_circles : plot.style_linebr
+
+float H5 = na
+float H4 = na
+float H3 = na
+float L3 = na
+float L4 = na
+float L5 = na
+
+H5 := highhtf / lowhtf * closehtf
+H4 := closehtf + RANGE * 1.1 / 2
+H3 := closehtf + RANGE * 1.1 / 4
+H2 = closehtf + RANGE * 1.1 / 6
+H1 = closehtf + RANGE * 1.1 / 12
+L1 = closehtf - RANGE * 1.1 / 12
+L2 = closehtf - RANGE * 1.1 / 6
+L3 := closehtf - RANGE * 1.1 / 4
+L4 := closehtf - RANGE * 1.1 / 2
+L5 := closehtf - (H5 - closehtf)
+//===================================================================================================
+ 
+pixelup = close > DPIV ? 0 : 100
+pixeldn = close < DPIV ? 0 : 100
+
+UPPrice = bullpower > DPI
+DOWNPrice = bearpower < DPI
+
+pixeu = close > DPIV ? 0 : 100
+pixed = close < DPIV ? 0 : 100
+
+move3 = (close > DPI) ? color.new(color.red, Pricer) : (close < DPI) ? color.new(color.green, Priceg) : color.new(color.white, 0)
+move4 = (close > DPI) ? color.new(color.teal, Priceg) : (close < DPI) ? color.new(color.maroon, Pricer) : color.new(color.white, 0)
+
+move33 = (close < DPI) ? color.new(color.red, Pricer) : (close > DPI) ? color.new(color.green, Priceg) : color.new(color.white, 0)
+move44 = (close < DPI) ? color.new(color.teal, Priceg) : (close > DPI) ? color.new(color.maroon, Pricer) : color.new(color.white, 0)
+
+move3i = (close < DPIV) and close > L3 ? color.new(color.green, pixelup) : (close < DPIV) and close < L3 ? color.new(color.red, pixeldn) : close > DPIV and close > H3 ? color.new(color.green, pixelup) : close > DPIV and close < H3 ? color.new(color.red, pixeldn) : color.new(color.white, 0)
+move4i = (close < DPIV) ? color.new(color.maroon, pixeldn) : (close > DPIV) ? color.new(color.teal, pixelup) : color.new(color.white, 0)
+
+// 2. OPTIMIZED LABEL FUNCTION
+f_draw_label(_x, _y, _text, _col, _tcol) =>
+    label.new(x = _x, y = _y, text = _text, color = _col, textcolor = _tcol, size = size.small, style = label.style_label_left, yloc = yloc.price)
+
+// 3. OPTIMIZED ARRAY DELETION (BULLETPROOF)
+var exlabels = array.new_label(0)
+if showlabels
+    if array.size(exlabels) > 0
+        for lb in exlabels
+            label.delete(lb)
+        array.clear(exlabels)
+
+    array.push(exlabels, f_draw_label(bar_index + 9, L3, 'L3', color.new(move3i, pixeldn), color.new(color.white, pixeldn)))
+    array.push(exlabels, f_draw_label(bar_index + 9, L4, 'L4', color.new(move4i, pixeldn), color.new(color.white, pixeldn)))
+    array.push(exlabels, f_draw_label(bar_index + 9, L5, 'L5', color.new(color.aqua, pixeldn), color.new(color.white, pixeldn)))
+    array.push(exlabels, f_draw_label(bar_index + 9, H3, 'H3', color.new(move3i, pixelup), color.new(color.white, pixelup)))
+    array.push(exlabels, f_draw_label(bar_index + 9, H4, 'H4', color.new(move4i, pixelup), color.new(color.white, pixelup)))
+    array.push(exlabels, f_draw_label(bar_index + 9, H5, 'H5', color.new(color.aqua, pixelup), color.new(color.white, pixelup)))
+    array.push(exlabels, f_draw_label(bar_index + 14, VAH, 'VAH', color.new(color.black, 0), color.new(#C8F05B, 0)))
+    array.push(exlabels, f_draw_label(bar_index + 14, VAL, 'VAL', color.new(color.black, 0), color.new(#C8F05B, 0)))
+
+TEXTCOLOR = CONFIRMEDBULLISH ? color.green : CONFIRMEDBEARISH ? color.red : REJECTEDBULLISH ? color.maroon : REJECTEDBEARISH ? color.teal : OUTSIDE ? color.black : UNCHANGED ? color.black : ANYDAY and (OO_ > h4 or OO_ < l4) or INSIDE ? color.orange : na
+PAINT = BULLISH ? color.teal : BEARISH ? color.maroon : MODERATELYBULLISH ? color.green : MODERATELYBEARISH ? color.red : INSIDE ? color.navy : UNCHANGED ? color.orange : OUTSIDE ? color.fuchsia : color.olive
+COLOUR = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? color.teal : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? color.maroon : ANYDAY and close > DBc and close < DTc ? color.blue : color.lime
+
+cpr_colour = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? #76E38A : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? #F0605B : ANYDAY and close > DBc and close < DTc ? #16DBCE : #16DBCE
+dpz_colour = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? #93E868 : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? #F0605B : ANYDAY and close > DBc and close < DTc ? #F24B94 : #F0F252
+
+CAMINSIDE = YH3 < h3 and YL3 > l3
+ANYRANGE = INRANGEINVALUE or INRANGEOUTOFVALUE or OUTOFRANGEVALUE
+
+//------------------------------------------------------------------
+HH = new_period(new_day, DH)
+LL = new_period(new_day, DL)
+CC1 = new_period(new_day, CC)
+
+PP = (HH + LL + CC1) / 3
+BBB = (HH + LL) / 2
+TT = PP - BBB + PP
+
+TCC = math.max(TT, BBB)
+BCC = math.min(TT, BBB)
+
+// ✅ OPTIMIZATION 5: Reused Daily MTF Data (Deleted 3 MTF calls)
+DD = open
+PH = DH
+PL = DL
+PC = CC
+
+dPH_ = new_period(new_day, PH)
+dPL_ = new_period(new_day, PL)
+DD_ = new_period(new_day, DD)
+CC_ = new_period(new_day, PC)
+
+P = (dPH_ + dPL_ + CC_) / 3.0
+Bc = (dPH_ + dPL_) / 2
+Tc = P - Bc + P
+
+//=======================================================================================================================================
+
+weekly_cpr = input.int(title = ' Logic for Weekly CPR ', defval = 7, minval = 0)
+//
+new_bar2(res) =>
+    ta.change(time(res)) != 0
+new_period2(condition, src) =>
+    result = 0.0
+    result := condition ? src : result[1]
+    result
+
+WW = open
+[WH, WL, WC] = request.security(syminfo.tickerid, 'W', [high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+
+one_week = 1000 * 50 * 50 * 24 * 7
+new_week = weekly_cpr > 0 and timenow - time < one_week * weekly_cpr and new_bar2('W')
+
+wPH_ = new_period2(new_week, WH)
+wPL_ = new_period2(new_week, WL)
+WW_ = new_period2(new_week, WW)
+wPC_ = new_period2(new_week, WC)
+
+// ✅ OPTIMIZATION 6: Reused Weekly MTF Data (Deleted 6 heavy MTF calls)
+HW = WH
+LW = WL
+CW = WC
+
+PW = (HW + LW + CW) / 3
+BW = (HW + LW) / 2
+TW = PW - BW + PW
+
+TCW = math.max(TW, BW)
+BCW = math.min(TW, BW)
+
+RangeW = HW - LW
+
+Wh3 = CW + RangeW * 1.1 / 4.0
+Wl3 = CW - RangeW * 1.1 / 4.0
+
+Wh4 = CW + RangeW * 1.1 / 2.0
+Wl4 = CW - RangeW * 1.1 / 2.0
+
+// ✅ Reusing Weekly MTF Data again
+WYtf_h = WH
+WYtf_l = WL
+WYtf_c = WC
+
+WYtf_highW = new_period2(new_week, WYtf_h)
+WYtf_lowW = new_period2(new_week, WYtf_l)
+WYtf_closeW = new_period2(new_week, WYtf_c)
+
+WPIV = (WYtf_highW + WYtf_lowW + WYtf_closeW) / 3
+
+WHY = new_period2(new_week, WYtf_h)
+WLY = new_period2(new_week, WYtf_l)
+WCY = new_period2(new_week, WYtf_c)
+
+RYW = WHY - WLY
+PWP = (WHY + WLY + WCY) / 3.0
+BcW = (WHY + WLY) / 2
+TcW = PW - BcW + PWP
+
+WTC = math.max(TcW, BcW)
+WBC = math.min(TcW, BcW)
+
+WCPR = 0.2 > math.abs(WPIV - WBC + WPIV - WBC) / WPIV * 100
+
+//-------------------
+
+Pwf_high = new_period2(new_week, WH)
+Pwf_low = new_period2(new_week, WL)
+Pwf_close = new_period2(new_week, WC)
+
+RW = Pwf_high - Pwf_low
+DPW = (Pwf_high + Pwf_low + Pwf_close) / 3.0
+WBCn = (Pwf_high + Pwf_low) / 2
+WTCn = DPW - DBCn + DPW
+
+WP = new_period2(new_week, DPW)
+
+WH3 = new_period(new_day, Wh3)
+WL3 = new_period(new_day, Wl3)
+
+WPtf_high1 = new_period(new_week, WH[1])
+WPtf_low1 = new_period(new_week, WL[1])
+WPtf_close1 = new_period(new_week, WC[1])
+
+WRY = WPtf_high1 - WPtf_low1
+YWP = (WPtf_high1 + WPtf_low1 + WPtf_close1) / 3.0
+WBcY = (WPtf_high1 + WPtf_low1) / 2
+WTcY = YWP - WBcY + YWP
+
+YWTC = math.max(WTcY, WBcY)
+YWBC = math.min(WTcY, WBcY)
+
+//--------------------
+
+monthly_cpr = input.int(title = ' Logic for Daily CPR ', defval = 30, minval = 0)
+//
+
+MD = open
+[mH, mL, Ytf_C1] = request.security(syminfo.tickerid, 'M', [high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+
+f_daysinmonth(_year, _month) =>
+    _m = _month < 1 ? 1 : _month > 12 ? 12 : _month 
+    28 + (_m == 2 and _year % 4 == 0 ? 1 : 0) + (_m + math.floor(_m / 8)) % 2 + 2 % _m + 2 * math.floor(1 / _m)
+days = f_daysinmonth(input(2025), input(1))
+
+one_month = 1000 * 50 * 50 * 24 * days
+new_month = monthly_cpr > 0 and timenow - time < one_month * monthly_cpr and new_bar1('M')
+
+mPH_ = new_period1(new_month, mH)
+mPL_ = new_period1(new_month, mL)
+MD_ = new_period1(new_month, MD)
+
+Ytf_High1 = new_period1(new_month, mH)
+Ytf_Low1 = new_period1(new_month, mL)
+Ytf_Close1 = new_period1(new_month, Ytf_C1)
+
+Ry1 = Ytf_High1 - Ytf_Low1
+Py1 = (Ytf_High1 + Ytf_Low1 + Ytf_Close1) / 3.0
+Bcy1 = (Ytf_High1 + Ytf_Low1) / 2
+Tcy1 = Py1 - Bcy1 + Py1
+
+YP1 = new_period1(new_month, Py1)
+Boy1 = new_period1(new_month, Bcy1)
+Toy1 = new_period1(new_month, Tcy1)
+
+YTC1 = math.max(Toy1, Boy1)
+YBC1 = math.min(Toy1, Boy1)
+
+//====================================
+
+movetransp11 = close < YP1 ? 0 : 100
+movetransp21 = close > YP1 ? 0 : 100
+
+moveVAL1 = close < YP1 and close > Ytf_Low1 ? color.new(color.olive, movetransp11) : color.new(color.white, 0)
+moveVAH1 = close > YP1 and close < Ytf_High1 ? color.new(color.olive, movetransp21) : color.new(color.white, 0)
+
+Wmovetransp1 = close > WP and close < wPH_ ? 0 : 100
+Wmovetransp2 = close < WP and close > wPL_ ? 0 : 100
+
+WmoveVAL = close < WP ? color.new(#16DBCE, Wmovetransp1) : color.new(color.white, 0)
+WmoveVAH = close > WP ? color.new(#16DBCE, Wmovetransp2) : color.new(color.white, 0)
+
+Pixelup = close > WP ? 0 : 100
+Pixeldn = close < WP ? 0 : 100
+
+var line WWH = na
+var line WWL = na
+var line WWPLine = na
+
+if barstate.islast
+
+    line.set_x2(WWH, bar_index)
+    line.set_x2(WWL, bar_index)
+    line.set_extend(WWH, extend.none)
+    line.set_extend(WWL, extend.none)
+
+    // ✅ FIXED: Delete the line from the previous tick before assigning a new one
+    line.delete(WWH)
+    WWH := line.new(V, wPH_, math.min(m, bar_index + 500), wPH_, width = 1, color = color.new(WmoveVAH, Wmovetransp1), style = line.style_solid, extend = extend.none)
+    
+    line.delete(WWL)
+    WWL := line.new(V, wPL_, math.min(m, bar_index + 500), wPL_, width = 1, color = color.new(WmoveVAL, Wmovetransp2), style = line.style_solid, extend = extend.none)
+
+    if not na(WWPLine) and line.get_x2(WWPLine) != bar_index
+        line.set_x2(WWH, math.min(M, bar_index + 500))
+        line.set_x2(WWL, math.min(M, bar_index + 500))
+
+var line YH1 = na
+var line YL1 = na
+var line YPLine = na
+
+if barstate.islast
+
+    line.set_x2(YH1, bar_index)
+    line.set_x2(YL1, bar_index)
+    line.set_extend(YH1, extend.none)
+    line.set_extend(YL1, extend.none)
+
+    // ✅ FIXED: Delete the line from the previous tick before assigning a new one
+    line.delete(YH1)
+    YH1 := line.new(v, Ytf_High1, math.min(m, bar_index + 500), Ytf_High1, width = 1, color = color.new(moveVAH1, movetransp21), style = line.style_solid, extend = extend.none)
+    
+    line.delete(YL1)
+    YL1 := line.new(v, Ytf_Low1, math.min(m, bar_index + 500), Ytf_Low1, width = 1, color = color.new(moveVAL1, movetransp11), style = line.style_solid, extend = extend.none)
+
+//==============================
+
+//camarilla labels
+var camLabels = array.new_label(0)
+if showlabels
+    if array.size(camLabels) > 0
+        for lb in camLabels
+            label.delete(lb)
+        array.clear(camLabels)
+
+    array.push(camLabels, f_draw_label(bar_index + 20, mPH_, 'PMH', color.new(color.olive, movetransp21), color.new(color.lime, movetransp21)))
+    array.push(camLabels, f_draw_label(bar_index + 20, mPL_, 'PML', color.new(color.olive, movetransp11), color.new(color.lime, movetransp11)))
+
+//===================================================================================================
+
+var wLabels = array.new_label(0)
+if showlabels
+    if array.size(wLabels) > 0
+        for lb in wLabels
+            label.delete(lb)
+        array.clear(wLabels)
+
+    array.push(wLabels, f_draw_label(bar_index + 17, WYtf_highW, 'PWH', color.new(color.navy, Pixelup), color.new(color.yellow, Pixelup)))
+    array.push(wLabels, f_draw_label(bar_index + 17, WYtf_lowW, 'PWL', color.new(color.navy, Pixeldn), color.new(color.yellow, Pixeldn)))
+
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------
+movehl = close > DPIV ? color.new(#F0F252, Priceg) : close > DPIV ? color.new(#F0F252, Pricer) : color.new(color.white, 0)
+movehl1 = close < DPIV ? color.new(#F0F252, Pricer) : close < DPIV ? color.new(#F0F252, Priceg) : color.new(color.white, 0)
+
+moveval = close > DPIV ? color.new(color.black, 0) : close < DPIV ? color.new(color.black, 0) : color.new(color.white, 0)
+
+bigmove = INRANGEINVALUE and (close > dDH_ or close < dDL_) ? 0 : 100
+bigtrend = OUTOFRANGEVALUE and (close < dDL_ or close > dDH_) ? 0 : 100
+
+movetransp1 = VAL > DP ? 40 : 100
+movetransp2 = VAH < DP ? 40 : 100
+
+moveVAL = VAL > DP ? color.new(color.silver, movetransp1) : color.new(color.white, 0)
+moveVAH = VAH < DP ? color.new(color.silver, movetransp2) : color.new(color.white, 0)
+
+movecolor = INRANGEINVALUE ? color.black : OUTOFRANGEVALUE ? color.black : VAL > DP ? color.new(moveVAL, movetransp1) : VAH < DP ? color.new(moveVAH, movetransp2) : color.white
+
+movetext = INRANGEINVALUE and close > dDH_ or OUTOFRANGEVALUE and close > dDH_ or INRANGEOUTOFVALUE and close > dDH_ ? color.green : INRANGEINVALUE and close < dDL_ or OUTOFRANGEVALUE and close < dDL_ or INRANGEOUTOFVALUE and close < dDL_ ? color.red : color.new(color.silver, 0)
+movetext1 = INRANGEINVALUE and close > dDH_ or OUTOFRANGEVALUE and close > dDH_ or INRANGEOUTOFVALUE and close > dDH_ ? color.teal : INRANGEINVALUE and close < dDL_ or OUTOFRANGEVALUE and close < dDL_ or INRANGEOUTOFVALUE and close < dDL_ ? color.maroon : color.new(color.silver, 0)
+
+cmoveL3 = BULLISH and (OO_ < H3 and OO_ > L3 or close < DP and close > L3) ? 80 : 100
+cmoveH3 = BEARISH and (OO_ > L3 and OO_ < H3 or close > DP and close < H3) ? 80 : 100
+
+moveH3 = BULLISH and (OO_ > L3 and OO_ < H3 or close > DP and close < H3) ? color.new(color.red, cmoveH3) : color.new(color.white, 100)
+moveL3 = BEARISH and (OO_ < H3 and OO_ > L3 or close < DP and close > L3) ? color.new(color.green, cmoveL3) : color.new(color.white, 100)
+
+cmoveL4 = close < DP and close < L3 and close > L4 ? 80 : 100
+cmoveH4 = close > DP and close > H3 and close < H4 ? 80 : 100
+
+moveL4 = close < L3 and close > L4 ? color.new(color.maroon, cmoveL4) : color.new(color.white, 100)
+moveH4 = close > H3 and close < H4 ? color.new(color.teal, cmoveH4) : color.new(color.white, 100)
+
+DS1 = new_period1(new_day, DS)
+DR1 = new_period1(new_day, DR)
+DM1 = new_period1(new_day, DM)
+
+// 4. OPTIMIZED CPR COLORS (Removed redundant ternaries)
+cprcolor  = color.rgb(173, 20, 196)
+cprcolor1 = color.rgb(24, 106, 229)
+cprcolor2 = color.rgb(24, 106, 229)
+
+cprres1 = NCPR ? 80 : close > dDL_ and close < dDH_ ? 100 : 80
+cprres2 = NCPR ? 80 : close > dDL_ and close < dDH_ ? 100 : 80
+
+Cprres1 = 100
+Cprres2 = 100
+cprres  = 100
+
+drcol = close > DP and close < DR1 ? 60 : 100
+dscol = close < DP and close > DS1 ? 60 : 100
+
+Drcol = close > DP and close < DR1 ? color.new(color.red, drcol) : color.new(color.white, 90)
+Dscol = close < DP and close > DS1 ? color.new(color.green, dscol) : color.new(color.white, 90)
+
+vahcol = close > DP ? 40 : 100
+valcol = close < DP ? 40 : 100
+
+Vahcol = close > DP and close < VAH ? color.new(color.black, vahcol) : color.new(color.gray, 90)
+Valcol = close < DP and close > VAL ? color.new(color.black, valcol) : color.new(color.gray, 90)
+
+dmcolor1 = DM1 == DTc ? color.rgb(23, 16, 230) : color.rgb(51, 137, 235)
+dmcolor2 = DM1 == DBc ? color.rgb(23, 16, 230) : color.rgb(51, 137, 235)
+
+dmres1 = DM1 == DTc ? 40 : 60
+dmres2 = DM1 == DBc ? 40 : 60
+
+cpr = color.rgb(23, 16, 230)
+
+valtransp1 = INRANGEINVALUE and close > VAL and close < VAH ? 60 : INRANGEINVALUE and close > VAH ? 40 : INRANGEOUTOFVALUE and close > VAH ? 40 : OUTOFRANGEVALUE and close > VAH ? 40 : 100
+valtransp2 = INRANGEINVALUE and close > VAL and close < VAH ? 60 : INRANGEINVALUE and close < VAL ? 40 : INRANGEOUTOFVALUE and close < VAL ? 40 : OUTOFRANGEVALUE and close < VAL ? 40 : 100
+
+valcol1 = INRANGEINVALUE ? color.black : INRANGEINVALUE and close > VAH ? color.black : INRANGEOUTOFVALUE and close > VAH ? color.black : OUTOFRANGEVALUE and close > VAH ? color.black : color.silver
+valcol2 = INRANGEINVALUE ? color.black : INRANGEINVALUE and close < VAL ? color.black : INRANGEOUTOFVALUE and close < VAL ? color.black : OUTOFRANGEVALUE and close < VAL ? color.black : color.silver
+
+//======================================================================================= //
+
+var line line100 = na
+line.delete(line100)
+line100 := line.new(bar_index[1] + 2, DP, bar_index + 52, DP, extend = extend.none, color = color.new(cprcolor, 0))
+
+var line line101 = na
+line.delete(line101)
+line101 := line.new(bar_index[1] + 2, DTC, bar_index + 52, DTC, extend = extend.none, color = color.new(cprcolor1, 0))
+
+var line line99 = na
+line.delete(line99)
+line99 := line.new(bar_index[1] + 2, DBC, bar_index + 52, DBC, extend = extend.none, color = color.new(cprcolor2, 0))
+
+//========================================
+
+var line YH = na
+var line YL = na
+var line VAHx = na
+var line VALx = na
+var line DTcLine = na
+var line DPLine = na
+var line DBcLine = na
+var line Dh3Line = na
+var line Dl3Line = na
+var line Dh4Line = na
+var line Dl4Line = na
+var line DRLine = na
+var line DSLine = na
+
+if barstate.islast
+
+    line.set_x2(YH, bar_index)
+    line.set_x2(YL, bar_index)
+    line.set_x2(VAHx, bar_index)
+    line.set_x2(VALx, bar_index)
+    line.set_x2(DTcLine, bar_index)
+    line.set_x2(DPLine, bar_index)
+    line.set_x2(DBcLine, bar_index)
+    line.set_x2(Dh3Line, bar_index)
+    line.set_x2(Dl3Line, bar_index)
+    line.set_x2(Dh4Line, bar_index)
+    line.set_x2(Dl4Line, bar_index)
+    line.set_x2(DRLine, bar_index)
+    line.set_x2(DSLine, bar_index)
+
+    line.set_extend(YH, extend.none)
+    line.set_extend(YL, extend.none)
+    line.set_extend(VAHx, extend.none)
+    line.set_extend(VALx, extend.none)
+    line.set_extend(DTcLine, extend.none)
+    line.set_extend(DPLine, extend.none)
+    line.set_extend(DBcLine, extend.none)
+    line.set_extend(Dh3Line, extend.none)
+    line.set_extend(Dl3Line, extend.none)
+    line.set_extend(Dh4Line, extend.none)
+    line.set_extend(Dl4Line, extend.none)
+    line.set_extend(DRLine, extend.none)
+    line.set_extend(DSLine, extend.none)
+
+    YH := line.new(v, highhtf, m, highhtf, width = 1, color = color.new(movehl, pixeu), style = line.style_solid, extend = extend.none)
+    line.delete(YH[1])
+    YL := line.new(v, lowhtf, m, lowhtf, width = 1, color = color.new(movehl1, pixed), style = line.style_solid, extend = extend.none)
+    line.delete(YL[1])
+    VAHx := line.new(v, VAH, m, VAH, width = 1, color = color.new(valcol1, valtransp1), style = line.style_solid, extend = extend.none)
+    line.delete(VAHx[1])
+    VALx := line.new(v, VAL, m, VAL, width = 1, color = color.new(valcol2, valtransp2), style = line.style_solid, extend = extend.none)
+    line.delete(VALx[1])
+    DSLine := line.new(v, DS1, m, DS1, width = 2, color = color.new(Dscol, dscol), style = line.style_dotted, extend = extend.none)
+    line.delete(DSLine[1])
+    DRLine := line.new(v, DR1, m, DR1, width = 2, color = color.new(Drcol, drcol), style = line.style_dotted, extend = extend.none)
+    line.delete(DRLine[1])
+    DTcLine := line.new(v, DTc, m, DTc, width = 2, color = color.new(cprcolor1, Cprres1), style = line.style_dotted, extend = extend.none)
+    line.delete(DTcLine[1])
+    DPLine := line.new(v, DP, m, DP, width = 2, color = color.new(cprcolor, cprres), style = line.style_dotted, extend = extend.none)
+    line.delete(DPLine[1])
+    DBcLine := line.new(v, DBc, m, DBc, width = 2, color = color.new(cprcolor2, Cprres2), style = line.style_dotted, extend = extend.none)
+    line.delete(DBcLine[1])
+    Dh3Line := line.new(v, H3, m, H3, width = 1, color = color.new(moveH3, cmoveH3), style = line.style_solid, extend = extend.none)
+    line.delete(Dh3Line[1])
+    Dl3Line := line.new(v, L3, m, L3, width = 1, color = color.new(moveL3, cmoveL3), style = line.style_solid, extend = extend.none)
+    line.delete(Dl3Line[1])
+    Dh4Line := line.new(v, H4, m, H4, width = 2, color = color.new(moveH4, cmoveH4), style = line.style_dotted, extend = extend.none)
+    line.delete(Dh4Line[1])
+    Dl4Line := line.new(v, L4, m, L4, width = 2, color = color.new(moveL4, cmoveL4), style = line.style_dotted, extend = extend.none)
+    line.delete(Dl4Line[1])
+
+if not na(DPLine) and line.get_x2(DPLine) != bar_index
+    line.set_x2(YH, bar_index + 1)
+    line.set_x2(YL, bar_index + 1)
+    line.set_x2(VAHx, bar_index + 1)
+    line.set_x2(VALx, bar_index + 1)
+    line.set_x2(DTcLine, bar_index + 1)
+    line.set_x2(DPLine, bar_index + 1)
+    line.set_x2(DBcLine, bar_index + 1)
+    line.set_x2(Dh3Line, bar_index + 1)
+    line.set_x2(Dl3Line, bar_index + 1)
+    line.set_x2(Dh4Line, bar_index + 1)
+    line.set_x2(Dl4Line, bar_index + 1)
+    line.set_x2(DRLine, bar_index + 1)
+    line.set_x2(DSLine, bar_index + 1)
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// Tomorrow's CPR
+
+// User inputs
+showTomorrowCPR = input(title = 'Show tomorrow\'s CPR', defval = true)
+showHistoricalCPR = input(title = 'Show historical CPR', defval = false)
+showR3S3 = input(title = 'Show L3 & H3', defval = true)
+
+// Defaults
+cprColor = color.fuchsia
+cprColor1 = #1E90FF
+rColor = color.red
+sColor = color.green
+
+lStyle = plot.style_line
+lTransp = 0
+fTransp = 15
+
+// Note: Week of Sunday=1...Saturday=7
+IsWeekend(_date) =>
+    dayofweek(_date) == 7 or dayofweek(_date) == 1
+
+// Skip Weekend
+SkipWeekend(_date) =>
+    _d = dayofweek(_date)
+    _mul = _d == 6 ? 3 : _d == 7 ? 2 : 1
+    _date + _mul * 86400000
+
+// Get Next Working Day
+GetNextWorkingDay(_date) =>
+    _dt = SkipWeekend(_date)
+    _dt
+
+// Today's Session Start timestamp
+y = year(timenow)
+mo = month(timenow)
+d = dayofmonth(timenow)
+
+// Start & End time for Today's CPR
+start = timestamp(y, mo, d, 06, 30)
+end = start + 86400000
+
+// Plot Today's CPR
+shouldPlotToday = timenow > start
+
+tom_start = start
+tom_end = end
+
+// Start & End time for Tomorrow's CPR
+if shouldPlotToday
+    tom_start := GetNextWorkingDay(start)
+    tom_end := tom_start + 86400000
+
+[tH, tL, tC] = request.security(syminfo.tickerid, 'D', [high, low, close], lookahead = barmerge.lookahead_on)
+tR = tH - tL
+
+// Pivot Range
+tp = (tH + tL + tC) / 3
+tP = new_period(new_day, tp)
+TCx = (tH + tL) / 2
+BCx = tp - TCx + tp
+
+ttC = math.max(TCx, BCx)
+tbC = math.min(TCx, BCx)
+
+tTC = new_period(new_day, ttC)
+tBC = new_period(new_day, tbC)
+
+// Resistance Levels
+tr3 = tTC + tR * 1.1 / 4.0
+tR3 = new_period(new_day, tr3)
+
+// Support Levels
+ts3 = tTC - tR * 1.1 / 4.0
+tS3 = new_period(new_day, ts3)
+
+var line _t_tc = na
+var line _t_p = na
+var line _t_bc = na
+
+if tP[1] != tP
+    _t_tc := line.new(tom_start, tTC, tom_end, ttC, xloc.bar_time, width = 2, color = color.new(cprColor1, 0), style = line.style_dotted, extend = extend.none)
+    line.delete(_t_tc[1])
+    _t_p := line.new(tom_start, tP, tom_end, tP, xloc.bar_time, width = 2, color = color.new(cprColor, 0), style = line.style_dotted, extend = extend.none)
+    line.delete(_t_p[1])
+    _t_bc := line.new(tom_start, tBC, tom_end, tbC, xloc.bar_time, width = 2, color = color.new(cprColor1, 0), style = line.style_dotted, extend = extend.none)
+    line.delete(_t_bc[1])
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+dp1 = (DH + DL + CC) / 3.0
+DBCp = (DH + DL) / 2
+DTCp = DP1 - DBCp + DP1
+
+DTC1 = math.max(DTCp, DBCp)
+DBC1 = math.min(DTCp, DBCp)
+
+PCPR = NCPR ? color.rgb(9, 87, 176) : color.rgb(8, 105, 105)
+PCPRRES = NCPR ? 85 : 95
+
+var line DTCLine2 = na
+var line DPLine2 = na
+var line DBCLine2 = na
+
+if dp1[1] != dp1
+    line.set_x2(DTCLine2, bar_index)
+    line.set_x2(DPLine2, bar_index)
+    line.set_x2(DBCLine2, bar_index)
+
+    line.set_extend(DPLine2, extend.none)
+    line.set_extend(DTCLine2, extend.none)
+    line.set_extend(DBCLine2, extend.none)
+
+    DTCLine2 := line.new(v, DTC1, math.min(m, bar_index + 500), DTC1, width = 2, color = color.new(PCPR, PCPRRES), style = line.style_solid, extend = extend.none)
+    DPLine2 := line.new(v, dp1, math.min(m, bar_index + 500), dp1, width = 2, color = color.new(PCPR, PCPRRES), style = line.style_solid, extend = extend.none)
+    DBCLine2 := line.new(v, DBC1, math.min(m, bar_index + 500), DBC1, width = 2, color = color.new(PCPR, PCPRRES), style = line.style_solid, extend = extend.none)
+
+if not na(DPLine2) and line.get_x2(DPLine2) != bar_index
+    line.set_x2(DTCLine2, math.min(M, bar_index + 500))
+    line.set_x2(DPLine2, math.min(M, bar_index + 500))
+    line.set_x2(DBCLine2, math.min(M, bar_index + 500))
+
+//=====================================================================================================================
+
+// ====================================================================
+// 5. ZONE DEFINITIONS & BOUNCE CONDITIONS
+// ====================================================================
+
+
+//====================================================================================================================
+
+group_support_and_resistance = 'Consecutively Increasing Volume / Price'
+tooltip_support_and_resistance = 'Moments where\n' + '- price is bullish or bearish consecutively for minimum 3 bars and on increasing volume with at least one bar\'s volume is above volume moving average\n' + 'or\n' + '- price is bullish or bearish consecutively on increasing/decreasing price for minimum 3 bars'
+
+group_volume_spike_sign_of_exhaustion = 'Volume Spike - Sign of Exhaustion'
+tooltip_volume_spike_sign_of_exhaustion = 'Moments where\n' + 'huge volume detected : current volume is grater than the product of the theshold value and volume moving average\n' + 'presents idea : huge volume may be a sign of exhaustion and may lead to sharp reversals'
+
+group_high_volatility = 'High Volatility'
+tooltip_high_volatility = 'Moments where\n' + 'price range of the current bar is grater than the product of the theshold value and average true range value of defined period'
+
+group_volume_weighted_colored_bars = 'Volume Weighted Colored Bars'
+tooltip_volume_weighted_colored_bars = 'Colors bars based on the bar\'s volume relative to volume moving average\n' + 'trading tip : a potential breakout trading opportunity may occur when price moves above a resistance level or moves below a support level on increasing volume'
+
+tooltip_volume_moving_average = 'Volume simple moving average, serves as reference to\n' + '- Support and Resistance,\n' + '- Volume Weighted Colored Bars,\n' + '- Volume Spike - Sign of Exhaustion\ncalculations'
+
+// User Input Declarations ---------------------------------------------------------------------- //
+i_lenLookback = input.int(360, 'Lookback Interval (Bars)', minval = 0, step = 10)
+
+i_sourceSnR = input.string('Volume', 'S & R Calculation Source', options = ['Price', 'Volume'], group = group_support_and_resistance, tooltip = tooltip_support_and_resistance)
+i_isSnR = input.bool(false, 'S & R Lines', inline = 'SR', group = group_support_and_resistance)
+i_srLnColor = input.color(color.black, '', inline = 'SR', group = group_support_and_resistance)
+i_srLnWidth = input.int(3, '', inline = 'SR', group = group_support_and_resistance)
+i_srLnStyle = input.string('Solid', '', options = ['Dashed', 'Dotted', 'Solid'], inline = 'SR', group = group_support_and_resistance)
+
+i_vSpikeLb = input.bool(false, '🚦', inline = 'SRS1', group = group_volume_spike_sign_of_exhaustion, tooltip = tooltip_volume_spike_sign_of_exhaustion)
+i_vSpikeThresh = input.float(4.669, 'Volume Spike Theshold', minval = .1, step = .1, inline = 'SRS1', group = group_volume_spike_sign_of_exhaustion)
+i_isSnRSpike = input.bool(false, 'S & R Lines', inline = 'SRS2', group = group_volume_spike_sign_of_exhaustion)
+i_spLnColor = input.color(color.black, '', inline = 'SRS2', group = group_volume_spike_sign_of_exhaustion)
+i_spLnWidth = input.int(3, '', inline = 'SRS2', group = group_volume_spike_sign_of_exhaustion)
+i_spLnStyle = input.string('Solid', '', options = ['Dashed', 'Dotted', 'Solid'], inline = 'SRS2', group = group_volume_spike_sign_of_exhaustion)
+i_spLnBullLevel = input.string('Both', 'Levels : Bullish', options = ['High', 'Close', 'Both'], inline = 'SRS3', group = group_volume_spike_sign_of_exhaustion)
+i_spLnBearLevel = input.string('Both', ' Bearish', options = ['Low', 'Close', 'Both'], inline = 'SRS3', group = group_volume_spike_sign_of_exhaustion)
+
+i_hATRLb = input.bool(true, '⚡', inline = 'ATR', group = group_high_volatility, tooltip = tooltip_high_volatility)
+i_atrLength = input.int(11, 'ATR : Length', inline = 'ATR', group = group_high_volatility)
+i_atrMult = input.float(2.718, 'Mult', minval = .1, step = .1, inline = 'ATR', group = group_high_volatility)
+i_hATRLn = input.bool(false, 'S & R Lines', inline = 'AT1', group = group_high_volatility)
+i_hATRLnColor = input.color(color.black, '', inline = 'AT1', group = group_high_volatility)
+i_hATRLnWidth = input.int(3, '', inline = 'AT1', group = group_high_volatility)
+i_hATRLnStyle = input.string('Solid', '', options = ['Dashed', 'Dotted', 'Solid'], inline = 'AT1', group = group_high_volatility)
+i_haLnBullLevel = input.string('Both', 'Levels : Bullish', options = ['High', 'Close', 'Both'], inline = 'AT2', group = group_high_volatility)
+i_haLnBearLevel = input.string('Both', ' Bearish', options = ['Low', 'Close', 'Both'], inline = 'AT2', group = group_high_volatility)
+
+i_vSMA = ta.sma(nz(volume), input.int(89, 'Volume Moving Average Length', group = 'General Settings', tooltip = tooltip_volume_moving_average))
+
+nzVolume = nz(volume)
+bullCandle = close > open
+bearCandle = close < open
+risingVol = nzVolume >= nzVolume[1]
+
+risingPrice = close > close[1]
+fallingPrice = close < close[1]
+
+lwstPrice = ta.lowest(low, 3)
+hstPrice = ta.highest(high, 3)
+
+weightedATR = i_atrMult * ta.atr(i_atrLength)
+range_1 = math.abs(high - low)
+t2 = timenow + 7 * math.round(ta.change(time))
+
+sProcessing = time > timenow - i_lenLookback * (timeframe.isintraday ? timeframe.multiplier * 86400000 / 1440 : timeframe.multiplier * 86400000)
+
+falling = if i_sourceSnR == 'Volume'
+    bearCandle and bearCandle[1] and bearCandle[2] and nzVolume > i_vSMA and risingVol and risingVol[1]
+else
+    bearCandle and bearCandle[1] and bearCandle[2] and fallingPrice and fallingPrice[1] and fallingPrice[2]
+
+rising = if i_sourceSnR == 'Volume'
+    bullCandle and bullCandle[1] and bullCandle[2] and nzVolume > i_vSMA and risingVol and risingVol[1]
+else
+    bullCandle and bullCandle[1] and bullCandle[2] and risingPrice and risingPrice[1] and risingPrice[2]
+
+yy = ta.valuewhen(falling or rising, falling ? lwstPrice : hstPrice, 0)
+xx1 = ta.valuewhen(falling or rising, time, 0)
+
+highVolatility = range_1 > weightedATR
+x1hV = ta.valuewhen(highVolatility, time, 0)
+
+f_getStyle(_s) =>
+    _s == 'Solid' ? line.style_solid : _s == 'Dotted' ? line.style_dotted : line.style_dashed
+
+// 6. VOLATILITY LINE OPTIMIZATION (Cleaned up redundant assignments)
+var line srLine = na
+
+if i_isSnR and falling and sProcessing
+    if falling == falling[1]
+        line.delete(srLine[1])
+    srLine := line.new(xx1, yy, t2, yy, xloc.bar_time, extend.none, i_srLnColor, f_getStyle(i_srLnStyle), i_srLnWidth)
+
+if i_isSnR and rising and sProcessing
+    if rising == rising[1]
+        line.delete(srLine[1])
+    srLine := line.new(xx1, yy, t2, yy, xloc.bar_time, extend.none, i_srLnColor, f_getStyle(i_srLnStyle), i_srLnWidth)
+
+var line volatileLine = na
+var line volatileLine1 = na
+var line volatileLine2 = na
+var line volatileLine3 = na
+
+if i_hATRLn and highVolatility and sProcessing
+    if bullCandle
+        if i_haLnBullLevel == 'High'
+            if highVolatility == highVolatility[1] and not bearCandle[1]
+                line.delete(volatileLine[1])
+            volatileLine := line.new(x1hV, high, t2, high, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+        else if i_haLnBullLevel == 'Close'
+            if highVolatility == highVolatility[1] and not bearCandle[1]
+                line.delete(volatileLine[1])
+            volatileLine := line.new(x1hV, close, t2, close, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+        else 
+            if highVolatility == highVolatility[1] and not bearCandle[1]
+                line.delete(volatileLine1[1])
+                line.delete(volatileLine2[1])
+                line.delete(volatileLine3[1])
+            volatileLine1 := line.new(x1hV, close, t2, close, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+            volatileLine2 := line.new(x1hV, math.avg(high, close), t2, math.avg(high, close), xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle('Dotted'), i_hATRLnWidth - 1)
+            volatileLine3 := line.new(x1hV, high, t2, high, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+
+    if bearCandle
+        if i_haLnBearLevel == 'Low'
+            if highVolatility == highVolatility[1] and not bullCandle[1]
+                line.delete(volatileLine[1])
+            volatileLine := line.new(x1hV, low, t2, low, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+        else if i_haLnBearLevel == 'Close'
+            if highVolatility == highVolatility[1] and not bullCandle[1]
+                line.delete(volatileLine[1])
+            volatileLine := line.new(x1hV, close, t2, close, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+        else 
+            if highVolatility == highVolatility[1] and not bullCandle[1]
+                line.delete(volatileLine1[1])
+                line.delete(volatileLine2[1])
+                line.delete(volatileLine3[1])
+            volatileLine1 := line.new(x1hV, low, t2, low, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+            volatileLine2 := line.new(x1hV, math.avg(low, close), t2, math.avg(low, close), xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle('Dotted'), i_hATRLnWidth - 1)
+            volatileLine3 := line.new(x1hV, close, t2, close, xloc.bar_time, extend.none, i_hATRLnColor, f_getStyle(i_hATRLnStyle), i_hATRLnWidth)
+
+plotchar(i_hATRLb and sProcessing and close < open ? highVolatility : false, 'High Volatile Bar', '⚡', location.abovebar, size = size.small)
+plotchar(i_hATRLb and sProcessing and close > open ? highVolatility : false, 'High Volatile Bar', '⚡', location.belowbar, size = size.small)
+
+//=======================================================================================================================================
+
+HTFxw = input('W', title = 'Higher Timeframe for EMA')
+
+smooth1w = input(defval = true, title = 'EMA1 Smooth')
+smooth2w = input(defval = true, title = 'EMA2 Smooth')
+smooth3w = input(defval = true, title = 'EMA3 Smooth')
+smooth4w = input(defval = true, title = 'EMA4 Smooth')
+
+GREENEMA = emaSmooth3 > emaSmooth4 and emaSmooth2 > emaSmooth1
+REDEMA =  emaSmooth3 < emaSmooth4 and emaSmooth2 < emaSmooth1
+
+// Bundled all gaps_on requests
+[emaSmooth1w, emaSmooth2w, emaSmooth3w, emaSmooth4w] = request.security(syminfo.tickerid, HTFxw, [fMedEMA, fShortEMA, fPivotPDEMAF, fPivotPDEMAS], barmerge.gaps_on, barmerge.lookahead_on)
+
+// Bundled all gaps_off requests
+[emaStep1w, emaStep2w, emaStep3w, emaStep4w] = request.security(syminfo.tickerid, HTFxw, [fMedEMA, fShortEMA, fPivotPDEMAF, fPivotPDEMAS], barmerge.gaps_off, barmerge.lookahead_on)
+
+GREENEMAw = emaSmooth3w > emaSmooth4w and emaSmooth2w > emaSmooth1w
+REDEMAw = emaSmooth3w < emaSmooth4w and emaSmooth2w < emaSmooth1w
+
+//==============================================
+
+//PLOTTING ARRAYS ON PRICE CHART. DEVELOPED BY VISHANT MESHRAM FOR THE thelioncapitalsolutions.com website.
+
+//=======================================================================================================================================
+
+openai = request.security(syminfo.tickerid, 'D', open, barmerge.gaps_off, barmerge.lookahead_on)
+OPN = new_period(new_day, openai)
+CLS = request.security(syminfo.tickerid, 'D', close[1], lookahead = barmerge.lookahead_on)
+
+ATRTsl = input.bool(false, 'ATR', group = 'MOVING INDICATORS', inline = 'atr')
+nATRPeriod = input.int(8, 'Period', inline = 'atr', group = 'MOVING INDICATORS')
+nATRMultip = input.float(1.5, 'Multi', inline = 'atr', group = 'MOVING INDICATORS')
+xATR = ta.atr(nATRPeriod)
+nLoss = nATRMultip * xATR
+xATRTrailingStop = 0.00
+iff_1 = close > nz(xATRTrailingStop[1], 0) ? close - nLoss : close + nLoss
+iff_2 = close < nz(xATRTrailingStop[1], 0) and close[1] < nz(xATRTrailingStop[1], 0) ? math.min(nz(xATRTrailingStop[1]), close + nLoss) : iff_1
+xATRTrailingStop := close > nz(xATRTrailingStop[1], 0) and close[1] > nz(xATRTrailingStop[1], 0) ? math.max(nz(xATRTrailingStop[1]), close - nLoss) : iff_2
+//plot(ATRTsl ? xATRTrailingStop[1] : na, color = color.silver, title = 'ATR Trailing Stop', editable = true) //}
+
+//=================================================
+
+
+ATRlength = input.int(title = 'Length', defval = 14, minval = 1)
+smoothing = input.string(title = 'Smoothing', defval = 'EMA', options = ['RMA', 'SMA', 'EMA', 'WMA'])
+Am = input(1, 'Multiplier')
+src1 = input(high)
+src2 = input(low)
+pline = input(false, 'Show Price Lines')
+col1c = close > fMedEMA ? color.red : close < fMedEMA ? color.rgb(26, 132, 30) : color.gray
+col123 = close > fMedEMA ? color.red : close < fMedEMA ? color.rgb(26, 132, 30) : color.gray
+//col1 = close > xATRTrailingStop[1] ? color.red : color.rgb(26, 132, 30)
+col11 = close > OPN ? color.teal : color.maroon
+//col11 = close > OPN ? color.teal : close > OPN ? color.maroon : color.black
+//col1 = input(color.red, 'ATR Text Color')
+col2 = input.color(color.blue, 'Low Text Color', inline = '1')
+col3 = input.color(color.red, 'High Text Color', inline = '2')
+
+ma_function(source, ATRlength) =>
+    if smoothing == 'RMA'
+        ta.rma(source, ATRlength)
+    else
+        if smoothing == 'SMA'
+            ta.sma(source, ATRlength)
+        else
+            if smoothing == 'EMA'
+                ta.ema(source, ATRlength)
+            else
+                ta.wma(source, ATRlength)
+
+Aa = ma_function(ta.tr(true), ATRlength) * Am
+Ax = ma_function(ta.tr(true), ATRlength) * Am + src1
+Ax2 = src2 - ma_function(ta.tr(true), ATRlength) * Am
+change = math.abs(CLS - close)
+per = (math.abs(CLS - close)/ CLS) * 100
+
+adx = 100 * ta.rma(math.abs(plus - minus) / (sum == 0 ? 1 : sum), lensig)
+
+TrailingSL = adx > 25 ? fShortEMA : fMedEMA
+
+var table Table = table.new(position.bottom_left, 5, 5, border_width = 4)
+
+f_fillCellx(_table, _column, _row, _value, _timeframe) =>
+
+    _cellText = _timeframe + str.tostring(_value, '#.##')
+    table.cell(_table, _column, _row, _cellText, text_color = col1c, text_size = size.auto)
+//    table.cell_set_text_color(Table, 0, 1, color.new(col123, transp = 100))
+    table.cell_set_text_color(Table, 1, 1, color.new(col11, transp = 100))
+    table.cell_set_text_color(Table, 1, 2, color.new(col11, transp = 100))
+
+    table.cell_set_text_color(Table, 1, 1, color.new(col11, transp = 0))
+    table.cell_set_text_color(Table, 1, 2, color.new(col11, transp = 0))
+
+if barstate.islast
+
+    f_fillCellx(Table, 1, 1, per, '% Change:  ')
+    f_fillCellx(Table, 1, 2, change, 'Price:  ')
+
+
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
+
+//PLOTTING ARRAYS ON PRICE CHART. DEVELOPED BY VISHANT MESHRAM.
+
+ln = input.int(1, minval = 1, title = 'Pivot Length') // Number of bars to use to calculate pivot
+mb = input.int(3, minval = 2, title = 'Max Breaks') // Maximum number of times a line can be broken before it's invalidated
+md = input.int(2, minval = 1, title = 'Max Distance %') // Maximum distance PA can move away from line before it's invalidated
+fo = input.int(2, minval = 0, title = 'Frontrun/Overshoot Threshold %') // If PA reverses within this distance of an existing S&R line, consider it a frontrun / overshoot
+cl = input.string('Red', title = 'Line Color', options = ['Red', 'Black', 'Silver', 'Gray', 'White', 'Maroon', 'Purple', 'Fuchsia', 'Green', 'Lime', 'Olive', 'Yellow', 'Navy', 'Teal', 'Aqua', 'Orange'])
+cl1 = input.string('Green', title = 'Line Color', options = ['Green', 'Black', 'Silver', 'Gray', 'White', 'Maroon', 'Red', 'Purple', 'Fuchsia', 'Lime', 'Olive', 'Yellow', 'Navy', 'Teal', 'Aqua', 'Orange'])
+wd = input.string('2', title = 'Line Thickness', options = ['1', '2', '4', '6', '8', '10', '20'])
+
+//lu =  emaStep3w < emaStep4w or  emaStep3 < emaStep4 ? color.red : color.silver
+//ld = emaStep3w > emaStep4w or emaStep3 > emaStep4 ? color.green : color.silver
+
+dwg = ((emaStep3 > emaStep4) and (emaStep3w > emaStep4w)) and (m0 > m10) ? 2 : 1
+dwr = ((emaStep3 < emaStep4) and (emaStep3w < emaStep4w)) and (m0 < m10) ? 2 : 1
+
+transr= emaStep3w < emaStep4w or  emaStep3 < emaStep4 ? 0  : 0
+transg= emaStep3w > emaStep4w or emaStep3 > emaStep4  ? 0 :0
+
+lu = ((emaStep3 < emaStep4) and (emaStep3w < emaStep4w)) ? #f80b0b : m0 < m10 ? #f80b0b : color.silver
+ld = ((emaStep3 > emaStep4) and (emaStep3w > emaStep4w)) ? #1be122 : m0 > m10 ? #1be122 : color.silver
+
+entrylevelColor = RED ? lu : ld
+entryleveltransp = RED ? transr : transg
+
+
+// ====================================================================
+// S&R SEPARATED VARIABLES
+// ====================================================================
+// Support Levels & Lines (Bullish)
+var float sup01 = na, var float sup02 = na, var float sup03 = na, var float sup04 = na, var float sup05 = na
+var float sup06 = na, var float sup07 = na, var float sup08 = na, var float sup09 = na, var float sup10 = na
+var float sup11 = na, var float sup12 = na, var float sup13 = na, var float sup14 = na, var float sup15 = na
+
+var line l_sup01 = na, var line l_sup02 = na, var line l_sup03 = na, var line l_sup04 = na, var line l_sup05 = na
+var line l_sup06 = na, var line l_sup07 = na, var line l_sup08 = na, var line l_sup09 = na, var line l_sup10 = na
+var line l_sup11 = na, var line l_sup12 = na, var line l_sup13 = na, var line l_sup14 = na, var line l_sup15 = na
+
+var br_sup01 = 0, var br_sup02 = 0, var br_sup03 = 0, var br_sup04 = 0, var br_sup05 = 0
+var br_sup06 = 0, var br_sup07 = 0, var br_sup08 = 0, var br_sup09 = 0, var br_sup10 = 0
+var br_sup11 = 0, var br_sup12 = 0, var br_sup13 = 0, var br_sup14 = 0, var br_sup15 = 0
+
+// Resistance Levels & Lines (Bearish)
+var float res01 = na, var float res02 = na, var float res03 = na, var float res04 = na, var float res05 = na
+var float res06 = na, var float res07 = na, var float res08 = na, var float res09 = na, var float res10 = na
+var float res11 = na, var float res12 = na, var float res13 = na, var float res14 = na, var float res15 = na
+
+var line l_res01 = na, var line l_res02 = na, var line l_res03 = na, var line l_res04 = na, var line l_res05 = na
+var line l_res06 = na, var line l_res07 = na, var line l_res08 = na, var line l_res09 = na, var line l_res10 = na
+var line l_res11 = na, var line l_res12 = na, var line l_res13 = na, var line l_res14 = na, var line l_res15 = na
+
+var br_res01 = 0, var br_res02 = 0, var br_res03 = 0, var br_res04 = 0, var br_res05 = 0
+var br_res06 = 0, var br_res07 = 0, var br_res08 = 0, var br_res09 = 0, var br_res10 = 0
+var br_res11 = 0, var br_res12 = 0, var br_res13 = 0, var br_res14 = 0, var br_res15 = 0
+
+
+// Check if a pivot is actually just a swing failure off an existing S&R level
+
+issfp(level) =>
+    open[ln] < level and high[ln] > level and close[ln] < level or open[ln] > level and low[ln] < level and close[ln] > level or open[ln + 1] < level and high[ln + 1] > level and close[ln + 1] < level or open[ln + 1] > level and low[ln + 1] < level and close[ln + 1] > level
+
+
+// Check if pivot is actually just a frontrun or overshoot of an existing S&R level (<1% diff)
+
+isfros(level) =>
+    open[ln] < level and math.abs(level - high[ln]) / level * 100 < fo and close[ln] < level or open[ln] > level and math.abs(low[ln] - level) / level * 100 < fo and close[ln] > level or open[ln - 1] < level and math.abs(level - high[ln - 1]) / level * 100 < fo and close[ln - 1] < level or open[ln - 1] > level and math.abs(low[ln - 1] - level) / level * 100 < fo and close[ln - 1] > level
+
+// Check for level break failure (frontrun or sfp)
+
+isbreakfailure() =>
+    issfp(sup01) ? true : issfp(sup02) ? true : issfp(sup03) ? true : issfp(sup04) ? true : issfp(sup05) ? true : issfp(sup06) ? true : issfp(sup07) ? true : issfp(sup08) ? true : issfp(sup09) ? true : issfp(sup10) ? true : issfp(sup11) ? true : issfp(sup12) ? true : issfp(sup13) ? true : issfp(sup14) ? true : issfp(sup15) ? true : issfp(res01) ? true : issfp(res02) ? true : issfp(res03) ? true : issfp(res04) ? true : issfp(res05) ? true : issfp(res06) ? true : issfp(res07) ? true : issfp(res08) ? true : issfp(res09) ? true : issfp(res10) ? true : issfp(res11) ? true : issfp(res12) ? true : issfp(res13) ? true : issfp(res14) ? true : issfp(res15) ? true : isfros(sup01) ? true : isfros(sup02) ? true : isfros(sup03) ? true : isfros(sup04) ? true : isfros(sup05) ? true : isfros(sup06) ? true : isfros(sup07) ? true : isfros(sup08) ? true : isfros(sup09) ? true : isfros(sup10) ? true : isfros(sup11) ? true : isfros(sup12) ? true : isfros(sup13) ? true : isfros(sup14) ? true : isfros(sup15) ? true : isfros(res01) ? true : isfros(res02) ? true : isfros(res03) ? true : isfros(res04) ? true : isfros(res05) ? true : isfros(res06) ? true : isfros(res07) ? true : isfros(res08) ? true : isfros(res09) ? true : isfros(res10) ? true : isfros(res11) ? true : isfros(res12) ? true : isfros(res13) ? true : isfros(res14) ? true : isfros(res15) ? true : false
+// Custom Pivot Function
+
+p = Top // Get pivot
+lt = ln // Offset of pivot line
+
+s = intraMid
+
+q = Bottom // Get pivot
+lb = ln // Offset of pivot line
+
+// Find an unused pivot level and use it
+
+// Find an unused resistance pivot level (p = Top)
+if not na(p)
+    if na(res01)
+        l_res01 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res01 := p
+    else if na(res02)
+        l_res02 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res02 := p
+    else if na(res03)
+        l_res03 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res03 := p
+    else if na(res04)
+        l_res04 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res04 := p
+    else if na(res05)
+        l_res05 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res05 := p
+    else if na(res06)
+        l_res06 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res06 := p
+    else if na(res07)
+        l_res07 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res07 := p
+    else if na(res08)
+        l_res08 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res08 := p
+    else if na(res09)
+        l_res09 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res09 := p
+    else if na(res10)
+        l_res10 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res10 := p
+    else if na(res11)
+        l_res11 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res11 := p
+    else if na(res12)
+        l_res12 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res12 := p
+    else if na(res13)
+        l_res13 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res13 := p
+    else if na(res14)
+        l_res14 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res14 := p
+    else if na(res15)
+        l_res15 := line.new(bar_index - lt, p, bar_index, p, extend = extend.right, color = color.new(lu, transr), width = dwr)
+        res15 := p
+
+// Find an unused support pivot level (q = Bottom)
+if not na(q)
+    if na(sup01)
+        l_sup01 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup01 := q
+    else if na(sup02)
+        l_sup02 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup02 := q
+    else if na(sup03)
+        l_sup03 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup03 := q
+    else if na(sup04)
+        l_sup04 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup04 := q
+    else if na(sup05)
+        l_sup05 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup05 := q
+    else if na(sup06)
+        l_sup06 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup06 := q
+    else if na(sup07)
+        l_sup07 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup07 := q
+    else if na(sup08)
+        l_sup08 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup08 := q
+    else if na(sup09)
+        l_sup09 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup09 := q
+    else if na(sup10)
+        l_sup10 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup10 := q
+    else if na(sup11)
+        l_sup11 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup11 := q
+    else if na(sup12)
+        l_sup12 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup12 := q
+    else if na(sup13)
+        l_sup13 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup13 := q
+    else if na(sup14)
+        l_sup14 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup14 := q
+    else if na(sup15)
+        l_sup15 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
+        sup15 := q
+
+// Break Counter & Invalidation (Resistance)
+if open < res01 and close > res01 or open > res01 and close < res01
+    br_res01 := br_res01 + 1
+if br_res01 >= mb or math.abs(res01 - close) / close * 100 >= md
+    res01 := na, br_res01 := 0, line.delete(l_res01)
+
+if open < res02 and close > res02 or open > res02 and close < res02
+    br_res02 := br_res02 + 1
+if br_res02 >= mb or math.abs(res02 - close) / close * 100 >= md
+    res02 := na, br_res02 := 0, line.delete(l_res02)
+
+if open < res03 and close > res03 or open > res03 and close < res03
+    br_res03 := br_res03 + 1
+if br_res03 >= mb or math.abs(res03 - close) / close * 100 >= md
+    res03 := na, br_res03 := 0, line.delete(l_res03)
+
+if open < res04 and close > res04 or open > res04 and close < res04
+    br_res04 := br_res04 + 1
+if br_res04 >= mb or math.abs(res04 - close) / close * 100 >= md
+    res04 := na, br_res04 := 0, line.delete(l_res04)
+
+if open < res05 and close > res05 or open > res05 and close < res05
+    br_res05 := br_res05 + 1
+if br_res05 >= mb or math.abs(res05 - close) / close * 100 >= md
+    res05 := na, br_res05 := 0, line.delete(l_res05)
+
+if open < res06 and close > res06 or open > res06 and close < res06
+    br_res06 := br_res06 + 1
+if br_res06 >= mb or math.abs(res06 - close) / close * 100 >= md
+    res06 := na, br_res06 := 0, line.delete(l_res06)
+
+if open < res07 and close > res07 or open > res07 and close < res07
+    br_res07 := br_res07 + 1
+if br_res07 >= mb or math.abs(res07 - close) / close * 100 >= md
+    res07 := na, br_res07 := 0, line.delete(l_res07)
+
+if open < res08 and close > res08 or open > res08 and close < res08
+    br_res08 := br_res08 + 1
+if br_res08 >= mb or math.abs(res08 - close) / close * 100 >= md
+    res08 := na, br_res08 := 0, line.delete(l_res08)
+
+if open < res09 and close > res09 or open > res09 and close < res09
+    br_res09 := br_res09 + 1
+if br_res09 >= mb or math.abs(res09 - close) / close * 100 >= md
+    res09 := na, br_res09 := 0, line.delete(l_res09)
+
+if open < res10 and close > res10 or open > res10 and close < res10
+    br_res10 := br_res10 + 1
+if br_res10 >= mb or math.abs(res10 - close) / close * 100 >= md
+    res10 := na, br_res10 := 0, line.delete(l_res10)
+
+if open < res11 and close > res11 or open > res11 and close < res11
+    br_res11 := br_res11 + 1
+if br_res11 >= mb or math.abs(res11 - close) / close * 100 >= md
+    res11 := na, br_res11 := 0, line.delete(l_res11)
+
+if open < res12 and close > res12 or open > res12 and close < res12
+    br_res12 := br_res12 + 1
+if br_res12 >= mb or math.abs(res12 - close) / close * 100 >= md
+    res12 := na, br_res12 := 0, line.delete(l_res12)
+
+if open < res13 and close > res13 or open > res13 and close < res13
+    br_res13 := br_res13 + 1
+if br_res13 >= mb or math.abs(res13 - close) / close * 100 >= md
+    res13 := na, br_res13 := 0, line.delete(l_res13)
+
+if open < res14 and close > res14 or open > res14 and close < res14
+    br_res14 := br_res14 + 1
+if br_res14 >= mb or math.abs(res14 - close) / close * 100 >= md
+    res14 := na, br_res14 := 0, line.delete(l_res14)
+
+if open < res15 and close > res15 or open > res15 and close < res15
+    br_res15 := br_res15 + 1
+if br_res15 >= mb or math.abs(res15 - close) / close * 100 >= md
+    res15 := na, br_res15 := 0, line.delete(l_res15)
+
+
+// Break Counter & Invalidation (Support)
+if open < sup01 and close > sup01 or open > sup01 and close < sup01
+    br_sup01 := br_sup01 + 1
+if br_sup01 >= mb or math.abs(sup01 - close) / close * 100 >= md
+    sup01 := na, br_sup01 := 0, line.delete(l_sup01)
+
+if open < sup02 and close > sup02 or open > sup02 and close < sup02
+    br_sup02 := br_sup02 + 1
+if br_sup02 >= mb or math.abs(sup02 - close) / close * 100 >= md
+    sup02 := na, br_sup02 := 0, line.delete(l_sup02)
+
+if open < sup03 and close > sup03 or open > sup03 and close < sup03
+    br_sup03 := br_sup03 + 1
+if br_sup03 >= mb or math.abs(sup03 - close) / close * 100 >= md
+    sup03 := na, br_sup03 := 0, line.delete(l_sup03)
+
+if open < sup04 and close > sup04 or open > sup04 and close < sup04
+    br_sup04 := br_sup04 + 1
+if br_sup04 >= mb or math.abs(sup04 - close) / close * 100 >= md
+    sup04 := na, br_sup04 := 0, line.delete(l_sup04)
+
+if open < sup05 and close > sup05 or open > sup05 and close < sup05
+    br_sup05 := br_sup05 + 1
+if br_sup05 >= mb or math.abs(sup05 - close) / close * 100 >= md
+    sup05 := na, br_sup05 := 0, line.delete(l_sup05)
+
+if open < sup06 and close > sup06 or open > sup06 and close < sup06
+    br_sup06 := br_sup06 + 1
+if br_sup06 >= mb or math.abs(sup06 - close) / close * 100 >= md
+    sup06 := na, br_sup06 := 0, line.delete(l_sup06)
+
+if open < sup07 and close > sup07 or open > sup07 and close < sup07
+    br_sup07 := br_sup07 + 1
+if br_sup07 >= mb or math.abs(sup07 - close) / close * 100 >= md
+    sup07 := na, br_sup07 := 0, line.delete(l_sup07)
+
+if open < sup08 and close > sup08 or open > sup08 and close < sup08
+    br_sup08 := br_sup08 + 1
+if br_sup08 >= mb or math.abs(sup08 - close) / close * 100 >= md
+    sup08 := na, br_sup08 := 0, line.delete(l_sup08)
+
+if open < sup09 and close > sup09 or open > sup09 and close < sup09
+    br_sup09 := br_sup09 + 1
+if br_sup09 >= mb or math.abs(sup09 - close) / close * 100 >= md
+    sup09 := na, br_sup09 := 0, line.delete(l_sup09)
+
+if open < sup10 and close > sup10 or open > sup10 and close < sup10
+    br_sup10 := br_sup10 + 1
+if br_sup10 >= mb or math.abs(sup10 - close) / close * 100 >= md
+    sup10 := na, br_sup10 := 0, line.delete(l_sup10)
+
+if open < sup11 and close > sup11 or open > sup11 and close < sup11
+    br_sup11 := br_sup11 + 1
+if br_sup11 >= mb or math.abs(sup11 - close) / close * 100 >= md
+    sup11 := na, br_sup11 := 0, line.delete(l_sup11)
+
+if open < sup12 and close > sup12 or open > sup12 and close < sup12
+    br_sup12 := br_sup12 + 1
+if br_sup12 >= mb or math.abs(sup12 - close) / close * 100 >= md
+    sup12 := na, br_sup12 := 0, line.delete(l_sup12)
+
+if open < sup13 and close > sup13 or open > sup13 and close < sup13
+    br_sup13 := br_sup13 + 1
+if br_sup13 >= mb or math.abs(sup13 - close) / close * 100 >= md
+    sup13 := na, br_sup13 := 0, line.delete(l_sup13)
+
+if open < sup14 and close > sup14 or open > sup14 and close < sup14
+    br_sup14 := br_sup14 + 1
+if br_sup14 >= mb or math.abs(sup14 - close) / close * 100 >= md
+    sup14 := na, br_sup14 := 0, line.delete(l_sup14)
+
+if open < sup15 and close > sup15 or open > sup15 and close < sup15
+    br_sup15 := br_sup15 + 1
+if br_sup15 >= mb or math.abs(sup15 - close) / close * 100 >= md
+    sup15 := na, br_sup15 := 0, line.delete(l_sup15)
+
+//=============================================================================
+
+luc =  (emaStep3w < emaStep4w) or  (emaStep3 < emaStep4)
+ldc = (emaStep3w > emaStep4w) or (emaStep3 > emaStep4)
+
+GREEN1 = ((plus > minus) and (m0 > m10))
+RED1 = ((minus > plus) and (m0 < m10))
+
+barcolor(RED1  and (high > res01 and open < res01 and low < res01 and (close < res01 and close < open)) ? color.new(#d90b91, 15) : na)
+barcolor(GREEN1  and (low < sup01 and close > sup01 and high > sup01 and (close > sup01 and close > open)) ? color.new(#1eecd8, 11) : na)
+barcolor(RED1  and (high > res02 and open < res02 and low < res02 and (close < res02 and close < open)) ? color.new(#d90b91, 15)  : na)
+barcolor(GREEN1  and (low < sup02 and close > sup02 and high > sup02 and (close > sup02 and close > open)) ? color.new(color.teal,100)  : na)
+barcolor(RED1  and (high > res03 and open < res03 and low < res03 and (close < res03 and close < open)) ? color.new(#d90b91, 15) : na)
+barcolor(GREEN1  and (low < sup03 and close > sup03 and high > sup03 and (close > sup03 and close > open)) ? color.new(#1eecd8, 11)  : na)
+barcolor(RED1  and (high > res04 and open < res04 and low < res04 and (close < res04 and close < open)) ? color.new(#d90b91, 15) : na)
+barcolor(GREEN1  and (low < sup04 and close > sup04 and high > sup04 and (close > sup04 and close > open)) ? color.new(#1eecd8, 11): na)
+barcolor(RED1  and (high > res05 and open < res05 and low < res05 and (close < res05 and close < open)) ? color.new(#d90b91, 15)  : na)
+barcolor(GREEN1  and (low < sup05 and close > sup05 and high > sup05 and (close > sup05 and close > open)) ? color.new(#1eecd8, 11)  : na)
+barcolor(RED1  and (high > res06 and open < res06 and low < res06 and (close < res06 and close < open)) ? color.new(#d90b91, 15)  : na)
+barcolor(GREEN1  and (low < sup06 and close > sup06 and high > sup06 and (close > sup06 and close > open)) ? color.new(#1eecd8, 11)  : na)
+barcolor(RED1  and (high > res07 and open < res07 and low < res07 and (close < res07 and close < open)) ? color.new(#d90b91, 15) : na)
+barcolor(GREEN1  and (low < sup07 and close > sup07 and high > sup07 and (close> sup07 and close > open)) ? color.new(#1eecd8, 11)  : na)
+barcolor(RED1  and (high > res08 and open < res08 and low < res08 and (close < res08 and close < open)) ? color.new(#d90b91, 15)  : na)
+barcolor(GREEN1  and (low < sup08 and close > sup08 and high > sup08 and (close > sup08 and close > open)) ? color.new(#1eecd8, 11)  : na)
+barcolor(RED1  and (high > res09 and open < res09 and low < res09 and (close < res09 and close < open)) ? color.new(#d90b91, 15)  : na)
+barcolor(GREEN1  and (low < sup09 and close > sup09 and high > sup09 and (close > sup09 and close > open)) ? color.new(#1eecd8, 11) : na)
+barcolor(RED1  and (high > res10 and open < res10 and low < res10 and (close < res10 and close < open)) ? color.new(#d90b91, 15)  : na)
+barcolor(GREEN1  and (low < sup10 and close > sup10 and high > sup10 and (close> sup10 and close > open)) ? color.new(#1eecd8, 11)  : na)
+//barcolor(RED1  and (high > res11 and open < res11 and low < res11 and (close < res11 and close < open)) ? color.new(#d90b91, 15)  : na)
+//barcolor(GREEN1  and (low < sup11 and close > sup11 and high > sup11 and (close > sup11 and close > open)) ? color.new(#1eecd8, 11)  : na)
+//barcolor(RED1  and (high > res12 and open < res12 and low < res12 and (close < res12 and close < open)) ? color.new(#d90b91, 15)  : na)
+//barcolor(GREEN1  and (low < sup12 and close > sup12 and high > sup12 and (close > sup12 and close > open)) ? color.new(#1eecd8, 11): na)
+//barcolor(RED1  and (high > res13 and open < res13 and low < res13 and (close < res13 and close < open)) ? color.new(#d90b91, 15): na)
+//barcolor(GREEN1  and (low < sup13 and close > sup13 and high > sup13 and (close > sup13 and close > open)) ? color.new(#1eecd8, 11)  : na)
+//barcolor(RED1  and (high > res14 and open < res14 and low < res14 and (close < res14 and close < open)) ? color.new(#d90b91, 15): na)
+//barcolor(GREEN1  and (low < sup14 and close > sup14 and high > sup14 and (close > sup14 and close > open)) ? color.new(#1eecd8, 11)  : na)
+//barcolor(RED1  and ((high > res15) and (open < res15) and (low < res15) and (close < res15 and close < open)) ? color.new(#d90b91, 15)  :na )
+//barcolor(GREEN1  and ((low < sup15) and (close > sup15) and (high > sup15) and (close > sup15 and close > open)) ? color.new(#1eecd8, 11) :na )
+
+
+Ra1= (RED1  and (high > res01 and open < res01 and low < res01 and (close < res01 and close < open)) ? true : false)
+Gr1= (GREEN1  and (low < sup01 and close > sup01 and high > sup01 and (close > sup01 and close > open)) ? true : false)
+Ra2= (RED1  and (high > res02 and open < res02 and low < res02 and (close < res02 and close < open)) ? true : false)
+Gr2= (GREEN1  and (low < sup02 and close > sup02 and high > sup02 and (close > sup02 and close > open)) ? true : false)
+Ra3= (RED1  and (high > res03 and open < res03 and low < res03 and (close < res03 and close < open)) ? true : false)
+Gr3= (GREEN1  and (low < sup03 and close > sup03 and high > sup03 and (close > sup03 and close > open)) ? true : false)
+Ra4= (RED1  and (high > res04 and open < res04 and low < res04 and (close < res04 and close < open)) ? true : false)
+Gr4= (GREEN1  and (low < sup04 and close > sup04 and high > sup04 and (close > sup04 and close > open)) ? true : false)
+Ra5= (RED1  and (high > res05 and open < res05 and low < res05 and (close < res05 and close < open)) ? true : false)
+Gr5= (GREEN1  and (low < sup05 and close > sup05 and high > sup05 and (close > sup05 and close > open)) ? true : false)
+Ra6= (RED1  and (high > res06 and open < res06 and low < res06 and (close < res06 and close < open)) ? true : false)
+Gr6= (GREEN1  and (low < sup06 and close > sup06 and high > sup06 and (close > sup06 and close > open)) ? true : false)
+Ra7= (RED1  and (high > res07 and open < res07 and low < res07 and (close < res07 and close < open)) ? true : false)
+Gr7= (GREEN1  and (low < sup07 and close > sup07 and high > sup07 and (close> sup07 and close > open)) ? true : false)
+Ra8= (RED1  and (high > res08 and open < res08 and low < res08 and (close < res08 and close < open)) ? true : false)
+Gr8= (GREEN1  and (low < sup08 and close > sup08 and high > sup08 and (close > sup08 and close > open)) ? true : false)
+Ra9= (RED1  and (high > res09 and open < res09 and low < res09 and (close < res09 and close < open)) ? true : false)
+Gr9= (GREEN1  and (low < sup09 and close > sup09 and high > sup09 and (close > sup09 and close > open)) ? true : false)
+Ra10= (RED1  and (high > res10 and open < res10 and low < res10 and (close < res10 and close < open)) ? true : false)
+Gr10= (GREEN1  and (low < sup10 and close > sup10 and high > sup10 and (close> sup10 and close > open)) ? true : false)
+Ra11= (RED1  and (high > res11 and open < res11 and low < res11 and (close < res11 and close < open)) ? true : false)
+Gr11= (GREEN1  and (low < sup11 and close > sup11 and high > sup11 and (close > sup11 and close > open)) ? true : false)
+Ra12= (RED1  and (high > res12 and open < res12 and low < res12 and (close < res12 and close < open)) ? true : false)
+Gr12= (GREEN1  and (low < sup12 and close > sup12 and high > sup12 and (close > sup12 and close > open)) ? true : false)
+Ra13= (RED1  and (high > res13 and open < res13 and low < res13 and (close < res13 and close < open)) ? true : false)
+Gr13= (GREEN1  and (low < sup13 and close > sup13 and high > sup13 and (close > sup13 and close > open)) ? true : false)
+Ra14= (RED1  and (high > res14 and open < res14 and low < res14 and (close < res14 and close < open)) ? true : false)
+Gr14= (GREEN1  and (low < sup14 and close > sup14 and high > sup14 and (close > sup14 and close > open)) ? true : false)
+Ra15= (RED1  and ((high > res15) and (open < res15) and (low < res15) and (close < res15 and close < open)) ? true : false)
+Gr15= (GREEN1  and ((low < sup15) and (close > sup15) and (high > sup15) and (close > sup15 and close > open)) ? true : false)
+
+//bool GrS = false
+//bool ReS = false
+
+//GrS := Gr1 or Gr2 or Gr3 or Gr4 or Gr5 or Gr6 or Gr7 or Gr8 or Gr9 or Gr10 or Gr11 or Gr12 or Gr13 or Gr14 or Gr15
+//ReS := Ra1 or Ra2 or Ra3 or Ra4 or Ra5 or Ra6 or Ra7 or Ra8 or Ra9 or Ra10 or Ra11 or Ra12 or Ra13 or Ra14 or Ra15
+
+//=======================================================================================================================================
+
+//STOP LOSS TAKE PROFIT INDICATOR OF MR. VISHANT VYANKAT MESHRAM CFTe AND CMT L3 DEC 2024
+// ————— Constants
+
+type Settings
+    int     firstTrade
+    int     analysisWindow      = 0
+    float   highTrendLimit      = 0
+    float   lowTrendLimit       = 0
+    float   initialCapital      = 0
+    float   leverage            = 0
+    bool    breakEvenEnabled    = false
+    float   slRatio             = 0
+    float   tp1Ratio            = 0
+    float   tp1ProfitRatio      = 0
+    float   tp2Ratio            = 0
+    float   tp2ProfitRatio      = 0
+    float   tp3Ratio            = 0
+    float   tp3ProfitRatio      = 0
+    float   tp4Ratio            = 0
+    float   tp4ProfitRatio      = 0
+    bool    showTPSL            = true
+    bool    showForecast        = false
+    bool    showPanel           = true
+    float   countryTax          = 0
+    float   exchangeMakerFees   = 0
+    float   exchangeTakerFees   = 0
+    float   accountBalance      = 0.0
+    float   accumulatedProfit   = 0.0
+    int     totalTrades         = 0
+    int     successfulTrades    = 0
+    int     failedTrades        = 0
+    int     consecutiveLosses   = 0
+    int     lossesInARow        = 0
+    int     consecutiveWins     = 0
+    int     winsInARow          = 0
+    float   totalExchangeFees   = 0.0
+
+type TradeLogic
+    string  tradeDirection      = ""
+    float   entryLevel          = 0.0
+    bool    hasHitEntry         = false
+    float   positionRemaining   = 100.0
+    bool    isClosed            = false
+    bool    forceClosed         = false
+    float   closeLevel          = 0.0
+    bool    breakEvenAllowed    = false
+    float   breakEvenLevel      = 0.0
+    float   profit              = 0.0
+    float   capital             = 0.0
+    int     startBarIndex       = 0
+    float   tp1Level            = 0.0
+    bool    tp1Triggered        = false
+    float   tp2Level            = 0.0
+    bool    tp2Triggered        = false
+    float   tp3Level            = 0.0
+    bool    tp3Triggered        = false
+    float   tp4Level            = 0.0
+    bool    tp4Triggered        = false
+    float   slLevel             = 0.0
+    bool    slTriggered         = false
+    string  openingBias         = ""
+    string  dayType             = ""
+    bool    trailingSLActivated = false
+    float   trailingSLLevel     = 0.0
+    int     entryTime           = 0
+    int     signalTime          = 0
+    int     originalEntryTime   = 0
+    bool    emaExitTriggered    = false
+    bool    divExitTriggered    = false
+
+type TradeVisuals
+    line    entryMarkerLine     = na
+    label   entryMarkerLabel    = na
+    line    closeMarkerLine     = na
+    label   signalLabel         = na
+    line    tp1Line             = na
+    label   tp1Label            = na
+    line    tp2Line             = na
+    label   tp2Label            = na
+    line    tp3Line             = na
+    label   tp3Label            = na
+    line    tp4Line             = na
+    label   tp4Label            = na
+    line    stopLossMarkerLine  = na
+    label   stopLossMarkerLabel = na
+
+var bool         isBullishTrendStarted    = false
+var bool         isBearishTrendStarted    = false
+var bool         hasTrendChanged          = false
+var bool         isBullishTrend           = false
+var bool         isBearishTrend           = false
+var bool         canBuy                   = false
+var bool         canSell                  = false
+var bool         scalpBullishTrendStarted = false
+var bool         scalpBearishTrendStarted = false
+var bool         scalpHasTrendChanged     = false
+
+var bool         missileBullishTrendStarted = false
+var bool         missileBearishTrendStarted = false
+var bool         missileHasTrendChanged     = false
+var bool         cleanTrendBullish = false
+var bool         cleanTrendBearish = false
+
+// ————— Inputs
+
+// 👉 Divergence Exit Settings
+
+ext_bullishDiv       = input.source(close, title="[OSC] Bullish Divergence")
+ext_bullishHiddenDiv = input.source(close, title="[OSC] Bullish Hidden Div")
+ext_bearishDiv       = input.source(close, title="[OSC] Bearish Divergence")
+ext_bearishHiddenDiv = input.source(close, title="[OSC] Bearish Hidden Div")
+
+bool  divExitActiveInput = input.bool(title = 'Enable Divergence Exit', defval = true, group = 'TRADES')
+
+currentYear = year(timenow)
+currentMonth = month(timenow)
+currentDay = dayofmonth(timenow)
+oneYearAgo = timestamp(currentYear - 1, currentMonth, currentDay, 00, 00)
+
+bool    showInput                   = input.bool(defval = true, title = 'Display ENTRY LEVEL', group = 'TRADES', inline = 'Display')
+string  ownerInput                  = input.string(title = 'PivotViewCharts', defval = 'Vishant Meshram CFTe')
+int     analysisWindowInput         = input.int(title = 'Analysis window', step = 1, defval = 100)
+float   highTrendLimitInput         = input.float(title = 'Fibo high trend limit', defval = 23.6, options = [23.6, 38.2])
+float   lowTrendLimitInput          = input.float(title = 'Fibo low trend limit', defval = 78.6, options = [61.8, 78.6])
+firstTradeInput                     = oneYearAgo
+
+// ── ATR-Based SL/TP ──────────────────────────────────────────
+int   atrLengthInput   = input.int(title = 'ATR Length',     defval = 14,  group = 'STOP_LOSS')
+float slAtrMultInput   = input.float(title = 'SL ATR Mult',  defval = 0.75, step = 0.1, group = 'STOP_LOSS')
+float tp1AtrMultInput  = input.float(title = 'TP1 ATR Mult', defval = 2.5, step = 0.1, group = 'TAKE_PROFITS')
+float tp2AtrMultInput  = input.float(title = 'TP2 ATR Mult', defval = 4.0, step = 0.1, group = 'TAKE_PROFITS')
+float tp3AtrMultInput  = input.float(title = 'TP3 ATR Mult', defval = 6.5, step = 0.1, group = 'TAKE_PROFITS')
+float tp4AtrMultInput  = input.float(title = 'TP4 ATR Mult', defval = 8.0, step = 0.1, group = 'TAKE_PROFITS')
+
+float atrValue = ta.atr(atrLengthInput)
+
+int     showVisualsDaysInput        = input.int(defval = 15, title = 'Show Signals for Last X Days', group = 'TRADES')
+bool    showTPSLInput               = input.bool(defval = true, title = 'Display TP/SL', group = 'TRADES', inline = 'Display')
+bool    showForecastInput           = input.bool(defval = false, title = 'Display Forecast', group = 'TRADES')
+float   leverageInput               = input.float(title = 'Leverage', step = 1, defval = 10, group = 'TRADES')
+float   initialCapitalInput         = input.float(title = 'Initial Capital', defval = 100, step = 100, group = 'TRADES')
+float   exchangeMakerFeeInput       = input.float(title = 'Exchange Maker Fees %', step = 0.001, defval = 0.002, group = 'TRADES')
+float   exchangeTakerFeeInput       = input.float(title = 'Exchange Taker Fees %', step = 0.001, defval = 0.006, group = 'TRADES')
+float   countryTaxInput             = input.float(title = 'Country tax %', step = 5, defval = 15, group = 'TRADES')
+
+bool    breakEvenEnabledInput       = input.bool(title = 'Break Even', defval = true, group = 'STOP_LOSS')
+
+float   tp1ProfitRatioInput         = input.float(title = 'Profit %', step = 5, defval = 0, group = 'TAKE_PROFITS', inline = 'TP1')
+float   tp2ProfitRatioInput         = input.float(title = 'Profit %', step = 5, defval = 0, group = 'TAKE_PROFITS', inline = 'TP2')
+float   tp3ProfitRatioInput         = input.float(title = 'Profit %', step = 5, defval = 0, group = 'TAKE_PROFITS', inline = 'TP3')
+float   tp4ProfitRatioInput         = input.float(title = 'Profit %', step = 5, defval = 0, group = 'TAKE_PROFITS', inline = 'TP4')
+
+float _totalTPAlloc = tp1ProfitRatioInput + tp2ProfitRatioInput + tp3ProfitRatioInput + tp4ProfitRatioInput
+float _tpScale      = _totalTPAlloc >= 100.0 ? 99.0 / _totalTPAlloc : 1.0
+
+float tp1Ratio      = tp1ProfitRatioInput * _tpScale
+float tp2Ratio      = tp2ProfitRatioInput * _tpScale
+float tp3Ratio      = tp3ProfitRatioInput * _tpScale
+float tp4Ratio      = tp4ProfitRatioInput * _tpScale
+
+bool    emaActiveInput              = input.bool(title = 'EMA double check', defval = false, group = 'EMA')
+bool    emaDisplayInput             = input.bool(title = 'Display EMA', defval = false, group = 'EMA')
+int     TrendLineEMA                = input.int(title = 'EMA Length', defval = 8, group = 'EMA')
+
+bool    emaActiveInput1             = input.bool(title = 'EMA double check', defval = true, group = 'EMA')
+bool    emaDisplayInput1            = input.bool(title = 'Display EMA', defval = true, group = 'EMA')
+int     Short_EMA                   = input.int(title = 'EMA Length', defval = 13, group = 'EMA')
+
+bool    emaActiveInput2             = input.bool(title = 'EMA double check', defval = true, group = 'EMA')
+bool    emaDisplayInput2            = input.bool(title = 'Display EMA', defval = true, group = 'EMA')
+int     Med_EMA                     = input.int(title = 'EMA Length', defval = 32, group = 'EMA')
+
+bool    emaActiveInput3             = input.bool(title = 'EMA double check', defval = false, group = 'EMA')
+bool    emaDisplayInput3            = input.bool(title = 'Display EMA', defval = false, group = 'EMA')
+int     Long_EMA                    = input.int(title = 'EMA Length', defval = 5, group = 'EMA')
+
+bool    showPanelInput              = input.bool(defval = false, title = 'Show Panel', group = 'PANELS')
+
+FPivot = (high + low + close) / 3
+
+bool w = time('1') == time(timeframe.period)
+float fShort_EMA = ta.ema(FPivot, Short_EMA)
+float fMed_EMA = ta.ema(FPivot, Med_EMA)
+float fLong_EMA = ta.ema(FPivot, Long_EMA)
+
+float highestHigh = ta.highest(high, ta.barssince(w) + 1)
+float lowestLow = ta.lowest(low, ta.barssince(w) + 1)
+
+float priceRange = highestHigh - lowestLow
+bool highTrendLimitLevel = bool(bullpower) 
+float trendLine = (highestHigh - lowestLow ) / 2 + lowestLow 
+bool lowTrendLimitLevel =  bool(bearpower)
+
+// ====================================================================
+// 1. CONSTRUCT SETTINGS OBJECT
+// ====================================================================
+var Settings settings = Settings.new(
+    firstTrade        = firstTradeInput,
+    analysisWindow    = analysisWindowInput,
+    highTrendLimit    = highTrendLimitInput,
+    lowTrendLimit     = lowTrendLimitInput,
+    initialCapital    = initialCapitalInput,
+    leverage          = leverageInput,
+    breakEvenEnabled  = breakEvenEnabledInput,
+    tp1ProfitRatio    = tp1Ratio,
+    tp2ProfitRatio    = tp2Ratio,
+    tp3ProfitRatio    = tp3Ratio,
+    tp4ProfitRatio    = tp4Ratio,
+    showTPSL          = showTPSLInput,
+    showForecast      = showForecastInput,
+    showPanel         = showPanelInput,
+    countryTax        = countryTaxInput,
+    exchangeMakerFees = exchangeMakerFeeInput,
+    exchangeTakerFees = exchangeTakerFeeInput
+)
+
+// ====================================================================
+// 2. FUNCTION DECLARATIONS
+// ====================================================================
+
+roundUp(number, decimals) =>
+    factor = math.pow(10, decimals)
+    math.ceil(number * factor) / factor
+
+// ✅ FIXED: Restored tradeDirection parameter. No more guessing from trailing stops!
+riskToReward(float entryLevel, float slLevel, float tpLevel, string tradeDirection) =>
+    bool isLong = str.contains(str.upper(tradeDirection), 'LONG')
+    float risk = math.abs(entryLevel - slLevel) // Absolute value prevents negative risk
+    float reward = isLong ? (tpLevel - entryLevel) : (entryLevel - tpLevel)
+    risk > 0 ? (reward / risk) : 0.0
+
+updateLine(line id, int startBar, float level) =>
+    if not na(id)
+        if na(level)
+            line.set_x1(id, na)
+            line.set_y1(id, na)
+            line.set_x2(id, na)
+            line.set_y2(id, na)
+        else
+            line.set_x1(id, startBar)
+            line.set_y1(id, level)
+            line.set_x2(id, bar_index)
+            line.set_y2(id, level)
+
+// ✅ FIXED: Removed the erroneous `* 100` fee multiplier that was destroying PNL
+calculateProfit(Settings settings, TradeLogic trade, float entry, float exit, float leverage, bool isLong, float positionRatio, bool isMaker = false) =>
+    profit = isLong ? ((exit - entry) / entry) * leverage * positionRatio : ((entry - exit) / entry) * leverage * positionRatio
+    exchangeFeesRatio = isMaker ? settings.exchangeMakerFees : settings.exchangeTakerFees
+    exitFeesRatio = exchangeFeesRatio * settings.leverage * (positionRatio / 100)
+    profit -= exitFeesRatio
+    settings.totalExchangeFees += exitFeesRatio * settings.initialCapital / 100
+    profit
+
+
+// ====================================================================
+// UPDATED ALERT & FINALIZE FUNCTIONS
+// ====================================================================
+sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
+    string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
+    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
+    
+    // AST OPTIMIZATION: Concatenate outer braces to avoid Pine Script str.format escape bugs!
+    string _ePay = '{' + str.format(
+         '"trigger":"TradeOpen","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
+         webhook_secret, syminfo.ticker, trade.tradeDirection, 'OPEN', 
+         str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
+         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
+         ) + '}'
+    alert(_ePay, alert.freq_once_per_bar_close)
+
+sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
+    string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
+    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
+    
+    string _tPay = '{' + str.format(
+         '"trigger":"TrailingSLUpdate","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
+         webhook_secret, syminfo.ticker, trade.tradeDirection, 'Trailing Stop', 
+         str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
+         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
+         ) + '}'
+    alert(_tPay, alert.freq_once_per_bar_close)
+
+
+evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, float trailRange) =>
+    float profit    = 0.0
+    bool  justHitTP = false
+    bool  isLong_   = str.contains(str.upper(trade.tradeDirection), 'LONG')
+
+    // 🛑 0. GUARD: IF ALREADY CLOSED, DO NOT EVALUATE ANY FURTHER
+    if trade.isClosed
+        trade.profit += profit
+
+    // ✅ PREVENT FALSE ENTRY ON THE SIGNAL CANDLE
+    if not trade.hasHitEntry and not trade.isClosed and bar_index > trade.startBarIndex
+        bool entryHit = isLong_ ? low <= trade.entryLevel : high >= trade.entryLevel
+        if entryHit
+            trade.startBarIndex := bar_index 
+            trade.hasHitEntry   := true
+            trade.entryTime     := time
+
+    // 1. LIMIT ORDER INVALIDATION CHECK
+    if not trade.hasHitEntry and not trade.isClosed and bar_index > trade.startBarIndex
+        bool isInvalidated = isLong_ ? low <= trade.slLevel : high >= trade.slLevel
+        if isInvalidated
+            trade.isClosed    := true
+            trade.forceClosed := true
+
+    // 2. STOP LOSS CHECK (MANDATORY: Evaluated FIRST on active filled trades)
+    if not trade.slTriggered and not trade.isClosed and trade.hasHitEntry
+        bool isSLHit = isLong_ ? low <= trade.slLevel : high >= trade.slLevel
+        if isSLHit
+            trade.slTriggered       := true
+            trade.isClosed          := true
+            trade.closeLevel        := trade.slLevel
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.slLevel, settings.leverage, isLong_, trade.positionRemaining, false)
+            trade.positionRemaining := 0.0
+
+    // 3. TAKE PROFIT EVALUATIONS (ONLY run if trade is STILL ACTIVE and NOT stopped out)
+    if not trade.isClosed and trade.hasHitEntry
+        // TP1
+        float tpLevel = trade.tp1Level
+        if not trade.tp1Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel)
+            trade.tp1Triggered        := true
+            justHitTP                 := true
+            trade.positionRemaining   -= settings.tp1ProfitRatio
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp1Level, settings.leverage, isLong_, settings.tp1ProfitRatio)
+            if settings.breakEvenEnabled
+                trade.breakEvenAllowed := true
+                trade.breakEvenLevel   := trade.entryLevel
+                if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
+                    trade.slLevel := trade.breakEvenLevel
+                    trade.trailingSLActivated := true
+
+        // TP2
+        tpLevel := trade.tp2Level
+        if not trade.tp2Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel)
+            trade.tp2Triggered      := true
+            justHitTP               := true
+            trade.positionRemaining -= settings.tp2ProfitRatio
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp2Level, settings.leverage, isLong_, settings.tp2ProfitRatio)
+            if settings.breakEvenEnabled
+                trade.breakEvenAllowed := true
+                trade.breakEvenLevel   := trade.tp1Level
+                if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
+                    trade.slLevel := trade.breakEvenLevel
+                    trade.trailingSLActivated := true
+
+        // TP3
+        tpLevel := trade.tp3Level
+        if not trade.tp3Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel)
+            trade.tp3Triggered      := true
+            justHitTP               := true
+            trade.positionRemaining -= settings.tp3ProfitRatio
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp3Level, settings.leverage, isLong_, settings.tp3ProfitRatio)
+            if settings.breakEvenEnabled
+                trade.breakEvenAllowed := true
+                trade.breakEvenLevel   := trade.tp2Level
+                if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
+                    trade.slLevel := trade.breakEvenLevel
+                    trade.trailingSLActivated := true
+
+        // TP4
+        tpLevel := trade.tp4Level
+        if not trade.tp4Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel)
+            trade.tp4Triggered      := true
+            justHitTP               := true
+            trade.positionRemaining -= settings.tp4ProfitRatio
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp4Level, settings.leverage, isLong_, settings.tp4ProfitRatio)
+            if settings.breakEvenEnabled
+                trade.breakEvenAllowed := true
+                trade.breakEvenLevel   := trade.tp3Level
+                if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
+                    trade.slLevel := trade.breakEvenLevel
+                    trade.trailingSLActivated := true
+
+    // 4. EMA Trailing SL
+    if trade.tp4Triggered and not trade.isClosed
+        if not na(fMed_EMA)
+            float newEmaSL = isLong_ ? math.max(trade.tp3Level, fMed_EMA) : math.min(trade.tp3Level, fMed_EMA)
+            if trade.slLevel != newEmaSL
+                trade.slLevel := newEmaSL
+                trade.trailingSLLevel := trade.slLevel
+                trade.trailingSLActivated := true
+
+        bool isEmaCross = isLong_ ? close < trade.slLevel : close > trade.slLevel
+        if isEmaCross
+            trade.isClosed         := true
+            bool isEmaAdvanced     = isLong_ ? (not na(fMed_EMA) and fMed_EMA > trade.tp3Level) : (not na(fMed_EMA) and fMed_EMA < trade.tp3Level)
+            if isEmaAdvanced
+                trade.emaExitTriggered := true
+            else
+                trade.slTriggered      := true
+            trade.closeLevel       := close
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, isLong_, trade.positionRemaining, false)
+            trade.positionRemaining := 0.0
+
+    // 5. Divergence Exit
+    if divExitActiveInput and not trade.isClosed and trade.hasHitEntry
+        bool regularBearishDivNow = (ext_bearishDiv == 1)
+        bool regularBullishDivNow = (ext_bullishDiv == 1)
+        bool isRegularDivExit     = (isLong_ and regularBearishDivNow) or (not isLong_ and regularBullishDivNow)
+
+        bool anyBearishDiv1Ago    = (ext_bearishDiv[1] == 1) or (ext_bearishHiddenDiv[1] == 1)
+        bool anyBullishDiv1Ago    = (ext_bullishDiv[1] == 1) or (ext_bullishHiddenDiv[1] == 1)
+        bool bearishPriceConfirm  = anyBearishDiv1Ago and (close < open) and (close < close[1])
+        bool bullishPriceConfirm  = anyBullishDiv1Ago and (close > open) and (close > close[1])
+        bool isConfirmedDivExit   = (isLong_ and bearishPriceConfirm) or (not isLong_ and bullishPriceConfirm)
+
+        if isRegularDivExit or isConfirmedDivExit
+            trade.isClosed          := true
+            trade.divExitTriggered  := true 
+            trade.closeLevel        := close
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, isLong_, trade.positionRemaining, false)
+            trade.positionRemaining := 0.0
+
+    if trade.positionRemaining <= 0
+        trade.isClosed := true
+
+    trade.profit += profit
+
+terminateTrade(Settings settings, TradeLogic trade) =>
+    trade.forceClosed := true
+    if not trade.slTriggered
+        trade.closeLevel := close
+        trade.isClosed := true
+        trade.profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, str.contains(str.upper(trade.tradeDirection), 'LONG'), trade.positionRemaining)
+
+deleteTradeVisuals(TradeVisuals visuals) =>
+    line.delete(visuals.entryMarkerLine)
+    label.delete(visuals.entryMarkerLabel)
+    line.delete(visuals.stopLossMarkerLine)
+    label.delete(visuals.stopLossMarkerLabel)
+    line.delete(visuals.tp1Line)
+    label.delete(visuals.tp1Label)
+    line.delete(visuals.tp2Line)
+    label.delete(visuals.tp2Label)
+    line.delete(visuals.tp3Line)
+    label.delete(visuals.tp3Label)
+    line.delete(visuals.tp4Line)
+    label.delete(visuals.tp4Label)
+
+generateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
+    int msPerDay = 86400000
+    int currentMidnight = timenow - (timenow % msPerDay)
+    int tradeMidnight   = time - (time % msPerDay)
+    bool isRecentTrade  = ((currentMidnight - tradeMidnight) / msPerDay) <= showVisualsDaysInput
+
+    if isRecentTrade
+        visuals.entryMarkerLine    := line.new(x1 = trade.startBarIndex, y1 = trade.entryLevel, x2 = bar_index - 1, y2 = trade.entryLevel, color = color.new(entrylevelColor, entryleveltransp), style = line.style_solid, width = 2)
+        string initEntryIcon = not trade.hasHitEntry ? '⏳ ' : str.contains(trade.tradeDirection, 'LIGHTNING') ? '⚡ ' : '🔰 '
+        visuals.entryMarkerLabel   := label.new(int(math.min(bar_index, trade.startBarIndex) - 10), trade.entryLevel, initEntryIcon + str.tostring(trade.entryLevel, format.mintick), style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.navy)
+        
+        visuals.stopLossMarkerLine  := line.new(x1 = trade.startBarIndex, y1 = trade.slLevel, x2 = bar_index - 1, y2 = trade.slLevel, color = color.red, style = line.style_dotted, width = 2)
+        visuals.stopLossMarkerLabel := label.new(int(math.min(bar_index, trade.startBarIndex) - 10), trade.slLevel, '⛔ ' + str.tostring(trade.slLevel, format.mintick), style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.red)
+        
+        float tpLevel = trade.tp1Level
+        visuals.tp1Line  := line.new(x1 = trade.startBarIndex, y1 = tpLevel, x2 = bar_index - 1, y2 = tpLevel, color = color.green, style = line.style_dotted, width = 2)
+        visuals.tp1Label := label.new(int(math.min(bar_index, trade.startBarIndex) - 10), tpLevel, '🎯 ' + str.tostring(tpLevel, format.mintick), style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.green)
+        
+        visuals.tp2Line  := line.new(na, na, na, na, color = color.green, style = line.style_dotted, width = 2)
+        visuals.tp2Label := label.new(x = na, y = na, text = "", style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.green)
+        
+        visuals.tp3Line  := line.new(na, na, na, na, color = color.green, style = line.style_dotted, width = 2)
+        visuals.tp3Label := label.new(x = na, y = na, text = "", style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.green)
+        
+        visuals.tp4Line  := line.new(na, na, na, na, color = color.green, style = line.style_dotted, width = 2)
+        visuals.tp4Label := label.new(x = na, y = na, text = "", style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.green)
+
+        linefill.new(visuals.entryMarkerLine, visuals.tp1Line, color = color.new(color.teal, 97))
+        linefill.new(visuals.stopLossMarkerLine, visuals.entryMarkerLine, color = color.new(color.red, 97))
+        linefill.new(visuals.tp1Line, visuals.tp2Line, color = color.new(color.teal, 97))
+        linefill.new(visuals.tp2Line, visuals.tp3Line, color = color.new(color.teal, 97))
+        linefill.new(visuals.tp3Line, visuals.tp4Line, color = color.new(color.teal, 97))
+
+updateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
+    // 1. PERMANENT DELETION: Closed trades, hit SL, or EMA exit must immediately delete visuals
+    if trade.isClosed or trade.slTriggered or trade.emaExitTriggered
+        deleteTradeVisuals(visuals)
+    else
+        // 2. DRAW ACTIVE / PENDING TRADES ONLY
+        if na(visuals.entryMarkerLine) and settings.showTPSL
+            generateTradeVisuals(settings, trade, visuals)
+
+        label.set_xy(visuals.entryMarkerLabel,    int(math.min(bar_index, trade.startBarIndex) - 15), trade.entryLevel)
+        string entryIcon = not trade.hasHitEntry ? '⏳ ' : str.contains(trade.tradeDirection, 'LIGHTNING') ? '⚡ ' : '🔰 '
+        label.set_text(visuals.entryMarkerLabel, entryIcon + str.tostring(trade.entryLevel, format.mintick))
+        updateLine(visuals.entryMarkerLine,      trade.startBarIndex, trade.entryLevel)
+        
+        label.set_xy(visuals.stopLossMarkerLabel, int(math.min(bar_index, trade.startBarIndex) - 15), trade.slLevel)
+        label.set_text(visuals.stopLossMarkerLabel, '⛔ ' + str.tostring(trade.slLevel, format.mintick))
+        updateLine(visuals.stopLossMarkerLine,   trade.startBarIndex, trade.slLevel)
+        
+        if trade.tp1Triggered
+            label.set_xy(visuals.tp1Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp1Level)
+            label.set_text(visuals.tp1Label, '✅ ' + str.tostring(trade.tp1Level, format.mintick))
+            updateLine(visuals.tp1Line, trade.startBarIndex, na)
+        else
+            label.set_xy(visuals.tp1Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp1Level)
+            label.set_text(visuals.tp1Label, '🎯 ' + str.tostring(trade.tp1Level, format.mintick))
+            updateLine(visuals.tp1Line, trade.startBarIndex, trade.tp1Level)
+            
+        if trade.tp2Triggered
+            label.set_xy(visuals.tp2Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp2Level)
+            label.set_text(visuals.tp2Label, '✅ ' + str.tostring(trade.tp2Level, format.mintick))
+            updateLine(visuals.tp2Line, trade.startBarIndex, na)
+        else if trade.tp1Triggered
+            label.set_xy(visuals.tp2Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp2Level)
+            label.set_text(visuals.tp2Label, '🎯 ' + str.tostring(trade.tp2Level, format.mintick))
+            updateLine(visuals.tp2Line, trade.startBarIndex, trade.tp2Level)
+        else
+            label.set_xy(visuals.tp2Label, na, na)
+            updateLine(visuals.tp2Line, trade.startBarIndex, na)
+            
+        if trade.tp3Triggered
+            label.set_xy(visuals.tp3Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp3Level)
+            label.set_text(visuals.tp3Label, '✅ ' + str.tostring(trade.tp3Level, format.mintick))
+            updateLine(visuals.tp3Line, trade.startBarIndex, na)
+        else if trade.tp2Triggered
+            label.set_xy(visuals.tp3Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp3Level)
+            label.set_text(visuals.tp3Label, '🎯 ' + str.tostring(trade.tp3Level, format.mintick))
+            updateLine(visuals.tp3Line, trade.startBarIndex, trade.tp3Level)
+        else
+            label.set_xy(visuals.tp3Label, na, na)
+            updateLine(visuals.tp3Line, trade.startBarIndex, na)
+            
+        if trade.tp4Triggered
+            label.set_xy(visuals.tp4Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp4Level)
+            label.set_text(visuals.tp4Label, '✅ ' + str.tostring(trade.tp4Level, format.mintick))
+            updateLine(visuals.tp4Line, trade.startBarIndex, na)
+        else if trade.tp3Triggered
+            label.set_xy(visuals.tp4Label, int(math.min(bar_index, trade.startBarIndex) - 15), trade.tp4Level)
+            label.set_text(visuals.tp4Label, '🎯 ' + str.tostring(trade.tp4Level, format.mintick))
+            updateLine(visuals.tp4Line, trade.startBarIndex, trade.tp4Level)
+        else
+            label.set_xy(visuals.tp4Label, na, na)
+            updateLine(visuals.tp4Line, trade.startBarIndex, na)
+
+signalLabelUpdate(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
+    0 
+    
+// AST OPTIMIZATION: Passed dX, mX, d1_message natively into finalizeTrade
+
+finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
+    string _outcome = 'Unknown'
+    if not trade.hasHitEntry
+        _outcome := 'Cancelled'
+    else if trade.slTriggered
+        if trade.tp4Triggered
+            _outcome := 'Hit TP3 Trailing'
+        else if trade.tp3Triggered
+            _outcome := 'Hit TP2 Trailing'
+        else if trade.tp2Triggered
+            _outcome := 'Hit TP1 Trailing'
+        else if trade.tp1Triggered
+            _outcome := 'Hit B/E'
+        else
+            _outcome := 'Hit Initial SL'
+    else if trade.divExitTriggered
+        _outcome := 'Divergence Exit'
+    else if trade.emaExitTriggered
+        _outcome := 'Hit EMA'
+    else if trade.forceClosed
+        _outcome := 'EOD Exit'
+    else if trade.tp4Triggered
+        _outcome := 'Completed TP4'
+    else if trade.tp3Triggered
+        _outcome := 'Completed TP3'
+    else if trade.tp2Triggered
+        _outcome := 'Completed TP2'
+    else if trade.tp1Triggered
+        _outcome := 'Completed TP1'
+        
+    
+    // ✅ Single-line ternary operator prevents indentation syntax errors (CE10013)
+    bool isShort = str.contains(str.upper(trade.tradeDirection), 'SHORT')
+    float exact_pct = isShort ? ((trade.entryLevel - trade.closeLevel) / trade.entryLevel) * 100 : ((trade.closeLevel - trade.entryLevel) / trade.entryLevel) * 100
+    float rMult = riskToReward(trade.entryLevel, trade.slLevel, trade.closeLevel, trade.tradeDirection)
+    
+    // Format human-readable UTC datestamps for both entry and exit
+    string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
+    string closeDateStr = str.format_time(time, "yyyy-MM-dd HH:mm:ss", "UTC")
+    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
+    
+    // ✅ Includes "trigger":"TradeClose", entryDate, closeDate, trade_id & mintick price formatting
+    string _oPay = '{' + str.format(
+         '"trigger":"TradeClose","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","closePrice":"{5}","slLevel":"{6}","tpLevel":"{7}","pnlAmount":"{8}","pnlPercent":"{9}","rMultiple":"{10}","zone":"{11}","opening_bias":"{12}","day_type":"{13}","dayType":"{12}","marketType":"{13}","tradeMessage":"{14}","entryTime":"{15}","closeTime":"{16}","rawText":"{17}","entryDate":"{18}","closeDate":"{19}","trade_id":"{20}"',
+         webhook_secret, syminfo.ticker, trade.tradeDirection, _outcome, 
+         str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.closeLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
+         str.tostring(trade.profit, '#.##'), str.tostring(exact_pct, '#.##'), str.tostring(rMult, '#.##'), 
+         z1_zone, dX, mX, d1_message, 
+         str.tostring(trade.entryTime), str.tostring(time), _outcome + ' | ' + str.tostring(trade.profit, '#.##'),
+         entryDateStr, closeDateStr, tradeIdStr
+         ) + '}'
+         
+    alert(_oPay, alert.freq_once_per_bar_close)
+    _oPay
+
+
+
+// =========================================================================
+// 1. THE COMPLETE INITIALIZE TRADE SESSION FUNCTION
+// =========================================================================
+initializeTradeSession(Settings settings, string tradeDirection) =>
+    TradeLogic trade = TradeLogic.new()
+    trade.entryTime         := time
+    trade.signalTime        := time
+    trade.originalEntryTime := time
+    entryFeesRatio = settings.exchangeTakerFees * 100 * settings.leverage
+    trade.profit -= entryFeesRatio
+    settings.totalExchangeFees += entryFeesRatio * settings.initialCapital / 100
+    trade.tradeDirection    := tradeDirection
+    trade.entryLevel        := trendLine
+
+    // ✅ Stays false so ghost lines remain hidden until the limit fills!
+    trade.hasHitEntry       := false
+    bool isLong = str.contains(str.upper(tradeDirection), 'LONG')
+
+    // 🔥 Dynamic ATR TP/SL Levels
+    trade.slLevel  := isLong ? math.round_to_mintick(trade.entryLevel - slAtrMultInput  * atrValue)
+                             : math.round_to_mintick(trade.entryLevel + slAtrMultInput  * atrValue)
+
+    trade.tp1Level := isLong ? math.round_to_mintick(trade.entryLevel + tp1AtrMultInput * atrValue)
+                             : math.round_to_mintick(trade.entryLevel - tp1AtrMultInput * atrValue)
+
+    trade.tp2Level := isLong ? math.round_to_mintick(trade.entryLevel + tp2AtrMultInput * atrValue)
+                             : math.round_to_mintick(trade.entryLevel - tp2AtrMultInput * atrValue)
+
+    trade.tp3Level := isLong ? math.round_to_mintick(trade.entryLevel + tp3AtrMultInput * atrValue)
+                             : math.round_to_mintick(trade.entryLevel - tp3AtrMultInput * atrValue)
+
+    trade.tp4Level := isLong ? math.round_to_mintick(trade.entryLevel + tp4AtrMultInput * atrValue)
+                             : math.round_to_mintick(trade.entryLevel - tp4AtrMultInput * atrValue)
+
+    trade.breakEvenLevel    := trade.entryLevel
+    trade.startBarIndex     := bar_index
+    trade.positionRemaining := 100.0
+    trade.capital           := settings.initialCapital
+
+    trade
+
+isValidBounceDown(float srLevel) =>
+    (not na(srLevel)) and high >= srLevel and open <= srLevel and low < srLevel and close < srLevel and close < open
+
+isValidBounceUp(float srLevel) =>
+    (not na(srLevel)) and low <= srLevel and open >= srLevel and high > srLevel and close > srLevel and close > open
+
+// Helper function to check green bounces across all 15 support levels
+checkAnyBounceUp(s01, s02, s03, s04, s05, s06, s07, s08, s09, s10, s11, s12, s13, s14, s15) => isValidBounceUp(s01) or isValidBounceUp(s02) or isValidBounceUp(s03) or isValidBounceUp(s04) or isValidBounceUp(s05) or isValidBounceUp(s06) or isValidBounceUp(s07) or isValidBounceUp(s08) or isValidBounceUp(s09) or isValidBounceUp(s10) or isValidBounceUp(s11) or isValidBounceUp(s12) or isValidBounceUp(s13) or isValidBounceUp(s14) or isValidBounceUp(s15)
+
+// Helper function to check red rejections across all 15 resistance levels
+checkAnyBounceDown(r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r13, r14, r15) => isValidBounceDown(r01) or isValidBounceDown(r02) or isValidBounceDown(r03) or isValidBounceDown(r04) or isValidBounceDown(r05) or isValidBounceDown(r06) or isValidBounceDown(r07) or isValidBounceDown(r08) or isValidBounceDown(r09) or isValidBounceDown(r10) or isValidBounceDown(r11) or isValidBounceDown(r12) or isValidBounceDown(r13) or isValidBounceDown(r14) or isValidBounceDown(r15)
+
+
+
+
+// ====================================================================
+// --- ARRAY HELPER FUNCTIONS TO REDUCE MAIN SCRIPT SIZE ---
+// ====================================================================
+
+// 1. Definition (11 parameters)
+initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message) =>
+    // ── H4/L4 HARD GATE ──
+    bool _buy  = buyCond  and low < H4
+    bool _sell = sellCond and high > L4
+    bool alreadyOpenedThisBar = false
+    if array.size(sessionsArr) > 0
+        TradeLogic lastTrade = array.get(sessionsArr, array.size(sessionsArr) - 1)
+        if lastTrade.startBarIndex == bar_index
+            alreadyOpenedThisBar := true
+    if (_buy or _sell) and not alreadyOpenedThisBar
+        TradeLogic newTrade = initializeTradeSession(settings, _buy ? longName : shortName)
+        TradeVisuals newVis = TradeVisuals.new()
+        sendAlert(settings, newTrade, z1, dX, mX, d1_message)
+        if settings.showTPSL
+            generateTradeVisuals(settings, newTrade, newVis)
+        array.push(sessionsArr, newTrade)
+        array.push(visualsArr, newVis)
+
+// ====================================================================
+// 3. BASE VARIABLES & EMA TRACKING
+// ====================================================================
+Faster      = fShort_EMA
+Slower      = fMed_EMA
+CPR_Today   = CPR
+
+
+// ====================================================================
+// 4. POWER CANDLE MIDPOINT TRACKING
+// ====================================================================
+var float grsMid      = na
+var float resMid      = na
+var int   grsBar      = na
+var int   resBar      = na
+var bool  grsExtended = false
+var bool  resExtended = false
+
+// 1. Check bounces on S&R levels using helper functions
+bool bouncedOffSR_Up   = checkAnyBounceUp(sup01, sup02, sup03, sup04, sup05, sup06, sup07, sup08, sup09, sup10, sup11, sup12, sup13, sup14, sup15)
+bool bouncedOffSR_Down = checkAnyBounceDown(res01, res02, res03, res04, res05, res06, res07, res08, res09, res10, res11, res12, res13, res14, res15)
+
+// 2. Check bounces on actual Power Midpoints
+bool bouncedOffActualGrsMid = isValidBounceUp(grsMid)
+bool bouncedOffActualResMid = isValidBounceDown(resMid)
+
+// 3. Clear Midpoints ONLY if the Midpoint itself was bounced on
+if bouncedOffActualGrsMid
+    grsMid      := na
+    grsBar      := na
+    grsExtended := false
+
+if bouncedOffActualResMid
+    resMid      := na
+    resBar      := na
+    resExtended := false
+
+// 4. Define consolidated Power Candle triggers
+bool GrS = GREEN1 and bouncedOffSR_Up
+bool ReS = RED1 and bouncedOffSR_Down
+
+// 5. Update / establish Midpoints on fresh Power Candles
+if GrS and not GrS[1]
+    grsMid := (high + low) / 2
+    grsBar := bar_index
+
+if ReS and not ReS[1]
+    resMid := (high + low) / 2
+    resBar := bar_index
+
+// ====================================================================
+// 5. ZONE DEFINITIONS & BOUNCE CONDITIONS
+// ====================================================================
+bool bullConds = (mX == 'BIG MOVE') or
+     (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or
+     (dX == 'OUT OF RANGE \n OUT OF VALUE') or
+     (c1 == 'CONFIRMED BULLISH') or
+     (c1 == 'REJECTED BEARISH') or
+     (c1 == 'WATCH') or NCPR
+
+bool bearConds = (mX == 'BIG MOVE') or
+     (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or
+     (dX == 'OUT OF RANGE \n OUT OF VALUE') or
+     (c1 == 'CONFIRMED BEARISH') or
+     (c1 == 'REJECTED BULLISH') or
+     (c1 == 'WATCH') or NCPR
+
+bool RisingUP    = bullConds
+bool FallingDOWN = bearConds
+
+bool RisingUp    = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and bullConds
+bool FallingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and bearConds
+
+bool R_up = RisingUp and close > open
+bool R_dn = FallingDown and close < open
+
+bool MissUP = (RisingUp or RisingUP) and close > open and (low < VAH and open > VAH and high > VAH and close > VAH)
+bool MissDOWN = (FallingDown or FallingDOWN) and close < open and (high > VAL and open < VAL and low < VAL and close < VAL)
+
+bool MissU = MissUP or (R_up and ((low < VAH and open > VAH and high > VAH and close > VAH) or
+     (low < Slower and open > Slower and high > Slower and close > Slower) or
+     (low < CPR_Today and open > CPR_Today and high > CPR_Today and close > CPR_Today)))
+
+bool MissD = MissDOWN or (R_dn and ((high > VAL and open < VAL and low < VAL and close < VAL) or
+     (high > Slower and open < Slower and low < Slower and close < Slower) or
+     (high > CPR_Today and open < CPR_Today and low < CPR_Today and close < CPR_Today)))
+
+bool RangingUp   = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) and
+     ((mX == 'INRANGEINVALUE') or (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or (dX == 'IN RANGE \n IN VALUE'))
+
+bool RangingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) and
+     ((mX == 'INRANGEINVALUE') or (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or (dX == 'IN RANGE \n IN VALUE'))
+
+bool BounceUp   = (RangingUp and close > open) and ((low < VAL and open > VAL and high > VAL and close > VAL) or
+     (low < CPR_Today and open > CPR_Today and high > CPR_Today and close > CPR_Today))
+
+bool BounceDown = (RangingDown and close < open) and ((high > VAH and open < VAH and low < VAH and close < VAH) or
+     (high > CPR_Today and open < CPR_Today and low < CPR_Today and close < CPR_Today))
+
+barcolor(ReS ? color.new(#d90b91, 15) : GrS ? color.new(#1eecd8, 11) : na)
+
+// ====================================================================
+// 6. DECLARE & UPDATE TREND STATES (MISSILE ➔ SCALP ➔ LIGHTNING)
+// ====================================================================
+bool CanBuy  = (emaCanBuy  and MissU) or (emaCanBuy and BounceUp)
+bool CanSell = (emaCanSell and MissD) or (emaCanSell and BounceDown)
+
+cleanTrendBullish := CanBuy ? true : CanSell ? false : RisingUp ? true : false
+cleanTrendBearish := CanSell ? true : CanBuy ? false : FallingDown ? true : false
+
+bool bouncedOffGrsMid = bouncedOffSR_Up or bouncedOffActualGrsMid
+bool bouncedOffResMid = bouncedOffSR_Down or bouncedOffActualResMid
+
+// -- SCALP SIGNALS --
+StepUp = (cleanTrendBullish or GREEN1) and bouncedOffGrsMid
+StepDn = (cleanTrendBearish or RED1) and bouncedOffResMid
+
+bool ScalpBuy  = (emaCanBuy  and StepUp)
+bool ScalpSell = (emaCanSell and StepDn)
+
+// ── SIDEWAYS DAY FILTER ──
+bool isSidewaysDay = (mX == 'INRANGEINVALUE') or
+                     (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or
+                     str.contains(mX, "TRADING RANGE") or
+                     str.contains(mX, "SIDEWAYS") or
+                     str.contains(mX, "TYPICAL DAY") or
+                     (dX == 'IN RANGE \n IN VALUE')
+
+bool dayAllowed = not isSidewaysDay or NCPR
+
+bool longAllowed  = low < H4
+bool shortAllowed = high > L4
+
+// ── WEBHOOK ZONE STATUS (z1) ──────────────────────────────────
+string z1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? 'LONG ZONE' : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? 'SHORT ZONE' : ANYDAY and close > DBc and close < DTc ? 'WAIT FOR SIGNAL' : 'WAITING'
+
+// ====================================================================
+// ====================================================================
+// ── LIGHTNING, DIVERGENCE & EXTREME REVERSAL SIGNALS ──────────────────
+// ====================================================================
+
+// ── CPR BOUNDARIES FOR HIDDEN DIVERGENCE (Signal Bar [1]) ────────────
+float cprTop_1    = math.max(daily_tc[1], daily_bc[1])
+float cprBottom_1 = math.min(daily_tc[1], daily_bc[1])
+
+// Check if candle [1] (where H was detected) was within Top and Bottom CPR lines
+// (covers candle close within CPR or candle body overlapping the CPR zone)
+bool hBullInsideCPR = (ext_bullishHiddenDiv[1] == 1) and ((close[1] >= cprBottom_1 and close[1] <= cprTop_1) or (math.min(open[1], close[1]) <= cprTop_1 and math.max(open[1], close[1]) >= cprBottom_1))
+bool hBearInsideCPR = (ext_bearishHiddenDiv[1] == 1) and ((close[1] >= cprBottom_1 and close[1] <= cprTop_1) or (math.min(open[1], close[1]) <= cprTop_1 and math.max(open[1], close[1]) >= cprBottom_1))
+
+// 👉 Hidden Divergence Confirmation Flags (H inside CPR + direction confirmation on current candle)
+bool hiddenBullishConfirmed = hBullInsideCPR and (close > open) and (close > close[1])
+bool hiddenBearishConfirmed = hBearInsideCPR and (close < open) and (close < close[1])
+
+// Regular Divergence (Standard rules)
+bool regBullDiv = (ext_bullishDiv[1] == 1)
+bool regBearDiv = (ext_bearishDiv[1] == 1)
+
+// 1. Standard Lightning (Pure Native Missile + Scalp Confluence)
+bool standardLightningBuy  = (CanBuy and ScalpBuy) and longAllowed and dayAllowed
+bool standardLightningSell = (CanSell and ScalpSell) and shortAllowed and dayAllowed
+
+// 2. Regular Divergence Signals (Standalone Strategy - Exempt from day types and NCPR)
+bool DivergenceBuy  = ((regBullDiv or regBullDiv[1] or regBullDiv[2] or regBullDiv[3] or regBullDiv[4] or regBullDiv[5]) and GrS) and longAllowed
+bool DivergenceSell = ((regBearDiv  or regBearDiv[1] or regBearDiv[2] or regBearDiv[3] or regBearDiv[4] or regBearDiv[5]) and ReS) and shortAllowed
+
+// 3. Hidden Divergence Signals (Standalone Strategy - Exempt from day types and NCPR)
+bool HiddenDivBuy   = ((hiddenBullishConfirmed or hiddenBullishConfirmed[1] or hiddenBullishConfirmed[2] or hiddenBullishConfirmed[3] or hiddenBullishConfirmed[4] or hiddenBullishConfirmed[5]) and GrS) and longAllowed
+bool HiddenDivSell  = ((hiddenBearishConfirmed or hiddenBearishConfirmed[1] or hiddenBearishConfirmed[2] or hiddenBearishConfirmed[3] or hiddenBearishConfirmed[4] or hiddenBearishConfirmed[5]) and ReS) and shortAllowed
+
+// Combined Lightning Buy / Sell
+bool LightningBuy   = standardLightningBuy
+bool LightningSell  = standardLightningSell
+
+// Flag to bypass day type / sideways filter inside initializeAndPushTrade when H triggers
+bool lightningBypassDayFilter = HiddenDivBuy or HiddenDivSell
+
+// 4. Extreme Reversal (Independent signal, standard dayAllowed gate)
+bool ExtremeReversalBuy  = Elongsignal and longAllowed and dayAllowed
+bool ExtremeReversalSell = Eshortsignal and shortAllowed and dayAllowed
+
+// 5. Filter out individual trades so they don't fire when Lightning, Extreme Reversal, or Divergences fire
+bool JustMissileBuy  = CanBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
+bool JustMissileSell = CanSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
+
+bool JustScalpBuy    = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
+bool JustScalpSell   = ScalpSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
+
+
+// ====================================================================
+// 7. DECLARE ARRAYS & INITIALIZE NEW TRADES 
+// ====================================================================
+var array<TradeLogic>   missileSessions       = array.new<TradeLogic>()
+var array<TradeVisuals> missileVisualsArr     = array.new<TradeVisuals>()
+
+var array<TradeLogic>   scalpSessions         = array.new<TradeLogic>()
+var array<TradeVisuals> scalpVisualsArr       = array.new<TradeVisuals>()
+
+var array<TradeLogic>   currentSessions       = array.new<TradeLogic>()
+var array<TradeVisuals> currentVisualsArr     = array.new<TradeVisuals>()
+
+var array<TradeLogic>   divergenceSessions   = array.new<TradeLogic>()
+var array<TradeVisuals> divergenceVisualsArr = array.new<TradeVisuals>()
+
+var array<TradeLogic>   hiddenDivSessions    = array.new<TradeLogic>()
+var array<TradeVisuals> hiddenDivVisualsArr  = array.new<TradeVisuals>()
+
+var array<TradeLogic>   extremeRevSessions   = array.new<TradeLogic>()
+var array<TradeVisuals> extremeRevVisualsArr = array.new<TradeVisuals>()
+
+// ── Initialize & Push Trades for All Decoupled Signal Categories ───
+initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, DivergenceBuy, DivergenceSell, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, HiddenDivBuy, HiddenDivSell, 'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE', hiddenDivSessions, hiddenDivVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, ExtremeReversalBuy, ExtremeReversalSell, 'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL', extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message)
+
+
+// ====================================================================
+// 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS)
+// ====================================================================
+bool  triggerTrailingSL = false
+float rangeTrailingSL   = 0.0
+
+// ⬇️ THIS FUNCTION DEFINITION WAS MISSING — PASTE THIS HERE:
+processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool triggerTrailingSL, float rangeTrailingSL) =>
+    if array.size(sessionsArr) > 0
+        for i = array.size(sessionsArr) - 1 to 0
+            TradeLogic trade = array.get(sessionsArr, i)
+            TradeVisuals vis = array.get(visualsArr, i)
+            
+            bool isPastDay = timeframe.isintraday and (time - trade.entryTime) >= 86400000
+            if isPastDay
+                trade.isClosed    := true
+                trade.forceClosed := true
+
+            float prevSL = trade.slLevel
+            
+            // Evaluates TP, SL, and Trailing Stop
+            evaluateTradeProgress(settings, trade, triggerTrailingSL, rangeTrailingSL)
+
+            if session.islastbar_regular and timeframe.isintraday and not trade.isClosed
+                terminateTrade(settings, trade)
+            
+            if trade.slLevel != prevSL and trade.trailingSLActivated
+                sendTrailingSLAlert(settings, trade, z1, dX, mX, d1_message)
+                
+            if not trade.isClosed
+                updateTradeVisuals(settings, trade, vis)
+                signalLabelUpdate(settings, trade, vis)
+            else
+                // Finalize upon closure & cleanly delete visuals
+                string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
+                deleteTradeVisuals(vis) 
+                TradeLogic   _removedTrade = array.remove(sessionsArr, i)
+                TradeVisuals _removedVis   = array.remove(visualsArr, i)
+                signalLabelUpdate(settings, trade, vis)
+
+// ⬇️ NOW THESE CALLS WILL COMPILE WITH ZERO ERRORS:
+processTradeArray(settings, missileSessions,    missileVisualsArr,    z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, scalpSessions,      scalpVisualsArr,      z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, currentSessions,    currentVisualsArr,    z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, hiddenDivSessions,  hiddenDivVisualsArr,  z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+
+// ====================================================================
+// 9. ON-CHART PLOTTINGS & VISUAL MARKERS
+// ====================================================================
+
+// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS
+plotshape(DivergenceBuy,  title = "Bullish Regular Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
+plotshape(DivergenceSell, title = "Bearish Regular Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
+
+// 🔵 / 🟠 2. HIDDEN DIVERGENCE (CPR CONFLUENCE) PLOTS
+plotshape(HiddenDivBuy,  title = "Bullish Hidden Divergence (CPR)", style = shape.labelup,   location = location.belowbar, color = color.new(color.teal, 0),   text = "H", textcolor = color.white, size = size.small)
+plotshape(HiddenDivSell, title = "Bearish Hidden Divergence (CPR)", style = shape.labeldown, location = location.abovebar, color = color.new(color.orange, 0), text = "H", textcolor = color.black, size = size.small)
+
+// ⚡ 3. LIGHTNING PLOTS
+plotchar(LightningBuy  and dayAllowed and longAllowed,  title = "Lightning Buy (Star)",  char = '★', location = location.belowbar, color = color.teal,   size = size.normal)
+plotchar(LightningSell and dayAllowed and shortAllowed, title = "Lightning Sell (Star)", char = '★', location = location.abovebar, color = color.maroon, size = size.normal)
+plotchar(LightningBuy  and dayAllowed and longAllowed,  title = "Lightning Buy (Bolt)",  char = '⚡', location = location.belowbar, color = color.lime,   size = size.normal)
+plotchar(LightningSell and dayAllowed and shortAllowed, title = "Lightning Sell (Bolt)", char = '⚡', location = location.abovebar, color = color.lime,   size = size.normal)
+
+// 🔥 4. EXTREME REVERSAL PLOTS
+plotshape(ExtremeReversalBuy,  title = "Bullish Extreme Reversal", style = shape.arrowup,   location = location.belowbar, color = color.aqua,    size = size.normal, text = "EXT REV", textcolor = color.aqua)
+plotshape(ExtremeReversalSell, title = "Bearish Extreme Reversal", style = shape.arrowdown, location = location.abovebar, color = color.fuchsia, size = size.normal, text = "EXT REV", textcolor = color.fuchsia)
+
+// 🚀 5. MISSILE PLOTS
+plotshape(JustMissileBuy  and dayAllowed and longAllowed,  title = "Long Missile",  style = shape.triangleup,   location = location.belowbar, color = color.green, size = size.small)
+plotshape(JustMissileSell and dayAllowed and shortAllowed, title = "Short Missile", style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
+
+// 💎 6. SCALP PLOTS
+plotshape(JustScalpBuy  and dayAllowed and longAllowed,  title = "Long Scalp",  style = shape.diamond, location = location.belowbar, color = color.green, size = size.small)
+plotshape(JustScalpSell and dayAllowed and shortAllowed, title = "Short Scalp", style = shape.diamond, location = location.abovebar, color = color.red,   size = size.small)
+
+// 🏹 7. BOUNCE PLOTS (Call & Put Arrows)
+plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup,   location = location.belowbar, color = color.green, size = size.large)
+plotshape(BounceDown and not LightningSell, title = 'Long Put',   style = shape.arrowdown, location = location.abovebar, color = color.red,   size = size.large)
+
+
+//indicator("Range", overlay = true)
+//Variables and User Inputs
+
+TF1 = input.timeframe('D', group = '========= HTF SETTINGS =========')
+show_HTF_for_TF1 = input.bool(true, title = 'Show HTF Candles', group = '========= HTF SETTINGS =========')
+HTF_Candles_to_Show_TF1 = input.int(2, title = 'Number of HTF Candles (Max: 10)', minval = 1, maxval = 10, step = 1, group = '========= HTF SETTINGS =========')
+offset_TF1 = input.int(7, title = 'HTF Bar/Candle Offset', minval = 5, step = 1, group = '========= HTF SETTINGS =========')
+gap_between_bars = input.int(2, title = 'Gap Between Bars', minval = 1, step = 1, group = '========= HTF SETTINGS =========')
+color_bullish = input.color(#089981, 'Bullish Candle Color', group = 'COLOR SETTINGS')
+color_bearish = input.color(#e44242, 'Bearish Candle Color', group = 'COLOR SETTINGS')
+color_text = input.color(color.rgb(4, 4, 4, 100), 'Text Color', group = 'COLOR SETTINGS')
+
+//Getting OHLC values For TF1
+[O_1_TF1, H_1_TF1, L_1_TF1, C_1_TF1, O_2_TF1, H_2_TF1, L_2_TF1, C_2_TF1, O_3_TF1, H_3_TF1, L_3_TF1, C_3_TF1, O_4_TF1, H_4_TF1, L_4_TF1, C_4_TF1, O_5_TF1, H_5_TF1, L_5_TF1, C_5_TF1, O_6_TF1, H_6_TF1, L_6_TF1, C_6_TF1, O_7_TF1, H_7_TF1, L_7_TF1, C_7_TF1, O_8_TF1, H_8_TF1, L_8_TF1, C_8_TF1, O_9_TF1, H_9_TF1, L_9_TF1, C_9_TF1, O_10_TF1, H_10_TF1, L_10_TF1, C_10_TF1, TF1_, Highest_TF1] = request.security(syminfo.tickerid, TF1, [open[0], high[0], low[0], close[0], open[1], high[1], low[1], close[1], open[2], high[2], low[2], close[2], open[3], high[3], low[3], close[3], open[4], high[4], low[4], close[4], open[5], high[5], low[5], close[5], open[7], high[7], low[7], close[7], open[8], high[8], low[8], close[8], open[9], high[9], low[9], close[9], open[10], high[10], low[10], close[10], TF1, ta.highest(high, HTF_Candles_to_Show_TF1)], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Function to plot HTF Candles
+condition(a, b, c, ax, open_, high_, low_, close_, show_label_, LO, LH, LL, LC, LTF, TF, x) =>
+    //Variables for candles OHLC
+    var line line_O_C_a = a
+    var line line_OC_H_b = b
+    var line line_OC_L_c = c
+    var label label_O_a = LO
+    var label label_H_b = LH
+    var label label_L_c = LL
+    var label label_C_d = LC
+    var label label_TF_e = LTF
+
+    //Cleaning up old candles
+    line.delete(line_O_C_a)
+    line.delete(line_OC_H_b)
+    line.delete(line_OC_L_c)
+    if show_label_
+        label.delete(label_O_a)
+        label.delete(label_H_b)
+        label.delete(label_L_c)
+        label.delete(label_C_d)
+        label.delete(label_TF_e)
+
+    //Plotting Open Close of the candles
+    line_O_C_a := line.new(bar_index + ax, open_, bar_index + ax, close_, color = open_ < close_ ? color_bullish : open_ > close_ ? color_bearish : color_bearish, width = 9)
+
+    //Plotting Wicks => wick above and below the candles
+    line_OC_H_b := line.new(bar_index + ax, open_ < close_ ? close_ : open_, bar_index + ax, high_, color = open_ < close_ ? color_bullish : open_ > close_ ? color_bearish : color_bearish)
+    line_OC_L_c := line.new(bar_index + ax, open_ > close_ ? close_ : open_, bar_index + ax, low_, color = open_ < close_ ? color_bullish : open_ > close_ ? color_bearish : color_bearish)
+
+    //labels
+    // x=10
+    if show_label_
+        // label_O_a := label.new(bar_index + ax + 12, open_, text = "O: " + str.tostring(open_), textcolor=open_<close_?color.lime:color.red, style=label.style_label_left, color = color.new(color.white, 100))
+        // label_H_b := label.new(bar_index + ax + 2, high_, text = "H: " + str.tostring(high_, '#'), textcolor=open_<close_?color.lime:color.red, style=label.style_label_left, color = color.new(color.white, 100))
+        // label_L_c := label.new(bar_index + ax + 2, low_, text = "L: " + str.tostring(low_, '#'), textcolor=open_<close_?color.lime:color.red, style=label.style_label_left, color = color.new(color.white, 100))
+        label_C_d := label.new(bar_index + ax + 1, close_, text = 'C: ' + str.tostring(close_), textcolor = color_text, style = label.style_label_left, color = color.new(color.white, 100))
+        label_TF_e := label.new(bar_index + ax, x, text = 'TF: ' + str.tostring(TF), textcolor = color_text, style = label.style_label_up, color = na, size = size.large)
+        label_TF_e
+    [line_O_C_a, line_OC_H_b, line_OC_L_c, label_O_a, label_H_b, label_L_c, label_C_d, label_TF_e]
+
+
+//HTF Candles for TF1
+if HTF_Candles_to_Show_TF1 >= 1 and show_HTF_for_TF1
+    var line line_O_C_1_TF1 = na
+    var line line_OC_H_1_TF1 = na
+    var line line_OC_L_1_TF1 = na
+    var label label_O_1_TF1 = na
+    var label label_H_1_TF1 = na
+    var label label_L_1_TF1 = na
+    var label label_C_1_TF1 = na
+    var label label_TF_1_TF1 = na
+    [line_O_C_1_TF1_, line_OC_H_1_TF1_, line_OC_L_1_TF1_, label_O_1_TF1_, label_H_1_TF1_, label_L_1_TF1_, label_C_1_TF1_, label_TF_1_] = condition(line_O_C_1_TF1, line_OC_H_1_TF1, line_OC_L_1_TF1, offset_TF1 - 0 * gap_between_bars, O_1_TF1, H_1_TF1, L_1_TF1, C_1_TF1, true, label_O_1_TF1, label_H_1_TF1, label_L_1_TF1, label_C_1_TF1, label_TF_1_TF1, TF1_, Highest_TF1)
+    line_O_C_1_TF1 := line_O_C_1_TF1_
+    line_OC_H_1_TF1 := line_OC_H_1_TF1_
+    line_OC_L_1_TF1 := line_OC_L_1_TF1_
+    label_O_1_TF1_ := label_O_1_TF1_
+    label_H_1_TF1 := label_L_1_TF1_
+    label_L_1_TF1 := label_L_1_TF1_
+    label_C_1_TF1 := label_C_1_TF1_
+    label_C_1_TF1
+
+if HTF_Candles_to_Show_TF1 >= 2 and show_HTF_for_TF1
+    var line line_O_C_2_TF1 = na
+    var line line_OC_H_2_TF1 = na
+    var line line_OC_L_2_TF1 = na
+    var label label_O_2_TF1 = na
+    var label label_H_2_TF1 = na
+    var label label_L_2_TF1 = na
+    var label label_C_2_TF1 = na
+    var label label_TF_2_TF1 = na
+    [line_O_C_2_TF1_, line_OC_H_2_TF1_, line_OC_L_2_TF1_, label_O_2_TF1_, label_H_2_TF1_, label_L_2_TF1_, label_C_2_TF1_, label_TF_1_] = condition(line_O_C_2_TF1, line_OC_H_2_TF1, line_OC_L_2_TF1, offset_TF1 - 1 * gap_between_bars, O_2_TF1, H_2_TF1, L_2_TF1, C_2_TF1, false, label_O_2_TF1, label_H_2_TF1, label_L_2_TF1, label_C_2_TF1, label_TF_2_TF1, TF1_, Highest_TF1)
+    line_O_C_2_TF1 := line_O_C_2_TF1_
+    line_OC_H_2_TF1 := line_OC_H_2_TF1_
+    line_OC_L_2_TF1 := line_OC_L_2_TF1_
+    label_O_2_TF1_ := label_O_2_TF1_
+    label_H_2_TF1 := label_L_2_TF1_
+    label_L_2_TF1 := label_L_2_TF1_
+    label_C_2_TF1 := label_C_2_TF1_
+    label_C_2_TF1
+
+if HTF_Candles_to_Show_TF1 >= 3 and show_HTF_for_TF1
+    var line line_O_C_3_TF1 = na
+    var line line_OC_H_3_TF1 = na
+    var line line_OC_L_3_TF1 = na
+    var label label_O_3_TF1 = na
+    var label label_H_3_TF1 = na
+    var label label_L_3_TF1 = na
+    var label label_C_3_TF1 = na
+    var label label_TF_3_TF1 = na
+    [line_O_C_3_TF1_, line_OC_H_3_TF1_, line_OC_L_3_TF1_, label_O_3_TF1_, label_H_3_TF1_, label_L_3_TF1_, label_C_3_TF1_, label_TF_1_] = condition(line_O_C_3_TF1, line_OC_H_3_TF1, line_OC_L_3_TF1, offset_TF1 - 2 * gap_between_bars, O_3_TF1, H_3_TF1, L_3_TF1, C_3_TF1, false, label_O_3_TF1, label_H_3_TF1, label_L_3_TF1, label_C_3_TF1, label_TF_3_TF1, TF1_, Highest_TF1)
+    line_O_C_3_TF1 := line_O_C_3_TF1_
+    line_OC_H_3_TF1 := line_OC_H_3_TF1_
+    line_OC_L_3_TF1 := line_OC_L_3_TF1_
+    label_O_3_TF1_ := label_O_3_TF1_
+    label_H_3_TF1 := label_L_3_TF1_
+    label_L_3_TF1 := label_L_3_TF1_
+    label_C_3_TF1 := label_C_3_TF1_
+    label_C_3_TF1
+
+if HTF_Candles_to_Show_TF1 >= 4 and show_HTF_for_TF1
+    var line line_O_C_4_TF1 = na
+    var line line_OC_H_4_TF1 = na
+    var line line_OC_L_4_TF1 = na
+    var label label_O_4_TF1 = na
+    var label label_H_4_TF1 = na
+    var label label_L_4_TF1 = na
+    var label label_C_4_TF1 = na
+    var label label_TF_4_TF1 = na
+    [line_O_C_4_TF1_, line_OC_H_4_TF1_, line_OC_L_4_TF1_, label_O_4_TF1_, label_H_4_TF1_, label_L_4_TF1_, label_C_4_TF1_, label_TF_1_] = condition(line_O_C_4_TF1, line_OC_H_4_TF1, line_OC_L_4_TF1, offset_TF1 - 3 * gap_between_bars, O_4_TF1, H_4_TF1, L_4_TF1, C_4_TF1, false, label_O_4_TF1, label_H_4_TF1, label_L_4_TF1, label_C_4_TF1, label_TF_4_TF1, TF1_, Highest_TF1)
+    line_O_C_4_TF1 := line_O_C_4_TF1_
+    line_OC_H_4_TF1 := line_OC_H_4_TF1_
+    line_OC_L_4_TF1 := line_OC_L_4_TF1_
+    label_O_4_TF1_ := label_O_4_TF1_
+    label_H_4_TF1 := label_L_4_TF1_
+    label_L_4_TF1 := label_L_4_TF1_
+    label_C_4_TF1 := label_C_4_TF1_
+    label_C_4_TF1
+
+if HTF_Candles_to_Show_TF1 >= 5 and show_HTF_for_TF1
+    var line line_O_C_5_TF1 = na
+    var line line_OC_H_5_TF1 = na
+    var line line_OC_L_5_TF1 = na
+    var label label_O_5_TF1 = na
+    var label label_H_5_TF1 = na
+    var label label_L_5_TF1 = na
+    var label label_C_5_TF1 = na
+    var label label_TF_5_TF1 = na
+    [line_O_C_5_TF1_, line_OC_H_5_TF1_, line_OC_L_5_TF1_, label_O_5_TF1_, label_H_5_TF1_, label_L_5_TF1_, label_C_5_TF1_, label_TF_1_] = condition(line_O_C_5_TF1, line_OC_H_5_TF1, line_OC_L_5_TF1, offset_TF1 - 4 * gap_between_bars, O_5_TF1, H_5_TF1, L_5_TF1, C_5_TF1, false, label_O_5_TF1, label_H_5_TF1, label_L_5_TF1, label_C_5_TF1, label_TF_5_TF1, TF1_, Highest_TF1)
+    line_O_C_5_TF1 := line_O_C_5_TF1_
+    line_OC_H_5_TF1 := line_OC_H_5_TF1_
+    line_OC_L_5_TF1 := line_OC_L_5_TF1_
+    label_O_5_TF1_ := label_O_5_TF1_
+    label_H_5_TF1 := label_L_5_TF1_
+    label_L_5_TF1 := label_L_5_TF1_
+    label_C_5_TF1 := label_C_5_TF1_
+    label_C_5_TF1
+
+if HTF_Candles_to_Show_TF1 >= 6 and show_HTF_for_TF1
+    var line line_O_C_6_TF1 = na
+    var line line_OC_H_6_TF1 = na
+    var line line_OC_L_6_TF1 = na
+    var label label_O_6_TF1 = na
+    var label label_H_6_TF1 = na
+    var label label_L_6_TF1 = na
+    var label label_C_6_TF1 = na
+    var label label_TF_6_TF1 = na
+    [line_O_C_6_TF1_, line_OC_H_6_TF1_, line_OC_L_6_TF1_, label_O_6_TF1_, label_H_6_TF1_, label_L_6_TF1_, label_C_6_TF1_, label_TF_1_] = condition(line_O_C_6_TF1, line_OC_H_6_TF1, line_OC_L_6_TF1, offset_TF1 - 5 * gap_between_bars, O_6_TF1, H_6_TF1, L_6_TF1, C_6_TF1, false, label_O_6_TF1, label_H_6_TF1, label_L_6_TF1, label_C_6_TF1, label_TF_6_TF1, TF1_, Highest_TF1)
+    line_O_C_6_TF1 := line_O_C_6_TF1_
+    line_OC_H_6_TF1 := line_OC_H_6_TF1_
+    line_OC_L_6_TF1 := line_OC_L_6_TF1_
+    label_O_6_TF1_ := label_O_6_TF1_
+    label_H_6_TF1 := label_L_6_TF1_
+    label_L_6_TF1 := label_L_6_TF1_
+    label_C_6_TF1 := label_C_6_TF1_
+    label_C_6_TF1
+
+if HTF_Candles_to_Show_TF1 >= 7 and show_HTF_for_TF1
+    var line line_O_C_7_TF1 = na
+    var line line_OC_H_7_TF1 = na
+    var line line_OC_L_7_TF1 = na
+    var label label_O_7_TF1 = na
+    var label label_H_7_TF1 = na
+    var label label_L_7_TF1 = na
+    var label label_C_7_TF1 = na
+    var label label_TF_7_TF1 = na
+    [line_O_C_7_TF1_, line_OC_H_7_TF1_, line_OC_L_7_TF1_, label_O_7_TF1_, label_H_7_TF1_, label_L_7_TF1_, label_C_7_TF1_, label_TF_1_] = condition(line_O_C_7_TF1, line_OC_H_7_TF1, line_OC_L_7_TF1, offset_TF1 - 6 * gap_between_bars, O_7_TF1, H_7_TF1, L_7_TF1, C_7_TF1, false, label_O_7_TF1, label_H_7_TF1, label_L_7_TF1, label_C_7_TF1, label_TF_7_TF1, TF1_, Highest_TF1)
+    line_O_C_7_TF1 := line_O_C_7_TF1_
+    line_OC_H_7_TF1 := line_OC_H_7_TF1_
+    line_OC_L_7_TF1 := line_OC_L_7_TF1_
+    label_O_7_TF1_ := label_O_7_TF1_
+    label_H_7_TF1 := label_L_7_TF1_
+    label_L_7_TF1 := label_L_7_TF1_
+    label_C_7_TF1 := label_C_7_TF1_
+    label_C_7_TF1
+
+if HTF_Candles_to_Show_TF1 >= 8 and show_HTF_for_TF1
+    var line line_O_C_8_TF1 = na
+    var line line_OC_H_8_TF1 = na
+    var line line_OC_L_8_TF1 = na
+    var label label_O_8_TF1 = na
+    var label label_H_8_TF1 = na
+    var label label_L_8_TF1 = na
+    var label label_C_8_TF1 = na
+    var label label_TF_8_TF1 = na
+    [line_O_C_8_TF1_, line_OC_H_8_TF1_, line_OC_L_8_TF1_, label_O_8_TF1_, label_H_8_TF1_, label_L_8_TF1_, label_C_8_TF1_, label_TF_1_] = condition(line_O_C_8_TF1, line_OC_H_8_TF1, line_OC_L_8_TF1, offset_TF1 - 7 * gap_between_bars, O_8_TF1, H_8_TF1, L_8_TF1, C_8_TF1, false, label_O_8_TF1, label_H_8_TF1, label_L_8_TF1, label_C_8_TF1, label_TF_8_TF1, TF1_, Highest_TF1)
+    line_O_C_8_TF1 := line_O_C_8_TF1_
+    line_OC_H_8_TF1 := line_OC_H_8_TF1_
+    line_OC_L_8_TF1 := line_OC_L_8_TF1_
+    label_O_8_TF1_ := label_O_8_TF1_
+    label_H_8_TF1 := label_L_8_TF1_
+    label_L_8_TF1 := label_L_8_TF1_
+    label_C_8_TF1 := label_C_8_TF1_
+    label_C_8_TF1
+
+if HTF_Candles_to_Show_TF1 >= 9 and show_HTF_for_TF1
+    var line line_O_C_9_TF1 = na
+    var line line_OC_H_9_TF1 = na
+    var line line_OC_L_9_TF1 = na
+    var label label_O_9_TF1 = na
+    var label label_H_9_TF1 = na
+    var label label_L_9_TF1 = na
+    var label label_C_9_TF1 = na
+    var label label_TF_9_TF1 = na
+    [line_O_C_9_TF1_, line_OC_H_9_TF1_, line_OC_L_9_TF1_, label_O_9_TF1_, label_H_9_TF1_, label_L_9_TF1_, label_C_9_TF1_, label_TF_1_] = condition(line_O_C_9_TF1, line_OC_H_9_TF1, line_OC_L_9_TF1, offset_TF1 - 8 * gap_between_bars, O_9_TF1, H_9_TF1, L_9_TF1, C_9_TF1, false, label_O_9_TF1, label_H_9_TF1, label_L_9_TF1, label_C_9_TF1, label_TF_9_TF1, TF1_, Highest_TF1)
+    line_O_C_9_TF1 := line_O_C_9_TF1_
+    line_OC_H_9_TF1 := line_OC_H_9_TF1_
+    line_OC_L_9_TF1 := line_OC_L_9_TF1_
+    label_O_9_TF1_ := label_O_9_TF1_
+    label_H_9_TF1 := label_L_9_TF1_
+    label_L_9_TF1 := label_L_9_TF1_
+    label_C_9_TF1 := label_C_9_TF1_
+    label_C_9_TF1
+
+if HTF_Candles_to_Show_TF1 >= 10 and show_HTF_for_TF1
+    var line line_O_C_10_TF1 = na
+    var line line_OC_H_10_TF1 = na
+    var line line_OC_L_10_TF1 = na
+    var label label_O_10_TF1 = na
+    var label label_H_10_TF1 = na
+    var label label_L_10_TF1 = na
+    var label label_C_10_TF1 = na
+    var label label_TF_10_TF1 = na
+    [line_O_C_10_TF1_, line_OC_H_10_TF1_, line_OC_L_10_TF1_, label_O_10_TF1_, label_H_10_TF1_, label_L_10_TF1_, label_C_10_TF1_, label_TF_1_] = condition(line_O_C_10_TF1, line_OC_H_10_TF1, line_OC_L_10_TF1, offset_TF1 - 9 * gap_between_bars, O_10_TF1, H_10_TF1, L_10_TF1, C_10_TF1, false, label_O_10_TF1, label_H_10_TF1, label_L_10_TF1, label_C_10_TF1, label_TF_10_TF1, TF1_, Highest_TF1)
+    line_O_C_10_TF1 := line_O_C_10_TF1_
+    line_OC_H_10_TF1 := line_OC_H_10_TF1_
+    line_OC_L_10_TF1 := line_OC_L_10_TF1_
+    label_O_10_TF1_ := label_O_10_TF1_
+    label_H_10_TF1 := label_L_10_TF1_
+    label_L_10_TF1 := label_L_10_TF1_
+    label_C_10_TF1 := label_C_10_TF1_
+    label_C_10_TF1
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
+```

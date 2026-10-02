@@ -108,6 +108,13 @@
   - Matched Black Box IDs are tracked via a `Set` to prevent cross-day duplicate comparisons.
   - Dynamic status indicators in the Parity Audit screen must dynamically display `PASS` (≥99.0%), `EVAL` (≥90.0%), or `AUDIT` (<90.0%) with corresponding semantic badge colors.
 
+## DhanHQ Data Restriction & Feed Stall Mandate (DH-902 & New vs Existing Trades)
+- **NEW TRADE RESTRICTION ONLY**: Any DhanHQ Data API restriction (such as HTTP 451 `DH-902: Unsubscribed Data API`, rate limits, or session cutoffs like 14:00 NSE / 22:00 MCX) applies strictly and exclusively to considering and generating **NEW trades**.
+- **EXISTING TRADES JOURNEY PRESERVATION**: Existing trades already entered / active (`status` = `⚡ TRADE ACTIVE`, `real_entry_time` populated, or limit filled) MUST continue their complete lifecycle journey without interruption until their natural, verified exits (`Hit Initial SL`, `Trailing SL`, `EMA Exit`, or `EOD Exit`). They must NEVER be abandoned, stalled, or left in an active state indefinitely due to a data feed restriction.
+- **DECOUPLED POSITION MANAGEMENT**: Scanners and background workers (`dhan-scanner-background.js`, `shadow_pipeline.py`) must decouple open trade lifecycle management from new candidate scanning. Position management MUST execute first and independently. If live candle fetching fails or is restricted (DH-902), the engine must monitor open positions via standard DhanHQ Market Quote / LTP API (`/v2/marketfeed/ltp` or `/v2/marketfeed/quote`) or execute session EOD closure.
+- **EOD MARKET CLOSURE GUARANTEE**: Any executed trade remaining active at market session close (15:30 IST for NSE, 23:30 IST for MCX) MUST be closed deterministically as `EOD Exit` with exact percentage calculation (`exact_pct`). Pending unexecuted limit orders must be hard-deleted (Zero-Ghost policy).
+- **FRONTEND ACTIVE VS LIMIT SEPARATION**: In the HUB Alerts Dashboard and active counters, ONLY genuinely executed live trades (`isLiveTrade`) may be displayed. Pending unexecuted limit orders must never be displayed in the active trades table or decorated with `⚡`.
+
 ## Exit Categorization (Rigid vs Dynamic Exits)
 - Do NOT bucket trades into static levels (e.g., "TP3" or "TP4") based on the highest level they *touched*. This corrupts the data because it hides the actual realized exit.
 - A trade belongs in a `TP` bucket ONLY if it *actually closed* at that exact level (e.g., via a limit order, or a step-based trailing stop that precisely locked in that previous level).
