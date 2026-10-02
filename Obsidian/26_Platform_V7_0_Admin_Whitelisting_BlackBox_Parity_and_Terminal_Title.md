@@ -80,3 +80,13 @@
   * Renamed the label when `todayTableMarket === 'ALL'` to strictly **`ALL`**, achieving 1:1 visual parity with the `ALL` market filter pill above it.
   * Retained dynamic market uppercase display (`NIFTY`, `BANKNIFTY`, etc.) when filtered to a specific market.
   * Completely eliminates string truncation and cleanly displays the full trade count and outcome breakdown (`totalClosed (totalWinsW/totalLossesL/totalBEB)`).
+
+---
+
+## 6. Weekly Signal Performance Table Summary Row: `WEEK'S` (Formerly `TILL DATE`)
+
+### Objective & Implementation
+* **Label Clarity in Weekly Performance Table**: In the "This week's signal performance" 7-day table on the mobile terminal (`page.tsx`), the summary row was previously labeled `TILL DATE` with subtitle `Consolidated`.
+* **Standardized `WEEK'S` Label**:
+  * Updated label from `TILL DATE` to strictly **`WEEK'S`**, directly aligning with the section title ("This week's signal performance").
+  * Retained the clean two-line layout with `Consolidated` underneath, providing unambiguous clarity that the top row represents the consolidated performance across all 7 days of the active week.
