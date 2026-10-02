@@ -33,6 +33,15 @@
   - **Deterministic CAGR Formulations**:
     - Weekly Rows: Annualized 52-week compounded rate from weekly net percentage $R_w$: $\text{CAGR} = \left[\left(1 + \frac{R_w}{100}\right)^{52} - 1\right] \times 100$.
     - Cumulative Row: Annualized multi-week compounded growth rate from $N$ historical weeks where $G = \prod_{i=1}^{N} \left(1 + \frac{R_{w,i}}{100}\right)$: $\text{CAGR} = \left[G^{\frac{52}{N}} - 1\right] \times 100$.
+- **Full 6-Tab DhanHQ Black Box Parity Mandate**:
+  - The DhanHQ Black Box comparative analysis data architecture is fully extended across all 6 tabs of the mobile application:
+    - **HUB Tab (`DASHBOARD`)**: Parameter Matrix, Trade Sequences, and Normalized Trade Performance toggle between Webhook and DhanHQ engines.
+    - **LOGS Tab (`ALERTS`)**: Data source toggle routes execution metrics, 2-row performance grid, and Trade Filters feed to `dhanBlackboxSignals`.
+    - **SCREENER Tab (`SCREENER`)**: Screener Matrix and Paper Portfolio provide dedicated sub-views (`DHAN_SCREENER`, `DHAN_PAPER`).
+    - **MARKETS Tab (`ANALYSIS`)**: When `engineSource === 'SHADOW'`, Today's Signal Performance table, sticky `∑ CONSOLIDATED` row, Intraday Trajectory equity curve, and trade audit feed evaluate DhanHQ executed trades.
+    - **INSIGHTS Tab (`INSIGHTS`)**: Evaluates DhanHQ opening prints (`IN RANGE IN VALUE`, `IN RANGE OUT OF VALUE`), day types, and Strategy Trigger performance matrix.
+    - **ANALYTICS Tab (`ANALYTICS`)**: Macro KPIs (Win Rate, PF, Net Edge, Best Trade, Max Drawdown) and Weekly Performance Edge table (with CAGR and Kelly) dynamically synthesize completed historical weeks from `dhanBlackboxSignals`.
+  - **Zero Additional Load Standard**: The full 6-tab parity leverages the existing in-memory client-side cache (`shadowSignals` / `dhanBlackboxSignals`) with zero additional database queries, zero backend API calls, and zero frontend frame-rate degradation.
 - **Global Version 7.0 Branding Standard**:
   - Mobile terminal header: `TLCS TERMINAL v7.0`.
   - SIEM app init log: `Terminal V7.0 initialized`.
