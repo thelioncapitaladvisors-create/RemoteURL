@@ -3,7 +3,7 @@
 
 //@version=6
 
-indicator('TLCS AIO INDICAOR v6.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
+indicator('TLCS AIO INDICAOR v7.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
 // ──── INPUTS ────────────────────────────────────────────────────────
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')

@@ -14,6 +14,25 @@
 - The entire web dashboard (`index.html`, `scanner.js`, `commodity-scanner.js`) and the mobile app (`page.tsx`) rely strictly on this `exact_pct`.
 - When calculating Profit Factor, Expectancy, Win Rate, Best Trade, and Max Drawdown, base ALL metrics strictly off the Exact Percentage values, regardless of whether the user is in "Novice Mode" or "Pro Mode".
 - **CANONICAL WIN RATE & SUCCESS RATE FORMULA**: Win Rate / Success Rate across ALL tabs (`HUB`, `MARKETS`, `ANALYTICS`, `Research`, `Dashboard`) MUST ALWAYS use total realized closed trades (`wins.length / totalClosed.length * 100`) in the denominator. Breakeven trades MUST NOT be omitted from the closed trades denominator. `(Wins + Losses)` denominator is strictly prohibited.
+## Version 7.0: Platform Baseline & Repository Standardization
+- **Version 7.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) and Pine Script indicator suite (`TLCS AIO INDICAOR v7.0`, `TV_Indicator_Full_Code.txt`) are standardized to Version 7.0.
+- **Canonical UI Section Terminology**:
+  - **HUB Tab Operational Command Center**: The `TLCS LIVE OPPORTUNITIES DASHBOARD` (Parameter Matrix, Trade Sequences, Extreme Reversal, Breakaway) is positioned at the top of the **HUB** tab, followed directly by `NORMALIZED TRADE PERFORMANCE` (P&L per trade distribution, asymmetric frequency bell curve histogram, and 8 institutional KPIs) and `TLCS LIVE OPTION CHAIN`.
+  - **LOGS Tab Execution Command Center**: The `TODAY'S TRADE SIGNAL PERFORMANCE` section (Execution metrics, 2-row performance grid, and Data Source toggle) is positioned at the top of the **LOGS** tab, directly above `TRADE FILTERS` (unified chronological execution and audit log).
+  - **MARKETS Tab Streamlined Performance**: The top redundant `Markets Today` section (duplicate scope filter, duplicate 8-card metric grid, duplicate equity curve) is permanently removed; the **MARKETS** tab opens directly with `Today's Signal Performance` table, sticky `∑ CONSOLIDATED` row, `CONSOLIDATED INTRADAY TRAJECTORY`, and trade audit feed.
+- **Mobile Terminal Clean Hardening**:
+  - The redundant in-memory evaluation instruction banner (`Viewing Black Box Shadow Engine (Local In-Memory Evaluation • shadow_signals) [SHADOW DB]`) is completely removed from `page.tsx` for cleaner, uninterrupted signal monitoring.
+- **Global Version 7.0 Branding Standard**:
+  - Mobile terminal header: `TLCS TERMINAL v7.0`.
+  - SIEM app init log: `Terminal V7.0 initialized`.
+  - Daemon status pill: `Active Daemon v7.0`.
+  - User-Agent headers: `TLCS-Mobile/7.0` (Mobile PWA) and `TLCS-Autonomous-Daemon/7.0` (Netlify background functions).
+  - Web footers & script cachebusters: `v7.0` / `?v=7.0` across `dashboard.html`, `login.html`, `metrics.html`, `scanner.html`.
+  - Service Worker Cache: `tlcs-website-cache-v7.0.0`.
+  - Localization & Scanner Engines: `v7.0.0` in `localization.js` and `scanner.js`.
+  - Package versions across all repositories: `7.0.0` in `Tv-Alert-Mobile/package.json` and `TLCS_Website_Deploy/package.json`.
+  - Pine Script Indicator: `indicator('TLCS AIO INDICAOR v7.0', ...)` in `TV Indicator/TLCS_Live_Pivot_Alerts.pine` and `TV_Indicator_Full_Code.txt`.
+
 ## Version 6.0: Platform Baseline & Repository Standardization
 - **Version 6.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) and Pine Script indicator suite (`TLCS AIO INDICAOR v6.0`, `TV_Indicator_Full_Code.txt`) are standardized to Version 6.0.
 - **HUB Tab Operational Command Center**: The `TLCS LIVE OPPORTUNITIES DASHBOARD` (Parameter Matrix, Trade Sequences, Extreme Reversal, Breakaway) is positioned at the top of the **HUB** tab, followed directly by `NORMALIZED TRADE PERFORMANCE` (P&L per trade distribution, asymmetric frequency bell curve histogram, and 8 institutional KPIs) and `TLCS LIVE OPTION CHAIN`.
