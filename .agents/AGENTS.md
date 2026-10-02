@@ -14,7 +14,27 @@
 - The entire web dashboard (`index.html`, `scanner.js`, `commodity-scanner.js`) and the mobile app (`page.tsx`) rely strictly on this `exact_pct`.
 - When calculating Profit Factor, Expectancy, Win Rate, Best Trade, and Max Drawdown, base ALL metrics strictly off the Exact Percentage values, regardless of whether the user is in "Novice Mode" or "Pro Mode".
 - **CANONICAL WIN RATE & SUCCESS RATE FORMULA**: Win Rate / Success Rate across ALL tabs (`HUB`, `MARKETS`, `ANALYTICS`, `Research`, `Dashboard`) MUST ALWAYS use total realized closed trades (`wins.length / totalClosed.length * 100`) in the denominator. Breakeven trades MUST NOT be omitted from the closed trades denominator. `(Wins + Losses)` denominator is strictly prohibited.
-## Version 7.0: Platform Baseline & Repository Standardization
+
+## Version 1.0: Clean Start Baseline & Version 7.0 Fallback Architecture Mandate
+- **Version 1.0 Clean Start Baseline (Effective October 2, 2026)**:
+  - All past historical trade signals and logs across database tables (`signals`, `shadow_signals`, `weekly_performance_logs`), backend scanner state cache (`pivotboss_scans`), and frontend paper-trading stores have been cleanly purged to 0 to start afresh.
+  - Multi-market tearsheet (`strategy_tearsheet.html` across `TLCS_Website_Deploy` and `algo_engine`) is regenerated from an empty baseline starting strictly on October 2, 2026 (`2026-10-02T00:00:00+05:30`), with zero historical drawdown residue from past months.
+  - User profiles, authenticated accounts (`profiles`), push subscriptions (`push_subscriptions`), and today's intraday pivot levels (`pivots`) are strictly preserved untouched.
+- **Version 7.0 System Fallback Anchor**:
+  - Version 7.0 serves as the official frozen, production-hardened fallback system.
+  - Complete v7.0 codebase, configurations, and snapshot state are archived at `Backups/TLCS_v7.0_Backup_20261002_145500` and `Backups/TLCS_v7.0_Backup_20261002_145500.zip`.
+  - In any recovery or rollback scenario, Version 7.0 remains the reference implementation for dual-engine parity, 6-tab parity navigation, CAGR weekly tables, and admin terminal isolation.
+- **Global Version 1.0 Branding Standard**:
+  - Mobile terminal header: `TLCS TERMINAL v1.0`.
+  - SIEM app init log: `Terminal V1.0 initialized`.
+  - Daemon status pill: `Active Daemon v1.0`.
+  - Web footers & script cachebusters: `v1.0` / `?v=1.0` across `dashboard.html`, `login.html`, `metrics.html`, `scanner.html`, `products.html`.
+  - Service Worker Cache: `tlcs-website-cache-v1.0.0`.
+  - Localization & Scanner Engines: `v1.0.0` in `localization.js` and `scanner.js`.
+  - Package versions across all repositories: `1.0.0` in `Tv-Alert-Mobile/package.json` and `TLCS_Website_Deploy/package.json`.
+  - Paper Trading Storage Keys: `tlcs_paper_portfolio_v1_0` and `tlcs_dhan_paper_portfolio_v1_0` ensuring users begin with a fresh ₹10,00,000 capital baseline and 0 prior trade history.
+
+## Version 7.0: Platform Baseline & Repository Standardization (Fallback Archive Reference)
 - **Version 7.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) and Pine Script indicator suite (`TLCS AIO INDICAOR v7.0`, `TV_Indicator_Full_Code.txt`) are standardized to Version 7.0.
 - **Canonical UI Section Terminology**:
   - **HUB Tab Operational Command Center**: The `LIVE OPPORTUNITIES DASHBOARD` (Parameter Matrix, Trade Sequences, Extreme Reversal, Breakaway) is positioned at the top of the **HUB** tab, followed directly by `NORMALIZED TRADE PERFORMANCE` (P&L per trade distribution, asymmetric frequency bell curve histogram, and 8 institutional KPIs) and `OPTION CHAIN`.
