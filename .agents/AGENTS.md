@@ -27,9 +27,12 @@
   - **Parity Audit Navigation**: The Parity Audit Screen features an explicit `Exit Audit` back-button beside `Re-Audit Telemetry`, allowing seamless return to the active terminal.
   - **Compact Visual Skins**: The theme picker grid (`DARK`, `SLATE`, `LIGHT`, `THE LION`, `AUTO`) is structured as a compact 5-column responsive row, reducing vertical height while maintaining full theme capability.
   - **Strict Admin-Only Menu Access**: Access to the `Terminal Menu` is strictly restricted to authenticated administrators (`APPROVED_ADMIN_EMAILS` with `admin`, `developer`, or `owner` roles). Subscribers and non-admin users must NEVER have access to the Terminal Menu: the Menu button is hidden from their headers, state changes are blocked by `useEffect` guards, and the modal mounting gate strictly enforces `isAdmin && showSettings`.
-- **Weekly Performance Edge Lean Layout Mandate**:
-  - The `Weekly Performance Edge` table on the mobile terminal (`page.tsx`) features a streamlined 6-column lean architecture (`Wk` 8%, `Date` 21%, `Win Rate` 18%, `Net Edge` 19%, `PF` 16%, `Kelly` 18%).
-  - The redundant `Calmar` column is permanently removed to prevent horizontal table crowding and provide generous spacing across all screen sizes.
+- **Weekly Performance Edge Lean Layout & CAGR Architecture Mandate**:
+  - In the `Weekly Performance Edge` table on the mobile terminal (`page.tsx`), the redundant `Calmar` column is replaced with the Compounded Annual Growth Rate (**`CAGR`**) column, positioned between `PF` and `Kelly`.
+  - The 7-column layout is balanced across 100% table width: `Wk` (7%), `Date` (20%), `Win Rate` (15%), `Net Edge` (15%), `PF` (13%), `CAGR` (15%), `Kelly` (15%). The generous 20% width on `Date` permanently prevents string wrapping (such as 'CUMULATIVE' breaking across lines).
+  - **Deterministic CAGR Formulations**:
+    - Weekly Rows: Annualized 52-week compounded rate from weekly net percentage $R_w$: $\text{CAGR} = \left[\left(1 + \frac{R_w}{100}\right)^{52} - 1\right] \times 100$.
+    - Cumulative Row: Annualized multi-week compounded growth rate from $N$ historical weeks where $G = \prod_{i=1}^{N} \left(1 + \frac{R_{w,i}}{100}\right)$: $\text{CAGR} = \left[G^{\frac{52}{N}} - 1\right] \times 100$.
 - **Global Version 7.0 Branding Standard**:
   - Mobile terminal header: `TLCS TERMINAL v7.0`.
   - SIEM app init log: `Terminal V7.0 initialized`.
