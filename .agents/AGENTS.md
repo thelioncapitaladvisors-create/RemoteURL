@@ -17,7 +17,7 @@
 ## Version 7.0: Platform Baseline & Repository Standardization
 - **Version 7.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) and Pine Script indicator suite (`TLCS AIO INDICAOR v7.0`, `TV_Indicator_Full_Code.txt`) are standardized to Version 7.0.
 - **Canonical UI Section Terminology**:
-  - **HUB Tab Operational Command Center**: The `TLCS LIVE OPPORTUNITIES DASHBOARD` (Parameter Matrix, Trade Sequences, Extreme Reversal, Breakaway) is positioned at the top of the **HUB** tab, followed directly by `NORMALIZED TRADE PERFORMANCE` (P&L per trade distribution, asymmetric frequency bell curve histogram, and 8 institutional KPIs) and `TLCS LIVE OPTION CHAIN`.
+  - **HUB Tab Operational Command Center**: The `LIVE OPPORTUNITIES DASHBOARD` (Parameter Matrix, Trade Sequences, Extreme Reversal, Breakaway) is positioned at the top of the **HUB** tab, followed directly by `NORMALIZED TRADE PERFORMANCE` (P&L per trade distribution, asymmetric frequency bell curve histogram, and 8 institutional KPIs) and `OPTION CHAIN`.
   - **LOGS Tab Execution Command Center**: The `TODAY'S TRADE SIGNAL PERFORMANCE` section (Execution metrics, 2-row performance grid, and Data Source toggle) is positioned at the top of the **LOGS** tab, directly above `TRADE FILTERS` (unified chronological execution and audit log).
   - **MARKETS Tab Streamlined Performance**: The top redundant `Markets Today` section (duplicate scope filter, duplicate 8-card metric grid, duplicate equity curve) is permanently removed; the **MARKETS** tab opens directly with `Today's Signal Performance` table, sticky `∑ CONSOLIDATED` row, `CONSOLIDATED INTRADAY TRAJECTORY`, and trade audit feed.
 - **Mobile Terminal Clean Hardening**:
@@ -98,7 +98,7 @@
   - **Bottom Navigation Clearance**: All main terminal scrolling containers (`page.tsx`) must strictly feature `pb-20 sm:pb-24` and `min-h-0` flex bounding to guarantee bottom table rows, status pills, and summary cards never scroll beneath or get obscured by floating bottom tab bars.
   - **Horizontal Table Column Integrity**: Data tables on mobile with high column density (such as the Markets performance table) must be wrapped inside responsive horizontal scroll containers (`overflow-x-auto hide-scrollbar w-full`) with a defined minimum inner width (e.g., `min-w-[520px]`).
   - **Consolidated Summary Row Spacing**: Table summary rows displaying both label (`∑ CONSOLIDATED`) and metrics must merge label and count columns (e.g., `col-span-2 flex justify-between`) or provide sufficient fractional grid width to avoid horizontal text collision.
-  - **Equalized Section Heading Typography Mandate**: Major section headings across all mobile terminal tabs (specifically `TODAY'S TRADE SIGNAL PERFORMANCE`, `TLCS LIVE OPPORTUNITIES DASHBOARD`, and `TRADE FILTERS`) must maintain strictly equal typography:
+  - **Equalized Section Heading Typography Mandate**: Major section headings across all mobile terminal tabs (specifically `TODAY'S TRADE SIGNAL PERFORMANCE`, `LIVE OPPORTUNITIES DASHBOARD`, and `TRADE FILTERS`) must maintain strictly equal typography:
     - Heading tag & font sizing: `h2` with `text-xl sm:text-2xl font-bold italic tracking-tighter uppercase leading-[1.1] text-primary flex items-center gap-2`.
     - Section Icon parity: Accent-colored icon (`text-accent shrink-0` with `size={22}`) paired directly with heading title.
     - Subtitle formatting: `text-[10px] sm:text-[11px] font-mono font-bold text-dim uppercase tracking-wider block mt-1`.
