@@ -22,6 +22,11 @@
   - **MARKETS Tab Streamlined Performance**: The top redundant `Markets Today` section (duplicate scope filter, duplicate 8-card metric grid, duplicate equity curve) is permanently removed; the **MARKETS** tab opens directly with `Today's Signal Performance` table, sticky `∑ CONSOLIDATED` row, `CONSOLIDATED INTRADAY TRAJECTORY`, and trade audit feed.
 - **Mobile Terminal Clean Hardening**:
   - The redundant in-memory evaluation instruction banner (`Viewing Black Box Shadow Engine (Local In-Memory Evaluation • shadow_signals) [SHADOW DB]`) is completely removed from `page.tsx` for cleaner, uninterrupted signal monitoring.
+- **Terminal Menu & Autonomous Engine Isolation Mandate**:
+  - **Engine Source Placement**: The Autonomous Engine Selector (`TV PROD`, `BLACK BOX LIVE`, `PARITY AUDIT`) is permanently moved from the main terminal header inside the **Terminal Menu** (`TERMINAL MENU`). The main terminal viewport remains clean and free from internal switching chrome for all users.
+  - **Parity Audit Navigation**: The Parity Audit Screen features an explicit `Exit Audit` back-button beside `Re-Audit Telemetry`, allowing seamless return to the active terminal.
+  - **Compact Visual Skins**: The theme picker grid (`DARK`, `SLATE`, `LIGHT`, `THE LION`, `AUTO`) is structured as a compact 5-column responsive row, reducing vertical height while maintaining full theme capability.
+  - **Strict Admin-Only Menu Access**: Access to the `Terminal Menu` is strictly restricted to authenticated administrators (`APPROVED_ADMIN_EMAILS` with `admin`, `developer`, or `owner` roles). Subscribers and non-admin users must NEVER have access to the Terminal Menu: the Menu button is hidden from their headers, state changes are blocked by `useEffect` guards, and the modal mounting gate strictly enforces `isAdmin && showSettings`.
 - **Global Version 7.0 Branding Standard**:
   - Mobile terminal header: `TLCS TERMINAL v7.0`.
   - SIEM app init log: `Terminal V7.0 initialized`.
@@ -32,6 +37,7 @@
   - Localization & Scanner Engines: `v7.0.0` in `localization.js` and `scanner.js`.
   - Package versions across all repositories: `7.0.0` in `Tv-Alert-Mobile/package.json` and `TLCS_Website_Deploy/package.json`.
   - Pine Script Indicator: `indicator('TLCS AIO INDICAOR v7.0', ...)` in `TV Indicator/TLCS_Live_Pivot_Alerts.pine` and `TV_Indicator_Full_Code.txt`.
+
 
 ## Version 6.0: Platform Baseline & Repository Standardization
 - **Version 6.0 Platform Baseline**: The system infrastructure (Mobile Next.js PWA, Web Dashboard, and Netlify background workers) and Pine Script indicator suite (`TLCS AIO INDICAOR v6.0`, `TV_Indicator_Full_Code.txt`) are standardized to Version 6.0.
