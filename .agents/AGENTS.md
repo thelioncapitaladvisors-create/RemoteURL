@@ -27,6 +27,9 @@
   - **Parity Audit Navigation**: The Parity Audit Screen features an explicit `Exit Audit` back-button beside `Re-Audit Telemetry`, allowing seamless return to the active terminal.
   - **Compact Visual Skins**: The theme picker grid (`DARK`, `SLATE`, `LIGHT`, `THE LION`, `AUTO`) is structured as a compact 5-column responsive row, reducing vertical height while maintaining full theme capability.
   - **Strict Admin-Only Menu Access**: Access to the `Terminal Menu` is strictly restricted to authenticated administrators (`APPROVED_ADMIN_EMAILS` with `admin`, `developer`, or `owner` roles). Subscribers and non-admin users must NEVER have access to the Terminal Menu: the Menu button is hidden from their headers, state changes are blocked by `useEffect` guards, and the modal mounting gate strictly enforces `isAdmin && showSettings`.
+- **Weekly Performance Edge Lean Layout Mandate**:
+  - The `Weekly Performance Edge` table on the mobile terminal (`page.tsx`) features a streamlined 6-column lean architecture (`Wk` 8%, `Date` 21%, `Win Rate` 18%, `Net Edge` 19%, `PF` 16%, `Kelly` 18%).
+  - The redundant `Calmar` column is permanently removed to prevent horizontal table crowding and provide generous spacing across all screen sizes.
 - **Global Version 7.0 Branding Standard**:
   - Mobile terminal header: `TLCS TERMINAL v7.0`.
   - SIEM app init log: `Terminal V7.0 initialized`.
