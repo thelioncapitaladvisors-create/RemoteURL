@@ -24,7 +24,7 @@ tags:
 
 ---
 
-## 1. Immutable 3-Admin Whitelist Authorization Model
+## 1. Immutable Authorized Admin Whitelist Authorization Model
 
 All administrative authorization checks on Web (`auth.js`, `admin.html`, `dashboard.html`), Mobile (`page.tsx`, `AuthGuard.tsx`), and Netlify serverless functions (`system-audit.js`, `test-telegram.js`, `admin-clear-signals.js`, `admin-delete-item.js`) evaluate strictly against:
 
@@ -32,7 +32,8 @@ All administrative authorization checks on Web (`auth.js`, `admin.html`, `dashbo
 const APPROVED_ADMIN_EMAILS = [
   'owner@tlcs.com',
   'vishantmeshram@gmail.com',
-  'thelioncapitaladvisors@gmail.com'
+  'thelioncapitaladvisors@gmail.com',
+  'connect@thelioncapitalsolutions.com'
 ];
 ```
 

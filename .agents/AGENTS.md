@@ -1365,12 +1365,13 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - Access is restricted exclusively to administrators and platform owners.
 - **Canonical Admin Authorization Model**:
   - Evaluated on mobile (`page.tsx`) and web (`dashboard.html`, `auth.js`, `admin.html`):
-    - Whitelisted strictly to the **exactly 3 registered authorized admin user accounts**:
+    - Whitelisted strictly to the authorized admin user accounts:
       1. `owner@tlcs.com`
       2. `vishantmeshram@gmail.com`
       3. `thelioncapitaladvisors@gmail.com`
+      4. `connect@thelioncapitalsolutions.com`
     - No other user or email domain (including `@thelioncapitaladvisors.com` or `admin@thelioncapitaladvisors.com`) may EVER be granted admin status without explicit prior owner instruction.
-    - All Menu / Admin Panel options, clear alerts controls, database sentinels, autonomous repair agents, and parity tools are strictly restricted to these 3 approved admin users.
+    - All Menu / Admin Panel options, clear alerts controls, database sentinels, autonomous repair agents, and parity tools are strictly restricted to these approved admin users.
 - **Zero UI Leakage & Client-Side Fail-Safe**:
   - **Web Dashboard**: `#engine-source-selector` MUST have default CSS `style="display: none;"`. It is revealed via `display: flex;` only after async Supabase authentication verifies admin status.
   - **Mobile App**: UI elements are wrapped inside `{isAdmin && ( ... )}` guards.
@@ -1392,11 +1393,12 @@ When a trade exits but its `exit_price` or canonical exit level was not register
     - Subtitle badge wrapper: `flex items-center w-full min-w-0 overflow-hidden` without margin-top (`mt-0`).
 
 ## Version 2.0 Security Hardening, Menu Gating & Canonical Baseline (20 Sept 2026)
-- **Strict 3-Admin Whitelist Mandate**:
-  - The entire platform across Web (`TLCS_Website_Deploy`), Mobile (`Tv-Alert-Mobile`), and Netlify serverless functions recognizes **strictly and exclusively 3 authorized admin accounts**:
+- **Strict Authorized Admin Whitelist Mandate**:
+  - The entire platform across Web (`TLCS_Website_Deploy`), Mobile (`Tv-Alert-Mobile`), and Netlify serverless functions recognizes authorized admin accounts:
     1. `owner@tlcs.com`
     2. `vishantmeshram@gmail.com`
     3. `thelioncapitaladvisors@gmail.com`
+    4. `connect@thelioncapitalsolutions.com`
   - **Zero Wildcard or Unregistered Admins**: All wildcard domain checks (e.g. `@thelioncapitaladvisors.com` or `admin@thelioncapitaladvisors.com`) are strictly eliminated.
   - **No Admin Self-Registration**: `AuthGuard.tsx` enforces `role: 'user'` for all non-approved accounts upon registration or login, preventing unauthorized privilege escalation.
 - **Top Header Menu & Admin Panel Gating**:
