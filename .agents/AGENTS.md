@@ -52,7 +52,18 @@
   - **Engine Source Placement**: The Autonomous Engine Selector (`TV PROD`, `BLACK BOX LIVE`, `PARITY AUDIT`) is permanently moved from the main terminal header inside the **Terminal Menu** (`TERMINAL MENU`). The main terminal viewport remains clean and free from internal switching chrome for all users.
   - **Parity Audit Navigation**: The Parity Audit Screen features an explicit `Exit Audit` back-button beside `Re-Audit Telemetry`, allowing seamless return to the active terminal.
   - **Compact Visual Skins**: The theme picker grid (`DARK`, `SLATE`, `LIGHT`, `THE LION`, `AUTO`) is structured as a compact 5-column responsive row, reducing vertical height while maintaining full theme capability.
-  - **Strict Admin-Only Menu Access**: Access to the `Terminal Menu` is strictly restricted to authenticated administrators (`APPROVED_ADMIN_EMAILS` with `admin`, `developer`, or `owner` roles). Subscribers and non-admin users must NEVER have access to the Terminal Menu: the Menu button is hidden from their headers, state changes are blocked by `useEffect` guards, and the modal mounting gate strictly enforces `isAdmin && showSettings`.
+  - **Role-Based Terminal Menu Access Model**:
+    - **App Subscribers**: Have access to the `Terminal Menu` restricted exclusively to client personalization, sensory alerting, and session management functions:
+      1. **`VISUAL SKINS`** (`DARK`, `SLATE`, `LIGHT`, `THE LION`, `GG DARK`, `GG LIGHT`, `AUTO`).
+      2. **`AUDIO ALERT SIGNATURE`** (`TLCS ALARM`, `RISK ISHQ`, `CHIME`, `RADAR`, `DIGITAL`, `SILENT`).
+      3. **`HAPTIC FEEDBACK`** (`DEVICE VIBRATION` / `PULSE ON NEW SIGNALS`).
+      4. **`SHUTDOWN TERMINAL`** (Secure session sign-out/exit).
+    - **Admin-Only Operational Isolation**: App Subscribers are strictly forbidden from viewing or accessing administrative, architectural, or algorithmic execution engine controls. The following sections are strictly gated behind `isAdmin`:
+      1. **`ARCHITECT & CREDENTIALS SIGNATURE`** (*Vishant Vyankat Meshram, CFTe, CMT L3 Dec 2024*).
+      2. **`EXECUTION ENGINE SOURCE`** (`TV PROD`, `BLACK BOX`, `PARITY AUDIT`).
+      3. **`24/7 SUPABASE DATABASE SENTINEL`** (Keep-alive pings, auto-cron monitors).
+      4. **`SYSTEM AUTONOMOUS RESOLUTION AGENT`** (Autonomous repair, weekly rollup, outcome healer, session sweeper, tearsheet generator).
+      5. **`TERMINAL MAINTENANCE`** (`Force Synchronize State`, `Clear All Alerts`).
 - **Weekly Performance Edge Lean Layout & CAGR Architecture Mandate**:
   - In the `Weekly Performance Edge` table on the mobile terminal (`page.tsx`), the redundant `Calmar` column is replaced with the Compounded Annual Growth Rate (**`CAGR`**) column, positioned between `PF` and `Kelly`.
   - The 7-column layout is balanced across 100% table width: `Wk` (7%), `Date` (20%), `Win Rate` (15%), `Net Edge` (15%), `PF` (13%), `CAGR` (15%), `Kelly` (15%). The generous 20% width on `Date` permanently prevents string wrapping (such as 'CUMULATIVE' breaking across lines).

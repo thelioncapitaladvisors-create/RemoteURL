@@ -108,9 +108,34 @@ In accordance with institutional UX hardening and logical data collocation, the 
 
 ---
 
-## 8. Verification & Validation Baseline
+## 8. Role-Based Terminal Menu Access Architecture (App Subscriber Gating)
+
+### Architecture Rationale
+* The Terminal Menu (`TERMINAL MENU`) was previously gated exclusively to authenticated administrative users (`APPROVED_ADMIN_EMAILS`), completely hiding personalization controls from standard application subscribers.
+* To provide subscribers with essential visual customization, auditory risk alerts, and haptic feedback while maintaining complete operational security, the Terminal Menu was restructured into a **Role-Based Access Control (RBAC)** architecture.
+
+### Implementation Details (`Tv-Alert-Mobile/src/app/page.tsx`)
+* **Header Button Access**: The header `Menu` button is accessible to all authenticated application users (both subscribers and administrators).
+* **Subscriber-Facing Functions (Client Personalization & Alerts)**:
+  1. **`VISUAL SKINS`**: Full access to all 7 visual themes (`DARK`, `SLATE`, `LIGHT`, `THE LION`, `GG DARK`, `GG LIGHT`, `AUTO`).
+  2. **`AUDIO ALERT SIGNATURE`**: Auditory alert selection (`TLCS ALARM`, `RISK ISHQ`, `CHIME`, `RADAR`, `DIGITAL`, `SILENT`).
+  3. **`HAPTIC FEEDBACK`**: Device vibration toggle (`DEVICE VIBRATION • PULSE ON NEW SIGNALS`).
+  4. **`SHUTDOWN TERMINAL`**: Clean session termination and sign-out.
+  * *Subtitle Readout*: Subtitle renders as `Terminal Preferences` for subscribers, while rendering as `Admin Command Center` for authenticated administrators.
+* **Admin-Only Operational Controls (Protected & Hidden from Subscribers)**:
+  The following sections are strictly wrapped behind `{isAdmin && (...)}` and are completely excluded from subscriber DOM trees:
+  1. **`ARCHITECT & CREDENTIALS SIGNATURE`**: Prominent credentials banner (*Vishant Vyankat Meshram, CFTe, CMT L3 Dec 2024*).
+  2. **`EXECUTION ENGINE SOURCE`**: Autonomous Engine Selector (`TV PROD`, `BLACK BOX`, `PARITY AUDIT`).
+  3. **`24/7 SUPABASE DATABASE SENTINEL`**: Real-time heartbeat, 6-hour cron monitor, and database keep-alive.
+  4. **`SYSTEM AUTONOMOUS RESOLUTION AGENT`**: Autonomous healing, weekly performance synchronization, session sweeps, and VectorBT tearsheet rebuilds.
+  5. **`TERMINAL MAINTENANCE`**: Operational state reset and `Clear All Alerts`.
+
+---
+
+## 9. Verification & Validation Baseline
 
 * **TypeScript Compilation**: `npx tsc --noEmit` verified with 0 syntax or type errors.
 * **Next.js Production Build**: `npm run build` compiled 100% cleanly across all 9 static and dynamic routes.
 * **Local Backup Synchronization**: Mirrored to `Project Backup/Tv-Alert-Mobile/src/app/page.tsx`, `Project Backup/.agents/AGENTS.md`, and Obsidian documentation directories.
+
 
