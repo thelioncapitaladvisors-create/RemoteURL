@@ -20,6 +20,13 @@
   - All past historical trade signals and logs across database tables (`signals`, `shadow_signals`, `weekly_performance_logs`), backend scanner state cache (`pivotboss_scans`), and frontend paper-trading stores have been cleanly purged to 0 to start afresh.
   - Multi-market tearsheet (`strategy_tearsheet.html` across `TLCS_Website_Deploy` and `algo_engine`) is regenerated from an empty baseline starting strictly on October 2, 2026 (`2026-10-02T00:00:00+05:30`), with zero historical drawdown residue from past months.
   - User profiles, authenticated accounts (`profiles`), push subscriptions (`push_subscriptions`), and today's intraday pivot levels (`pivots`) are strictly preserved untouched.
+- **Version 1.0 Complete Production Backup Anchor (Effective October 3, 2026)**:
+  - Version 1.0 serves as the official, complete, production-hardened institutional system baseline.
+  - Complete v1.0 codebase, configurations, documentation, and snapshot state are archived at `Backups/TLCS_v1.0_Complete_Backup_20261003_222500` and `Backups/TLCS_v1.0_Complete_Backup_20261003_222500.zip`.
+  - Applications-only package archived at `Backups/TLCS_Applications_v1.0_20261003.zip`.
+  - Secondary external mirror preserved in `/Users/vishant/Documents/Backups/`.
+  - Local mirror continuously synchronized at `Project Backup/`.
+  - Git release tags `v1.0` and `v1.0.0` pushed to GitHub across all four primary repositories (`Tv-Alert-Mobile`, `TLCS_Website_Deploy`, `RemoteURL`, and root repository).
 - **Version 7.0 System Fallback Anchor**:
   - Version 7.0 serves as the official frozen, production-hardened fallback system.
   - Complete v7.0 codebase, configurations, and snapshot state are archived at `Backups/TLCS_v7.0_Backup_20261002_145500` and `Backups/TLCS_v7.0_Backup_20261002_145500.zip`.
