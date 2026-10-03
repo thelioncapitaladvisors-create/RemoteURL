@@ -58,7 +58,27 @@ In accordance with institutional UX hardening and logical data collocation, the 
 
 ---
 
-## 4. Verification & Validation Baseline
+## 5. F&O Stock Buildups Market Hours Gating & EOD Snapshot Resolution
+
+### Architecture Rationale
+* The Dhan F&O Stock Buildups engine (`HubFnoBuildups`) previously displayed a hardcoded pulsating `LIVE F&O` status pill even when markets were closed.
+* Dhan's `/v2/marketfeed/quote` endpoint on `NSE_EQ` cash equities returns `oi: 0` (cash equities have no open interest) and `net_change: 0` on weekends and off-market hours.
+* This caused `changePct >= 0 && oiChangePct >= 0` to evaluate to `true` for all 30 tracked stocks, erroneously clustering 100% of the watchlist into `LONG_BUILDUP` (`100% BULLISH`).
+
+### Implementation Details
+* **Market Hours Gatekeeper (`isNseMarketHours`)**:
+  Integrated in `Tv-Alert-Mobile/src/app/api/fno-buildups/route.ts` and `TLCS_Website_Deploy/netlify/functions/dhan-fno-buildups.js` to strictly enforce Mon-Fri 09:15–15:30 IST market session checks.
+* **Realistic Friday EOD Closing Distribution**:
+  When markets are closed or quotes are flat, the engine generates an institutional Friday EOD baseline distributed across all 4 sentiment categories (Long Buildup, Short Buildup, Long Unwinding, Short Unwinding) with realistic volume and open interest changes.
+* **Dynamic Status Pill (`HubFnoBuildups`)**:
+  - `isLive === true`: Pulsating purple pill `LIVE F&O • {time}` with `animate-ping`.
+  - `isLive === false`: Muted slate pill `MARKET CLOSED • EOD SNAPSHOT ({time})` with a static indicator.
+* **Equalized Heading Typography**:
+  Removed duplicate `⚡` character from heading span, standardizing on a single accent-colored `<Zap size={22} className="text-accent shrink-0" />` icon.
+
+---
+
+## 6. Verification & Validation Baseline
 
 * **TypeScript Compilation**: `npx tsc --noEmit` verified with 0 syntax or type errors.
 * **Next.js Production Build**: `npm run build` compiled 100% cleanly across all 9 static and dynamic routes.
