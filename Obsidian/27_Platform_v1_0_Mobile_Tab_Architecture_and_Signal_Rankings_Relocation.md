@@ -34,27 +34,30 @@ In accordance with institutional UX hardening and logical data collocation, the 
 
 ---
 
-## 3. MARKETS Tab Extended Edge & 7-Day Performance Relocation
+## 3. MARKETS Tab Extended Edge & Weekly Performance Relocation
 
 ### Architecture Rationale
 * The **This Week's Signal Performance** block provides a day-by-day (D7 down to D1) calendar performance breakdown (closed trades, win rate, net profit %, and average return %).
-* In the **ANALYTICS** tab, this 7-day intraday table sat between the Macro KPI cards and the multi-week institutional `Weekly Performance Edge` table (CAGR, PF, Kelly, Win Rate), creating visual clutter.
-* Moving it to the bottom of the **MARKETS** tab consolidates all short-horizon execution metrics (Intraday execution feed $\rightarrow$ Market-wise KPI cards $\rightarrow$ 7-day rolling calendar performance) in a single operational viewport.
+* In addition, the institutional **Weekly Performance Edge** table (multi-week aggregated performance: Wk, Date, Win Rate, Net Edge, Profit Factor, Compounded Annual Growth Rate [CAGR], and Kelly Criterion %) was previously located on the **ANALYTICS** tab.
+* In the **ANALYTICS** tab, these tables occupied space between the high-level Macro KPI cards and the comprehensive institutional Strategy Tearsheets (Equity Growth Chart and Multi-Market Statistical Metrics).
+* Relocating both **This Week's Signal Performance** and **Weekly Performance Edge** to the bottom of the **MARKETS** tab consolidates all short-horizon and medium-horizon performance metrics (Intraday execution feed $\rightarrow$ Market-wise KPI cards $\rightarrow$ 7-day rolling calendar performance $\rightarrow$ Multi-week institutional Weekly Performance Edge) into a single unified performance tab.
+* This leaves the **ANALYTICS** tab streamlined: Macro KPI cards and the Intraday Trajectory Equity Curve connect seamlessly into the embedded high-resolution VectorBT institutional strategy tearsheets.
 
 ### Implementation Details (`Tv-Alert-Mobile/src/app/page.tsx`)
-* **Removal from ANALYTICS Tab**: The Macro KPI cards and System-Wide Intraday Equity Curve now connect cleanly into the institutional `Weekly Performance Edge` table.
-* **Insertion into MARKETS Tab**: Positioned at the bottom of `activeTab === 'ANALYSIS'` below `{/* --- END MARKET WISE SECTIONS --- */}`.
+* **Removal from ANALYTICS Tab**: The `Weekly Performance Edge` table was completely removed from `activeTab === 'ANALYTICS'`.
+* **Insertion into MARKETS Tab**: Positioned at the very bottom of `activeTab === 'ANALYSIS'` directly following `This Week's Signal Performance`.
 * **Dynamic Filter Parity**:
-  * Connected to `todayTableMarket` (ALL, NIFTY, STOCKS, MCX, NYMEX, CRYPTO, FOREX, WORLD):
-    ```tsx
-    const currentMarketSignals = engineSource === 'SHADOW' ? dhanBlackboxSignals : signals;
-    const filteredSigs = todayTableMarket === 'ALL' 
-      ? currentMarketSignals 
-      : currentMarketSignals.filter(s => getMarket(s) === todayTableMarket.toLowerCase());
-    ```
-  * Table dynamically filters to the chosen market when the user taps any market chip.
+  * Bound to `todayTableMarket` (ALL, NIFTY, STOCKS, MCX, NYMEX, CRYPTO, FOREX, WORLD):
+    - Subtitle reflects selected market: `🌐 {todayTableMarket === 'ALL' ? 'SYSTEM-WIDE (ALL MARKETS)' : todayTableMarket.toUpperCase()}`
+    - `weeklyEdgeLogs` computation effect re-filters on `todayTableMarket` changes:
+      ```tsx
+      const activeEdgeMarket = (todayTableMarket || 'ALL').toLowerCase();
+      const filteredData = activeEdgeMarket === 'all' 
+        ? logsToUse 
+        : logsToUse.filter(log => (log.market_type || '').toLowerCase() === activeEdgeMarket);
+      ```
   * Dual-Engine Aware: Automatically evaluates live Webhook signals (`TV`) or standalone Black Box signals (`SHADOW`).
-* **Zero Navigation Collision**: Added `pb-24` to `motion.div key="analysis"` container to guarantee complete scroll clearance above the floating bottom navigation bar.
+* **Zero Navigation Collision**: Protected by `pb-24` on the `motion.div key="analysis"` container to guarantee complete scroll clearance above the floating bottom navigation bar.
 
 ---
 
