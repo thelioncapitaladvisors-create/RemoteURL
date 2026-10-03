@@ -75,7 +75,20 @@ In accordance with institutional UX hardening and logical data collocation, the 
 
 ---
 
-## 5. Verification & Validation Baseline
+## 5. Zero Theme Branding in Viewports Mandate
+
+### Architecture Rationale
+* Visual theme names (such as "Golden Gate 27.0.1", "Golden Gate Light 27.0.1", and "Platform Guide") previously surfaced as decorative status pills in card headers (notably the `TRADE FILTERS` / `RECENT TRADE AUDIT LOGS` card on the **LOGS** tab).
+* These badges added visual noise to operational trading feeds without providing analytical utility.
+
+### Implementation Details (`Tv-Alert-Mobile/src/app/page.tsx`)
+* **Removal from TRADE FILTERS Header**: Completely eliminated the conditional pill badges for `theme === 'lion'` (`PLATFORM GUIDE`), `theme === 'goldengate'` (`GOLDEN GATE 27.0.1`), and `theme === 'goldengate-light'` (`GOLDEN GATE LIGHT 27.0.1`).
+* **Clean Header Action Area**: The right side of the Trade Filters header now exclusively displays functional telemetry (e.g. `{activeSignals.length} ACTIVE SIGNALS` / `{activeDhanCount} ACTIVE SIGNALS`).
+* **Terminal Menu Visual Skins Standardization**: In the Settings Modal, the active skin readout was updated from `GOLDEN GATE 27.0.1` / `GOLDEN GATE LIGHT 27.0.1` to clean, compact nomenclature (`GG DARK` / `GG LIGHT`), matching the button labels in the selection grid.
+
+---
+
+## 6. Verification & Validation Baseline
 
 * **TypeScript Compilation**: `npx tsc --noEmit` verified with 0 syntax or type errors.
 * **Next.js Production Build**: `npm run build` compiled 100% cleanly across all 9 static and dynamic routes.
