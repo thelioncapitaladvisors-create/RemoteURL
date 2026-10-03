@@ -58,7 +58,24 @@ In accordance with institutional UX hardening and logical data collocation, the 
 
 ---
 
-## 4. Verification & Validation Baseline
+## 4. HUB Tab Operational Command Center & Dual-Engine Toggle Harmonization
+
+### Architecture Rationale
+* Previously, the dual-engine data source toggle (`[WEBHOOK]` vs `[DHANHQ ⚡]`) in the HUB tab was nested inside the `NORMALIZED TRADE PERFORMANCE` card halfway down the page, while the top of the tab lacked the standard engine toggle banner present in `LOGS`, `MARKETS`, `INSIGHTS`, and `ANALYTICS`.
+* This caused visual and operational asymmetry, requiring users to scroll down to switch data feeds for the top `LIVE OPPORTUNITIES DASHBOARD` parameter matrix.
+
+### Implementation Details (`Tv-Alert-Mobile/src/app/page.tsx`)
+* **Standard Top-of-Tab Toggle Banner**: Added directly beneath the `LIVE OPPORTUNITIES DASHBOARD` header:
+  * Full-width container: `flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-1.5 rounded-2xl bg-card border border-border/80 shadow-sm mb-4`.
+  * Left: Segmented toggle buttons `[WEBHOOK SIGNALS]` and `[BLACK BOX]` with pulse/bounce animated icons.
+  * Right: Dynamic status text (`● Live Webhook Engine` or `⚡ Standalone Black Box`).
+  * OnClick handler synchronizes `setHubDataSource`, `setDistDataSource`, `setEngineSource`, and resets filters cleanly.
+* **Removal of Redundant In-Card Buttons**: Removed the secondary toggle buttons from `NORMALIZED TRADE PERFORMANCE` header, streamlining the title and letting the top toggle serve as the single source of truth for the entire tab.
+* **Header Badge Parity**: Updated the Uniform Tab Header right badge on the HUB tab to dynamically render `⚡ BLACK BOX` vs `LIVE WEBHOOK (TV)`, identical to `MARKETS`, `INSIGHTS`, and `ANALYTICS`.
+
+---
+
+## 5. Verification & Validation Baseline
 
 * **TypeScript Compilation**: `npx tsc --noEmit` verified with 0 syntax or type errors.
 * **Next.js Production Build**: `npm run build` compiled 100% cleanly across all 9 static and dynamic routes.
