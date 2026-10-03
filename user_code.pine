@@ -597,6 +597,22 @@ Wshortsignal = ta.falling(fPivotPDEMAS, 1) and Wshortsig
 plotshape(Wlongsig, color = color.new(color.navy, 0), location = location.belowbar, style = shape.triangleup, size = size.small)
 plotshape(Wshortsig, color = color.new(color.navy, 0), location = location.abovebar, style = shape.triangledown, size = size.small)
 
+// outside Reversal System
+
+L03 = input(true, title = 'Enable Outside Reversal System')
+BarMultiplier = input.float(title = 'Body Multiplier', defval = 1.25, step = 0.05, maxval = 3.5)
+BarsBack = input.int(title = 'Bars Back', defval = 50, maxval = 250)
+AverageCandle1 = ta.sma(H - L, BarsBack)
+
+Olongsig = L03 and GREENZONE and L < L[1] and C > H[1] and H - L >= AverageCandle1 * BarMultiplier
+Oshortsig = L03 and REDZONE and H > H[1] and C < L[1] and H - L >= AverageCandle1 * BarMultiplier
+
+Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
+Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
+
+plotshape(Olongsig, color = color.new(color.orange, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
+plotshape(Oshortsig, color = color.new(color.orange, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
+
 // Exteme Reversal System
 
 L02 = input(true, title = 'Enable Exteme Reversal System')
@@ -609,30 +625,14 @@ AverageBody = ta.sma(mybodysize, barsback)
 mycandlesize = H - L
 AverageCandle = ta.sma(mycandlesize, barsback)
 
-Elongsig = GREENZONE and O[1] - C[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and O[1] - C[1] > AverageBody and C > O
-Eshortsig = REDZONE and C[1] - O[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and C[1] - O[1] > AverageBody and O > C
+Elongsig = L02 and GREENZONE and O[1] - C[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and O[1] - C[1] > AverageBody and C > O
+Eshortsig = L02 and REDZONE and C[1] - O[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and C[1] - O[1] > AverageBody and O > C
 
 Elongsignal = ta.rising(fPivotPDEMAS, 1) and Elongsig
 Eshortsignal = ta.falling(fPivotPDEMAS, 1) and Eshortsig
 
 plotshape(Elongsig, color = color.new(color.fuchsia, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
 plotshape(Eshortsig, color = color.new(color.fuchsia, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
-
-// outside Reversal System
-
-L03 = input(true, title = 'Enable Outside Reversal System')
-BarMultiplier = input.float(title = 'Body Multiplier', defval = 1.25, step = 0.05, maxval = 3.5)
-BarsBack = input.int(title = 'Bars Back', defval = 50, maxval = 250)
-AverageCandle1 = ta.sma(mycandlesize, BarsBack)
-
-Olongsig = GREENZONE and L < L[1] and C > H[1] and H - L >= AverageCandle1 * BarMultiplier
-Oshortsig = REDZONE and H > H[1] and C < L[1] and H - L >= AverageCandle1 * BarMultiplier
-
-Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
-Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
-
-plotshape(Olongsig, color = color.new(color.orange, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
-plotshape(Oshortsig, color = color.new(color.orange, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
 
 // Doji Reversal System
 
@@ -649,8 +649,8 @@ DAverageBody = ta.sma(Dmybodysize, Wbarsback)
 Dmycandlesize = H - L
 DAverageCandle = ta.sma(Dmycandlesize, Wbarsback)
 
-Dshort = frangeco <= frangehl * percentage and C < L[1] and L[1] > sma10 and C < O or C < L[2] and C[1] >= L[2] and frangeco <= frangeco * percentage and C < O and L[2] > sma10
-Dlong = frangeco <= frangehl * percentage and C > H[1] and H[1] < sma10 and C > O or C > H[2] and C[1] <= H[2] and frangeco <= frangeco * percentage and C > O and H[2] < sma10
+Dshort = frangeco <= frangehl * percentage and C < L[1] and L[1] > sma10 and C < O or C < L[2] and C[1] >= L[2] and frangeco <= frangehl * percentage and C < O and L[2] > sma10
+Dlong = frangeco <= frangehl * percentage and C > H[1] and H[1] < sma10 and C > O or C > H[2] and C[1] <= H[2] and frangeco <= frangehl * percentage and C > O and H[2] < sma10
 
 Dlongsig = GREENZONE and bool(lowleftempty) and L04 and Dlong and H - L >= WAverageCandle * DBarMultiplier
 Dshortsig = REDZONE and bool(highleftempty) and L04 and Dshort and H - L >= WAverageCandle * DBarMultiplier
