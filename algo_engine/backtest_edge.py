@@ -476,7 +476,8 @@ def run_returns_backtest():
         
         body.mode-stats .tab-container {{ display: none !important; }}
         body.mode-stats .tab-content {{ display: none !important; }}
-        body.mode-stats #stats {{ display: block !important; }}
+        body.mode-stats #stats {{ display: block !important; height: auto !important; min-height: auto !important; padding: 8px 10px !important; }}
+        body.mode-stats {{ overflow-y: hidden !important; }}
     </style>
 </head>
 <body>
@@ -791,6 +792,19 @@ def run_returns_backtest():
     [50, 150, 300, 600, 1000].forEach(delay => {{{{
         setTimeout(updateCharts, delay);
     }}}});
+
+    if (mode === 'stats') {{{{
+        function sendStatsHeight() {{{{
+            const table = document.querySelector('.stats-table');
+            const h = table ? table.offsetHeight + 24 : (document.getElementById('stats')?.offsetHeight || document.body.scrollHeight);
+            if (window.parent && window.parent !== window) {{{{
+                window.parent.postMessage({{{{ type: 'TLCS_TEARSHEET_HEIGHT', height: h }}}}, '*');
+            }}}}
+        }}}}
+        window.addEventListener('load', sendStatsHeight);
+        [100, 300, 600, 1000].forEach(d => setTimeout(sendStatsHeight, d));
+        window.addEventListener('resize', sendStatsHeight);
+    }}}}
 </script>
 </body>
 </html>
