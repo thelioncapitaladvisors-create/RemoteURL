@@ -15,17 +15,24 @@
 - When calculating Profit Factor, Expectancy, Win Rate, Best Trade, and Max Drawdown, base ALL metrics strictly off the Exact Percentage values, regardless of whether the user is in "Novice Mode" or "Pro Mode".
 - **CANONICAL WIN RATE & SUCCESS RATE FORMULA**: Win Rate / Success Rate across ALL tabs (`HUB`, `MARKETS`, `ANALYTICS`, `Research`, `Dashboard`) MUST ALWAYS use total realized closed trades (`wins.length / totalClosed.length * 100`) in the denominator. Breakeven trades MUST NOT be omitted from the closed trades denominator. `(Wins + Losses)` denominator is strictly prohibited.
 
-## Version 1.0: Clean Start Baseline & Version 7.0 Fallback Architecture Mandate
+## Version 1.0: Clean Start Baseline & Complete Production Anchor (Effective October 4, 2026)
+- **Version 1.0 VAPT, DAST Security Hardening & Zero-Tamper Guarantee (Effective October 4, 2026)**:
+  - **Subscription Duration Tampering Shield**: `/api/subscribe` and payment processing strictly authenticate requests via `supabase.auth.getUser(token)`, verify user ID ownership (`user.id === userId`), and lock subscription duration strictly on the server via canonical plan price map (`2999` -> 30d, `6999` -> 90d, `11999` -> 180d, `19999` -> 365d). Any client-supplied `metadata.days` or altered payload values are strictly discarded.
+  - **Database Privilege Escalation Shield (`HARDEN_PROFILES_RLS.sql`)**: PostgreSQL trigger `trg_protect_profile_security_fields` on the `profiles` table guarantees that non-service-role / non-admin users cannot alter `role`, `subscription_status`, `subscription_plan`, or `subscription_end_date`.
+  - **Zero Credential Exposure in Repositories**: All DhanHQ PINs, TOTP secrets, Client IDs, and VAPID keys are strictly read from runtime environment variables (`process.env`) with zero hardcoded fallback strings anywhere in codebase or comments.
+  - **Anti-Clickjacking & XSS Protection**: `_headers` restricts iframe embedding (`frame-ancestors 'self' https://thelioncapitalsolutions.com https://tlcsterminal.netlify.app`), and `login.html` enforces `sanitizeRedirectUrl()` blocking `http:`, `https:`, `javascript:`, `data:`, and `//` protocol-relative redirects.
+  - **Internal Cron & Background Worker Protection**: All backend scanner and auth functions (`dhan-scanner-background.js`, `cron-dhan-scanner.js`, `dhan-auth.js`) enforce internal secret (`x-internal-secret`) or authenticated admin verification before execution.
+- **Version 1.0 Crisp Typography & Contrast Architecture (Effective October 4, 2026)**:
+  - **Shiny Card Isolation & Text Clarity**: `.shiny-card` enforces `isolation: isolate` and `> * { z-index: 2; }` while `.shiny-card::before` operates at `z-index: 0` with reduced sheen opacity (`0.15`), permanently eliminating milky/opaque text haze.
+  - **High-Contrast Dark Slate Tokens**: Light and Golden Gate Light themes utilize `--text-primary: #020617`, `--text-secondary: #0F172A`, and `--text-dim: #334155` alongside global `-webkit-font-smoothing: antialiased` for crisp rendering.
+  - **F&O Stock Buildups Typography**: Font sizes across `HubFnoBuildups` headings, breadth metrics, filter tabs, top active stock cards (LTP, OI, Volume), and interactive analysis modal are increased by 1-2px with bold contrast for optimal readability.
 - **Version 1.0 Clean Start Baseline (Effective October 2, 2026)**:
   - All past historical trade signals and logs across database tables (`signals`, `shadow_signals`, `weekly_performance_logs`), backend scanner state cache (`pivotboss_scans`), and frontend paper-trading stores have been cleanly purged to 0 to start afresh.
   - Multi-market tearsheet (`strategy_tearsheet.html` across `TLCS_Website_Deploy` and `algo_engine`) is regenerated from an empty baseline starting strictly on October 2, 2026 (`2026-10-02T00:00:00+05:30`), with zero historical drawdown residue from past months.
   - User profiles, authenticated accounts (`profiles`), push subscriptions (`push_subscriptions`), and today's intraday pivot levels (`pivots`) are strictly preserved untouched.
-- **Version 1.0 Complete Production Backup Anchor (Effective October 3, 2026)**:
+- **Version 1.0 Complete Production Backup Anchor (Effective October 4, 2026)**:
   - Version 1.0 serves as the official, complete, production-hardened institutional system baseline.
-  - Complete v1.0 codebase, configurations, documentation, and snapshot state are archived at `Backups/TLCS_v1.0_Complete_Backup_20261003_222500` and `Backups/TLCS_v1.0_Complete_Backup_20261003_222500.zip`.
-  - Applications-only package archived at `Backups/TLCS_Applications_v1.0_20261003.zip`.
-  - Secondary external mirror preserved in `/Users/vishant/Documents/Backups/`.
-  - Local mirror continuously synchronized at `Project Backup/`.
+  - Complete v1.0 codebase, configurations, documentation, and snapshot state are archived in `Backups/`, `Project Backup/`, and secondary external mirror `/Users/vishant/Documents/Backups/`.
   - Git release tags `v1.0` and `v1.0.0` pushed to GitHub across all four primary repositories (`Tv-Alert-Mobile`, `TLCS_Website_Deploy`, `RemoteURL`, and root repository).
 - **Version 7.0 System Fallback Anchor**:
   - Version 7.0 serves as the official frozen, production-hardened fallback system.
