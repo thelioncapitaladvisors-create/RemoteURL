@@ -30,6 +30,9 @@
   - **Shiny Card Isolation & Text Clarity**: `.shiny-card` enforces `isolation: isolate` and `> * { z-index: 2; }` while `.shiny-card::before` operates at `z-index: 0` with reduced sheen opacity (`0.15`), permanently eliminating milky/opaque text haze.
   - **High-Contrast Dark Slate Tokens**: Light and Golden Gate Light themes utilize `--text-primary: #020617`, `--text-secondary: #0F172A`, and `--text-dim: #334155` alongside global `-webkit-font-smoothing: antialiased` for crisp rendering.
   - **F&O Stock Buildups Typography**: Font sizes across `HubFnoBuildups` headings, breadth metrics, filter tabs, top active stock cards (LTP, OI, Volume), and interactive analysis modal are increased by 1-2px with bold contrast for optimal readability.
+  - **Strategy Tearsheet Statistics Dynamic Height & Zero-Empty-Space Guarantee**:
+    - Eliminated legacy hardcoded `min-h-[1100px]` from the statistics iframe container on the `ANALYTICS` tab in `page.tsx`.
+    - Integrated real-time height discovery: `strategy_tearsheet.html` in `mode=stats` measures the exact table height (`table.offsetHeight + 24px`) and broadcasts `TLCS_TEARSHEET_HEIGHT` via `postMessage`. `page.tsx` dynamically adapts container height (`statsHeight`, default 625px), eliminating ~480px of dead blank white space beneath the 17-row metrics table while preserving seamless native vertical scrolling.
 - **Version 1.0 Clean Start Baseline (Effective October 2, 2026)**:
   - All past historical trade signals and logs across database tables (`signals`, `shadow_signals`, `weekly_performance_logs`), backend scanner state cache (`pivotboss_scans`), and frontend paper-trading stores have been cleanly purged to 0 to start afresh.
   - Multi-market tearsheet (`strategy_tearsheet.html` across `TLCS_Website_Deploy` and `algo_engine`) is regenerated from an empty baseline starting strictly on October 2, 2026 (`2026-10-02T00:00:00+05:30`), with zero historical drawdown residue from past months.
