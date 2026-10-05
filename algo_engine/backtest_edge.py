@@ -475,7 +475,7 @@ def run_returns_backtest():
         body.mode-charts #stats {{ display: none !important; }}
         
         body.mode-stats .tab-container {{ display: none !important; }}
-        body.mode-stats .tab-content {{ display: none !important; }}
+        body.mode-stats .tab-content:not(#stats) {{ display: none !important; }}
         body.mode-stats #stats {{ display: block !important; height: auto !important; min-height: auto !important; padding: 8px 10px !important; }}
         body.mode-stats {{ overflow-y: hidden !important; }}
     </style>
@@ -794,6 +794,7 @@ def run_returns_backtest():
     }}}});
 
     if (mode === 'stats') {{{{
+        switchTab('stats');
         function sendStatsHeight() {{{{
             const table = document.querySelector('.stats-table');
             const h = table ? table.offsetHeight + 24 : (document.getElementById('stats')?.offsetHeight || document.body.scrollHeight);
