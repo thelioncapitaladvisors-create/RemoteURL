@@ -779,6 +779,14 @@ def run_returns_backtest():
         return allUpdated;
     }}}}
 
+    function sendStatsHeight() {{{{
+        const table = document.querySelector('.stats-table');
+        const h = table ? table.offsetHeight + 40 : (document.getElementById('stats')?.offsetHeight || document.body.scrollHeight);
+        if (window.parent && window.parent !== window) {{{{
+            window.parent.postMessage({{{{ type: 'TLCS_TEARSHEET_HEIGHT', height: h }}}}, '*');
+        }}}}
+    }}}}
+
     function switchTab(tabId, btn) {{{{
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -787,6 +795,10 @@ def run_returns_backtest():
         if (target) target.classList.add('active');
         if (btn) btn.classList.add('active');
         
+        if (tabId === 'stats') {{{{
+            setTimeout(sendStatsHeight, 50);
+        }}}}
+
         setTimeout(() => {{{{
             if (target) {{{{
                 const chartDiv = target.querySelector('.plotly-graph-div');
@@ -803,18 +815,12 @@ def run_returns_backtest():
         setTimeout(updateCharts, delay);
     }}}});
 
+    window.addEventListener('load', sendStatsHeight);
+    [100, 300, 600, 1000].forEach(d => setTimeout(sendStatsHeight, d));
+    window.addEventListener('resize', sendStatsHeight);
+
     if (mode === 'stats') {{{{
         switchTab('stats');
-        function sendStatsHeight() {{{{
-            const table = document.querySelector('.stats-table');
-            const h = table ? table.offsetHeight + 24 : (document.getElementById('stats')?.offsetHeight || document.body.scrollHeight);
-            if (window.parent && window.parent !== window) {{{{
-                window.parent.postMessage({{{{ type: 'TLCS_TEARSHEET_HEIGHT', height: h }}}}, '*');
-            }}}}
-        }}}}
-        window.addEventListener('load', sendStatsHeight);
-        [100, 300, 600, 1000].forEach(d => setTimeout(sendStatsHeight, d));
-        window.addEventListener('resize', sendStatsHeight);
     }}}}
 </script>
 </body>
