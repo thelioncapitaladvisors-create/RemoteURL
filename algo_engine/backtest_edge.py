@@ -470,14 +470,24 @@ def run_returns_backtest():
             background-color: #1e293b;
         }}
         
+    <script>
+        (function() {{{{
+            var p = new URLSearchParams(window.location.search);
+            var m = p.get('mode');
+            if (m === 'charts') document.documentElement.classList.add('mode-charts');
+            if (m === 'stats') document.documentElement.classList.add('mode-stats');
+        }}}})();
+    </script>
+    <style>
         /* Layout overrides for modes */
-        body.mode-charts .tab-btn[onclick*="stats"] {{ display: none !important; }}
-        body.mode-charts #stats {{ display: none !important; }}
+        html.mode-charts .tab-btn[onclick*="stats"], html.mode-charts #stats,
+        body.mode-charts .tab-btn[onclick*="stats"], body.mode-charts #stats {{ display: none !important; }}
         
-        body.mode-stats .tab-container {{ display: none !important; }}
-        body.mode-stats .tab-content:not(#stats) {{ display: none !important; }}
-        body.mode-stats #stats {{ display: block !important; height: auto !important; min-height: auto !important; padding: 8px 10px !important; }}
-        body.mode-stats {{ overflow-y: hidden !important; }}
+        html.mode-stats .tab-container, html.mode-stats .tab-content:not(#stats),
+        body.mode-stats .tab-container, body.mode-stats .tab-content:not(#stats) {{ display: none !important; }}
+        
+        html.mode-stats #stats, body.mode-stats #stats {{ display: block !important; height: auto !important; min-height: auto !important; padding: 8px 10px !important; }}
+        html.mode-stats, body.mode-stats {{ overflow-y: hidden !important; }}
     </style>
 </head>
 <body>
