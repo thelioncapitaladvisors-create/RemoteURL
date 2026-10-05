@@ -818,6 +818,12 @@ def run_returns_backtest():
         with open(output_path, "w") as f:
             f.write(template)
         print(f'Multi-market tear sheet saved to {output_path}')
+        
+    mobile_public_path = os.path.join(os.path.dirname(__file__), '..', 'Tv-Alert-Mobile', 'public', 'strategy_tearsheet.html')
+    if os.path.exists(os.path.dirname(mobile_public_path)):
+        with open(mobile_public_path, "w") as f:
+            f.write(template)
+        print(f'Mobile PWA tear sheet saved to {mobile_public_path}')
 
 if __name__ == '__main__':
     run_returns_backtest()
