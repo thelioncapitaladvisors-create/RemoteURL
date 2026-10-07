@@ -1,0 +1,17 @@
+[Unit]
+Description=TLCS Black Box 15-Minute NSE100 Scanner Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/Users/vishant/Documents/Project/algo_engine
+ExecStart=/Applications/anaconda3/bin/python3 /Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py --interval 900
+Restart=always
+RestartSec=15
+StandardOutput=append:/Users/vishant/Documents/Project/algo_engine/logs/scanner_stdout.log
+StandardError=append:/Users/vishant/Documents/Project/algo_engine/logs/scanner_stderr.log
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

@@ -11,6 +11,7 @@ import base64
 import struct
 import hmac
 import hashlib
+import datetime
 import requests
 import logging
 from dotenv import load_dotenv
@@ -105,6 +106,51 @@ def fetch_fresh_token() -> str:
         return _cached_token
 
 
+SUPABASE_URL = os.getenv("SUPABASE_URL") or "https://dwepduvhzuhzeehbeaaz.supabase.co"
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_SERVICE_KEY") or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3ZXBkdXZoenVoemVlaGJlYWF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzMwMDY3NSwiZXhwIjoyMDkyODc2Njc1fQ.4gnT-NbFvQp_8PwkCHqzMvt1KGXwyZXH6kpSqwC70qg"
+
+
+def get_token_from_supabase() -> tuple[str, float] | None:
+    """Fetch active token from Supabase shared cache."""
+    try:
+        url = f"{SUPABASE_URL}/rest/v1/dhan_token?id=eq.1&select=access_token,expires_at"
+        headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}"
+        }
+        res = requests.get(url, headers=headers, timeout=4)
+        if res.status_code == 200:
+            data = res.json()
+            if data and len(data) > 0:
+                t = data[0].get("access_token")
+                exp = float(data[0].get("expires_at", 0)) / 1000.0
+                if t and exp > time.time():
+                    return t, exp
+    except Exception as e:
+        logger.debug(f"[DhanAuth] Supabase token check warning: {e}")
+    return None
+
+
+def save_token_to_supabase(token: str, exp_sec: float):
+    """Save token to Supabase shared cache."""
+    try:
+        headers = {
+            "apikey": SUPABASE_KEY,
+            "Authorization": f"Bearer {SUPABASE_KEY}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates"
+        }
+        payload = {
+            "id": 1,
+            "access_token": token,
+            "expires_at": int(exp_sec * 1000),
+            "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        }
+        requests.post(f"{SUPABASE_URL}/rest/v1/dhan_token", headers=headers, json=payload, timeout=4)
+    except Exception as e:
+        logger.debug(f"[DhanAuth] Failed to save token to Supabase: {e}")
+
+
 def get_valid_dhan_token(force_refresh: bool = False) -> str:
     """Return a guaranteed valid Dhan token. Refreshes if expired or < 5 mins left."""
     global _cached_token, _token_expires_at
@@ -114,7 +160,18 @@ def get_valid_dhan_token(force_refresh: bool = False) -> str:
     if not force_refresh and _cached_token and (_token_expires_at - now > safety_buffer):
         return _cached_token
 
-    # Check disk cache before making network request
+    # 1. Check Supabase shared cache first
+    if not force_refresh:
+        sb_res = get_token_from_supabase()
+        if sb_res:
+            sb_token, sb_exp = sb_res
+            if (sb_exp - now) > safety_buffer:
+                _cached_token = sb_token
+                _token_expires_at = sb_exp
+                logger.info(f"[DhanAuth] Loaded valid token from Supabase shared cache. Valid until {sb_exp}")
+                return _cached_token
+
+    # 2. Check disk cache before making network request
     if not force_refresh and os.path.exists(TOKEN_CACHE_FILE):
         try:
             import json
@@ -128,4 +185,7 @@ def get_valid_dhan_token(force_refresh: bool = False) -> str:
         except Exception:
             pass
 
-    return fetch_fresh_token()
+    fresh = fetch_fresh_token()
+    if fresh and _token_expires_at > now:
+        save_token_to_supabase(fresh, _token_expires_at)
+    return fresh
