@@ -58,9 +58,18 @@ def generate_totp(secret: str = DHAN_TOTP_SECRET) -> str:
     return f"{code % 1000000:06d}"
 
 
+_last_totp_attempt = 0.0
+
+
 def fetch_fresh_token() -> str:
     """Call DhanHQ Auth Server to generate fresh 24-hour token via Client ID, PIN, and dynamic TOTP."""
-    global _cached_token, _token_expires_at
+    global _cached_token, _token_expires_at, _last_totp_attempt
+    now = time.time()
+    if now - _last_totp_attempt < 125.0 and _cached_token and _token_expires_at > now:
+        logger.info("[DhanAuth] Enforcing 2-minute cooldown between TOTP requests. Using cached token.")
+        return _cached_token
+
+    _last_totp_attempt = now
     totp = generate_totp()
     url = "https://auth.dhan.co/app/generateAccessToken"
     params = {
@@ -107,7 +116,7 @@ def fetch_fresh_token() -> str:
 
 
 SUPABASE_URL = os.getenv("SUPABASE_URL") or "https://dwepduvhzuhzeehbeaaz.supabase.co"
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_SERVICE_KEY") or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3ZXBkdXZoenVoemVlaGJlYWF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzMwMDY3NSwiZXhwIjoyMDkyODc2Njc1fQ.4gnT-NbFvQp_8PwkCHqzMvt1KGXwyZXH6kpSqwC70qg"
+SUPABASE_KEY = os.getenv("SUPABASE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_SERVICE_KEY") or "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3ZXBkdXZoenVoemVlaGJlYWF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzMwMDY3NSwiZXhwIjoyMDkyODc2Njc1fQ.4gnT-NbFvQp_8PwkCHqzMvt1KGXwyZXH6kpSqwC70qg"
 
 
 def get_token_from_supabase() -> tuple[str, float] | None:
