@@ -11,3 +11,5 @@ algo_engine/.env
 algo_engine/data/
 algo_engine/daemon.log
 
+algo_engine/logs/
+TLCS_frozen_v1.0_backup/
