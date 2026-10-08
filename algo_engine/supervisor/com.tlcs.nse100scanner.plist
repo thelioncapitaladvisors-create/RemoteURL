@@ -6,10 +6,8 @@
     <string>com.tlcs.nse100scanner</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Applications/anaconda3/bin/python3</string>
-        <string>/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py</string>
-        <string>--interval</string>
-        <string>900</string>
+        <string>/bin/bash</string>
+        <string>/Users/vishant/Documents/Project/algo_engine/supervisor/run_scanner_daemon.sh</string>
     </array>
     <key>WorkingDirectory</key>
     <string>/Users/vishant/Documents/Project/algo_engine</string>

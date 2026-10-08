@@ -1,0 +1,47 @@
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+/Applications/anaconda3/bin/python3: can't open file '/Users/vishant/Documents/Project/algo_engine/run_nse100_scanner.py': [Errno 1] Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/vishant/Documents/Project/algo_engine/supervisor/run_scanner_daemon.sh: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/vishant/Documents/Project/algo_engine/supervisor/run_scanner_daemon.sh: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/vishant/Documents/Project/algo_engine/supervisor/run_scanner_daemon.sh: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/vishant/Documents/Project/algo_engine/supervisor/run_scanner_daemon.sh: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/vishant/Documents/Project/algo_engine/supervisor/run_scanner_daemon.sh: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/vishant/Documents/Project/algo_engine/supervisor/run_scanner_daemon.sh: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/vishant/Documents/Project/algo_engine/supervisor/run_scanner_daemon.sh: Operation not permitted
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: /Users/vishant/Documents/Project/algo_engine/supervisor/run_scanner_daemon.sh: Operation not permitted
+2026-10-08T21:38:04: 2026-10-08 21:38:04 [INFO] [algo_engine.dhan_auth] [DhanAuth] Loaded persisted token from disk. Valid until 1791560192.0
+2026-10-08T21:38:04: 2026-10-08 21:38:04 [INFO] [NSE100Runner] [NSE100Runner] Live Dhan credentials verified. Ingesting live 15m candles from DhanHQ (ALL).
+2026-10-08T21:38:04: 2026-10-08 21:38:04 [INFO] [algo_engine.shadow_pipeline] [ShadowPipeline] Supabase client initialized.
+2026-10-08T21:38:04: 2026-10-08 21:38:04 [INFO] [NSE100Runner] [NSE100Runner] Initialized. Market: ALL. Universe: 113 assets. Interval: 900s.
+2026-10-08T21:38:04: 2026-10-08 21:38:04 [INFO] [NSE100Scanner] [NSE100Scanner] Starting 15m scan cycle across 13 symbols at 21:38:04 IST (NSE: False, MCX: True)...
+2026-10-08T21:38:16: 2026-10-08 21:38:16 [INFO] [NSE100Scanner] [NSE100Scanner] Scan finished in 11.87s. Detected 0 active signals.
+2026-10-08T21:38:16: 2026-10-08 21:38:16 [INFO] [NSE100Runner] [NSE100Runner] Cycle completed. 0 signals generated.
+2026-10-08T21:38:16: 2026-10-08 21:38:16 [INFO] [NSE100Runner] [NSE100Runner] Sleeping 889s until next 15m candle close...
