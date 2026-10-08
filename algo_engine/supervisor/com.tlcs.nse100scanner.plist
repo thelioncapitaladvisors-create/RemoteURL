@@ -7,24 +7,26 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/vishant/Documents/Project/algo_engine/supervisor/run_scanner_daemon.sh</string>
+        <string>/Users/vishant/Project/algo_engine/supervisor/run_scanner_daemon.sh</string>
     </array>
     <key>WorkingDirectory</key>
-    <string>/Users/vishant/Documents/Project/algo_engine</string>
+    <string>/Users/vishant/Project/algo_engine</string>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>/Users/vishant/Documents/Project/algo_engine/logs/scanner_stdout.log</string>
+    <string>/Users/vishant/Project/algo_engine/logs/scanner_stdout.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/vishant/Documents/Project/algo_engine/logs/scanner_stderr.log</string>
+    <string>/Users/vishant/Project/algo_engine/logs/scanner_stderr.log</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
         <string>/Applications/anaconda3/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
         <key>PYTHONUNBUFFERED</key>
         <string>1</string>
+        <key>PYTHONPATH</key>
+        <string>/Users/vishant/Project:/Users/vishant/Project/algo_engine</string>
     </dict>
 </dict>
 </plist>

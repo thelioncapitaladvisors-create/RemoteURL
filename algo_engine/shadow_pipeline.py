@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 import logging
 from dotenv import load_dotenv
@@ -152,8 +152,21 @@ class ShadowPipeline:
         Record a scanner-detected active signal into shadow_signals.
         """
         sym = normalize_symbol(sig.get("symbol", ""))
+        sig_type = sig.get("type", "ACTIVE")
+
+        # Deduplication check: skip if identical symbol and type exists within last 30 mins
+        if self._sb and self._table_available is not False:
+            try:
+                thirty_mins_ago = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+                existing = self._sb.from_(self.table_name).select("id").eq("symbol", sym).eq("type", sig_type).gt("created_at", thirty_mins_ago).limit(1).execute()
+                if existing and existing.data and len(existing.data) > 0:
+                    logger.info(f"[ShadowPipeline] Skipping duplicate signal for {sym} ({sig_type}) - already logged in past 30m.")
+                    return
+            except Exception as e_dedup:
+                logger.debug(f"[ShadowPipeline] Deduplication check skipped: {e_dedup}")
+
         now_iso = datetime.now(timezone.utc).isoformat()
-        trade_id = f"SCAN_{sym}_{int(time.time() * 1000)}_{sig.get('type', 'SIG')}"
+        trade_id = f"SCAN_{sym}_{int(time.time() * 1000)}_{sig_type}"
 
         payload = {
             "symbol": sym,
