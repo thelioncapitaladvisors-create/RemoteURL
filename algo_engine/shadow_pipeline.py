@@ -168,6 +168,11 @@ class ShadowPipeline:
         now_iso = datetime.now(timezone.utc).isoformat()
         trade_id = f"SCAN_{sym}_{int(time.time() * 1000)}_{sig_type}"
 
+        now_dt = datetime.now(timezone.utc)
+        ist_dt = now_dt.astimezone(timezone(timedelta(hours=5, minutes=30)))
+        entry_date_str = ist_dt.strftime("%Y-%m-%d")
+        entry_datetime_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+
         payload = {
             "symbol": sym,
             "type": sig.get("type", "ACTIVE"),
@@ -188,6 +193,9 @@ class ShadowPipeline:
             "updated_at": now_iso,
             "metadata": {
                 "trade_id": trade_id,
+                "entry_date": entry_date_str,
+                "entryDate": entry_datetime_str,
+                "entry_time": sig.get("created_at", now_iso),
                 **(sig.get("metadata") or {}),
                 "engine_version": "4.0.0"
             }
@@ -250,6 +258,11 @@ class ShadowPipeline:
         else:
             status_str = trade.exit_level or "Closed"
 
+        now_dt = datetime.now(timezone.utc)
+        ist_dt = now_dt.astimezone(timezone(timedelta(hours=5, minutes=30)))
+        close_date_str = ist_dt.strftime("%Y-%m-%d")
+        close_datetime_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+
         payload = {
             "status": status_str,
             "outcome": outcome_str,
@@ -261,7 +274,8 @@ class ShadowPipeline:
                 "trade_id": trade.trade_id,
                 "exact_pct": exact_pct,
                 "exit_level": trade.exit_level,
-                "close_date": now_iso,
+                "close_date": close_date_str,
+                "closeDate": close_datetime_str,
             }
         }
         self._execute_update(trade.trade_id, payload)
