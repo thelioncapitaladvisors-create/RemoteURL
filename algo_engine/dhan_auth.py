@@ -59,12 +59,17 @@ def generate_totp(secret: str = DHAN_TOTP_SECRET) -> str:
 
 
 _last_totp_attempt = 0.0
+_last_failed_renewal = 0.0
 
 
 def fetch_fresh_token() -> str:
     """Call DhanHQ Auth Server to generate fresh 24-hour token via Client ID, PIN, and dynamic TOTP."""
-    global _cached_token, _token_expires_at, _last_totp_attempt
+    global _cached_token, _token_expires_at, _last_totp_attempt, _last_failed_renewal
     now = time.time()
+    if now - _last_failed_renewal < 600.0:
+        logger.warning(f"[DhanAuth] Renewal circuit breaker active ({int(600.0 - (now - _last_failed_renewal))}s remaining). Using cached token.")
+        return _cached_token
+
     if now - _last_totp_attempt < 125.0 and _cached_token and _token_expires_at > now:
         logger.info("[DhanAuth] Enforcing 2-minute cooldown between TOTP requests. Using cached token.")
         return _cached_token
@@ -84,6 +89,7 @@ def fetch_fresh_token() -> str:
         data = res.json()
         if res.status_code == 200 and data.get("accessToken"):
             _cached_token = data["accessToken"]
+            _last_failed_renewal = 0.0
             # Parse JWT exp
             try:
                 import json
@@ -107,10 +113,12 @@ def fetch_fresh_token() -> str:
                 pass
             return _cached_token
         else:
+            _last_failed_renewal = now
             err_msg = data.get("message", f"HTTP {res.status_code}")
-            logger.warning(f"[DhanAuth] Dhan auth returned error: {err_msg}. Using cached token.")
+            logger.warning(f"[DhanAuth] Dhan auth returned error: {err_msg} - circuit breaker engaged for 10m. Using cached token.")
             return _cached_token
     except Exception as e:
+        _last_failed_renewal = now
         logger.error(f"[DhanAuth] Failed to generate token: {e}")
         return _cached_token
 
