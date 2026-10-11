@@ -65,8 +65,9 @@ class DayTypeConfig:
 
     # FNL/FNH — Range
     adr_min_pct: float = 0.75            # line 51: adrMinPct (75 / 100)
+    fnl_max_pct: float = 1.00            # STP2 PDF p. 22: 75-100% ADR range bound
 
-    # FNL/FNH — Sweep
+    # Sweep Lookback
     sweep_lookback: int = 1              # line 54: sweepLookback
 
     # FNL/FNH — Close Location
@@ -89,6 +90,11 @@ class DayTypeConfig:
 
     # Stop Run Day — Structure
     srd_struct_len: int = 5              # line 77: srdStructLen
+
+    # Sequence Lifecycle / Expiration (STP2 & Pine Script Parity)
+    max_active_days: int = 20            # Max duration for Rejection / Stop Run / Failed Absorption
+    acc_max_active_days: int = 60        # Max duration for Accumulation Sequence
+    require_open_gate: bool = True       # STP2 Day 2+ rule: Entry requires Open > MID[1] (bull) / Open < MID[1] (bear)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -121,6 +127,11 @@ class DayTypeResult:
     bear_retest_srd: bool = False
     bull_continuation: bool = False
     bear_continuation: bool = False
+
+    # STP 2.0 Quantitative Analytics & Execution Targets
+    srd_target: Optional[float] = None       # STP2 Stop Run target: yHI + (yHI - L) or yLO - (H - yLO)
+    absorption_mid: Optional[float] = None   # Active absorption zone midpoint
+    entry_open_valid: bool = True            # STP2 Day 2+ rule: Entry requires favorable open vs midpoint
 
     def get_active_blueprints(self) -> List[str]:
         """Return list of active Day Type Blueprint names."""
@@ -208,27 +219,43 @@ class SequenceState:
     """
     Tracks persistent state across bars for Trade Sequences.
     
-    Mirrors the `var` variables in Pine Script's f_calc() (lines 186-232).
+    Mirrors the `var` variables in Pine Script's f_calc() and STP 2.0 state machine.
     Must be maintained across daily bars for each symbol independently.
     """
-    # Rejection Day Sequence State (lines 186-193)
+    # Accumulation / Distribution Sequence State (Pine lines 653-656)
+    acc_active_start_bar: Optional[int] = None
+    acc_active_mid: Optional[float] = None
+    bull_acc_active: bool = False
+    bear_acc_active: bool = False
+
+    # Rejection Day Sequence State (Pine lines 657-662)
+    rej_active_start_bar: Optional[int] = None
     rej_active_mid: Optional[float] = None
     rej_active_high: Optional[float] = None
     rej_active_low: Optional[float] = None
     bull_rej_active: bool = False
     bear_rej_active: bool = False
 
-    # Failed Absorption Context (lines 192-193)
+    # Failed Absorption Context (Pine lines 663-666)
+    bull_failed_abs_start_bar: Optional[int] = None
+    bear_failed_abs_start_bar: Optional[int] = None
     bull_failed_abs_active: bool = False
     bear_failed_abs_active: bool = False
 
-    # Stop Run Day Sequence State (lines 229-232)
+    # Stop Run Day Sequence State (Pine lines 667-671)
+    srd_active_start_bar: Optional[int] = None
     srd_active_mid: Optional[float] = None
     srd_active_ext: Optional[float] = None
     bull_srd_active: bool = False
     bear_srd_active: bool = False
 
-    # Continuation Day Tracking (lines 310-311)
+    # Outside Day State (STP2 PDF p. 26)
+    od_active_start_bar: Optional[int] = None
+    od_active_mid: Optional[float] = None
+    bull_od_active: bool = False
+    bear_od_active: bool = False
+
+    # Continuation Day Tracking (Pine lines 672-673)
     prev_active_day_bull: bool = False
     prev_active_day_bear: bool = False
 
@@ -330,6 +357,17 @@ class DayTypeClassifier:
 
             result.bull_acc = is_compressing and bar.close >= acc_mid
             result.bear_dist = is_compressing and bar.close < acc_mid
+
+            if result.bull_acc:
+                self.state.acc_active_mid = acc_mid
+                self.state.acc_active_start_bar = idx
+                self.state.bull_acc_active = True
+                self.state.bear_acc_active = False
+            elif result.bear_dist:
+                self.state.acc_active_mid = acc_mid
+                self.state.acc_active_start_bar = idx
+                self.state.bear_acc_active = True
+                self.state.bull_acc_active = False
         
         # ════════════════════════════════════════════════════════
         # 1. REJECTION DAY TRIGGER (lines 155-170)
@@ -387,6 +425,29 @@ class DayTypeClassifier:
         result.bull_stop_run = bull_srd_signal
         result.bear_stop_run = bear_srd_signal
 
+        # STP 2.0 Stop Run Target Calculation (PDF p. 30):
+        # Forecast range below yHI above yHI for longs; range above yLO below yLO for shorts
+        if bull_srd_signal and idx > 0:
+            y_hi = self._highs[idx - 1]
+            result.srd_target = y_hi + (y_hi - bar.low)
+        elif bear_srd_signal and idx > 0:
+            y_lo = self._lows[idx - 1]
+            result.srd_target = y_lo - (bar.high - y_lo)
+
+        # Accumulation transition on Stop Run (Pine lines 724-735)
+        if self.state.bull_acc_active and bull_srd_signal:
+            self.state.acc_active_mid = mid
+        if self.state.bear_acc_active and bear_srd_signal:
+            self.state.acc_active_mid = mid
+        if self.state.bull_acc_active and self.state.acc_active_mid is not None and bar.close < self.state.acc_active_mid:
+            self.state.bull_acc_active = False
+        if self.state.bear_acc_active and self.state.acc_active_mid is not None and bar.close > self.state.acc_active_mid:
+            self.state.bear_acc_active = False
+        if self.state.bull_acc_active and self.state.acc_active_start_bar is not None and (idx - self.state.acc_active_start_bar) > cfg.acc_max_active_days:
+            self.state.bull_acc_active = False
+        if self.state.bear_acc_active and self.state.acc_active_start_bar is not None and (idx - self.state.acc_active_start_bar) > cfg.acc_max_active_days:
+            self.state.bear_acc_active = False
+
         # Track triggers for barsSince
         self._rej_triggered.append(bull_rej or bear_rej)
         self._srd_triggered.append(bull_srd_signal or bear_srd_signal)
@@ -400,6 +461,7 @@ class DayTypeClassifier:
             self.state.rej_active_mid = mid
             self.state.rej_active_high = bar.high
             self.state.rej_active_low = bar.low
+            self.state.rej_active_start_bar = idx
             self.state.bull_rej_active = True
             self.state.bear_rej_active = False
             self.state.bull_failed_abs_active = False
@@ -408,23 +470,26 @@ class DayTypeClassifier:
             self.state.rej_active_mid = mid
             self.state.rej_active_high = bar.high
             self.state.rej_active_low = bar.low
+            self.state.rej_active_start_bar = idx
             self.state.bear_rej_active = True
             self.state.bull_rej_active = False
             self.state.bull_failed_abs_active = False
             self.state.bear_failed_abs_active = False
 
-        # Check Rejection Failure → triggers Failed Absorption Context (lines 214-220)
+        # Check Rejection Failure → triggers Failed Absorption Context (Pine lines 756-763)
         if self.state.bull_rej_active and self.state.rej_active_mid is not None:
             if bar.close < self.state.rej_active_mid:
                 self.state.bull_rej_active = False
                 self.state.bear_failed_abs_active = True
+                self.state.bear_failed_abs_start_bar = idx
 
         if self.state.bear_rej_active and self.state.rej_active_mid is not None:
             if bar.close > self.state.rej_active_mid:
                 self.state.bear_rej_active = False
                 self.state.bull_failed_abs_active = True
+                self.state.bull_failed_abs_start_bar = idx
 
-        # Invalidate Failed Absorption Context (lines 222-226)
+        # Invalidate Failed Absorption Context (Pine lines 764-767)
         if self.state.bear_failed_abs_active and self.state.rej_active_high is not None:
             if bar.close > self.state.rej_active_high:
                 self.state.bear_failed_abs_active = False
@@ -432,6 +497,16 @@ class DayTypeClassifier:
         if self.state.bull_failed_abs_active and self.state.rej_active_low is not None:
             if bar.close < self.state.rej_active_low:
                 self.state.bull_failed_abs_active = False
+
+        # Expiration of Rejection & Failed Absorption sequences (Pine lines 768-775)
+        if self.state.bull_rej_active and self.state.rej_active_start_bar is not None and (idx - self.state.rej_active_start_bar) > cfg.max_active_days:
+            self.state.bull_rej_active = False
+        if self.state.bear_rej_active and self.state.rej_active_start_bar is not None and (idx - self.state.rej_active_start_bar) > cfg.max_active_days:
+            self.state.bear_rej_active = False
+        if self.state.bull_failed_abs_active and self.state.bull_failed_abs_start_bar is not None and (idx - self.state.bull_failed_abs_start_bar) > cfg.max_active_days:
+            self.state.bull_failed_abs_active = False
+        if self.state.bear_failed_abs_active and self.state.bear_failed_abs_start_bar is not None and (idx - self.state.bear_failed_abs_start_bar) > cfg.max_active_days:
+            self.state.bear_failed_abs_active = False
 
         # ════════════════════════════════════════════════════════
         # STATE TRACKING: STOP RUN SEQUENCE (lines 228-250)
@@ -441,11 +516,13 @@ class DayTypeClassifier:
         if bull_srd_signal:
             self.state.srd_active_mid = mid
             self.state.srd_active_ext = bar.high
+            self.state.srd_active_start_bar = idx
             self.state.bull_srd_active = True
             self.state.bear_srd_active = False
         elif bear_srd_signal:
             self.state.srd_active_mid = mid
             self.state.srd_active_ext = bar.low
+            self.state.srd_active_start_bar = idx
             self.state.bear_srd_active = True
             self.state.bull_srd_active = False
 
@@ -456,6 +533,12 @@ class DayTypeClassifier:
         if self.state.bear_srd_active and self.state.srd_active_mid is not None:
             if bar.close > self.state.srd_active_mid:
                 self.state.bear_srd_active = False
+
+        # Expiration of Stop Run sequence (Pine lines 794-797)
+        if self.state.bull_srd_active and self.state.srd_active_start_bar is not None and (idx - self.state.srd_active_start_bar) > cfg.max_active_days:
+            self.state.bull_srd_active = False
+        if self.state.bear_srd_active and self.state.srd_active_start_bar is not None and (idx - self.state.srd_active_start_bar) > cfg.max_active_days:
+            self.state.bear_srd_active = False
 
         # ════════════════════════════════════════════════════════
         # 3. FADE AFTER STOP RUN (lines 252-254)
@@ -518,7 +601,7 @@ class DayTypeClassifier:
                         and abs(bar.high - self.state.srd_active_mid) <= self.state.srd_active_mid * cfg.abs_mid_tol_pct)
 
         # ════════════════════════════════════════════════════════
-        # X. OUTSIDE DAY (lines 265-268)
+        # X. OUTSIDE DAY (lines 265-268 & STP2 PDF p. 26)
         # ════════════════════════════════════════════════════════
         od_range_ok = avg_range > 0 and rng > cfg.od_adr_mult_min * avg_range
 
@@ -530,10 +613,33 @@ class DayTypeClassifier:
                                        and bar.high > self._highs[idx - 1]
                                        and bar.close < self._lows[idx - 1])
 
+        # Track Outside Day absorption state (STP2 PDF p. 26)
+        if result.bull_outside_day:
+            self.state.od_active_mid = mid
+            self.state.od_active_start_bar = idx
+            self.state.bull_od_active = True
+            self.state.bear_od_active = False
+        elif result.bear_outside_day:
+            self.state.od_active_mid = mid
+            self.state.od_active_start_bar = idx
+            self.state.bear_od_active = True
+            self.state.bull_od_active = False
+
+        if self.state.bull_od_active and self.state.od_active_mid is not None and bar.close < self.state.od_active_mid:
+            self.state.bull_od_active = False
+        if self.state.bear_od_active and self.state.od_active_mid is not None and bar.close > self.state.od_active_mid:
+            self.state.bear_od_active = False
+
+        if self.state.bull_od_active and self.state.od_active_start_bar is not None and (idx - self.state.od_active_start_bar) > 4:
+            self.state.bull_od_active = False
+        if self.state.bear_od_active and self.state.od_active_start_bar is not None and (idx - self.state.od_active_start_bar) > 4:
+            self.state.bear_od_active = False
+
         # ════════════════════════════════════════════════════════
-        # 5. FNL / FNH — Failed New Low / Failed New High (lines 270-291)
+        # 5. FNL / FNH — Failed New Low / Failed New High (STP2 PDF p. 22)
         # ════════════════════════════════════════════════════════
-        fnl_range_ok = avg_range > 0 and rng >= cfg.adr_min_pct * avg_range
+        # STP2 Rule: Range must be 75-100% ADR (average daily range)
+        fnl_range_ok = avg_range > 0 and rng >= cfg.adr_min_pct * avg_range and rng <= cfg.fnl_max_pct * avg_range
 
         if idx >= cfg.sweep_lookback:
             prior_low_sweep = lowest(self._lows, cfg.sweep_lookback, idx - 1)
@@ -621,6 +727,26 @@ class DayTypeClassifier:
         result.bear_continuation = (self.state.prev_active_day_bear
                                      and idx > 0
                                      and bar.close < self._closes[idx - 1])
+
+        # Resolve active absorption zone midpoint (STP2 Primary Absorption Zone)
+        if self.state.bull_rej_active or self.state.bear_rej_active:
+            result.absorption_mid = self.state.rej_active_mid
+        elif self.state.bull_srd_active or self.state.bear_srd_active:
+            result.absorption_mid = self.state.srd_active_mid
+        elif self.state.bull_acc_active or self.state.bear_acc_active:
+            result.absorption_mid = self.state.acc_active_mid
+        elif self.state.bull_od_active or self.state.bear_od_active:
+            result.absorption_mid = self.state.od_active_mid
+
+        # Day 2+ Entry Open Gate (STP2 PDF pp. 17, 19, 22, 26, 30)
+        # Price must OPEN > MID[1] for longs, OPEN < MID[1] for shorts
+        if cfg.require_open_gate and result.absorption_mid is not None:
+            is_bull_active = self.state.bull_rej_active or self.state.bull_srd_active or self.state.bull_acc_active or self.state.bull_od_active
+            is_bear_active = self.state.bear_rej_active or self.state.bear_srd_active or self.state.bear_acc_active or self.state.bear_od_active
+            if is_bull_active and bar.open < result.absorption_mid:
+                result.entry_open_valid = False
+            elif is_bear_active and bar.open > result.absorption_mid:
+                result.entry_open_valid = False
 
         # Update prevActiveDayBull/Bear for NEXT bar (lines 316-317)
         self.state.prev_active_day_bull = (
