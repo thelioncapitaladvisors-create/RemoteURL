@@ -1,0 +1,1588 @@
+
+=== PAGE 1 ===
+PRESENTS
+SWING TRADE PRO 2.0
+with Frank Ochoa President and Founder, PivotBoss, LLC Author, Secrets of a Pivot Boss
+THE 5-STEP SWING TRADING BLUEPRINT
+=== PAGE 2 ===
+SWING TRADE PRO 2.0THE 5-STEP SWING TRADING BLUEPRINT1.Risk Management | Set your risk parameters
+2.Trade Sequences | Find trading opportunities
+3.Strategy Toolkit | Choose a trading strategy
+4.Execution | Execute the strategy
+5.Documentation | Document and review the results
+RISK MANAGEMENT > TRADE SEQUENCES > STRATEGY TOOLKIT > EXECUTION > DOCUMENTATION
+“Those traders who have conﬁdence in their own trades, who trust themselves to do what needs to be done without hesitation, are the ones who become successful. They no longer fear the erratic behavior of the market. They learn to focus on the information that helps them spot opportunities to make a proﬁt, rather than focusing on the information that reinforces their fears.” — Mark Douglas, Trading in the Zone 
+Swing Trade Pro 2.0: The 5-Step Swing Trading Blueprint is a powerful 5-part course that is designed to teach you how to execute high probability swing trades in the markets you wish to engage.
+Swing Trade Pro 2.0 oﬀers a universal approach to engaging any market and any timeframe as a participant, whether you trade stocks, ETFs, futures, forex, or cryptocurrencies, or whether you’re trading daily bars, hourly bars, or intraday.
+This training is also platform agnostic, which means we are delivering a blueprint that can be traded with the platform you’re currently using.
+THE 5-STEP SWING TRADING BLUEPRINT
+=== PAGE 3 ===
+SWING TRADE PRO 2.0THE 5-STEP SWING TRADING BLUEPRINT1.Risk Management | Set your risk parameters
+2.Trade Sequences | Find trading opportunities
+3.Strategy Toolkit | Choose a trading strategy
+4.Execution | Execute the strategy
+5.Documentation | Document and review the results
+RISK MANAGEMENT > TRADE SEQUENCES > STRATEGY TOOLKIT > EXECUTION > DOCUMENTATION1.Risk Management: You will learn how to assess your risk tolerance, how to calculate core equity, trade allocation, and max portfolio risk for various account sizes. You will also learn how and when to adjust your level of risk exposure, and how to use the Risk Management Matrix. 
+2.Trade Sequences: You will learn how to identify and trade ﬁve Day Type Blueprints and four Trade Sequences. These blueprints and sequences will help you recognize important days in the market, so you will know how to engage them, including identifying each absorption zone, multiple entry points, and failure points. 
+3.Strategy Toolkit: You will learn about the various options strategies in our Strategy Toolkit, and how to choose the right strategy for the trading opportunity presenting itself. The Strategy Toolkit is designed to allow you to choose trading strategies that are categorized by their relative risk proﬁles, thus allowing you to pick the type of risk that you’re willing to take relative to the probability of proﬁt for the opportunity you’re considering trading. 
+4.Execution: You will learn ﬁve execution techniques and how to use them to execute entries and manage positions in the market, including scaling into and scaling out of positions according to the technique and risk exposure you choose to execute. 
+5.Documentation: You will learn how to document your trades and experiences in the market, including documenting entries, exits, and trade results. Additionally, documentation allows you to review past performance so that you can identify and improve upon weaknesses, while identifying and building upon strengths.
+THE 5-STEP SWING TRADING BLUEPRINT
+=== PAGE 4 ===
+PRESENTS
+SWING TRADE PRO 2.0
+THE 5-STEP SWING TRADING BLUEPRINTSTEP 1: RISK MANAGEMENT
+=== PAGE 5 ===
+SWING TRADE PRO 2.0SET YOUR RISK PARAMETERS"If you are unable to trade without the slightest bit of emotional discomfort (speciﬁcally, fear), then you have not learned how to accept the risks inherent in trading. This is a big problem, because to whatever degree you haven’t accepted the risk, is the same degree to which you will avoid the risk. Trying to avoid something that is unavoidable will have disastrous eﬀects on your ability to trade successfully.”  — Mark Douglas, Trading in the Zone 
+Set Your Risk Parameters 
+Step 1 of our 5-Step Blueprint is Risk Management, wherein you’ll learn how to deﬁne your personal risk parameters, from trade allocation to max portfolio heat. Each trader has a diﬀerent risk tolerance, and it is important that you fully understand your own risk tolerance so that you may deﬁne the risk that you are willing to take for a given opportunity. You will also learn how to navigate among various levels of risk exposure as the odds of proﬁtability for opportunities increase or decrease.
+Assess Your Risk Proﬁle: 
+•Conservative: A conservative trader focuses on capital preservation and growth, and looks to produce income trades while limiting risk.
+•Moderate: A moderate trader focuses on growth and looks to increase and decrease risk exposure according to the odds of proﬁtability for a given opportunity. 
+•Aggressive: An aggressive trader seeks to rapidly grow an account, and will place directional bets under the most favorable circumstances, increasing exposure as odds increase.
+RISK MANAGEMENT:
+1. RISK MANAGEMENT1.1 Equity Model Calculation 1.2 Trade Allocation Model 1.3 Percent of Trade Allocation 1.4 Portfolio Heat 1.5 Risk Management Matrix
+SET YOUR RISK PARAMETERS
+SWING TRADE PRO 2.0
+=== PAGE 6 ===
+SWING TRADE PRO 2.01. RISK MANAGEMENT1.1 Equity Model Calculation 1.2 Trade Allocation Model 1.3 Percent of Trade Allocation 1.4 Portfolio Heat 1.5 Risk Management Matrix
+EQUITY MODEL CALCULATIONBefore putting your money at risk, you must ﬁrst outline how you intend to manage risk. In essence, you must ﬁrst set your risk parameters before executing trades. In this section, you will learn how to calculate tradable equity so you can begin determining your preferred trade allocation. We will use the Core Equity Model to calculate tradable equity.
+Core Equity Model: The value of your account equity is determined by the amount of cash in your account less the risk amount allocated for each open position. Equity is only added back after closing a position. Use this model to determine how much of your account to risk for each position.
+CORE EQUITY EXAMPLE: 
+TOTAL EQUITY             $50,000 
+TRADE 1 RISK ALLOCATION (1%)		 $500 (50,000 x 1%)
+REMAINING CORE EQUITY          $49,500 (50,000 - 500) 
+TRADE 2 RISK ALLOCATION (1%)		 $495 (49,500 x 1%)
+REMAINING CORE EQUITY       $49,005 (49,500 - 495) 
+TRADE 3 RISK ALLOCATION (1%)		 $490 (49,005 x 1%)
+REMAINING CORE EQUITY      $48,515 (49,005 - 490)
+RISK MANAGEMENT:
+SET YOUR RISK PARAMETERS
+=== PAGE 7 ===
+SWING TRADE PRO 2.01. RISK MANAGEMENT1.1 Equity Model Calculation 1.2 Trade Allocation Model 1.3 Percent of Trade Allocation 1.4 Portfolio Heat 1.5 Risk Management Matrix
+TRADE ALLOCATION MODELTrade Allocation determines how much you’re willing to risk for a given trade. The Trade Allocation Model that we will use is the Fixed Risk Model, which allows traders to control position size as a percentage of Core Equity. 
+Fixed Risk Model (AKA Fixed Fractional Model): This model involves controlling position size as a percentage of core equity. 
+The following statistics are based on trade simulations performed by Dr. Van Tharp in his book Van Tharp’s Definitive Guide to Position Sizing Strategies, which gives you a basic understanding of the risk profiles associated with the various percentages: 
+•0.8% Fixed Risk: Returned a chance of ruin of only 0.1% and a meager 0.4% chance of reaching 300% profit objective on 100k account over the first 100 trades 
+•1.2% Fixed Risk: Returned less than a 1% chance of ruin and a modest 8.5% chance of reaching 300% profit objective on 100k account over the first 100 trades 
+•2.6% Fixed Risk: The optimal retire/ruin ratio is risking 2.6%, based on 10,000 100 trade simulations. With this percentage, there is a 53.9% chance of reaching a profit of 300% over 100 trades, and a 12.3% chance of ruin, which was defined as a 25% loss of starting equity  
+•3.6% Fixed Risk: Returned the greatest probability of reaching +300% objective (60.3% chance), with a 22.6% chance of ruin (-25%)  
+•4.6% Fixed Risk: Returned the highest Median Gain percentage gain (+545.5%), with a 58.2% chance of success (+300%), and a 31.7% chance of failure (-25%)
+RISK MANAGEMENT:
+SET YOUR RISK PARAMETERS
+=== PAGE 8 ===
+SWING TRADE PRO 2.01. RISK MANAGEMENT1.1 Equity Model Calculation 1.2 Trade Allocation Model 1.3 Percent of Trade Allocation 1.4 Portfolio Heat 1.5 Risk Management Matrix
+TRADE ALLOCATION MODELDepending on your Core Equity, you’ll want to adjust the Fixed Risk Model to ﬁt your risk proﬁle and account goals.
+For account sizes above $25,000, look to use more of a “conventional” approach to the Fixed Risk Model, which generally includes limiting position sizing to between 1% and 3% of core equity. This becomes more important as you approach, or exceed, equity of $100,000.
+For account balances less than $25,000, you may want to be more aggressive, as shown below:
+FIXED RISK MODEL EXAMPLES:
+CORE EQUITY > $25,000
+— 1.0% Fixed Risk Trade Allocation (CONSERVATIVE)
+— 1.5% Fixed Risk Trade Allocation (MODERATE)
+— 2-3.0% Fixed Risk Trade Allocation (AGGRESSIVE) 
+EXAMPLE: $150,000 (CORE EQUITY) x 1.5% (MODERATE) = $2,250 Trade Allocation 
+CORE EQUITY < $25,000 — 2.5% Fixed Risk Trade Allocation (CONSERVATIVE)
+— 5.0% Fixed Risk Trade Allocation (MODERATE)
+— 10.0% Fixed Risk Trade Allocation (AGGRESSIVE) 
+EXAMPLE: $10,000 (CORE EQUITY) x 10.0% (AGGRESSIVE) = $1000 Trade Allocation
+RISK MANAGEMENT:
+SET YOUR RISK PARAMETERS
+=== PAGE 9 ===
+SWING TRADE PRO 2.01. RISK MANAGEMENT1.1 Equity Model Calculation 1.2 Trade Allocation Model 1.3 Percent of Trade Allocation 1.4 Portfolio Heat 1.5 Risk Management Matrix
+TRADE ALLOCATION MODELIn this section, you will learn how to increase or decrease the level of exposure to the market for a trade based on the odds of proﬁtability of the opportunity presenting itself.
+Level of Exposure refers to the amount of risk capital that is exposed to the market for a given opportunity. Ideally, you want to increase the level of exposure for opportunities with higher odds of success, and look to decrease the level of exposure for opportunities with lower odds of success.
+Depending on the odds of success and your desired level of exposure, you can execute entries into positions conservatively, moderately, or aggressively.
+ODDS-BASED TRADE ALLOCATION:
+ACCOUNT SIZE > $25,000 — 1.0% (CONSERVATIVE): For trades with good odds of success
+— 1.5% (MODERATE): For trades with high odds of success
+— 2-3.0% (AGGRESSIVE): For trades with the best odds of success 
+ACCOUNT SIZE < $25,000 — 2.5% (CONSERVATIVE): For trades with good odds of success
+— 5.0% (MODERATE): For trades with high odds of success
+— 10.0% (AGGRESSIVE): For trades with the best odds of success
+RISK MANAGEMENT:
+SET YOUR RISK PARAMETERS
+=== PAGE 10 ===
+SWING TRADE PRO 2.01. RISK MANAGEMENT1.1 Equity Model Calculation 1.2 Trade Allocation Model 1.3 Percent of Trade Allocation 1.4 Portfolio Heat 1.5 Risk Management Matrix
+PERCENT OF TRADE ALLOCATIONRISK MANAGEMENT:
+SET YOUR RISK PARAMETERS
+Percent of Trade Allocation allows you to systematically scale into a position using a percentage of overall trade allocation. This entry allocation technique gives you a powerful approach to controlling the amount of overall trade allocation that will be exposed to the market at the outset of a trade, and then looking to reward winning trades with additional exposure.
+Again, depending on the odds of success for an opportunity and your desired level of exposure, you can allocate conservative, moderate, and aggressive trade allocations, but choose to scale into these positions with a bit more conservatism.
+ENTRY ALLOCATION: 
+•Good Odds — 1.0% FIXED RISK (CONSERVATIVE) — Scale into 33% of 1% Trade Allocation (CONSERVATIVE)
+— Scale into 50% of 1% Trade Allocation (MODERATE)
+— Scale into 100% of 1% Trade Allocation (AGGRESSIVE)
+•High Odds — 1.5% FIXED RISK (MODERATE) — Scale into 33% of 1.5% Trade Allocation (CONSERVATIVE)
+— Scale into 50% of 1.5% Trade Allocation (MODERATE)
+— Scale into 100% of 1.5% Trade Allocation (AGGRESSIVE)
+•Best Odds — 2-3.0% FIXED RISK (AGGRESSIVE) — Scale into 33% of 2.6% Trade Allocation (CONSERVATIVE)
+— Scale into 50% of 2.6% Trade Allocation (MODERATE)
+— Scale into 100% of 2.6% Trade Allocation (AGGRESSIVE)
+=== PAGE 11 ===
+SWING TRADE PRO 2.01. RISK MANAGEMENT1.1 Equity Model Calculation 1.2 Trade Allocation Model 1.3 Percent of Trade Allocation 1.4 Portfolio Heat 1.5 Risk Management Matrix
+PORTFOLIO HEAT
+In this section, you will learn how to calculate the amount of capital that is at risk for a portfolio. This metric is called Portfolio Heat.
+Portfolio Heat (or Total Heat): The total amount of capital at risk for a portfolio, which includes the amount at risk for each open position.
+Max Portfolio Heat: The maximum amount of capital that can be simultaneously at risk for a portfolio. Max Portfolio Heat is often presented as a percentage of Total Equity.
+•Designed to limit the eﬀects of price shocks that a portfolio can experience when leverage and exposure is high
+•Designed to limit the eﬀects of price shocks that a portfolio can experience when ﬂash crashes occur
+•The amount of portfolio heat you use should depend on the quality of the system, opportunities present, and the experience of the trader
+RISK MANAGEMENT:
+SET YOUR RISK PARAMETERS
+=== PAGE 12 ===
+SWING TRADE PRO 2.01. RISK MANAGEMENT1.1 Equity Model Calculation 1.2 Trade Allocation Model 1.3 Percent of Trade Allocation 1.4 Portfolio Heat 1.5 Risk Management Matrix
+PORTFOLIO HEATLimiting Portfolio Heat is extremely important, which helps to avoid ruin during ﬂash crash events and periods of high volatility. Here’s how to calculate Max Portfolio Heat for various account sizes:
+Max Heat by Account Size: 
+— Account Size > $25,000: 10-15% Max Heat
+— Account Size < $25,000: 20-30% Max Heat
+EXAMPLE 1: Account Size = $100,000 @ 10% Max Heat 
+— Max Portfolio Heat = $10,000 ($100,000 x 10% = $10,000)
+— Trade Allocation Model @ 1.5% = $1,500 ($100,000 x 1.5%)
+— Total Number of Positions = 6 ($10,000 / $1,500 = 6.6 Positions)
+EXAMPLE 2: Account Size = $5,000 @ 20% Max Heat 
+— Max Portfolio Heat = $1000 ($5,000 x 20% = $1,000)
+— Trade Allocation Model @ 5% = $250 ($5,000 x 5%)
+— Total Number of Positions = 4 ($1,000 / $250 = 4 Positions)
+RISK MANAGEMENT:
+SET YOUR RISK PARAMETERS
+=== PAGE 13 ===
+SWING TRADE PRO 2.01. RISK MANAGEMENT1.1 Equity Model Calculation 1.2 Trade Allocation Model 1.3 Percent of Trade Allocation 1.4 Portfolio Heat 1.5 Risk Management Matrix
+RISK MANAGEMENT MATRIXThe Risk Management Matrix incorporates and automates the sections that we’ve covered in Step 1: Risk Management, including using Core Equity to calculate conservative, moderate, and aggressive Trade Allocations. 
+Populate the yellow cells with your preferred risk management parameters, and allow the spreadsheet to calculate your customized risk management matrix. 
+The matrix is designed to provide accuracy, speed, and efficiency in calculating trade allocations and risk management controls in real time as you trade.
+RISK MANAGEMENT:
+SET YOUR RISK PARAMETERS
+
+=== PAGE 14 ===
+PRESENTS
+SWING TRADE PRO 2.0
+THE 5-STEP SWING TRADING BLUEPRINTSTEP 1: RISK MANAGEMENT
+=== PAGE 15 ===
+PRESENTS
+SWING TRADE PRO 2.0
+THE 5-STEP SWING TRADING BLUEPRINTSTEP 2: TRADE SEQUENCES
+=== PAGE 16 ===
+SWING TRADE PRO 2.02. TRADE SEQUENCES2.1 Day Type Blueprints 2.2 Trade Sequences
+FIND TRADING OPPORTUNITIESTRADE SEQUENCES:
+FIND TRADING OPPORTUNITIES
+Step 2 of our 5-Step Blueprint introduces Trade Sequences, which help traders ﬁnd and trade opportunities in the market. You’ll learn how to identify and trade speciﬁc day types and multiple-day trade sequences using blueprints that detail every absorption zone, entry point, and failure point.
+The Day Type blueprints are designed to help you identify and execute entries for single sessions that are statistically important in the market, while Trade Sequences string together several day types in a row that will collectively fuel the next move.
+These blueprints are designed to help you ﬁnd high probability opportunities in any market and in any timeframe, and come with speciﬁc guidelines for executing and building positions. Thoroughly understanding these blueprints will give you the power to conﬁdently execute trades in any market when the opportunity strikes.
+Day Type Blueprints: 
+— Rejection Day Blueprint
+— Absorption Day Blueprint
+— Failed New Low Blueprint 
+— Outside Day Blueprint 
+— Stop Run Day Blueprint 
+Trade Sequences: 
+— Rejection Day Sequence
+— Stop Run Sequence
+— Failed Absorption Sequence
+— Accumulation Sequence
+=== PAGE 17 ===
+REJECTION DAY BLUEPRINT
+RANGE
+SWING TRADE PRO 2.0BACKGROUND
+HIGH
+LOW
+MID
+•Rejection Days develop at price extremes — ie: previous highs and lows
+•Rejection Days have a range that is signiﬁcantly larger than the 10-day average
+•The ideal swing entry is the Rejection Day midpoint, which can be defended for 1-4 days after the rejection
+•A daily close below the Rejection Day midpoint breaks the pattern, as this would indicate a retest of the Rejection Day low
+The Rejection Day is a signiﬁcant day type that tends to precede powerful reversals. Absorption days typically follow this day type, which fuel the developing reversal.
+BODY
+TAIL
+MEASUREMENTS1.RANGE > greater than average, ie: > 125% ADR
+2.TAIL > ideally greater than 2.5 x BODY size
+3.CLOSE is usually in the upper 35% of the day’s RANGE 
+4.MID: ((H+L)/2) = Ideal Swing Entry; price must remain above this level in order for the rejection day sequence to remain intact
+5.LOCATION: Powerful when paired with market structure, previous lows, and low volume nodes (LVNs)
+6.ENTRIES: Ideal entry is MID on Day 1, or just before the Close on the day of rejection. On Day 2+, price must OPEN > MID [1] for entry to be considered at MID
+ENTRY 1: The ideal entry point for swing trades is the Rejection Day midpoint to the rejected lows, which can be defended 1-4 days after rejection, UNLESS a daily close occurs below this level
+ENTRY 2: Secondary entry is a retest of the Rejection Day’s high/close from above, which can be defended 1-2 days after rejection
+CLOSE
+*Flip for bearish blueprint
+=== PAGE 18 ===
+DAY TYPE BLUEPRINTSREJECTION DAYThe Rejection Day day type is a powerful pattern that can precede signiﬁcant reversals in price. The primary objective during this day type is to conﬁrm the rejection by the end of the day, with the option to enter a position (full or partial) at some point during the day, usually in the last hour of the session.
+Rejection Day: Signiﬁcant Rejection Day develops at critical support at 160, which suggests a bounce into our forecasted target zone of 170 to 173
+1st Entry Opportunity: If the Rejection Day is conﬁrmed by the end of the day, you have the option to execute an entry during the last hour of the day.
+2nd Entry Opportunity: 
+If the Rejection Day is conﬁrmed by the end of the day, you have the option to execute an entry at the Absorption Zone the next day
+=== PAGE 19 ===
+SWING TRADE PRO 2.0
+RANGE
+HIGH
+LOW
+BACKGROUND•Absorption Days develop after signiﬁcant rejection or expansion days
+•Absorption Days typically have small price ranges, which oﬀers two-way trade for market participants
+•Absorption Days are days when bets are being placed, as market participants are eager to position themselves ahead of the next move
+•An Absorption Day can develop by itself, or in a series of days, before building enough energy to fuel the next move
+•Failed Absorption usually leads to signiﬁcant stop run days
+MEASUREMENTS1.RANGE < average daily range, ie: < 75% ADR
+2.CLOSE > rejection day or expansion day midpoint, and is usually > OPEN
+3.LOW near rejection day or expansion day midpoint
+4.LOCATION:  tends to develop after rejection or expansion days; can oftentimes be an Inside Day 
+5.ENTRIES: Ideal entry is the midpoint of the rejection day (yMID), but price must OPEN > yMID for entry to be considered. Several rotations into the trigger zone can occur during an absorption day type
+ABSORPTION DAY BLUEPRINTThe Absorption Day is typically a range bound day that is designed to facilitate trade between market participants. This day type fuels the forthcoming move.
+ENTRY 1: The ideal entry point for swing trades is the Rejection Day midpoint, which can be defended 1-4 days after rejection, UNLESS a daily close occurs below this level
+yMID
+*Flip for bearish blueprint
+ENTRY 2: Secondary entry is a rejection of the Absorption Day’s low the next session
+=== PAGE 20 ===
+DAY TYPE BLUEPRINTSABSORPTION DAYThe Absorption Day is a day that facilitates trade among market participants, allowing them to position themselves ahead of the next potential move. Use this day to trigger entries at the ideal trade location, which is usually the midpoint of any rejection day. This zone may see absorption for several days, and a daily close below this zone will tend to lead to a long liquidation.
+2nd Entry Opportunity: 
+Look to execute an entry at the rejection day midpoint the morning after rejection. This can be a partial or full position entry.
+Absorption Day: 
+Ideally, an absorption day will develop after a signiﬁcant rejection day. This day will allow you to enter trades at favorable trade location before the reversal begins to take shape. In this case, bulls defend the Absorption Zone at 160.
+Developing Day: 
+When executing an entry during an absorption day at the rejection day midpoint, the day’s bar will be incomplete and appear “bearish”, but ideally will close the day higher.
+Primary Absorption ZoneCLVN
+=== PAGE 21 ===
+DAY TYPE BLUEPRINTSKEYS TO GOOD REJECTION DAYSRejection Days are signiﬁcant days in the market, but not all rejection days are created equal. Several keys to a good rejection day are the signiﬁcance of the rejection and the level being rejected, how price responds to the absorption zone, and the ability to make quick proﬁts.
+3. Taking Proﬁts: Price continues higher day after day; no stalling. After price rallies and hits the forecasted target zone, look to take proﬁts, either partial or full, depending on your plan.
+2. Ideal Entry: 
+Price rallies after bulls defended the rejection day midpoint on Day 2, which oﬀered ideal trade location with minimal adverse excursion
+1. Signiﬁcant Rejection Day:
+The signiﬁcance of the rejection day combined with the signiﬁcance of the key level (160) fueled this trade
+=== PAGE 22 ===
+SWING TRADE PRO 2.0
+LOW
+yLO
+MID
+MEASUREMENTS•Failed New Low day types begin with strong rejection at a previous day’s low, or at multiple-day lows
+•After rejection, the previous low (or the rejected level), becomes the primary absorption zone for entries
+•Ideally, price will close above the previous session’s midpoint, which would suggest a strong rejection
+•These days can oftentimes precede signiﬁcant moves in the market, and can initiate a trend or fuel one
+1.RANGE = average daily range, ie: 75-100% ADR
+2.LOW < previous session’s low, and sometimes below multi-day lows
+3.CLOSE > previous session’s midpoint in ideal situation
+4.LOCATION: can trigger powerful reversals when paired with previous highs/lows and CLVNs, and can also fuel a powerful continuation leg within an already established trend
+5.ENTRIES: Ideal day trading entry is yLO on Day 1, and at the close for swing trades. On Day 2, price must OPEN > MID [1] for entry to be considered at the midpoint of the FNL 
+BACKGROUND
+FAILED NEW LOW BLUEPRINTThe Failed New Low day types can both trigger reversals and be part of continuation patterns. These day types are usually traps to generate more fuel for the existing trend.
+ENTRY 1: Ideal day trading entry is to watch for failed range expansion below previous lows. Look to defend previous lows from above after rejection
+ENTRY 2: Ideal swing entry is to defend the Failed New Low midpoint, which can be defended 1-2 days after rejection, UNLESS a daily close occurs below this level
+HIGH
+yMID
+CLOSE
+PRIMARY ABSORPTION ZONE
+*Flip for bearish blueprint
+ENTRY 1B: Partial/full entries can be made before the Close of the rejection day if price closes above yMid.
+=== PAGE 23 ===
+DAY TYPE BLUEPRINTSFAILED NEW LOWThe Failed New Low day type oftentimes precedes powerful reversals. The primary objective during this day type is to conﬁrm the rejection by the end of the day, with the option to enter a position (full or partial) at some point during the day, usually in the last hour of the session.
+Failed New Low: Signiﬁcant multiple-day failed new low develops, which suggests a major short squeeze may be ahead, with targets between 185 and 191
+1st Entry Opportunity: If the FNL is conﬁrmed by the end of the day, you have the option to execute an entry during the last hour of the day.2nd Entry Opportunity: 
+If the FNL is conﬁrmed by the end of the day, you have the option to execute an entry at the Absorption Zone on Day 2
+=== PAGE 24 ===
+The morning after a Failed New Low develops, look to execute a position, full or partial, at the rejection day midpoint. An Absorption Day (or at the very least a morning of absorption) typically develops after rejection, which will allow for ideal trade location.
+DAY TYPE BLUEPRINTSFAILED NEW LOW
+2nd Entry Opportunity: 
+Look to execute an entry at the FNL midpoint the morning after rejection. This can be a partial or full position entry.
+Absorption Day: 
+Ideally, an absorption day will develop after a signiﬁcant rejection day. This day will allow you to enter trades at favorable trade location before the reversal begins to take shape.
+Developing Day: 
+When executing an entry during an absorption day at the FNL midpoint, the day’s bar will be incomplete and appear “bearish”, but ideally will close the day higher.
+=== PAGE 25 ===
+The Failed New Low day type is a powerful pattern that can fuel short term and long term moves alike. Under the right circumstances, look to engage this pattern more aggressively. 
+Taking Proﬁts: After price rallies and hits your forecasted target zone, look to take proﬁts, either partial or full, depending on your plan.
+Ideal Entry: 
+Price rallies after the bulls defended the FNL midpoint on Day 2, which oﬀered ideal trade location with minimal adverse excursion
+DAY TYPE BLUEPRINTSFAILED NEW LOW
+High Odds Trade: 
+When a FNL develops after a range compression, explosive moves can occur
+=== PAGE 26 ===
+RANGE
+SWING TRADE PRO 2.0
+HIGH
+LOW
+CLOSE
+yHI
+MEASUREMENTS1.RANGE > greater than average, ie: > 105% ADR
+2.LOW < the previous session’s low, which is forcefully rejected
+3.CLOSE > the previous session’s high, which completes the outside day rejection pattern
+4.MID: ((H+L)/2) = Ideal Swing Entry; price must remain above this level in order for the outside day sequence to remain intact 
+5.LOCATION: Powerful when paired with market structure, previous lows, and low volume nodes (LVNs)
+6.ENTRIES: Ideal entry is yLO on Day 1, or just before the Close on the day of rejection. On Day 2+, price must OPEN > MID [1] for entry to be considered 
+•Outside Days develop at price extremes — ie: previous highs and lows
+•Outside Days have a range that is larger than average, making the day more statistically signiﬁcant
+•The ideal swing entry is yLO, but can also be the Outside Day midpoint
+•A daily close below the Outside Day midpoint breaks the pattern, as this would indicate a retest of the Outside Day low
+BACKGROUND
+yLO
+OUTSIDE DAY BLUEPRINTThe Outside Day is a day type that powerfully illustrates rejection, stop runs, and shakeouts. This is a signiﬁcant day type that oftentimes precedes a strong reversal.
+ENTRY 1: Ideal entry is between the Outside Day midpoint and the price level that was rejected (usually a previous low), which can be defended 1-4 days after rejection, UNLESS a daily close occurs below this zone
+ENTRY 2: Secondary entry is a retest of the previous high to the Outside Day close, which can be defended 1-2 days after rejection
+*Flip for bearish blueprint
+
+=== PAGE 27 ===
+DAY TYPE BLUEPRINTSOUTSIDE DAY
+Outside Day: 
+An outside day rejection develops after price takes out multi-day lows and then rallies to close above the previous session’s high price. This rejection, especially after developing within a price compression, suggests a rally may be ahead. 
+1st Entry Opportunity: If the Outside Day is conﬁrmed by the end of the day, you have the option to execute an entry during the last hour of the day, either full or partial.
+2nd Entry Opportunity: 
+If the Rejection Day is conﬁrmed by the end of the day, you have the option to execute an entry at the Absorption Zone on Day 2
+The Outside Day rejection day type is a powerful pattern that can precede signiﬁcant reversals in price. The primary objective during this day type is to conﬁrm the rejection by the end of the day, with the option to enter a position (full or partial) at some point during the day, usually in the last hour of the session.
+Primary Absorption Zone
+Secondary Absorption Zone
+=== PAGE 28 ===
+DAY TYPE BLUEPRINTSOUTSIDE DAYOutside Day day types have multiple entry points, allowing traders to enter a various points during the life cycle of the rejection. These entries can be standalone trades, or can be used together to build a position.
+3rd Entry Opportunity: Price rejects yLO at the secondary absorption zone, providing a third entry opportunity
+2nd Entry Opportunity: 
+Look to execute an entry upon a retest of the rejection day high/close price the next morning.
+1st Entry Opportunity: Execute an entry upon a failure at yLO or during the last hour of the rejection day
+=== PAGE 29 ===
+DAY TYPE BLUEPRINTSOUTSIDE DAYAfter a day of rejection, and a couple of days of absorption, look to take proﬁts after the ﬁrst major rally into your forecasted target zone. These pops in your favor are designed for you to pay yourself after building a position, so take advantage of the move by taking either partial or full proﬁts.Taking Proﬁts: After price rallies and hits your forecasted target zone, look to take proﬁts, either partial or full, depending on your plan
+Absorption Zone: 
+The Outside Day rejection will remain intact until price can no longer sustain a daily close above the nearest absorption zone.Outside DayAbsorption Day/  Failed New Low
+=== PAGE 30 ===
+SWING TRADE PRO 2.0
+RANGE
+HIGH
+LOW
+MID
+STOP RUN DAY BLUEPRINTThe Stop Run Day is an aggressive trend day that can lead to some of the most powerful days in the market. Absorption days help fuel these days.
+MEASUREMENTS•Stop Run Days are price-discovery phases that tend to trend at an aggressive pace
+•Stop Run Days tend to be the biggest days in the market, with daily ranges exceeding 200-300% of average range
+•Stop Run Day Target: take today’s range below yHI and forecast it above yHI for a reliable, high odds target
+•The day after a Stop Run day tends to be a countertrend fade day, which usually sees price return to the Stop Run day midpoint
+BACKGROUND 1.RANGE > greater than average, ie: > 200% ADR
+2.LOW: oftentimes the low can coincide with rejection, ie: failed range expansion
+3.CLOSE > previous session’s high (for longs) and usually closes in the upper 10-15% of the day’s range
+4.MID >= recent multiple-day highs/resistance (for longs)
+5.LOCATION: usually develops after rejection and/or absorption; powerful when paired with CLVNs
+6.ENTRIES: Ideal entry is yLO on Day 1. On Day 2, price must OPEN > MID [1] for entry to be considered at yHI/MID[1]
+TARGET: Take the developing stop run day’s range below yHI and forecast this measurement higher from yHI
+yLO
+ENTRY 2: Acceptance above previous highs triggers the stop run. Look to defend retests of yHI from above. This entry can double as a day trade, or can be used 1-2 days for a swing trade, UNLESS a daily close occurs below this level
+ENTRY 1: Ideal entry is to watch for failed range expansion at yLO. Look to defend yLO from above after rejection
+STOP RUN DAY TARGETCLOSE
+yHI
+*Flip for bearish blueprint
+=== PAGE 31 ===
+DAY TYPE BLUEPRINTSSTOP RUN DAYThe Stop Run Day is the most aggressive trend day the market has to oﬀer. The primary objective is to conﬁrm the day as early as possible, usually in the intraday timeframe, and then look to execute an aggressive position to take advantage of the day’s forecasted price range, and the subsequent swing move to come. The Stop Run Day can be traded as a day or swing position.
+Stop Run Day: 
+The Stop Run Day is an aggressive trend day that can lead to some of the most powerful days in the market. Rejection days and Absorption days help fuel these days.
+Stop Run Day Target: (yHI - L) ~= yHI + (yHI - L)
+1st Entry Opportunity: If the SRD is conﬁrmed early in the day, look to execute an entry at/near the breakout point (usually yHI). This can be a partial or full entry, but look to be more aggressive on this type of day if conﬁrmed.
+2nd Entry Opportunity: If the SRD closes in the upper 20% of the day’s range, then a 2nd entry opportunity presents itself upon a retest of the absorption zone on Day 2
+Absorption Zone: The absorption zone will continue to remain bid until the market sees a daily closing price below this zone
+Absorption Zone
+Taking Proﬁts: After price rallies and hits your forecasted SRD target, look to take proﬁts on the entire trade if it’s a day trade, and take proﬁts on half the position if it’s a swing, with the intention of adding back the next day
+=== PAGE 32 ===
+SWING TRADE PRO 2.0
+THE REJECTION DAY SEQUENCEThis blueprint illustrates the Rejection Day trade sequence, including identifying key absorption zones and entry points. Use this sequence when a Rejection Day develops.
+1
+334
+78
+2
+6
+PRIMARY ABSORPTION ZONE
+SECONDARY ABSORPTION ZONE
+Entry 1Add to position, or establish new position, at the absorption zone (price must open above the Rejection Day midpoint for an entry trigger to be considered)
+Entry 3
+Entry 4
+Entry 5
+Entry 2Establish full/partial position on this day Add to position, or establish new position, should a failed new low develop
+Add to position on this day, and take partial proﬁts ahead of the close
+5
+1.Rejection Day: Establish a new position after rejection. Entries can be made on the day of a conﬁrmed rejection day, or in the coming days at the Primary Absorption Zone (2).
+2.Primary Absorption Zone: The zone between the Rejection Day midpoint and the rejected price level becomes the absorption zone, which bulls will use to establish positions. A daily close below this zone will ruin this trade and trigger a stop run to the downside, thus positions must be exited at such time.
+3.Absorption Day: Add to your position (or establish a new position) at the Absorption Zone on these days.
+4.Failed New Low: Add to your position (or establish a new position) should a Failed New Low develop. 5.Stop Run Day: Add to your position at the breakout point or lower on this day, and take partial proﬁts at the close.
+6.Secondary Absorption Zone: The zone between the Stop Run Day midpoint and recent resistance. Defend trades, or establish new positions, at this zone. A daily close below this zone will ruin this trade and trigger a stop run to the downside, thus positions must be exited at such time.
+7.Retest After Stop Run: Add to positions (or establish a new position) upon a retest of prior resistance from above.
+8.Continuation Day: Ideally, the continuation day fuels a move to your primary target, allowing you to take partial proﬁts and reduce risk exposure.
+Add to position, or establish new position, upon a retest
+* This sequence can be used for any major rejection day, including Failed New Low and Outside Day day types
+**Flip for bearish sequence
+=== PAGE 33 ===
+Rejection Day Sequence
+TRADE SEQUENCESREJECTION DAY TRADE SEQUENCEThe Rejection Day is the ﬁrst day of the Rejection Day trade sequence. The primary objective during this day is to conﬁrm the rejection day by the end of the day, with the option to enter a position (full or partial) at some point during the day, usually in the last hour of the session.
+Rejection Day: Signiﬁcant rejection day develops above the 27.70 CLVN, with quarterly earnings in 3 days. Expecting a pop into earnings, with a shot at reaching our forecasted high probability target zone between 32 and 33.
+1
+6
+1
+1st Entry Opportunity: If the rejection day is conﬁrmed by the end of the day, execute an entry during the last hour of the day, either partial or full
+1. Rejection Day
+2. Absorption Zone 3. Absorption Day 4. Failed New Low  5. Stop Run Day 6. Continuation Day
+2
+253
+CLVN
+=== PAGE 34 ===
+1
+2nd Entry Opportunity: Execute an entry at the absorption zone on Day 2 at/near the rejection day midpoint, either partial or full
+TRADE SEQUENCESREJECTION DAY TRADE SEQUENCEThe Absorption Day develops after rejection, and can last between 1 and 4 days in many cases. The primary objective during this day is to execute an entry (full, partial, or add-on) at the absorption zone, which is at/near the rejection day midpoint.
+Absorption Day: Bulls will look to defend the absorption zone on day 2 after rejection, which oﬀers ideal trade location for swing longs. A daily close below the absorption zone breaks this trade opportunity.
+32
+1. Rejection Day
+2. Absorption Zone 3. Absorption Day 4. Failed New Low  5. Stop Run Day 6. Continuation Day
+CLVN
+=== PAGE 35 ===
+TRADE SEQUENCESREJECTION DAY TRADE SEQUENCEThe Failed New Low day type is a powerful rejection day in and of itself, and within the Rejection Day trade sequence, the FNL oﬀers an opportunity to add to a position or execute a new one, and tends to develop 2 or 3 days after rejection.
+Failed New Low: Price drops through two-day lows and retests the primary absorption zone of the rejection day, which is again defended by bulls. Waiting for conﬁrmation on this day (an ability to reestablish acceptance back above yLO) oﬀers an opportunity to execute, or add to, a position.
+1
+3rd Entry Opportunity: Execute an entry after conﬁrmation of the FNL, either partial or full. After four days of development, this will likely be the last opportunity to trigger an entry ahead of the next move.
+34
+Rejection Day Sequence1
+6253
+2
+1. Rejection Day
+2. Absorption Zone 3. Absorption Day 4. Failed New Low  5. Stop Run Day 6. Continuation Day
+CLVN
+=== PAGE 36 ===
+Rejection Day Sequence
+TRADE SEQUENCESREJECTION DAY TRADE SEQUENCEAfter building a position during the ﬁrst few days of a rejection day trade sequence, your primary goal is to take proﬁts on the ﬁrst favorable pop into your forecasted target zone, while looking to dump the trade if price fails to hold above the absorption zone on a daily closing basis.
+1
+Proﬁt-Taking Opportunity: Price pops higher on earnings and reaches our forecasted target zone between 32 and 33. This is the ideal opportunity to take full or partial proﬁts after building a position during the ﬁrst four days of the rejection day trade sequence.
+34
+5/6
+2
+1. Rejection Day
+2. Absorption Zone 3. Absorption Day 4. Failed New Low  5. Stop Run Day 6. Continuation Day
+=== PAGE 37 ===
+SWING TRADE PRO 2.0
+THE STOP RUN SEQUENCEThis blueprint illustrates the Stop Run trade sequence, wherein the entries can serve as both day and swing trading opportunities. Use this sequence when a Stop Run Day develops.
+1
+24
+5PRIMARY ABSORPTION ZONE
+4
+3
+1.Stop Run Day: A failed new low oﬀers the earliest opportunity to establish a new position, while a secondary entry occurs upon expansion through the breakout point (previous highs).
+2.Primary Absorption Zone: The zone between the Stop Run Day midpoint and the rejected price level becomes the absorption zone. Defend current position, or establish new positions, here. A daily close below this zone will ruin this trade sequence, thus positions must be exited at such time.
+3.Fade After Stop Run: Rejection at the Stop Run Day high will trigger a short term countertrend fade opportunity back to the Stop Run Day midpoint. This move can be used as a standalone day trade or as a hedge, with targets at the Stop Run Day midpoint.
+4.Absorption Days: Add to your position (or establish a new position) on these days, including days with Failed New Lows.
+5.Continuation Day: Ideally, the continuation day fuels a move to your primary target, allowing you to take partial proﬁts and reduce risk exposure.
+Entry 1
+Entry 2Entry 4
+A rejection of the Stop Run Day high price oﬀers the opportunity to hedge your current bullish position, with targets at the stop run day midpoint
+Establish full/partial position upon a rejection of yLO, including retests from above
+yLO
+Add to position upon a break through yHI, including defending retests of yHI from above, and take partial proﬁts ahead of the close
+Entry 3
+Add to position, or establish new position, upon a retest
+SECONDARY ABSORPTION ZONE
+*Flip for bearish sequence
+=== PAGE 38 ===
+TRADE SEQUENCESSTOP RUN TRADE SEQUENCEStop Run Days usually produce the biggest moves the market has to oﬀer. As such, being able to diagnose a potential stop run day before it happens becomes extremely beneﬁcial in being able to position yourself ahead of the next big move. These days can be played as day trades, or as swing trades.
+1
+2 Absorption Zone: Bulls will look to defend the absorption zone on Day 2 after stop run, which oﬀers ideal trade location for swing longs. Bulls will want to add to positions, or establish new positions, at this zone in the coming days. A daily close below the absorption zone breaks this trade opportunity.
+Stop Run Day: Stop Run Day initially begins to develop upon a failure to establish acceptance below the previous session’s low price, which triggers a stop run through the previous session’s high price. This rejection also coincides with a signiﬁcant CLVN at 30, which is market structure support.
+1st Entry Opportunity: Typically, a stop run day will experience an aggressive trend day structure. Look to execute a full position upon a retest of yHI from above, with the option of taking proﬁts in the last hour of the day (partial or full).
+CLVN
+1. Stop Run Day
+2. Absorption Zone 3. Fade After Stop Run 4. Absorption Day 5. Continuation Day
+=== PAGE 39 ===
+1
+24
+TRADE SEQUENCESSTOP RUN TRADE SEQUENCE
+3
+Absorption Zone: Bulls will look to defend the absorption zone for several days, unless a daily close below the zone occurs.
+2nd Entry Opportunity: Execute an entry at the absorption zone on Day 2 at/near the rejection day midpoint/breakout point. This entry can serve as a full or partial entry.
+The day after a Stop Run Day can oﬀer two-way trade, including a fade opportunity back to the previous session’s midpoint. Bulls will be looking to defend a pullback to the absorption zone, which oﬀers traders the ability to initiate, or add to, a position on a swing basis.
+Fade After Stop Run: Look to the Stop Run Day high for signs of rejection the next morning, as a fade opportunity may present itself back to the stop run day midpoint/breakout point.
+•Option 1: Execute a stand-alone short position should rejection occur at yHI, with a target as low as yMid
+•Option 2: Execute a short position that acts as a short term hedge to protect a long position, thus counteracting the pullback
+•Option 3: Scale a portion of long position in the last hour of the stop run day, and then add back to the position at the absorption zone upon a retest on Day 2
+CLVN
+1. Stop Run Day
+2. Absorption Zone 3. Fade After Stop Run 4. Absorption Day 5. Continuation Day
+=== PAGE 40 ===
+1
+24
+3
+4
+TRADE SEQUENCESSTOP RUN TRADE SEQUENCEIn most cases, bulls will need to keep the Stop Run Day midpoint bid in order to maintain control of the developing move higher. Pullbacks to the absorption zone over the next 2 to 3 days oﬀer opportunities for bulls to initiate or defend a position.
+3rd Entry Opportunity: Day 3 after stop run usually involves looking for a failed new low, which could provide another entry opportunity. Execute an entry upon a rejection of yLO at the absorption zone. This entry can serve as a full or partial entry.
+Absorption Zone: After a couple of days of absorption, bulls need price to remain above the absorption zone. A daily close below this zone will likely trigger a long liquidation.
+CLVN
+1. Stop Run Day
+2. Absorption Zone 3. Fade After Stop Run 4. Absorption Day 5. Continuation Day
+=== PAGE 41 ===
+Stop Run Sequence
+TRADE SEQUENCESSTOP RUN TRADE SEQUENCEAfter building a position during the ﬁrst few days of a stop run day trade sequence, your primary goal is to take proﬁts on the ﬁrst favorable pop into your forecasted target zone, while looking to dump the trade if price fails to hold above the absorption zone on a daily closing basis.
+1
+Proﬁt-Taking Opportunity: Price pops higher after earnings, allowing for an ideal opportunity to take full or partial proﬁts after building a position during the ﬁrst few days of the stop run day trade sequence.
+3
+4 244
+5
+Failed New Lows: Several entry/re-entry opportunities develop throughout the life cycle of this stop run trade sequence, with each revealing itself as a Failed New Low.
+CLVN
+1. Stop Run Day
+2. Absorption Zone 3. Fade After Stop Run 4. Absorption Day 5. Continuation Day
+=== PAGE 42 ===
+SWING TRADE PRO 2.0
+FAILED ABSORPTION SEQUENCEThis blueprint illustrates the Failed Absorption trade sequence, including identifying the primary absorption zone and all entry points. Use this sequence when Failed Absorption is suspected to occur.
+1
+3 3
+4
+62 5
+PRIMARY ABSORPTION ZONE RETEST AFTER STOP RUN
+3
+7
+FAILED BREAKOUT
+1.Rejection Day: Bulls will build long positions at the Primary Absorption Zone after a Rejection Day develops. A failure of these longs to get paid will trigger sell stops through the absorption zone, likely triggering a Stop Run Day and additional selling pressure.
+2.Primary Absorption Zone: The zone between the Rejection Day midpoint and the rejected price level becomes the absorption zone. This is the zone that will be used by the bulls to build/defend positions, while bears will look to trigger sell stops below it.
+3.Absorption Days: Bulls will build/defend positions on these days, but after 3-5 days of failing eﬀort, a Stop Run Day may be imminent.
+4.Failed Breakout: Bulls attempt expansion, but a failed breakout through recent highs/resistance likely triggers a Stop Run Day. Build short positions at the rejected price level where the failed breakout occurred. This is the earliest potential entry point.
+5.Stop Run Day: The failed breakout triggers sell stops, fueling an aggressive stop run day. Add to positions on this day. 
+6.Retest After Stop Run: Add to positions (or establish a new position) upon a retest of the failed absorption zone from below. A daily close back above the primary absorption zone ruins this trade sequence, and positions must be exited at such time.
+7.Continuation Day: Ideally, the continuation day fuels a move to the primary target, allowing you to take partial proﬁts and reduce risk.
+Entry 1
+Entry 2
+Entry 3
+Establish full/partial position on this day
+Add to position on this day, and take partial proﬁts ahead of the close
+Add to position, or establish new position, upon a retest
+*Flip for bullish sequence
+=== PAGE 43 ===
+A Failed Absorption Sequence occurs after bulls fail to keep the absorption zone of a rejection day bid, thus triggering a long liquidation as bulls are forced to exit positions once sell stops are triggered. A daily close below the midpoint of a rejection day after several days of absorption will usually lead to a failed absorption sequence.
+1
+Absorption Zone: The absorption zone develops between the rejection day midpoint and the price that has been rejected. A daily close below this zone will likely trigger a long liquidation.
+2
+Rejection Day: Signiﬁcant rejection day develops at a CLVN between 175 and 176. Bulls need to keep the absorption zone bid for a shot at returning price to previous highs.
+CLVN
+1. Rejection Day
+2. Absorption Zone 3. Absorption Days 4. Failed Breakout 5. Stop Run Day 6. Retest After Stop Run 7. Continuation Day
+TRADE SEQUENCESFAILED ABSORPTION SEQUENCE
+=== PAGE 44 ===
+The best Failed Absorption Sequences tend to start with several days of absorption, which becomes the fuel for the next move. Anywhere between 2 and 5 days of absorption can usually build enough energy for a signiﬁcant long liquidation should price close below the absorption zone.
+3Absorption Days: Bulls defend price at the absorption zone for two sessions, but price closes below the rejection day midpoint on Day 2 of absorption, which opens the door to selling pressure ahead.
+1
+2
+1. Rejection Day
+2. Absorption Zone 3. Absorption Days 4. Failed Breakout 5. Stop Run Day 6. Retest After Stop Run 7. Continuation Day
+TRADE SEQUENCESFAILED ABSORPTION SEQUENCE
+Failed Breakout: Once price closes below the rejection day midpoint, bears will be looking to trap bulls at/above yHI, which tends to develops as a failed breakout the next day if bears are successful
+=== PAGE 45 ===
+Failed Absorption is usually triggered by failure — price fails to go higher and market participants fail to get paid, which then causes a long liquidation and selling pressure. As such, begin watching for failed breakouts and failed new highs when a bullish rejection sequence can’t seem to ﬁnd liftoﬀ.
+1
+324
+5
+Failed Breakout: Price attempts to rally above yHI, but fails. This failed breakout attempt, especially within a downtrend, usually precedes a stop run, as bulls will be forced to liquidate trades as the market sells oﬀ.
+Stop Run Day: After the failed breakout, price pushes through the absorption zone, triggering an aggressive stop run day
+TRADE SEQUENCESFAILED ABSORPTION SEQUENCE
+1st Entry Opportunity: After price fails to close above the absorption zone in the previous session, look to execute an entry (full or partial) upon a rejection/retest of yHI the next morning
+2nd Entry Opportunity: Typically, a stop run day will experience an aggressive trend day structure. Look to execute a full position upon a retest of yLO from below, with the option of taking proﬁts in the last hour of the day (partial or full).
+1. Rejection Day
+2. Absorption Zone 3. Absorption Days 4. Failed Breakout 5. Stop Run Day 6. Retest After Stop Run 7. Continuation Day
+Long Liquidation: The bulls that defended the market during the rejection day, and during the subsequent two absorption days, fail to get paid, which triggers the beginning of a long liquidation
+=== PAGE 46 ===
+After building a position during the ﬁrst few days of a rejection day trade sequence, your primary goal is to take proﬁts on the ﬁrst favorable pop into your forecasted target zone, while looking to dump the trade if price fails to hold above the absorption zone on a daily closing basis.
+1
+Retest After Stop Run: After signiﬁcant selling pressure through the absorption zone, bears will be looking to defend a retests/pullbacks into the absorption zone from below
+62
+7
+4
+5
+Failed New High/Stop Run Day/ Outside Day/ Rejection Day
+Taking Proﬁts: After price drops and hits your forecasted target zone, look to take proﬁts, ether partial or full, depending on your plan.
+1. Rejection Day
+2. Absorption Zone 3. Absorption Days 4. Failed Breakout 5. Stop Run Day 6. Retest After Stop Run 7. Continuation Day
+TRADE SEQUENCESFAILED ABSORPTION SEQUENCE
+3rd Entry Opportunity: The morning after stop run oﬀers an opportunity to initiate or add to a position. Execute an entry at/near the stop run day midpoint upon a retest from below the next morning
+New Absorption Zone: The absorption zone is adjusted lower to coincide with the midpoint of the stop run day and the 2-day absorption lows
+=== PAGE 47 ===
+SWING TRADE PRO 2.0
+ACCUMULATION SEQUENCEThis blueprint illustrates the Accumulation trade sequence, including identifying tendencies of accumulation and detailing each entry point. Use this sequence when Accumulation develops.
+1
+4
+3
+62 7
+1.Accumulation: Accumulation occurs when institutional investors buy substantial supply of a given stock, while simultaneously keeping price within a narrow range for 20+ days, which eventually fuels expansion and a markup phase. Rounded bottoms are extremely reliable patterns of accumulation.
+2.Breakout/Absorption Zone: The zone between the Stop Run Day midpoint and recent resistance, which bulls will use to defend their trades or establish new positions. A daily close below this zone will ruin this trade and trigger a stop run to the downside, thus positions must be exited at such time.
+3.Rejection Day: It can be challenging to discern when expansion will occur from the accumulation phase, but Rejection Days on the right side of a rounded bottom can oftentimes precede expansion. Establish a partial position on this day, or the next session at the rejection day midpoint (3). 
+4.Absorption Day: Add to your position (or establish a new position) at the Absorption Zone on these days.
+5.Stop Run Day: Add to your position on this day, or look to defend your position upon a retest of the breakout point from above in the days moving forward.
+6.Retest After Stop Run: Defend your position upon a retest of the breakout point from above, or establish new position here. Multiple rotations can be defended at this level. A daily close below this zone will ruin this trade and trigger a stop run to the downside, thus positions must be exited at such time.
+7.Continuation Day: Ideally, the continuation day fuels a move to your pre-determined high probability target, allowing you to take partial proﬁts and reduce risk, but the position can be held to realize long term targets 6-12 months out, or can be used as a “buy-the-dips" candidate throughout the markup phase.
+5
+Entry 1
+Entry 4
+Entry 2
+Entry 3
+Establish full/partial position on this dayAdd to position, or establish new position, at the absorption zone
+Add to position on this day, or wait for Retest Entry (6)
+Add to position, or establish new position, upon a retest
+*Flip for bearish sequence
+=== PAGE 48 ===
+The Accumulation Sequence is the most powerful of all patterns, as this pattern develops over many weeks, months, or even years before releasing signiﬁcant energy once expansion occurs. Rounding and rejection on the right side of the accumulation phase can be “tells” that price is nearing expansion.
+Rejection Day: Signiﬁcant Rejection Day develops after a multi-week failed new low, which suggests expansion may be imminent
+3rd Entry Opportunity: 
+A Failed New Low rejection develops upon a retest of the absorption zone from above, which oﬀers another entry opportunity. Execute an entry once FNL is conﬁrmed, either partial or full position.
+1
+3
+TRADE SEQUENCESACCUMULATION SEQUENCE
+2
+Accumulation: The accumulation phase lasts 8 weeks, which builds plenty of energy to fuel a big move. The range further compresses in the last 3 weeks, which suggests expansion may be forthcoming.
+1. Accumulation 2. Breakout/Absorption Zone 3. Rejection Day 4. Absorption Day 5. Stop Run Day 6. Retest After Stop Run 7. Continuation Day
+Rounded Bottom: Signiﬁcant rounding of the accumulation phase, which implies expansion may be near
+1st Entry Opportunity: If the Rejection Day is conﬁrmed by the end of the day, look to execute an entry during the last hour of the day, either partial or full.
+56
+2nd Entry Opportunity: The breakout the next session oﬀers an opportunity to add to the position, or initiate a new position
+=== PAGE 49 ===
+1. Accumulation 2. Breakout/Absorption Zone 3. Rejection Day 4. Absorption Day 5. Stop Run Day 6. Retest After Stop Run 7. Continuation Day
+A true Accumulation phase will fuel a signiﬁcant Markup phase that can last as long as the time it takes to build the accumulation itself, or longer. You must have the patience to allow this time-based position to mature during the Markup phase, as long as market structure remains intact.
+Transition Phase: 
+Ideally, the transition from accumulation phase to markup phase should be quick and aggressive.
+2
+Accumulation Breakout Sequence
+Add-Backs & Swing Trades: 
+Once price has ﬁrmly transitioned into a Markup phase from an Accumulation phase, all pullbacks to the PEMA trigger zone become buyable dips, either to add to an existing position, or to trade as standalone swing trades.
+1 3
+47
+Time-Based Target: The phase of accumulation lasted about 8 weeks, which means you can forecast about 6-8 weeks of expansion during the markup phase.
+ACCUMULATION PHASE
+MARKUP PHASE
+Managing the Trade: After building a position during the accumulation sequence, look to hold the position for a longer term move, anywhere from 6-8 weeks to year, depending on the phase of accumulation. This is a time-based trade that requires patience. Look to hold as long as price maintains its market structure.
+TRADE SEQUENCESACCUMULATION SEQUENCE
+Taking Proﬁts: 
+Look to trim portions of the position along the way, and take oﬀ the rest of the position once price either hits its price target, hits its time target, or becomes range bound.
+=== PAGE 50 ===
+PRESENTS
+SWING TRADE PRO 2.0
+THE 5-STEP SWING TRADING BLUEPRINTSTEP 2: TRADE SEQUENCES
+=== PAGE 51 ===
+PRESENTS
+SWING TRADE PRO 2.0
+THE 5-STEP SWING TRADING BLUEPRINTSTEP 3: STRATEGY TOOLKIT
+=== PAGE 52 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+STRATEGY TOOLKITBENEFITS OF TRADING OPTIONSIn Step 3: Strategy Toolkit, you will learn about the options strategies that we will use in our strategy toolkit. You will also learn how to choose the right strategy for the opportunity presenting itself. But ﬁrst, let’s discuss the beneﬁts of trading options. 
+Beneﬁts of Trading Options:  
+•Less Capital Required: You can trade options using a fraction of the capital required to trade stocks or ETFs, which gives you additional capital to deploy. 
+•Less Risk: The risk is built into the options strategy that you choose, which allows you to deﬁne your maximum allowable risk, even if the market were to suﬀer a catastrophic event, like a ﬂash crash.
+•Higher Potential Return: While less capital is required to trade options, they can return nearly 85% of the potential reward versus owning the stock, which means the potential return on investment is oftentimes much higher trader options.
+•More Strategies: Options provide a plethora of ways to strategically engage the market, which is a stark contrast to the long-only or short-only approach to stocks.
+=== PAGE 53 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+STRATEGY TOOLKIT:
+CHOOSE A TRADING STRATEGY
+The Strategy Toolkit is designed to allow you to choose trading strategies that are categorized by their relative risk proﬁles, thus allowing you to pick the type of risk that you’re willing to take relative to the probability of proﬁt for the opportunity that you’re considering trading.
+For example, Credit Spreads are at the low end of the risk spectrum, while Neutral Strategies are at the center and Trade the Underlying is at the high end of the risk spectrum.
+Look to choose a relatively low-risk strategy, like a Credit or Debit Spread, for an opportunity with good odds of proﬁtability. Choose a more aggressive strategy, like ITM Long Calls or Puts when the opportunity has high odds of success. Your ability to determine which trading strategy is right for the setup that you are trading will go a long way toward building consistency.
+CHOOSE A TRADING STRATEGY
+3.1 CREDIT SPREADS — Put Credit Spread (BULLISH)
+— Call Credit Spread (BEARISH)
+3.2 DEBIT SPREADS — Call Debit Spread (BULLISH)
+— Put Debit Spread (BEARISH)
+3.3 NEUTRAL STRATEGIES — Long Straddle (BREAKOUT)
+— Short Iron Butterﬂy (RANGE) 3.4 ITM OPTIONS — ITM Long Call (BULLISH)
+— ITM Long Put (BEARISH) 3.5 OTM OPTIONS — OTM Long Call (BULLISH)
+— OTM Long Put (BEARISH) 3.6 TRADE THE UNDERLYING — Covered Call (INCOME)
+— Protective Put (HEDGE)
+— Collar (HEDGE)
+=== PAGE 54 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads •Put Credit Spread (Bullish) •Call Credit Spread (Bearish) 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+Credit Spreads oﬀer a low-risk approach to executing a bias in the market by betting where the market won’t go. Credit Spreads are an option strategy that pay out a net credit, as you are selling a higher priced option and buying a lower priced option for protection. This approach allows you to collect premium on the option sold, while limiting your risk with the cheaper bought option.
+Credit Spread: Involves selling a higher priced option to collect premium, while buying a lower priced option in the same underlying with the same expiration for risk protection, resulting in a net credit for the trade.
+3.1 CREDIT SPREADS — Put Credit Spread (BULLISH)
+— Call Credit Spread (BEARISH) 
+Beneﬁts of Credit Spreads: 
+•Deﬁned Risk: This strategy allows you to cap your risk for a trade. No matter how the trade turns out, you cannot lose more than your pre-deﬁned risk. 
+•Max Proﬁt is Easily Achieved: As long as price remains beyond the option sold, you will achieve max proﬁt for a trade. In essence, price can go strongly in your favor, mildly in your favor, or remain ﬂat, and you can still collect max proﬁt with this strategy. 
+•Time Decay Works in Your Favor: When selling options, time decay is extremely helpful.
+CREDIT SPREADS
+CHOOSE A TRADING STRATEGY
+=== PAGE 55 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads •Put Credit Spread (Bullish) •Call Credit Spread (Bearish) 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+OBJECTIVE: The objective of a Put Credit Spread is to execute a bullish income strategy for a net credit while also reducing your maximum risk. The sold puts produce the income element, while the bought puts limit your downside risk.
+Direction: Bullish/Neutral
+Asset Legs: Short Put (higher strike), Long Put (lower strike)
+When to Use: If you think the market will go up or sideways 
+Proﬁt Characteristics: Retain the net credit if both options expire worthless — This is the ideal scenario for this trade.
+Loss Characteristics: Diﬀerence in strikes less the net credit you received
+Decay Characteristics: Time decay is helpful when the position is winning, and harmful when the position is losing
+Max Risk: Capped
+Max Reward: Capped
+Strategy:  
+•Use this strategy when you believe price will move higher or stay ﬂat.
+•You’re selling premium, so you want time decay to work in your favor, therefore trade options with 15 days or less to expiration.
+•You want both options to expire worthless. If this happens, you won’t have to pay commission to close the position.
+•If the trade hits near max proﬁt early in the trade, go ahead and take the windfall proﬁts
+•If the stock rises, both puts expire worthless, and you simply retain the entire net credit.
+•If the stock falls, then your breakeven is the higher strike minus the net credit you received.
+CHOOSE A TRADING STRATEGY
+CREDIT SPREADS:PUT CREDIT SPREAD (BULLISH)
+=== PAGE 56 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads •Put Credit Spread (Bullish) •Call Credit Spread (Bearish) 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+EXECUTION: Sell the Put Credit Spread when the underlying reaches your entry trigger.
+PUT CREDIT SPREAD EXAMPLE: 
+XYZ is trading at 100 in Jan and you believe that price will close above 100 at expiration:
+	 Sell the Feb 100 put for 2.00
+	 Buy the Feb 95 put for .50
+Risk Proﬁle:  
+•Net Credit Transaction: Premium sold - premium bought (2.00 - .50 = 1.50)
+•Maximum Risk: Diﬀerence in strikes minus net credit ((100 - 95) - 1.50 = 3.50)
+•Maximum Reward: Net credit received (1.50)
+•Breakeven: Higher strike minus net credit (100 - 1.50 = 98.50)
+•Collect 1.50 in Premium, which stays in your account if price closes above 100 at expiration
+•If price remains above 100, allow the options to expire worthless to keep the entire credit and to avoid paying commissions
+•If price goes against the trade, the breakeven point is the higher strike minus the net credit received
+•Look to cover this trade ahead of expiration to avoid assignment if position is losing
+CHOOSE A TRADING STRATEGY
+CREDIT SPREADS:PUT CREDIT SPREAD (BULLISH)
+=== PAGE 57 ===
+
+=== PAGE 58 ===
+
+=== PAGE 59 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads •Put Credit Spread (Bullish) •Call Credit Spread (Bearish) 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+OBJECTIVE: The objective of a Call Credit Spread is to execute a bearish income strategy for a net credit while also reducing your maximum risk. The sold calls produce the income element, while the bought calls limit your upside risk.
+Direction: Bearish/Neutral
+Asset Legs: Short Call (lower strike), Long Call (higher strike)
+When to Use: If you think the market will go down or sideways
+Proﬁt Characteristics: Retain the net credit if both options expire worthless — This is the ideal scenario for this trade.
+Loss Characteristics: Diﬀerence in strikes less the net credit 
+Decay Characteristics: Time decay is helpful when the position is winning, and harmful when the position is losing
+Max Risk: Capped
+Max Reward: Capped
+Strategy:  
+•Use this strategy when you believe price will move lower or stay ﬂat.
+•You’re selling premium, so you want time decay to work in your favor, therefore trade options with 15 days or less to expiration.
+•You want both options to expire worthless. If this happens, you won’t have to pay commission to close the trade.
+•If the trade hits near max proﬁt early in the trade, go ahead and take the windfall proﬁts
+•If the stock falls, both calls expire worthless, and you simply retain the entire net credit.
+•If the stock rises, then your breakeven is the lower strike plus the net credit you received.
+CHOOSE A TRADING STRATEGY
+CREDIT SPREADS:CALL CREDIT SPREAD (BEARISH)
+=== PAGE 60 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads •Put Credit Spread (Bullish) •Call Credit Spread (Bearish) 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+EXECUTION: Sell the Call Credit Spread when the underlying reaches your entry trigger.
+CALL CREDIT SPREAD EXAMPLE: 
+XYZ is trading at 100 in Jan and you believe that price will close below 100 at expiration:
+	 Sell the Feb 100 call for 2.00
+	 Buy the Feb 105 call for .50
+Risk Proﬁle:  
+•Net Credit Transaction: Premium sold - premium bought (2.00 - .50 = 1.50)
+•Maximum Risk: Diﬀerence in strikes minus net credit ((105 - 100) - 1.50 = 3.50)
+•Maximum Reward: Net credit received (1.50)
+•Breakeven: Lower strike plus net credit (100 + 1.50 = 101.50)
+•Collect 1.50 in Premium, which stays in your account if price closes below 100 at expiration
+•If price remains below 100, allow the options to expire worthless to keep the entire credit and to avoid paying commissions
+•If price goes against the trade, the breakeven point is the lower strike plus the net credit received
+•Look to cover this trade ahead of expiration to avoid assignment if position is losing
+CHOOSE A TRADING STRATEGY
+CREDIT SPREADS:CALL CREDIT SPREAD (BEARISH)
+=== PAGE 61 ===
+
+=== PAGE 62 ===
+
+=== PAGE 63 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads •Call Debit Spread (Bullish) •Put Debit Spread (Bearish) 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+Debit Spreads oﬀer a risk-deﬁned approach to executing a directional bias in the market. Debit Spreads are an option strategy that results in a net debit, as you are buying a higher priced option and selling a lower priced option in order to oﬀset time decay, limit risk, and reduce the cost basis of the trade.
+Debit Spreads: Involves buying a higher priced option, while selling a lower priced option in the same underlying with the same expiration in order to oﬀset the eﬀects of time decay and reduce cost, resulting in a net debit for the trade.
+3.2 DEBIT SPREADS — Call Debit Spread (BULLISH)
+— Put Debit Spread (BEARISH) 
+Beneﬁts of Debit Spreads: 
+•Deﬁned Risk: This strategy allows you to cap your risk for a trade. No matter how the trade turns out, you cannot lose more than the amount you paid for the trade.
+•Time Decay is Oﬀset: Buy selling the lower priced option, you are essentially oﬀsetting the negative eﬀects of time decay. 
+•Lower Cost Basis: By selling the lower priced option, you are reducing the cost basis of the trade, while also improving your breakeven point.
+DEBIT SPREADS
+CHOOSE A TRADING STRATEGY
+=== PAGE 64 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads •Call Debit Spread (Bullish) •Put Debit Spread (Bearish) 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+OBJECTIVE: The objective of a Call Debit Spread is to execute a bullish trade by buying calls, while reducing your maximum risk by selling calls at a higher strike. The sold calls cap proﬁt potential, but also reduce your cost basis, risk, and breakeven points.
+Direction: Bullish
+Asset Legs: Long Call (lower strike), Short Call (higher strike)
+When to Use: If you think the market will go up, but with limited upside potential
+Proﬁt Characteristics: Max proﬁt is reached if price closes at or above the sold call at expiration — This is the ideal scenario for this trade.
+Loss Characteristics: Max risk is the net cost of the spread
+Decay Characteristics: Time decay is helpful when the position is winning, and harmful when the position is losing
+Max Risk: Capped
+Max Reward: Capped
+Strategy:  
+•Use this strategy when you believe price will move higher, but has limited upside potential.
+•If the stock rises to the higher (sold) call, you make max proﬁt
+•If the stock falls below the lower (bought) call, you take a max loss
+•If the stock falls somewhere in between, then you must clear the breakeven point, which is the lower strike plus the net debit.
+DEBIT SPREADS:CALL DEBIT SPREAD (BULLISH)
+=== PAGE 65 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads •Call Debit Spread (Bullish) •Put Debit Spread (Bearish) 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+EXECUTION: Buy the Call Debit Spread when the underlying reaches your entry trigger.
+CALL DEBIT SPREAD EXAMPLE: 
+XYZ is trading at 100 in Jan and you believe that price will rally, but has limited upside to about 105:
+	 Buy the Feb 100 call for 2.00
+	 Sell the Feb 105 call for .50
+Risk Proﬁle:   •Net Debit Transaction: Premium bought - premium sold (2.00 - .50 = 1.50)
+•Maximum Risk: Debit paid (1.50)
+•Maximum Reward: Diﬀerence in strikes minus debit paid ((105 - 100) - 1.50 = 3.50)
+•Breakeven: Lower strike plus net debit (100 + 1.50 = 101.50)
+•Max proﬁt occurs if price rises to the higher (sold) strike
+•If price closes below the lower (bought) strike at expiration, you take a max loss
+•If price closes somewhere between the two strikes, your breakeven is the lower strike plus the net debit paid
+DEBIT SPREADS:CALL DEBIT SPREAD (BULLISH)
+=== PAGE 66 ===
+
+=== PAGE 67 ===
+
+=== PAGE 68 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads •Call Debit Spread (Bullish) •Put Debit Spread (Bearish) 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+OBJECTIVE: The objective of a Put Debit Spread is to execute a bearish trade by buying puts, while reducing your maximum risk by selling puts at a lower strike. The sold puts cap proﬁt potential, but also reduce your cost basis, risk, and breakeven points.
+Direction: Bearish
+Asset Legs: Long Put (higher strike), Short Put (lower strike)
+When to Use: If you think the market will go down, but with limited downside potential
+Proﬁt Characteristics: Max proﬁt is reached if price closes at or below the sold put at expiration — This is the ideal scenario for this trade.
+Loss Characteristics: Max risk is the net cost of the spread
+Decay Characteristics: Time decay is helpful when the position is winning, and harmful when the position is losing
+Max Risk: Capped
+Max Reward: Capped
+Strategy:  
+•Use this strategy when you believe price will move lower, but has limited downside potential.
+•If the stock falls to the lower (sold) put, you make max proﬁt. If this happens prior to expiration, go ahead and take proﬁts.
+•If the sold options loses its value, you can take proﬁts on this leg, and hold the long option as a free trade.
+•If the stock rises above the higher (bought) put, you take a max loss
+•If the stock falls somewhere in between, then you must clear the breakeven point, which is the higher strike minus the net debit.
+DEBIT SPREADS:PUT DEBIT SPREAD (BEARISH)
+=== PAGE 69 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads •Call Debit Spread (Bullish) •Put Debit Spread (Bearish) 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+EXECUTION: Buy the Put Debit Spread when the underlying reaches your entry trigger.
+PUT DEBIT SPREAD EXAMPLE: 
+XYZ is trading at 100 in Jan and you believe that price will fall, but has limited downside to about 95:
+	 Buy the Feb 100 put for 2.00
+	 Sell the Feb 95 put for .50
+Risk Proﬁle:   •Net Debit Transaction: Premium bought - premium sold (2.00 - .50 = 1.50)
+•Maximum Risk: Debit paid (1.50)
+•Maximum Reward: Diﬀerence in strikes minus debit paid ((100 - 95) - 1.50 = 3.50)
+•Breakeven: Higher strike minus net debit (100 - 1.50 = 98.50)
+•Max proﬁt occurs if price falls to the lower (sold) strike. Will take proﬁts if this happens prior to expiration.
+•If price closes above the higher (bought) strike at expiration, you take a max loss. If this happens prior to expiration, there is no harm in holding onto the position, as there is always a chance it could ﬁnish with value given there’s still time remaining to expiration.
+•If price closes somewhere between the two strikes, your breakeven is the higher strike minus the net debit paid
+DEBIT SPREADS:PUT DEBIT SPREAD (BEARISH)
+=== PAGE 70 ===
+
+=== PAGE 71 ===
+
+=== PAGE 72 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies •Long Straddle (Breakout) •Short Iron Butterﬂy (Range) 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+Neutral Options Strategies are those that allow traders to make money in markets that will either remain range-bound, or have the potential to see signiﬁcant expansion.
+While there are many diﬀerent strategies for trading a neutral market, we will primarily focus on executing Long Straddles for markets that are poised for expansion and selling Iron Butterﬂies for collecting premium during range-bound markets.
+3.3 NEUTRAL STRATEGIES — Long Straddle (BREAKOUT)
+— Iron Butterﬂy (RANGE) 
+Beneﬁts of Neutral Strategies: 
+•Make Money When You Don’t Know Direction: Long Straddles allow traders to make money even when you don’t know which direction the market will break. However, you need enough of a breakout to cover the cost of executing this strategy.
+•Make Money When the Market is Range Bound: Short Iron Butterﬂies allow traders to make money when a market has become range-bound. In essence, you are able to take advantage of situations when the market isn’t moving by selling premium. Commission costs can add up quickly with this four-leg trade, so use accordingly.
+NEUTRAL STRATEGIES
+=== PAGE 73 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies •Long Straddle (Breakout) •Short Iron Butterﬂy (Range) 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+OBJECTIVE: The objective of a Long Straddle is to execute a neutral trade for a capital gain while expecting a surge in volatility. Ideally you are looking for a scenario where Implied Volatility is currently very low, giving you cheaper option prices, but the stock is about to make an explosive move — you just don’t know which direction.
+Direction: Neutral (Breakout)
+Asset Legs: Long Call, Long Put (same strike and expiration)
+When to Use: When premiums are low and you think the market is ready for an explosive breakout in either direction
+Proﬁt Characteristics: Proﬁt is open-ended in both directions
+Loss Characteristics: Limited to the cost of the spread; max loss occurs if the market closes at your strike at expiration
+Decay Characteristics: Time decay really works against this position
+Max Risk: Capped
+Max Reward: Uncapped
+Strategy:  
+•Use this strategy when premiums are low and you believe price will see a breakout in either direction
+•This is a high cost trade; needs a big enough move to cover costs 
+•Consider this trade ahead of earnings or news
+•Consider stocks with price ranges that are compressed and ready for range expansion
+•Buy puts/calls with 45+ days to expiration
+•If the stock hasn’t moved, sell your position to avoid holding into the last month (to avoid serious time decay)
+NEUTRAL STRATEGIESLONG STRADDLE (BREAKOUT)
+=== PAGE 74 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies •Long Straddle (Breakout) •Short Iron Butterﬂy (Range) 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+EXECUTION: Buy the Long Straddle when the price of the underlying is at, or very close, to the strike you wish to straddle, and when volatility is low (to pay cheaper premiums).
+LONG STRADDLE EXAMPLE: 
+XYZ is trading at 100 in Jan and you believe that price will experience a signiﬁcant breakout soon, but direction is unknown:
+	 Buy the Apr 100 call for 2.55
+	 Buy the Apr 100 put for 2.25
+Risk Proﬁle:   
+•Net Debit Transaction: Premiums bought (2.55 + 2.25 = 4.80)
+•Maximum Risk: Debit paid (4.80)
+•Maximum Reward: Unlimited (∞)
+•Breakeven Up: Strike + net debit (100 + 4.80 = 104.80)
+•Breakeven Down: Strike - net debit (100 - 4.80 = 95.20)
+•This trade needs a big enough breakout to cover the net debit cost
+•Execute this strategy when volatility is low to pay cheaper premiums
+•If price doesn’t move, look to exit this trade 20-30 days before expiration, as time decay will begin to work doubly against the trade
+NEUTRAL STRATEGIESLONG STRADDLE (BREAKOUT)
+=== PAGE 75 ===
+
+=== PAGE 76 ===
+
+=== PAGE 77 ===
+
+=== PAGE 78 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies •Long Straddle (Breakout) •Short Iron Butterﬂy (Range) 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+OBJECTIVE: The objective of a Short Iron Butterﬂy is to execute a neutral trade for a capital gain while expecting price to remain mostly range-bound. Ideally you are looking for a scenario where Implied Volatility is currently very high, giving you high option premiums to sell, but price action is likely to become range bound as volatility decreases. This strategy combines Put and Call Credit Spreads.
+Direction: Neutral (Range)
+Asset Legs: Short ATM Call, Short ATM Put, Long OTM Call, Long OTM Put (same strike and expiration)
+When to Use: When premiums are high and you expect the market to become range-bound
+Proﬁt Characteristics: Proﬁt is limited to the net credit received; Max proﬁt occurs if the market closes precisely at the sold strike at expiration
+Loss Characteristics: Limited to the diﬀerence in strikes minus the net credit received
+Decay Characteristics: Time decay signiﬁcantly helps this trade
+Max Risk: Capped
+Max Reward: Capped
+Strategy:  
+•Use this strategy when premiums are high and you believe price will become range-bound and volatility will drop
+•For a neutral bias, sell the ATM puts and calls. Add a directional bias to the position by selling puts/calls above or below current price.
+•Do not trade this strategy ahead of earnings or news
+•Consider stocks that have experienced major volatility and are due for compression
+•Use this strategy with 30 days or less to expiration, but preferably less than 15 days to expiration
+•Look to close out the position just before expo, as most of the proﬁt will be realized closer to expo
+NEUTRAL STRATEGIESSHORT IRON BUTTERFLY (RANGE)
+=== PAGE 79 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies •Long Straddle (Breakout) •Short Iron Butterﬂy (Range) 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+EXECUTION: Sell the Iron Butterﬂy when the price of the underlying is at, or very close, to the strike you wish to straddle, and when implied volatility is high (in order to collect higher premiums).
+SHORT IRON BUTTERFLY EXAMPLE: 
+XYZ is trading at 100 in Jan and you believe volatility will decline and that price will remain around 100 by the next expiration.
+	 Buy the Feb 105 call for .40
+Sell the Feb 100 call for 2.00
+Sell the Feb 100 put for 2.40
+	 Buy the Feb 95 put for .60
+Risk Proﬁle:   
+•Net Credit Transaction: Premium sold - premium bought (4.40 - 1.00 = 3.40)
+•Maximum Risk: (Sold strike - bought strike) - net credit ((100 - 95) - 3.40 = 1.60)
+•Maximum Reward: Net credit received (3.40)
+•Breakeven Up: Sold strike + net credit (100 + 3.40 = 103.40)
+•Breakeven Down: Sold strike - net credit (100 - 3.40 = 96.60)
+•This trade needs implied volatility to drop and for price to remain near the sold strike
+•Execute this strategy when volatility is high to collect higher premiums
+•Look to close out this trade ahead of expiration to avoid potential assignment
+•This is a high cost trade; use accordingly
+NEUTRAL STRATEGIESSHORT IRON BUTTERFLY (RANGE)
+=== PAGE 80 ===
+The objective of a Short Iron Butterﬂy is to execute a neutral trade for a capital gain while expecting price to remain mostly range-bound. Ideally you are looking for a scenario where Implied Volatility is currently very high, giving you high option premiums to sell, but price action is likely to become range bound as volatility decreases. This strategy combines Put and Call Credit Spreads.
+TIPS: — Sell the Iron Fly when implied volatility is high to collect higher premiums
+— Sell the Iron Fly when price is likely to become range-bound
+— Sell the Iron Fly when implied volatility is likely to decline
+— Do not use this strategy ahead of earnings or anticipated news
+— Buy farther OTM calls/puts for a wider breakeven range
+NEUTRAL STRATEGIESSHORT IRON BUTTERFLY (RANGE)
+EXAMPLE: — Sell 20 APR (22) 37 Call
+— Sell 20 APR (22) 37 Put
+— Buy 20 APR (22) 40 Call
+— Buy 20 APR (22) 40 Put
+— Net Credit: 2.25
+— Max Risk: 0.75 (37 - 34 - 2.25 = 0.75)
+— Max Reward: 2.25 (credit received)
+Buy 40 Call
+Buy 34 Put
+Sell 37 Call
+Sell 37 Put
+Breakeven Up: 39.25
+Breakeven Dn: 34.75
+EXECUTION: Sell the Iron Butterﬂy when the price of the underlying is at, or very close, to the strike you wish to sell, and when volatility is high (to collect higher premiums).
+IRON BUTTERFLY CREDITS: 
+6 APR (8) Weekly:
+13 APR (15) Weekly:
+20 APR (22) Monthly:
+29 MAR 1.85
+2.10
+2.25
+=== PAGE 81 ===
+Use the Short Iron Butterﬂy strategy after price experiences volatility and is likely due for compression. This trade needs implied volatility to drop and for price to remain near the sold strike.
+TIPS: — Look to close out the position just before expo, as most of the proﬁt will be realized closer to expiration
+— For a neutral bias, sell the ATM puts/calls— For directional bias, sell puts/calls above or below current price
+NEUTRAL STRATEGIESSHORT IRON BUTTERFLY (RANGE) Buy 40 Call
+Buy 34 Put
+Sell 37 Call
+Sell 37 Put
+IRON BUTTERFLY CREDITS: 
+6 APR (8) Weekly:
+13 APR (15) Weekly:
+20 APR (22) Monthly:
+29 MAR 1.85
+2.10
+2.25
+2 APR 1.75
+2.07
+2.30
+6 APR .52
+1.72
+2.00
+13 APR NT
+2.27
+2.15
+20 APR NT
+NT
+.67
+Breakeven Up: 39.25
+Breakeven Dn: 34.75
+20 APR
+13 APR
+6 APR
+EXAMPLE: — Value of 20 APR Iron Butterﬂy (at expo): 0.67
+— Value of 20 APR 40 Call: 0.00
+— Value of 20 APR 37 Call: 0.00
+— Value of 20 APR 37 Put: 0.67
+— Value 20 APR 34 Put: 0.00
+— Final Credit: 1.58 (2.25 - 0.67 = 1.58)
+Notice how the value of the Iron Butterﬂy ﬂuctuates as price gets closer and farther away from the sold strikes, and how this impacts options with closer expirations versus expirations farther away
+=== PAGE 82 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options •ITM Long Calls (Bullish) •ITM Long Puts (Bearish) 3.5 OTM Options 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+ITM Options are options that are “in-the-money,” which means the stock price is above the strike price for calls, and below the strike price for puts, thus giving these options intrinsic and time value. These options are more expensive, and the farther in-the-money they are, the more expensive the options become.
+ITM Options: In-the-money options means the stock price is above the strike price (for calls) or below the strike price (for puts), which gives these options intrinsic and time value, thus making them more valuable and expensive.
+3.4 ITM OPTIONS — ITM Long Calls (BULLISH)
+— ITM Long Puts (BEARISH) 
+Beneﬁts of ITM Options: 
+•Have More Value: ITM Options have more value, so you get what you pay for with these options. These options will retain more value if the position begins to go against you due to intrinsic value. 
+•Slightly Less Risky: ITM Options are less risky compared to their OTM counterparts due to having both intrinsic and time value, which means they will be more forgiving should the position begin to go against your desired direction.
+ITM OPTIONS
+=== PAGE 83 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKITCHOOSE A TRADING STRATEGY
+OBJECTIVE: The objective of using ITM Long Calls is to execute a bullish trade when you are highly bullish and want to be aggressive. This approach improves overall return versus buying the underlying outright, while inherently protecting your downside risk.
+Direction: Bullish
+Asset Legs: Long Calls (Delta 70 or higher)
+When to Use: When you are highly bullish
+Proﬁt Characteristics: Proﬁt increases as the market rises, with unlimited proﬁt potential
+Loss Characteristics: Max risk is the amount paid for the calls
+Decay Characteristics: Time decay erodes the value of the options as expiration approaches
+Max Risk: Capped
+Max Reward: Unlimited
+Strategy:  
+•Use this strategy when you are extremely bullish and believe price will move higher
+•The cost of the option will be higher, which carries more risk, but being “in the money” gives the option more intrinsic value
+•Give yourself enough time to be right before expiration (30-45 days)
+•The trade is proﬁtable at expiration if price closes above the breakeven point, which is the strike plus the price paid for the option
+•If the stock falls below the strike of the call, you take a max loss
+ITM OPTIONSITM LONG CALLS (BULLISH)
+3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options •ITM Long Calls (Bullish) •ITM Long Puts (Bearish) 3.5 OTM Options 3.6 Trade the Underlying
+=== PAGE 84 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKITCHOOSE A TRADING STRATEGY
+EXECUTION: Buy the ITM Long Call options (70 Delta or better) when the price of the underlying reaches your entry trigger.
+ITM LONG CALL EXAMPLE: 
+XYZ is trading at 100 in Jan and you believe that price will experience a high probability move to the upside.
+	 Buy the Feb 97.50 call for 3.55
+Risk Proﬁle:   
+•Net Debit Transaction: Premium bought (3.55)
+•Maximum Risk: Debit paid (3.55)
+•Maximum Reward: Unlimited (∞)
+•Breakeven: Strike + net debit (97.50 + 3.55 = 101.05)
+•This trade needs a big enough move to cover the net debit cost
+•Execute this strategy when you expect a high probability move higher
+•It is not necessary to hold this trade to expiration, especially if your proﬁt target(s) have been reached
+•Give yourself enough time in the trade (days to expiration) to be right, ideally 45+ days to expiration
+ITM OPTIONSITM LONG CALLS (BULLISH)
+3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options •ITM Long Calls (Bullish) •ITM Long Puts (Bearish) 3.5 OTM Options 3.6 Trade the Underlying
+=== PAGE 85 ===
+
+=== PAGE 86 ===
+
+=== PAGE 87 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKITCHOOSE A TRADING STRATEGY
+OBJECTIVE: The objective of using ITM Long Puts is to execute a bearish trade when you are highly bearish and want to be aggressive. This approach improves overall return versus selling the underlying outright, while inherently protecting your upside risk.
+Direction: Bearish
+Asset Legs: Long Puts (Delta 70 or higher)
+When to Use: When you are highly bearish
+Proﬁt Characteristics: Proﬁt increases as the market falls, with unlimited proﬁt potential
+Loss Characteristics: Max risk is the amount paid for the puts
+Decay Characteristics: Time decay erodes the value of the options as expiration approaches
+Max Risk: Capped
+Max Reward: Unlimited (to a stock price of zero)
+Strategy:  
+•Use this strategy when you are extremely bearish and believe price will move lower
+•The cost of the option will be higher, which carries more risk, but being “in the money” gives the option more intrinsic value
+•Give yourself enough time to be right before expiration (30-45 days)
+•The trade is proﬁtable at expiration if price closes below the breakeven point, which is the strike minus the price paid for the put
+•If the stock rises above the strike of the put, you take a max loss — in this scenario just allow the puts to expire worthless (pay no commission, and you don’t have to deliver stock) 
+ITM OPTIONSITM LONG PUTS (BEARISH)
+3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options •ITM Long Calls (Bullish) •ITM Long Puts (Bearish) 3.5 OTM Options 3.6 Trade the Underlying
+=== PAGE 88 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKITCHOOSE A TRADING STRATEGY
+EXECUTION: Buy the ITM Long Put options (70 Delta or better) when the price of the underlying reaches your entry trigger.
+ITM LONG PUT EXAMPLE: 
+XYZ is trading at 100 in Jan and you believe that price will experience a high probability move to the downside.
+	 Buy the Feb 102.50 put for 3.55
+Risk Proﬁle:   
+•Net Debit Transaction: Premium bought (3.55)
+•Maximum Risk: Debit paid (3.55)
+•Maximum Reward: Unlimited (to zero)
+•Breakeven: Strike - net debit (102.50 - 3.55 = 98.95)
+•This trade needs a big enough move to cover the net debit cost
+•Execute this strategy when you expect a high probability move lower
+•It is not necessary to hold this trade to expiration, especially if your proﬁt target(s) have been reached
+•Give yourself enough time in the trade (days to expiration) to be right, ideally 45+ days to expiration
+ITM OPTIONSITM LONG PUTS (BEARISH)
+3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options •ITM Long Calls (Bullish) •ITM Long Puts (Bearish) 3.5 OTM Options 3.6 Trade the Underlying
+=== PAGE 89 ===
+
+=== PAGE 90 ===
+
+=== PAGE 91 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options •OTM Long Calls (Bullish) •OTM Long Puts (Bearish) 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+OTM Options are options that are “out-of-the-money,” which means the stock price is below the strike price for calls, and above the strike price for puts, thus giving these options time value, but not intrinsic value. These options are cheap, and the farther out-of-the-money they are, the cheaper the options become. These options are typically called “lottery tickets” because of potentially explosive percentage gains, but are EXTREMELY risky, and should only be traded sparingly.
+OTM Options: Out-of-the-money options means the stock price is below the strike price for calls or above the strike price for puts, which leaves these options with time value, but not intrinsic value, thereby making them less valuable and less expensive.
+3.5 ITM OPTIONS — OTM Long Calls (BULLISH)
+— OTM Long Puts (BEARISH) 
+Beneﬁts of OTM Options: 
+•They are Cheap: It is not uncommon to pay pennies for OTM options, and for good cause — the likelihood of price being ITM at expiration is quite low. So while they’re quite cheap, the risk of losing the entire amount paid for the option is high, unless you are very right on direction and timing. 
+•Percentage Gain Can Be Big: Because of the cheap nature of OTM options, major percentage gains can be seen if price explodes in your desired direction. However, time decay hits OTM options harder than their ITM counterparts, so exercise caution.
+OTM OPTIONS
+=== PAGE 92 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options •OTM Long Calls (Bullish) •OTM Long Puts (Bearish) 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+OTM OPTIONSOTM LONG CALLS (BULLISH)OBJECTIVE: The objective of using OTM Long Calls is to execute a bullish trade when you are either extremely bullish or want a “lottery ticket” approach to a trade. This approach reduces the cost of the trade, and also increases the potential return. However, this play is very risky because OTM options do not have intrinsic value and have greater odds of expiring worthless, thus resulting in complete loss of the trade.
+Direction: Bullish
+Asset Legs: Long Calls
+When to Use: When you are extremely bullish, or want a “lottery ticket"
+Proﬁt Characteristics: Proﬁt increases as the market rises, with unlimited proﬁt potential
+Loss Characteristics: Max risk is the amount paid for the calls
+Decay Characteristics: Time decay erodes the value of OTM options at a much higher rate than ITM options
+Max Risk: Capped
+Max Reward: Unlimited
+Strategy:
+•Use this strategy when you are extremely bullish
+•Go slightly OTM to reduce your cost basis
+•Go deep OTM when you want a “lottery ticket” approach to a trade
+•The cost of the option will be cheap, which carries less capital risk, but the deeper OTM the more risk is incurred
+•Give yourself enough time to be right before expiration (45+ days)
+•Max risk is the amount paid for the option
+•You want a quick move in your desired direction
+=== PAGE 93 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options •OTM Long Calls (Bullish) •OTM Long Puts (Bearish) 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+OTM OPTIONSOTM LONG CALLS (BULLISH)EXECUTION: Buy the OTM Long Call options (30 Delta or lower) when the price of the underlying reaches your entry trigger.
+OTM LONG CALL EXAMPLE: 
+XYZ is trading at 100 in Jan and you believe that price has the potential to see a major upside move to 115 or beyond.
+	 Buy the Mar 110 call for 0.35
+Risk Proﬁle:   
+•Net Debit Transaction: Premium bought (0.35)
+•Maximum Risk: Debit paid (0.35)
+•Maximum Reward: Unlimited (∞)
+•Breakeven: Strike + net debit (110 + 0.35 = 110.35)
+•Execute this strategy when you anticipate a potentially explosive move to the upside, but would rather risk the small debit paid (lottery ticket)
+•You typically want to see price move in your desired direction quickly, otherwise, time decay will begin to erode this position
+•It is not necessary to hold this trade to expiration, especially if your proﬁt target(s) have been reached
+•Give yourself enough time in the trade (days to expiration) to be right, ideally 45+ days to expiration
+=== PAGE 94 ===
+
+=== PAGE 95 ===
+
+=== PAGE 96 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options •OTM Long Calls (Bullish) •OTM Long Puts (Bearish) 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+OTM OPTIONSOTM LONG PUTS (BEARISH)OBJECTIVE: The objective of using OTM Long Puts is to execute a bearish trade when you are either extremely bearish or want a “lottery ticket” approach to a trade. This approach reduces the cost of the trade, and also increases the potential return. However, this play is very risky because OTM options do not have intrinsic value and have greater odds of expiring worthless, thus resulting in complete loss of the trade.
+Direction: Bearish
+Asset Legs: Long Puts
+When to Use: When you are extremely bearish, or want a “lottery ticket"
+Proﬁt Characteristics: Proﬁt increases as the market falls, with unlimited proﬁt potential
+Loss Characteristics: Max risk is the amount paid for the puts
+Decay Characteristics: Time decay erodes the value of OTM options at a much higher rate than ITM options
+Max Risk: Capped
+Max Reward: Unlimited (to a stock price of zero)
+Strategy:
+•Use this strategy when you are extremely bearish
+•Go slightly OTM to reduce your cost basis
+•Go deep OTM when you want a “lottery ticket” approach to a trade
+•The cost of the option will be cheap, which carries less capital risk, but the deeper OTM the more risk is incurred
+•Give yourself enough time to be right before expiration (45+ days)
+•Max risk is the amount paid for the option
+•You want a quick move in your desired direction
+=== PAGE 97 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options •OTM Long Calls (Bullish) •OTM Long Puts (Bearish) 3.6 Trade the Underlying
+CHOOSE A TRADING STRATEGY
+OTM OPTIONSOTM LONG PUTS (BEARISH)EXECUTION: Buy the OTM Long Put options (30 Delta or lower) when the price of the underlying reaches your entry trigger. 
+OTM LONG PUT EXAMPLE: 
+XYZ is trading at 100 in Jan and you believe that price has the potential to see a major downside move to 85 or beyond. 
+ Buy the Mar 90 put for 0.35 
+Risk Profile:   
+•Net Debit Transaction: Premium bought (0.35) •Maximum Risk: Debit paid (0.35) •Maximum Reward: Unlimited (∞) •Breakeven: Strike - net debit (90 - 0.35 = 89.65) 
+•Execute this strategy when you anticipate a potentially explosive move to the downside, but would rather risk the small debit paid (lottery ticket) than pay a larger premium •You typically want to see price move in your desired direction quickly, otherwise, time decay will begin to erode this position •It is not necessary to hold this trade to expiration, especially if your profit target(s) have been reached •Give yourself enough time in the trade (days to expiration) to be right, ideally 45+ days to expiration
+=== PAGE 98 ===
+
+=== PAGE 99 ===
+
+=== PAGE 100 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying •Covered Call (Income) •Protective Put (Hedge) •Collar (HEDGE)
+CHOOSE A TRADING STRATEGY
+TRADE THE UNDERLYINGSTOCKS, ETFS, FUTURES, FOREX, CRYPTOWhile “trading the underlying” isn’t necessarily an options strategy, sometimes it is the appropriate strategy for the speciﬁc opportunity presenting itself. In this section, you’ll learn the beneﬁts of trading the underlying (buying and selling shares/contracts in stocks, futures, etc.) versus trading an options strategy. Additionally, you’ll learn how to generate income from a position, and how to hedge a position, using options.
+3.6 TRADE THE UNDERLYING — Covered Call (INCOME)
+— Protective Put (HEDGE)
+— Collar (HEDGE) 
+Beneﬁts of Trading the Underlying: 
+•Easy to Understand: Trading stocks and futures is much easier to understand than trading options, which makes for an easy transition for beginners, as Options can be complex to understand at ﬁrst.
+•Liquidity: Volume and liquidity tends to be much better in the equities and futures markets versus options, which is extremely helpful in getting ﬁlled on entries/exits.
+•No Time Decay/Constraint: There is no time constraint on the position, which allows you to hold for longer time periods of time as markets trend for months or years.
+=== PAGE 101 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying •Covered Call (Income) •Protective Put (Hedge) •Collar (HEDGE)
+CHOOSE A TRADING STRATEGY
+TRADE THE UNDERLYINGCOVERED CALL (INCOME)OBJECTIVE: The objective of using a Covered Call strategy is to generate income from a long position in the underlying that you intend to keep for the long term, but are willing to sell if the underlying reaches a speciﬁc price (the call strike price).
+Direction: Bullish
+Asset Legs: Long Underlying, Short OTM Calls
+When to Use: When you are long shares/contracts of the underlying and want to generate income by selling premium
+Proﬁt Characteristics: Retain the credit if the call options expire worthless — This is the ideal scenario for this trade if wanting to generate income
+Decay Characteristics: Time decay erodes the value of OTM options at a much higher rate than ITM options, which is very helpful for this trade
+Max Risk: Credit received minus any downside risk from owning shares/contracts
+Max Reward: Capped to credit received plus any potential gains from share assignment
+Strategy:
+•Use this strategy when you are long shares/contracts and want extra income
+•Use this strategy after you’ve enjoyed a proﬁtable move and are okay with selling your shares/contracts should the sold strike price be reached and assigned
+•Buy shares/contracts and sell calls at the same time to lower cost (“Buy/Write”)
+•Sell far OTM Calls to generate income and lessen the odds of assignment
+•Use this strategy with weekly and monthly options for generating income frequently
+=== PAGE 102 ===
+The objective of using a Covered Call strategy is to generate income from a long position in the underlying that you intend to keep for the long term, but are willing to sell if the underlying reaches a speciﬁc price (the call strike price).
+TIPS: — Sell calls when implied volatility is high to collect more premium, like before earnings
+— Sell farther OTM calls if you don’t really intend to sell your shares
+— Sell closer OTM calls if you’ve proﬁted quite a bit in the underlying and are ready to exit the position
+EXECUTION: You’re long shares from 31 and want to generate additional income by selling OTM call options at 55 or 60 with earnings due after the closing bell. If the strike is reached and the calls are exercised, you are okay with selling your shares in the underlying.
+TRADE THE UNDERLYINGCOVERED CALL (INCOME)
+CLVN
+Sell 55 Call (0.65 credit)
+Long 1000 
+Shares from 31
+EXAMPLE: — Long 1000 shares @ 31.00
+— Sell 10 Aug Weekly (2) 55 Call for 0.65 (10 contracts)
+— Net Credit: 0.65 ($650)
+— Max Risk: 0.65 credit minus any downside risk from being long 1000 shares
+— Max Reward: 0.65 credit plus 1000 shares x 24 points from stock position
+Sell 60 Call (0.24 credit)
+=== PAGE 103 ===
+TIPS: — Use this strategy weekly or monthly to squeeze more income out of each expiration cycle while you’re holding a long term position
+— Use this strategy at the entry of a new long term position in the underlying in order to reduce cost upfront by collecting the credit of the sold call (“Buy/Write”)
+CLVN
+55 Call
+Long 1000 
+Shares from 31
+The Covered Call strategy oﬀers a great way to book consistent income (weekly/monthly) from a long term position in the underlying. This strategy oﬀers a low risk approach to squeezing out extra proﬁt from a position you already intend to hold, but are happy to book proﬁts on.
+TRADE THE UNDERLYINGCOVERED CALL (INCOME) 60 Call
+EXAMPLE: — Value of 10 Aug 55 Call (at expiration):  3.10
+— Net Gain: (0.65 credit x 10 contracts) + (1000 shares x 24 points gained) = $24,650
+ALTERNATE OPTION: Had the 60 call been selected, it would’ve expired worthless. The 0.24 credit would be retained, and there would be no need to sell the 1000 share position in the underlying
+OPTION EXERCISED: ROKU beats on earnings, triggering a rally the next two days, with price closing at 58.10. The sold 55 call is exercised, and we must sell our 1000 share position in the underlying for 55, giving the trade a 24 point gain.
+=== PAGE 104 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying •Covered Call (Income) •Protective Put (Hedge) •Collar (HEDGE)
+CHOOSE A TRADING STRATEGY
+TRADE THE UNDERLYINGPROTECTIVE PUT (HEDGE)OBJECTIVE: The objective of using a Protective Put strategy is to protect a long position in the underlying against a downturn. Execute this strategy when you intend to hold a position in the underlying for the foreseeable future, but want to protect proﬁts in the event of selling pressure ahead of news or earnings.
+Direction: Bullish
+Asset Legs: Long Underlying, Long OTM Puts
+When to Use: When you are bullish, but want downside protection
+Proﬁt Characteristics: Proﬁt increases as the market rises, with unlimited proﬁt potential
+Loss Characteristics: Max risk is the amount paid for the puts
+Decay Characteristics: Time decay will negatively aﬀect the value of the option
+Max Risk: Capped
+Max Reward: Unlimited
+Strategy:
+•Use this strategy when you are bullish and want to protect gains from a downturn
+•Buy OTM puts to reduce your cost basis
+•Buy ATM or ITM puts if you are conﬁdent and want to proﬁt from the downturn
+•Ideally, price will rally enough to cover the cost of the protective put, or price will sell oﬀ enough to capitalize on the move using the bought puts
+•This strategy is a better, although more expensive, alternative to using stop orders
+=== PAGE 105 ===
+TRADE THE UNDERLYINGPROTECTIVE PUT (HEDGE)The objective of using a Protective Put strategy is to protect a long position in the underlying against a downturn. Execute this strategy when you intend to hold a position in the underlying for the foreseeable future, but want to protect proﬁts in the event of selling pressure ahead of news or earnings.
+TIPS: — Buy a Protective Put ahead of earnings, but look to buy the option 5 to 10 days ahead of earnings, as options will become more expensive as implied volatility increases the closer earnings gets
+— Buy ATM or slightly OTM puts to reduce cost basis
+— Buy ITM if you are conﬁdent price will move lower and you want to proﬁt from the move
+EXECUTION: You’re long shares in the underlying from $3/share and want to protect the position by buying the ATM 3 put ahead of earnings in 9 days.
+EXAMPLE: — Long 1000 shares @ 3.00
+— Buy 3 Aug Weekly (9) 3 Put for 0.30 (10 contracts)
+— Net Debit: 0.30 ($300)
+— Max Risk: 0.30 ($300)
+— Max Reward: Unlimited (∞)
+Long 1000 
+Shares from 3Buy 3 Put
+=== PAGE 106 ===
+The Protective Put strategy oﬀers a great way to hedge a long position in the underlying ahead of news or earnings. While more expensive, buying puts oﬀers a better way to protect a position than simply using a stop order.
+TRADE THE UNDERLYINGPROTECTIVE PUT (HEDGE)
+Long 1000 
+Shares from 3Buy 3 Put
+TIPS: — You can choose to allow the put option to expire ITM and collect the gains to oﬀset the decline in the underlying
+— You can choose to exercise the put option at the $3 strike, which allows you to sell your 1000 shares at $3/share
+— If price were to have closed above $3, you can choose to allow the option to expire worthless, thus avoiding paying commission on the exit and only taking the .30 loss while capitalizing on the rally in the underlying
+EXAMPLE: — Long Shares: 1000 shares x .84 (3 - 2.16) = $840 loss
+— Value of 3 Aug 3 Put (at expiration): 0.84
+— Net Gain: 0.84 - 0.30 = .54 (.54 x 10 contracts = $540 gain)
+Failed Absorption: Price drops through the absorption zone and sells oﬀ ahead of earnings, and then gaps down on the earnings announcement, closing the week 84 cents below the $3 strike. By buying the put, you are able to oﬀset most of the losses in the underlying.
+=== PAGE 107 ===
+SWING TRADE PRO 2.03. STRATEGY TOOLKIT3.1 Credit Spreads 3.2 Debit Spreads 3.3 Neutral Strategies 3.4 ITM Options 3.5 OTM Options 3.6 Trade the Underlying •Covered Call (Income) •Protective Put (Hedge) •Collar (HEDGE)
+CHOOSE A TRADING STRATEGY
+TRADE THE UNDERLYINGCOLLAR (HEDGE)OBJECTIVE: The objective of using a Collar strategy is to protect a position in the underlying by buying puts ahead of news or earnings, while selling calls to help oﬀset the cost of the bought puts. You must be okay with selling your shares in the underlying if the calls are exercised.
+Direction: Bullish
+Asset Legs: Long Underlying, Long OTM Puts, Short OTM Calls
+When to Use: When you are long shares/contracts of the underlying and want to protect current proﬁts, but are willing to part with the stock if the calls are assigned
+Decay Characteristics: Time decay is mostly oﬀset with this position
+Max Risk: Limited to the current stock price minus the strike of the put plus the net debit paid, or minus the net credit received 
+Max Reward: Capped to credit received plus any potential gains from share assignment
+Strategy:
+•Use this strategy when you want to protect proﬁts in the underlying ahead of earnings 
+•Use this strategy to lower the cost of protecting proﬁts
+•Use this strategy after you’ve enjoyed a proﬁtable move and are okay with selling should the sold strike price be reached and assigned
+•Buy shares/contracts and sell calls at the same time to lower cost (“Buy/Write”)
+=== PAGE 108 ===
+The objective of using a Collar strategy is to protect a position in the underlying by buying puts ahead of news or earnings, while selling calls to help oﬀset the cost of the bought puts. You must be okay with selling your shares in the underlying if the calls are exercised.
+EXECUTION: You’re long shares in the underlying from $3/share and want to protect the position by buying the OTM 3 put ahead of earnings in 9 days, but will also sell the OTM 4 call to reduce cost
+EXAMPLE: — Long 1000 shares @ 3.00
+— Buy 3 Aug Weekly (9) 3 Put for 0.30 (10 contracts)
+— Sell 3 Aug Weekly (9) 4 Call for 0.15 (10 contracts)
+— Net Debit: 0.15 (1000 x .15 = $150)
+— Max Risk: 0.15 - (3.13 - 3) = .02 (1000 x .02 = $20)
+— Max Reward: 1.00 (4 - 3) - 0.15 = .85 (1000 x .85 = $850)
+Long 1000 
+Shares from 3Buy 3 Put
+Sell 4 Call
+TIPS: — Buy a Collar ahead of earnings, but look to buy the option 5 to 10 days ahead of earnings, as options will become more expensive as implied volatility increases the closer earnings gets
+— You can buy the underlying shares, buy the puts, and sell the calls all in one transaction to protect the underlying at the outset of the trade and to lower cost
+COLLAR (HEDGE)TRADE THE UNDERLYING
+=== PAGE 109 ===
+COLLAR (HEDGE)TRADE THE UNDERLYING
+TIPS: — You can allow the 4 call to expire worthless and allow the put option to expire ITM and collect the gains to oﬀset the decline in the underlying
+— You can choose to exercise the put option at the $3 strike, which allows you to sell your 1000 shares at $3/share, while collecting .15 on the sold 4 call
+— If price were to have closed above $3, you can choose to allow the put option to expire worthless to avoid paying commission on the exit
+The Collar strategy oﬀers a great way to protect a long position in the underlying ahead of news or earnings, while looking to lower costs by selling the OTM call. Add the sold call to a Protective Put to create the Collar when you are okay with selling your position in the underlying should the sold calls be exercised.EXAMPLE: — Long Shares: 1000 shares x .84 (3 - 2.16) = $840 loss
+— Value of 3 Aug 3 Put (at expiration): 0.84
+— Value of 3 Aug 4 Put (at expiration): 0.00
+— Net Gain: 0.84 - 0.15 = .69 (.69 x 10 contracts = $690 gain)
+Failed Absorption: Price drops through the absorption zone and sells oﬀ ahead of earnings, and then gaps down on the earnings announcement, closing the week 84 cents below the $3 strike. By buying the put, you are able to oﬀset most of the losses in the underlying, and by selling the 4 call you were able to further oﬀset the loss by receiving the credit.
+Sell 4 Call
+Long 1000 
+Shares from 3Buy 3 Put
+=== PAGE 110 ===
+PRESENTS
+SWING TRADE PRO 2.0
+THE 5-STEP SWING TRADING BLUEPRINTSTEP 3: STRATEGY TOOLKIT
+=== PAGE 111 ===
+PRESENTS
+SWING TRADE PRO 2.0
+THE 5-STEP SWING TRADING BLUEPRINTSTEP 4: EXECUTION
+=== PAGE 112 ===
+SWING TRADE PRO 2.0
+4. EXECUTION4.1 1x3 Entry Technique 4.2 1x2 Entry Technique 4.3 11 Scaling Technique 4.4 111 Scaling Technique 4.5 211 Scaling Technique
+EXECUTE THE STRATEGYWhile each step in our 5-Step Blueprint is important, perhaps no other step requires more attention to detail, focus, and practice than Step 4: Execution.
+Your goal is to be able to execute your bias in the market without error, as execution error is generally the most costly of all trading errors. Practice ﬂawless execution of your strategies for each and every trade.
+In this step, you will learn how to scale into positions according to the level of exposure that you’re wiling to take at the outset of a trade.
+Scaling into trades is the process of building a position by ﬁrst testing the trade with smaller size, and then adding more exposure as the position begins to work in your favor. This approach is quite eﬀective, as traders have the ability to reward winning trades with additional exposure, while limiting losing trades to smaller losses due to smaller starting size.
+You will learn two entry techniques that will give you the ability to scale into positions, thereby giving you an additional lever to adjust in terms of risk management, alongside trade allocation.
+EXECUTION:
+EXECUTE THE STRATEGY
+You will also learn three techniques for scaling out of positions as a powerful form of trade management. 
+Scaling out of trades is the process of gradually taking proﬁts as a position moves in your favor, or reducing exposure should a position move against you. These techniques are designed to provide consistency, reduce risk exposure, and oﬀer ﬂexibility while in trade.
+Your goal is to be able to execute entries and exits in any market by using, and combining, the following entry and scaling techniques:
+Techniques for Scaling Into a Position: 
+— 1x3 Entry Technique 
+— 1x2 Entry Technique 
+Techniques for Scaling Out of a Position: 
+— 11 Scaling Technique
+— 111 Scaling Technique
+— 211 Scaling Technique
+=== PAGE 113 ===
+SWING TRADE PRO 2.0
+4. EXECUTION4.1 1x3 Entry Technique 4.2 1x2 Entry Technique 4.3 11 Scaling Technique 4.4 111 Scaling Technique 4.5 211 Scaling Technique
+1x3 ENTRY TECHNIQUE1x3 Entry Technique: A 3-part technique used for scaling into a position by thirds. Each scale-in splits the maximum allowable trade allocation by 1/3 and can have multiple contracts/shares per scale-in.
+1x3 Entry Technique: 
+•1st Entry (33% of Trade Allocation): Execute a starting position by scaling into a third of your maximum allowable trade allocation.
+•2nd Entry (33% of Trade Allocation): Look to add 33% more exposure should price move in your favor, or if you want to defend your trade.
+•3rd Entry (33% of Trade Allocation): Look to add the ﬁnal 33% of allowable exposure should price move in your favor, or if you want to defend your trade.
+•Additional Option: A 1x3 entry technique variation is to execute 50% of allowable trade allocation on the 1st entry, and then adding 25% additional exposure on both the 2nd and 3rd entries.
+1x3 ENTRY TECHNIQUE EXAMPLE: 
+CORE EQUITY             $100,000 TRADE ALLOCATION @ 1.5%    $1,500 1ST ENTRY         $500 Trade Allocation ($1,500 / 3) 2ND ENTRY         $500 Trade Allocation ($1,500 / 3) 3RD ENTRY         $500 Trade Allocation ($1,500 / 3) TOTAL RISK             $1500 ($500 x 3)
+EXECUTION:
+EXECUTE THE STRATEGY
+=== PAGE 114 ===
+1x3 ENTRY
+EXECUTION1x3 ENTRY TECHNIQUE
+2nd Entry (33%): Add to the position by executing an entry at/near the absorption zone on Day 2 with 33% of trade allocation
+1st Entry (33%): Start an initial position by executing an entry with 33% of trade allocation during the last hour of a rejection day
+3rd Entry (33%): Reserve the last 33% of trade allocation to defend your position should a failed new low develop on Days 3 and/or 4.
+Taking Proﬁts: After building a successful position during the ﬁrst 4 days of rejection and absorption, look to pay yourself on the ﬁrst major pop in your favor, taking either full or partial proﬁts.
+The 1x3 Entry Technique allows traders to build a position in three parts, ﬁrst by ﬁrst testing the trade with smaller size (33%), and then adding more exposure if necessary (66%). This approach allows traders to reward winning trades with additional exposure, while limiting losses due to smaller starting position size.
+1x3 Entry Technique: Allows traders to conservatively scale into a position using 33% of allowable trade allocation. Winners get rewarded with additional exposure, and trades that underperform do so on smaller position size.
+=== PAGE 115 ===
+SWING TRADE PRO 2.0
+4. EXECUTION4.1 1x3 Entry Technique 4.2 1x2 Entry Technique 4.3 11 Scaling Technique 4.4 111 Scaling Technique 4.5 211 Scaling Technique
+1x2 ENTRY TECHNIQUE1x2 Entry Technique: A 2-part technique used for scaling into a position by halves. Each scale-in splits the maximum allowable trade allocation by 1/2 and can have multiple contracts/shares per scale-in.
+1x2 Entry Technique: 
+•1st Entry (50% of Trade Allocation): Execute a starting position by scaling into half of your maximum allowable trade allocation.
+•2nd Entry (50% of Trade Allocation): Look to add the ﬁnal 50% of allowable exposure should price move in your favor, or if you want to defend your trade.
+1x2 ENTRY TECHNIQUE EXAMPLE: 
+CORE EQUITY                $100,000 TRADE ALLOCATION @ 1.5% $1,500 1ST ENTRY         $750 Trade Allocation ($1,500 / 2) 2ND ENTRY                $750 Trade Allocation ($1,500 / 2) TOTAL RISK                    $1500 ($750 x 2)
+EXECUTION:
+EXECUTE THE STRATEGY
+=== PAGE 116 ===
+1x2 ENTRY
+EXECUTION1x2 ENTRY TECHNIQUEThe 1x2 Entry Technique allows traders to build a position in two parts, ﬁrst by ﬁrst testing the trade with smaller size (50%), and then adding more exposure if necessary (50%). This approach allows traders to reward winning trades with additional exposure, while limiting losses due to smaller starting position size.
+2nd Entry (50%): Reserve the last 50% of trade allocation to defend your position should a failed new low develop
+1st Entry (50%): Start an initial position by executing an entry with 50% of trade allocation at/near the absorption zone
+Taking Proﬁts: After building a successful position during the ﬁrst 4 days of rejection and absorption, look to pay yourself on the ﬁrst major pop in your favor, taking either full or partial proﬁts.
+1x2 Entry Technique: Allows traders to conservatively scale into a position using 50% of allowable trade allocation. Winners get rewarded with additional exposure, and trades that underperform do so on smaller position size.
+=== PAGE 117 ===
+EXECUTIONENTRY EXECUTION TECHNIQUESChoose an entry execution technique that aligns with the probability of proﬁt for a given opportunity. For example, use the 1x2 or 1x3 entry technique for countertrend trades, while entering high odds trades more aggressively.
+1st Scale-In: Execute 50% of trade allocation during the last hour of rejection day3rd Scale-In: Execute 33% of trade allocation after failed new low develops
+1x3 ENTRY
+1x2 ENTRY
+100% ENTRY
+100% ENTRY
+2nd Scale-In: Execute 50% of trade allocation at/near the rejection day midpoint
+1st Option: Execute 100% of trade allocation during last hour of rejection day1st Scale-In: Execute 33% of trade allocation during last hour of rejection day
+2nd Scale-In: Execute 33% of trade allocation at/near the rejection day midpoint on Day 2 or Day 3
+2nd Option: Execute 100% of trade allocation at/near the rejection day midpoint
+1st Option: Execute 100% of trade allocation during last hour of rejection day
+2nd Option: Execute 100% of trade allocation at/near the rejection day midpoint
+=== PAGE 118 ===
+EXECUTION1x2 SCALE-IN TECHNIQUEThe 1x2 Scale-In Technique is a 2-part technique used for scaling into a position by halves. Each scale-in splits the maximum allowable trade allocation by 1/2 and can have multiple contracts/shares per scale-in.
+1x2 ENTRY1st Scale-In: Execute 50% of trade allocation during the last hour of rejection day
+2nd Scale-In: Execute 50% of trade allocation at/near the rejection day midpoint
+1x2 ENTRY
+2nd Scale-In: Execute 50% of trade allocation at/near the rejection day midpoint
+1x2 ENTRY
+2nd Scale-In: Execute 50% of trade allocation at/near the rejection day midpoint
+1st Scale-In: Execute 50% of trade allocation during the last hour of rejection day
+=== PAGE 119 ===
+SWING TRADE PRO 2.0
+4. EXECUTION4.1 1x3 Entry Technique 4.2 1x2 Entry Technique 4.3 11 Scaling Technique 4.4 111 Scaling Technique 4.5 211 Scaling Technique
+11 SCALING TECHNIQUE
+11 Scaling Technique: a 2-part technique used for scaling out of a position by halves. Each scale-out can have multiple contracts/shares, but ideally there are the same number of units for each scale-out.
+11 Scaling Technique: 
+•1st Scale: Scale out of half of the position at your ﬁrst target (T1).
+•2nd Scale: Scale out of the last half of the position at your second target (T2).
+11 SCALING TECHNIQUE EXAMPLE: 
+TRADE ALLOCATION 20 contracts 1ST SCALE Scale 1/2 (10 contracts) at T1 2ND SCALE Scale 1/2 (10 contracts) at T2
+EXECUTION:
+EXECUTE THE STRATEGY
+=== PAGE 120 ===
+EXECUTION11 SCALING TECHNIQUEUse the 11 Scaling Technique to scale out of a position in two equal parts. Look to scale out of 50% of the position on the ﬁrst favorable move after building a position, and scale out of the last 50% at your forecasted target zone. This technique is designed to provide consistency, reduce risk exposure, and oﬀer ﬂexibility.
+11 Scaling Technique: After building a position within the Rejection Day sequence, look to take partial proﬁts after the ﬁrst major pop in your favor, and again after price reaches your forecasted target zone.
+1st Scale (50%): Scale 1/2 the position after the ﬁrst expansion day in your favor. It is important to pay yourself on partial proﬁts after successfully building a position within the rejection sequence in order to reduce risk and improve well being.
+2nd Scale (50%): Scale 1/2 the position after price enters your forecasted target zone, which completes the trade
+=== PAGE 121 ===
+SWING TRADE PRO 2.0
+4. EXECUTION4.1 1x3 Entry Technique 4.2 1x2 Entry Technique 4.3 11 Scaling Technique 4.4 111 Scaling Technique 4.5 211 Scaling Technique
+111 SCALING TECHNIQUE
+111 Scaling Technique: a 3-part technique used for scaling out of a position by thirds. Each scale-out can have multiple contracts/shares, but ideally there are the same number of units for each scale-out.
+111 Scaling Technique: 
+•1st Scale: Scale out of a third of the position at your ﬁrst target (T1).
+•2nd Scale: Scale out of second third of the position at your second target (T2).
+•3rd Scale: Scale out of the last third of the position at your third target (T3).
+111 SCALING TECHNIQUE EXAMPLE: 
+TRADE ALLOCATION 300 shares 1ST SCALE Scale 1/3 (100 shares) at T1 2ND SCALE Scale 1/3 (100 shares) at T2 3RD SCALE Scale 1/3 (100 shares) at T3
+EXECUTION:
+EXECUTE THE STRATEGY
+=== PAGE 122 ===
+EXECUTION111 SCALING TECHNIQUEUse the 111 Scaling Technique to scale out of a position by thirds (33% for each scale). Look to scale out of 33% of the position on the ﬁrst favorable move after building a position, and then trim 33% twice more as price moves in your favor.
+111 Scaling Technique: After building a position within the Rejection Day sequence, look to take partial proﬁts after the ﬁrst major pop in your favor, and again after price reaches your forecasted target zone.
+1st Scale (33%): Scale 1/3 position at the end of the ﬁrst breakout day after building a position within the rejection sequence2nd Scale (33%): Scale 1/3 position after price enters your forecasted target zone
+3rd Scale (33%): Scale ﬁnal 1/3 position inside the forecasted target zone after a failure to hold yHI, which completes the trade
+Add Back (33%): After scaling 1/3 position the previous session, you have the option to add the 1/3 scale back to the position upon a retest of the secondary absorption zone the next day
+=== PAGE 123 ===
+SWING TRADE PRO 2.0
+4. EXECUTION4.1 1x3 Entry Technique 4.2 1x2 Entry Technique 4.3 11 Scaling Technique 4.4 111 Scaling Technique 4.5 211 Scaling Technique
+211 SCALING TECHNIQUE
+211 Scaling Technique: a 3-part technique that is used for scaling out of a position by half at ﬁrst, and then by quarters. Each scale-out can have multiple contracts/shares, but ideally the ﬁrst scale has twice the size as the second and third scales.
+211 Scaling Technique: 
+•1st Scale: Scale out of half of the position at your ﬁrst target (T1).
+•2nd Scale: Scale out of a quarter of the position at your second target (T2).
+•3rd Scale: Scale out of the last quarter of the position at your third target (T3).
+211 SCALING TECHNIQUE EXAMPLE: 
+TRADE ALLOCATION 4 contacts 1ST SCALE Scale 1/2 (2 contracts) at T1 2ND SCALE Scale 1/4 (1 contract) at T2 3RD SCALE Scale 1/4 (1 contract) at T3
+EXECUTION:
+EXECUTE THE STRATEGY
+=== PAGE 124 ===
+211 Scaling Technique: After building a position within the Rejection Day sequence, look to scale the position in three parts, typically by scaling 50% of the position at ﬁrst, and then scaling twice more in 25% scales.
+1st Scale (50%): Scale 1/2 position at the end of the ﬁrst breakout day after building a position within the rejection sequence
+2nd Scale (25%): Scale 1/4 position upon a retest of recent highs, leaving just a 1/4 position heading into earnings
+3rd Scale (25%): Scale ﬁnal 1/4 position on the pop after earnings, which completes the trade211 SCALING TECHNIQUEUse the 211 Scaling Technique to scale out of a position in three parts. Look to scale out of 50% of the position on the ﬁrst favorable move after building a position, and scale out of the last 50% in two parts as the trade progresses. This technique is designed to provide consistency, reduce risk exposure, and oﬀer ﬂexibility.
+EXECUTION
+=== PAGE 125 ===
+PRESENTS
+SWING TRADE PRO 2.0
+THE 5-STEP SWING TRADING BLUEPRINTSTEP 4: EXECUTION
+=== PAGE 126 ===
+PRESENTS
+SWING TRADE PRO 2.0
+THE 5-STEP SWING TRADING BLUEPRINTSTEP 5: DOCUMENTATION
+=== PAGE 127 ===
+SWING TRADE PRO 2.0
+5. DOCUMENTATION5.1 Entry Documentation 5.2 Exit Documentation 5.3 Trade Log & Review
+DOCUMENT THE RESULTSStep 5 of our 5-Step Blueprint captures the importance of proper and routine Documentation, including periodic review of such documentation. In order to improve as a trader, you must learn from experience, including learning from losing and winning trades alike. This process allows you to identify patterns from your performance history that may reveal strengths you can build upon, or weaknesses to improve upon. While documentation is an often overlooked aspect of trading, it is a vital and necessary routine for serious traders.  
+In this section, you’ll learn how to properly document your trades, including entry and exit documentation. Remember, it is not enough to simply document the results, you must also periodically review your documentation and results in order to reveal tendencies that may be helping or hindering your trading. 
+DOCUMENTATION: 
+•Entry Documentation: You’ll learn how to document a trade at the entry 
+•Exit Documentation: You’ll learn how to document a trade after the final exit 
+•Trade Log & Review: You’ll learn what to include in a trade log and trade journal, and also learn about the importance of periodic performance review.
+DOCUMENTATION:
+DOCUMENT THE RESULTS
+=== PAGE 128 ===
+SWING TRADE PRO 2.0
+5. DOCUMENTATION5.1 Entry Documentation 5.2 Exit Documentation 5.3 Trade Log & Review
+ENTRY DOCUMENTATIONIn this section, you’ll learn how to properly document your trades at the outset of a position — at the entry. An efficient approach to entry documentation is to take a screenshot of the chart, followed by annotating the chart with notes that include the following information: 
+1.TRADE ALLOCATION: Note the trade allocation that you have chosen for the trade.
+2.SETUP: Note the setup that you have chosen to trade.
+3.STRATEGY: Note the strategy that you will be executing from the toolkit.
+4.ENTRY ALLOCATION: Note the execution technique that you will be using to enter and manage the trade.
+5.TARGETS: Note the proﬁt targets that you have forecasted for the trade
+6.ENTRY PRICE: Note the entry price for the trade, including taking a screenshot of the option chain if need be
+7.TRADE NOTES: Jot down pertinent notes for the trade, including current or foreseen market conditions, conﬂuence zones, general trade thoughts, etc.
+DOCUMENTATION:
+DOCUMENT THE RESULTS
+=== PAGE 129 ===
+NOTES:
+— Strong uptrend with rejection day at CLVN
+— Rejection at 8/21 PEMA trigger zone
+— Expecting price to close above 1800 by expo 7/27
+— Expecting good earnings and positive reaction, with upside target at 1860
+=== PAGE 130 ===
+SWING TRADE PRO 2.0
+5. DOCUMENTATION
+EXIT DOCUMENTATIONIn this section, you’ll learn how to properly document your trades at the conclusion of a position. For the sake of efficiency, take a screenshot of the chart once you’ve completely exited the position, and then annotate the chart with notes that include the following information: 
+1.EXIT PRICE: Document the exit price(s) for the trade, including all scales 
+2.PROFIT/LOSS (PNL): Document the PNL for the trade
+3.PERCENT ROI: Document the gain/loss as a percentage of initial investment (ROI)
+4.DAYS IN TRADE: Document the number of days in trade
+5.MAX ADVERSE EXCURSION (MAE): Document the farthest price went against your entry price while the position was still in trade
+6.MAX FAVORABLE EXCURSION (MFE): Document the farthest price went in your favor from the entry price while the position was still in trade
+7.TRADE NOTES:  •Document what went well for the trade
+•Document what could have been improved for the trade
+•Document any market conditions that may have positively (or adversely) aﬀected the trade
+DOCUMENTATION:
+DOCUMENT THE RESULTS5.1 Entry Documentation 5.2 Exit Documentation 5.3 Trade Log & Review
+=== PAGE 131 ===
+
+=== PAGE 132 ===
+SWING TRADE PRO 2.0
+5. DOCUMENTATION
+TRADE LOG & REVIEWIn this section, you’ll learn what to include in a proper trade log and journal, including suggestions for periodic trade and performance review. Here’s what to include: 
+1.TRADE LOG (SPREADSHEET): It is important to keep a log of all trades, including any and all pertinent information as it relates to the trade.
+2.TRADE JOURNAL: It is important to keep a trade journal, either handwritten or digital (or both), that will allow you to jot down notes on the market, for trades, market insights, etc, which should be review periodically.
+•HANDWRITTEN NOTEBOOK
+•DIGITAL NOTEBOOK (EVERNOTE, ONE NOTE, ETC)
+3.TRADE REVIEW: Periodic trade review is extremely important, as it allows you to improve upon weaknesses, and build upon strengths.
+•DAILY REVIEW
+•WEEKLY REVIEW
+•MONTHLY REVIEW
+•MILESTONE REVIEW (e.g. EVERY 100 TRADES)
+4.JOURNAL REVIEW: Periodically reviewing your trade journal is also important, as it allows you to review your notes on prior market conditions, analysis, and forecasts, and to measure how these eventually turned out in the future.
+•WEEKLY REVIEW
+•MONTHLY REVIEW
+•SPECIFIC REVIEW
+DOCUMENTATION:
+DOCUMENT THE RESULTS5.1 Entry Documentation 5.2 Exit Documentation 5.3 Trade Log & Review
+=== PAGE 133 ===
+TRADE RECAP:   
+•$AMZN developed a rejection day at the critical market structure CLVN of 1780 
+•The rejection also coincided with the 8/21 PEMA trigger zone 
+•The rejection of this level suggested a rally to previous market structure resistance — at around 1860 
+•Earnings on Friday (7/27), and expected to beat and for price to move higher 
+•The trade went in my favor immediately, reaching the 1860 target in 2 days 
+REINFORCING THE GOOD:  
+•I executed a precision entry after morning rejection, believing that bullish absorption was already occurring oﬀ the 1780s 
+•I held steadfast to my belief that price would close above 1800 by the end of the week, even under extreme conditions after earnings were released, including: 
+-Price initially dropping to as low as 1806.96 after earnings were released (my heart rate was clocked at 71bpm during this time)  
+-Price gapped up the next day after earnings to 1880, but then dropped all the way to 1806.53 at around noon on expiration day, before settling above 1800 for the week 
+NEED TO IMPROVE:  
+I had at least two diﬀerent chances to buy back my put spread for .05, but instead decided to hold 
+-IMPROVE: Look to take quick proﬁts on a credit spread if .05 can be had early in the trade. This will give you quick proﬁts, and allow you to begin putting new money to work on another opportunity. 
+-TAKE ACTION: As soon as the credit spread is executed to open the position, execute an order to close the position for .05. This will help semi-automate the process and take the money when it is there for the taking.
+
+=== PAGE 134 ===
+PRESENTS
+SWING TRADE PRO 2.0
+THE 5-STEP SWING TRADING BLUEPRINTSTEP 5: DOCUMENTATION
+=== PAGE 135 ===
+PRESENTS
+SWING TRADE PRO 2.0
+with Frank Ochoa President and Founder, PivotBoss, LLC Author, Secrets of a Pivot Boss
+THE 5-STEP SWING TRADING BLUEPRINT

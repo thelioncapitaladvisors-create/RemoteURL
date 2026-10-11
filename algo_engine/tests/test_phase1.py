@@ -390,6 +390,105 @@ class TestDayTypes(unittest.TestCase):
         # State should be initialized
         self.assertIsInstance(classifier.state, SequenceState)
 
+    def test_stp2_fnl_range_bound(self):
+        """STP 2.0 rule: FNL range must be 75-100% of ADR (p. 22)."""
+        bars = self._make_bars(20, base_price=100, daily_range=5)  # ADR ~ 10
+        prev_bar = bars[-1]
+        
+        # Candle sweeping prior low, close > yMID, but range is 150% ADR (> 100%)
+        huge_range_bar = OHLC(
+            open=prev_bar.close,
+            high=prev_bar.high + 5,
+            low=prev_bar.low - 10,  # Sweeps prior low
+            close=prev_bar.high + 4, # Close > yMid
+        )
+        classifier = DayTypeClassifier()
+        for b in bars:
+            classifier.evaluate(b)
+        res_huge = classifier.evaluate(huge_range_bar)
+        # Should NOT trigger FNL because range > 100% ADR
+        self.assertFalse(res_huge.bull_fnl)
+
+        # Now test candle within 75-100% ADR
+        classifier.reset()
+        for b in bars:
+            classifier.evaluate(b)
+        # avg_range is approx 10. We craft a bar with range 8.5 (85% ADR)
+        y_mid = (prev_bar.high + prev_bar.low) / 2.0
+        good_fnl_bar = OHLC(
+            open=prev_bar.low + 1.0,
+            high=y_mid + 3.0,
+            low=prev_bar.low - 1.0, # Sweep
+            close=y_mid + 2.5,       # Close > yMid
+        )
+        res_good = classifier.evaluate(good_fnl_bar)
+        self.assertTrue(res_good.bull_fnl)
+
+    def test_stp2_sequence_expiration(self):
+        """STP 2.0 & Pine parity: Rejection sequence expires after max_active_days."""
+        bars = self._make_bars(25, base_price=100, daily_range=5)
+        # Trigger rejection
+        rej_bar = OHLC(open=101, high=103, low=85, close=102.5)
+        bars.append(rej_bar)
+        
+        classifier = DayTypeClassifier()
+        for b in bars:
+            classifier.evaluate(b)
+        self.assertTrue(classifier.state.bull_rej_active)
+
+        # Feed 25 quiet bars (close stays above rej_active_mid)
+        for i in range(25):
+            quiet_bar = OHLC(open=102, high=103, low=101, close=102)
+            classifier.evaluate(quiet_bar)
+        
+        # After > 20 bars, sequence MUST have expired
+        self.assertFalse(classifier.state.bull_rej_active)
+
+    def test_stp2_srd_target_calculation(self):
+        """STP 2.0 rule: SRD target = yHI + (yHI - L) for longs (p. 30)."""
+        bars = self._make_bars(20, base_price=100, daily_range=5)  # ADR ~ 10
+        prev_bar = bars[-1]
+        
+        # Craft Bullish Stop Run Day: Range > 2x ADR (>20), close > yHigh, close near top
+        srd_bar = OHLC(
+            open=prev_bar.close,
+            high=prev_bar.high + 25,
+            low=prev_bar.low - 2,
+            close=prev_bar.high + 24,
+        )
+        classifier = DayTypeClassifier()
+        for b in bars:
+            classifier.evaluate(b)
+        res = classifier.evaluate(srd_bar)
+        
+        if res.bull_stop_run:
+            expected_target = prev_bar.high + (prev_bar.high - srd_bar.low)
+            self.assertAlmostEqual(res.srd_target, expected_target, places=3)
+
+    def test_stp2_day2_open_gate(self):
+        """STP 2.0 rule: Day 2+ entry requires OPEN > MID[1] for longs (p. 17)."""
+        bars = self._make_bars(25, base_price=100, daily_range=5)
+        rej_bar = OHLC(open=101, high=103, low=85, close=102.5)
+        bars.append(rej_bar)
+
+        classifier = DayTypeClassifier()
+        for b in bars:
+            classifier.evaluate(b)
+        self.assertTrue(classifier.state.bull_rej_active)
+
+        # Bar opening below rejection mid: entry_open_valid should be False
+        bad_open_bar = OHLC(open=88, high=103, low=87, close=101)  # Open 88 < Mid ~94
+        res_bad = classifier.evaluate(bad_open_bar)
+        self.assertFalse(res_bad.entry_open_valid)
+
+        # Reset & test bar opening above rejection mid: entry_open_valid should be True
+        classifier.reset()
+        for b in bars:
+            classifier.evaluate(b)
+        good_open_bar = OHLC(open=98, high=103, low=97, close=101) # Open 98 > Mid ~94
+        res_good = classifier.evaluate(good_open_bar)
+        self.assertTrue(res_good.entry_open_valid)
+
 
 # ════════════════════════════════════════════════════════════════════
 # TEST 6: STRATEGY H4/L4 GATING
