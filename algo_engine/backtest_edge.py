@@ -469,14 +469,14 @@ def run_returns_backtest():
         .stats-table tr:hover td:first-child {{
             background-color: #1e293b;
         }}
-        
+    </style>
     <script>
-        (function() {{{{
+        (function() {{
             var p = new URLSearchParams(window.location.search);
             var m = p.get('mode');
             if (m === 'charts') document.documentElement.classList.add('mode-charts');
             if (m === 'stats') document.documentElement.classList.add('mode-stats');
-        }}}})();
+        }})();
     </script>
     <style>
         /* Layout overrides for modes */
@@ -691,8 +691,8 @@ def run_returns_backtest():
     const axisLineColor = isLightMode ? '#334155' : 'rgba(255, 255, 255, 0.45)';
     const zeroLineColor = isLightMode ? 'rgba(15, 23, 42, 0.35)' : 'rgba(255, 255, 255, 0.35)';
 
-    function getPlotlyLayoutUpdates() {{{{
-        return {{{{
+    function getPlotlyLayoutUpdates() {{
+        return {{
             'template': isLightMode ? 'plotly_white' : 'plotly_dark',
             'paper_bgcolor': 'transparent',
             'plot_bgcolor': 'transparent',
@@ -759,35 +759,35 @@ def run_returns_backtest():
             'legend.x': 0.5,
             'title.font.color': textColor,
             'title.font.size': 12.5
-        }}}};
-    }}}}
+        }};
+    }}
 
-    function updateChartDiv(div) {{{{
-        if (div && div.layout && window.Plotly) {{{{
+    function updateChartDiv(div) {{
+        if (div && div.layout && window.Plotly) {{
             Plotly.relayout(div, getPlotlyLayoutUpdates());
             return true;
-        }}}}
+        }}
         return false;
-    }}}}
+    }}
 
-    function updateCharts() {{{{
+    function updateCharts() {{
         let allUpdated = true;
-        document.querySelectorAll('.plotly-graph-div').forEach(div => {{{{
+        document.querySelectorAll('.plotly-graph-div').forEach(div => {{
             const updated = updateChartDiv(div);
             if (!updated) allUpdated = false;
-        }}}});
+        }});
         return allUpdated;
-    }}}}
+    }}
 
-    function sendStatsHeight() {{{{
+    function sendStatsHeight() {{
         const table = document.querySelector('.stats-table');
         const h = table ? table.offsetHeight + 40 : (document.getElementById('stats')?.offsetHeight || document.body.scrollHeight);
-        if (window.parent && window.parent !== window) {{{{
-            window.parent.postMessage({{{{ type: 'TLCS_TEARSHEET_HEIGHT', height: h }}}}, '*');
-        }}}}
-    }}}}
+        if (window.parent && window.parent !== window) {{
+            window.parent.postMessage({{ type: 'TLCS_TEARSHEET_HEIGHT', height: h }}, '*');
+        }}
+    }}
 
-    function switchTab(tabId, btn) {{{{
+    function switchTab(tabId, btn) {{
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         
@@ -795,33 +795,33 @@ def run_returns_backtest():
         if (target) target.classList.add('active');
         if (btn) btn.classList.add('active');
         
-        if (tabId === 'stats') {{{{
+        if (tabId === 'stats') {{
             setTimeout(sendStatsHeight, 50);
-        }}}}
+        }}
 
-        setTimeout(() => {{{{
-            if (target) {{{{
+        setTimeout(() => {{
+            if (target) {{
                 const chartDiv = target.querySelector('.plotly-graph-div');
-                if (chartDiv && window.Plotly) {{{{
+                if (chartDiv && window.Plotly) {{
                     Plotly.Plots.resize(chartDiv);
                     updateChartDiv(chartDiv);
-                }}}}
-            }}}}
+                }}
+            }}
             window.dispatchEvent(new Event('resize'));
-        }}}}, 30);
-    }}}}
+        }}, 30);
+    }}
 
-    [50, 150, 300, 600, 1000].forEach(delay => {{{{
+    [50, 150, 300, 600, 1000].forEach(delay => {{
         setTimeout(updateCharts, delay);
-    }}}});
+    }});
 
     window.addEventListener('load', sendStatsHeight);
     [100, 300, 600, 1000].forEach(d => setTimeout(sendStatsHeight, d));
     window.addEventListener('resize', sendStatsHeight);
 
-    if (mode === 'stats') {{{{
+    if (mode === 'stats') {{
         switchTab('stats');
-    }}}}
+    }}
 </script>
 </body>
 </html>
