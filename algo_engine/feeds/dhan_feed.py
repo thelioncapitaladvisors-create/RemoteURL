@@ -356,8 +356,10 @@ class DhanFeed(BaseFeed):
             except Exception as e:
                 logger.warning(f"[DhanFeed] Failed to fetch live {interval}m candles for {symbol}: {e}")
 
-        # Mock fallback generator for offline testing or off-market hours
-        return self._generate_mock_candles(clean, interval=interval)
+        # Mock fallback generator strictly for explicit mock_mode offline testing
+        if self.mock_mode:
+            return self._generate_mock_candles(clean, interval=interval)
+        return []
 
     def fetch_daily_levels(self, symbol: str) -> Optional[dict]:
         """
@@ -422,7 +424,10 @@ class DhanFeed(BaseFeed):
             except Exception as e_intra:
                 logger.debug(f"[DhanFeed] Intraday daily fallback error for {symbol}: {e_intra}")
 
-        return self._generate_mock_daily_levels(clean)
+        # Mock fallback generator strictly for explicit mock_mode offline testing
+        if self.mock_mode:
+            return self._generate_mock_daily_levels(clean)
+        return None
 
     def _generate_mock_candles(self, symbol: str, interval: int = 15) -> List[dict]:
         """Generate realistic synthetic 15-minute candles for testing."""

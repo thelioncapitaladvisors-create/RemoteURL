@@ -22,9 +22,15 @@ from .feeds import normalize_symbol, get_market_category
 
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+# 12 Canonical Strategy Triggers (Zero Speculation STP 2.0 Execution Rule)
+CANONICAL_EXECUTION_TRIGGERS = {
+    'LONG MISSILE', 'SHORT MISSILE',
+    'LONG SCALP', 'SHORT SCALP',
+    'LONG LIGHTNING', 'SHORT LIGHTNING',
+    'LONG DIVERGENCE', 'SHORT DIVERGENCE',
+    'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE',
+    'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL'
+}
 
 
 class ShadowPipeline:
@@ -112,6 +118,10 @@ class ShadowPipeline:
             Generated trade_id
         """
         clean_sym = normalize_symbol(symbol)
+        if signal.name not in CANONICAL_EXECUTION_TRIGGERS:
+            logger.warning(f"[ShadowPipeline] Rejected non-canonical signal type: {signal.name} for {clean_sym}")
+            return None
+
         mkt = get_market_category(clean_sym)
         now_iso = datetime.now(timezone.utc).isoformat()
         trade_id = f"{clean_sym}_{int(time.time() * 1000)}_{signal.name}"
@@ -153,6 +163,11 @@ class ShadowPipeline:
         """
         sym = normalize_symbol(sig.get("symbol", ""))
         sig_type = sig.get("type", "ACTIVE")
+
+        # Zero Speculation Mandate: reject any blueprint/sequence or non-canonical trigger
+        if sig_type not in CANONICAL_EXECUTION_TRIGGERS or "BLUEPRINT" in sig_type.upper() or "SEQUENCE" in sig_type.upper():
+            logger.warning(f"[ShadowPipeline] Rejected non-canonical signal type: {sig_type} for {sym}")
+            return
 
         # Deduplication check: skip if identical symbol and type exists within last 30 mins
         if self._sb and self._table_available is not False:

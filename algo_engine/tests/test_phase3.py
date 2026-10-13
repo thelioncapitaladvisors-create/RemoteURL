@@ -83,6 +83,38 @@ class TestShadowPipeline(unittest.TestCase):
         self.assertEqual(row["source"], "BLACKBOX")
         self.assertEqual(row["exchange"], "NIFTY")
 
+    def test_reject_non_canonical_and_blueprint_signals(self):
+        """Blueprint and sequence signals must be rejected from shadow registration."""
+        # 1. Non-canonical / Blueprint via record_signal
+        bp_sig = StrategySignal(
+            name="SELL FAILED NEW HIGH/LOW BLUEPRINT (BEARISH)",
+            direction="SHORT",
+            entry_price=990.0,
+            stop_loss=995.0,
+            tp1=985.0, tp2=980.0, tp3=975.0, tp4=970.0,
+            bar_index=1
+        )
+        trade_id = self.pipeline.record_signal(bp_sig, "IDEA")
+        self.assertIsNone(trade_id, "Blueprint signal must be rejected")
+
+        # 2. Non-canonical / Blueprint via sync_signal
+        before_count = len(self.pipeline.get_recent_signals())
+        self.pipeline.sync_signal({
+            "symbol": "IDEA",
+            "type": "SELL FAILED NEW HIGH/LOW BLUEPRINT (BEARISH)",
+            "trigger": "Failed New High/Low Blueprint (Bearish)",
+            "entry_price": 990.0
+        })
+        self.assertEqual(len(self.pipeline.get_recent_signals()), before_count)
+
+        self.pipeline.sync_signal({
+            "symbol": "CRUDEOILM",
+            "type": "BUY STOP RUN SEQUENCE",
+            "trigger": "Stop Run Sequence",
+            "entry_price": 6000.0
+        })
+        self.assertEqual(len(self.pipeline.get_recent_signals()), before_count)
+
     def test_record_fill(self):
         """Fill event updates status to '⚡ TRADE ACTIVE'."""
         sig = StrategySignal("LONG SCALP", "LONG", 100.0, 95.0, 110.0, 120.0, 130.0, 140.0, 0)

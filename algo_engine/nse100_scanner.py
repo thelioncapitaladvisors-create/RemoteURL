@@ -36,6 +36,17 @@ MCX_COMMODITIES: List[str] = [
     'CRUDEOILM', 'GOLDM', 'SILVERM', 'NATURALGASM', 'ZINCM', 'ALUMINI'
 ]
 
+# 12 Canonical Strategy Triggers (Zero Speculation STP 2.0 Execution Rule)
+CANONICAL_EXECUTION_TRIGGERS = {
+    'LONG MISSILE', 'SHORT MISSILE',
+    'LONG SCALP', 'SHORT SCALP',
+    'LONG LIGHTNING', 'SHORT LIGHTNING',
+    'LONG DIVERGENCE', 'SHORT DIVERGENCE',
+    'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE',
+    'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL'
+}
+
+
 
 def clean_symbol(sym: str) -> str:
     """Normalize symbol string."""
@@ -248,6 +259,8 @@ class NSE100Scanner:
 
             strat_sigs = self.strategy_engine.evaluate(ctx)
             for sig in strat_sigs:
+                if sig.name not in CANONICAL_EXECUTION_TRIGGERS:
+                    continue
                 signals.append({
                     'symbol': clean,
                     'type': sig.name,
@@ -265,52 +278,6 @@ class NSE100Scanner:
                     'metadata': {
                         'timeframe': '15m',
                         'day_type': primary_day_type,
-                        'opening_bias': opening_bias,
-                        'market_category': market_category,
-                        'source_feed': 'DhanHQ',
-                        'h4': levels.H4,
-                        'l4': levels.L4
-                    }
-                })
-
-        # Also register blueprint signals if active and before entry cutoff
-        if self.mock_mode or is_trade_entry_allowed_for_bar(clean, bars[-1].timestamp):
-            for bp in active_blueprints:
-                is_bull = 'Bullish' in bp
-                bp_type = f'BUY {bp.upper()}' if is_bull else f'SELL {bp.upper()}'
-                signals.append({
-                    'symbol': clean,
-                    'type': bp_type,
-                    'trigger': bp,
-                    'market': market_name,
-                    'entry_price': bars[-1].close,
-                    'status': 'ACTIVE',
-                    'source': 'blackbox_dhan',
-                    'created_at': datetime.now(timezone.utc).isoformat(),
-                    'metadata': {
-                        'timeframe': '15m',
-                        'day_type': bp,
-                        'opening_bias': opening_bias,
-                        'market_category': market_category,
-                        'source_feed': 'DhanHQ',
-                        'h4': levels.H4,
-                        'l4': levels.L4
-                    }
-                })
-
-            for seq in active_sequences:
-                signals.append({
-                    'symbol': clean,
-                    'type': f'BUY {seq.upper()}',
-                    'trigger': seq,
-                    'market': market_name,
-                    'entry_price': bars[-1].close,
-                    'status': 'ACTIVE',
-                    'source': 'blackbox_dhan',
-                    'created_at': datetime.now(timezone.utc).isoformat(),
-                    'metadata': {
-                        'timeframe': '15m',
-                        'day_type': seq,
                         'opening_bias': opening_bias,
                         'market_category': market_category,
                         'source_feed': 'DhanHQ',
