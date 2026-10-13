@@ -45,7 +45,15 @@ On October 13, 2026, four key architectural advancements were deployed across th
     \frac{W}{100} \times 0.0001, & \text{if } R = 0 \\
     R \times \left(1.5 - 0.5 \times \frac{W}{100}\right), & \text{if } R < 0 
     \end{cases}$$
-  - Applied the identical composite score sorting to both `strategyCategoryStats` (Strategy Performance table) and `strategyInsights` (ALERT SIGNAL RANKINGS), ensuring unified row-to-card sequence alignment.
+    - Applied the identical composite score sorting to both `strategyCategoryStats` (Strategy Performance table) and `strategyInsights` (ALERT SIGNAL RANKINGS), ensuring unified row-to-card sequence alignment.
+
+### 1.5 Flashy Breaking News Broadcast Radar for Active Signals Matrix
+- **Broadcast Wire Aesthetic**: Transformed the plain `FILTER` | `CURRENT SIGNAL` opportunities parameter matrix on the HUB tab (`Tv-Alert-Mobile/src/app/page.tsx`) into an institutional "Breaking News / Live Wire" broadcast console.
+- **Top Broadcast Ribbon**: Integrated a full-width header ribbon with pulsating live beacon (`animate-ping`), `🚨 BREAKING RADAR | LIVE WIRE SIGNALS`, and high-contrast `REAL-TIME SCAN` status badge.
+- **Container Ambient Glow**: Styled card borders with `border-rose-500/30` and glowing drop-shadow `shadow-[0_4px_25px_rgba(244,63,94,0.12)]`.
+- **Broadcast Header Pill**: Upgraded `CURRENT SIGNAL` column header to a live wire badge with dual-ring pulsing radar dot, crimson `BREAKING` tag, electric animated tri-color gradient typography (`bg-gradient-to-r from-rose-600 via-amber-500 to-sky-500 animate-pulse`), and animated lightning bolt `⚡`.
+- **Glowing Ticker Pills**: Upgraded active symbols from comma-separated text into individual glowing ticker pills with directional markers (`▲ [SYMBOL]` in glowing emerald, `▼ [SYMBOL]` in glowing rose, and `⚡` badge for Black Box executions).
+- **Scanning Radar Empty State**: Replaced dull static text with an animated radar blip: `RADAR ACTIVE • MONITORING INTRADAY BREAKOUTS`.
 
 ---
 
@@ -53,7 +61,7 @@ On October 13, 2026, four key architectural advancements were deployed across th
 
 | Repository | File Path | Key Changes |
 | :--- | :--- | :--- |
-| **Tv-Alert-Mobile** | `src/app/page.tsx` | Relocated parameters on HUB tab, added `Req WR` across 3 tables, updated composite ranking score & deduped `strategyInsights`. |
+| **Tv-Alert-Mobile** | `src/app/page.tsx` | Relocated parameters on HUB tab, added `Req WR` across 3 tables, updated composite ranking score & deduped `strategyInsights`, added flashy breaking news live radar styling. |
 | **Tv-Alert-Mobile** | `src/app/globals.css` | Added `.text-on-accent` utility class for high-contrast active button states. |
 | **TLCS_Website_Deploy** | `scanner.js` | Added `Req WR` column header, cumulative `cumReqWr`, and row fallback calculation to `WEEKLY PERFORMANCE EDGE`. |
 | **TLCS_Website_Deploy** | `trade-metrics.js` | Synced canonical signal type grouping and composite return % + win rate score in `renderStrategyInsights`. |
@@ -71,3 +79,5 @@ On October 13, 2026, four key architectural advancements were deployed across th
 - **Production Build**: Next.js 14 production build (`npm run build`) completed successfully with 8/8 static pages generated.
 - **Python Unit Testing**: `python3 -m unittest algo_engine/tests/test_phase3.py` passed 9/9 tests in 0.54s.
 - **Parity Audit**: Web and mobile platforms exhibit 100% mathematical and layout synchronization.
+- **Git Repositories Synced**: `Tv-Alert-Mobile` (commit `fba74f1`), root `Project` / `RemoteURL` (commit `6e7b662`), `TLCS_Website_Deploy` clean on `main`.
+- **Local Mirrors & Backups Updated**: Synchronized to `Project Backup/` and `Backups/`.
