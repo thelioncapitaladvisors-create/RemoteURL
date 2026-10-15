@@ -98,6 +98,8 @@ def main():
         try:
             signals = scanner.run_scan_cycle(limit=args.limit)
             logger.info(f"[NSE100Runner] Cycle completed. {len(signals)} signals generated.")
+            if scanner.shadow_pipeline:
+                scanner.shadow_pipeline.purge_non_canonical_signals()
         except Exception as e:
             logger.error(f"[NSE100Runner] Error in scan cycle: {e}", exc_info=True)
 

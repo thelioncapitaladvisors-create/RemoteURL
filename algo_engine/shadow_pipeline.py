@@ -298,8 +298,27 @@ class ShadowPipeline:
 
     # ── Underlying Persistence Handlers ──────────────────────────
 
+    def purge_non_canonical_signals(self) -> int:
+        """Autonomous sentinel sweep: purge any non-canonical or blueprint rows from shadow_signals."""
+        if not self._sb or self._table_available is False:
+            return 0
+        try:
+            res = self._sb.from_(self.table_name).delete().or_("type.ilike.%BLUEPRINT%,type.ilike.%SEQUENCE%").execute()
+            count = len(res.data) if res and res.data else 0
+            if count > 0:
+                logger.info(f"[ShadowPipeline] Autonomous Watchdog purged {count} non-canonical rows.")
+            return count
+        except Exception as e:
+            logger.debug(f"[ShadowPipeline] Purge sweep skipped: {e}")
+            return 0
+
     def _execute_insert(self, trade_id: str, payload: Dict[str, Any]) -> None:
         """Insert into Supabase shadow table (and signals if dual_write) or local fallback."""
+        sig_type = str(payload.get("type", "")).upper()
+        if (sig_type not in CANONICAL_EXECUTION_TRIGGERS) or ("BLUEPRINT" in sig_type) or ("SEQUENCE" in sig_type):
+            logger.warning(f"[ShadowPipeline] Hard gate rejected non-canonical signal insert: {sig_type} (Trade ID: {trade_id})")
+            return
+
         if self._sb and self._table_available is not False:
             try:
                 res = self._sb.from_(self.table_name).insert(payload).execute()

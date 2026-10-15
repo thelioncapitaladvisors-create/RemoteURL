@@ -39,3 +39,15 @@ jobs:
           else
             echo "⚠️ Unexpected response: ${HTTP_CODE}"
           fi
+
+      - name: Ping Netlify Keep-Alive & DhanHQ Autonomous Sentinel
+        run: |
+          echo "⏰ Pinging Netlify 24/7 Keep-Alive Sentinel & Option Chain Pre-warm..."
+          NETLIFY_RES=$(curl -s -w "\n%{http_code}" -X GET "https://thelioncapitalsolutions.com/.netlify/functions/cron-keep-alive")
+          NETLIFY_CODE=$(echo "$NETLIFY_RES" | tail -n1)
+          echo "Netlify Keep-Alive HTTP Status: ${NETLIFY_CODE}"
+          if [ "$NETLIFY_CODE" -ge 200 ] && [ "$NETLIFY_CODE" -lt 500 ]; then
+            echo "✅ Netlify Sentinel successfully invoked!"
+          else
+            echo "⚠️ Netlify Sentinel returned ${NETLIFY_CODE}"
+          fi
