@@ -1339,6 +1339,7 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 ## Version 1.0: Virtual Paper Portfolio Simulator Single 10 Lacs (₹10,00,000) Baseline
 - **Single Standardized Preset Option**: The Virtual Capital selection panel MUST provide exclusively **`[10L]`** as the single preset button. All variant presets (`1L`, `5L`, `25L`) are permanently deprecated.
 - **Uniform Market Baseline**: All market configurations in `DEFAULT_LOT_CONFIG` (`NIFTY 50`, `MCX COMMODITIES`, `NYMEX & COMEX`, `CRYPTO TOP 25`, `FOREX PAIRS`, `WORLD INDICES`, and `ALL MARKETS`) MUST initialize with `defaultCapital: 1000000` (₹10,00,000).
+- **Default Forex Lot Size (100 Units)**: The default lot size and contract multiplier for all Global Forex pairs (`EURUSD`, `GBPUSD`, `USDJPY`, etc.) in `DEFAULT_LOT_CONFIG` and `paperSimulatedTrades` is strictly configured to **100 Units** (`mult = 100`, `qtyLabel = '100 Units'`), replacing legacy 10K units for institutional micro-lot simulation consistency.
 - **Paper Portfolio Reset Baseline**: When the user taps **START AFRESH** in the Virtual Paper Portfolio, the simulated account balance MUST cleanly reset to **₹10,00,000**.
 
 ## Version 1.0: Sequential Metrics Sorting Parity & Disaster Recovery Backups
