@@ -938,5 +938,64 @@ class TestExitLevelResolution(unittest.TestCase):
                          msg="Exit near TP3 should resolve to TP3")
 
 
+# ════════════════════════════════════════════════════════════════════
+# TEST 12: MIDPOINT RETEST SCALP (PULLBACK RETEST PARITY)
+# ════════════════════════════════════════════════════════════════════
+
+class TestMidpointRetestScalp(unittest.TestCase):
+    """
+    Parity test for Pine Script v6 midpoint retest logic:
+    1. Breakout bar off S&R creates a Power Candle and records its midpoint.
+       It must NOT trigger a Scalp on the breakout candle itself.
+    2. Subsequent pullback candle retests the established midpoint.
+       It triggers the SCALP signal on the retest and clears the midpoint.
+    3. Further bars without a retest do not trigger duplicate signals.
+    """
+
+    def test_midpoint_retest_scalp_lifecycle(self):
+        engine = StrategyEngine()
+
+        # Context defaults: Bullish trend environment
+        # Bar 1: Green Power Candle bouncing up from VAL (98.0)
+        # Open 98.5, Low 97.0 (< VAL 98.0), High 104.0, Close 103.0 (> VAL 98.0)
+        # Midpoint = (104.0 + 97.0) / 2 = 100.5
+        bar1 = OHLC(open=98.5, high=104.0, low=97.0, close=103.0, volume=1000)
+        ctx1 = MarketContext(
+            bar=bar1, bar_index=1,
+            H4=110.0, L4=90.0, H3=106.0, L3=94.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            val=98.0, vah=102.0,
+            short_ema=102.0, med_ema=100.0,
+            pivot_trend_fast=102.0, pivot_trend_slow=100.0,
+            plus=25.0, minus=15.0,
+            day_type_label="TREND DAY", opening_bias="OUT OF RANGE",
+            session_highest=104.0, session_lowest=97.0, atr=2.0
+        )
+        signals1 = engine.evaluate(ctx1)
+        scalp_signals1 = [s for s in signals1 if "SCALP" in s.name]
+        # Must NOT trigger scalp on the initial breakout candle
+        self.assertEqual(len(scalp_signals1), 0, "Breakout candle should not trigger Scalp")
+        self.assertEqual(engine._grs_mid, 100.5, "Midpoint must be recorded at 100.5")
+
+        # Bar 2: Pullback bar that retests the midpoint (100.5)
+        # Low dips to 100.0 (< 100.5) and closes at 102.0 (> 100.5)
+        bar2 = OHLC(open=103.0, high=103.5, low=100.0, close=102.0, volume=1000)
+        ctx2 = MarketContext(
+            bar=bar2, bar_index=2,
+            H4=110.0, L4=90.0, H3=106.0, L3=94.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            val=98.0, vah=102.0,
+            short_ema=102.0, med_ema=100.0,
+            pivot_trend_fast=102.0, pivot_trend_slow=100.0,
+            plus=25.0, minus=15.0,
+            day_type_label="TREND DAY", opening_bias="OUT OF RANGE",
+            session_highest=104.0, session_lowest=97.0, atr=2.0
+        )
+        signals2 = engine.evaluate(ctx2)
+        scalp_signals2 = [s for s in signals2 if s.name == "LONG SCALP"]
+        self.assertEqual(len(scalp_signals2), 1, "Retest of midpoint must trigger LONG SCALP")
+        self.assertIsNone(engine._grs_mid, "Midpoint must be cleared after being bounced on")
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

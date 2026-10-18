@@ -3090,8 +3090,15 @@ bool CanSell = (emaCanSell and MissD) or (emaCanSell and BounceDown)
 cleanTrendBullish := CanBuy ? true : CanSell ? false : RisingUp ? true : false
 cleanTrendBearish := CanSell ? true : CanBuy ? false : FallingDown ? true : false
 
-bool bouncedOffGrsMid = bouncedOffSR_Up or bouncedOffActualGrsMid
-bool bouncedOffResMid = bouncedOffSR_Down or bouncedOffActualResMid
+// 6. Final Bounce Flags used for Signals
+//    - Replaced raw 'bouncedOffSR_Up' with retest-only bounce logic.
+//    - Now exclusively enters on the retest of the Power Candle Midpoint,
+//      eliminating the initial breakout candle from qualifying as the bounce.
+bool bouncedOffGrsMid = bouncedOffActualGrsMid
+bool bouncedOffResMid = bouncedOffActualResMid
+
+//bool bouncedOffGrsMid = bouncedOffSR_Up or bouncedOffActualGrsMid
+//bool bouncedOffResMid = bouncedOffSR_Down or bouncedOffActualResMid
 
 // -- SCALP SIGNALS --
 StepUp = (cleanTrendBullish or GREEN1) and bouncedOffGrsMid

@@ -327,8 +327,21 @@ class StrategyEngine:
 
         # ═══════════════════════════════════════════════════════
         # POWER CANDLE / S&R BOUNCE DETECTION (lines 2958-2987)
-        # ═══════════════════════════════════════════════════════
-        # Simplified: detect green/red power candles at S&R levels
+        # 1. Evaluate midpoint retest on existing midpoint from prior bars
+        bounced_off_actual_grs_mid = (
+            self._grs_mid is not None and _bounce_up_from(self._grs_mid)
+        )
+        bounced_off_actual_res_mid = (
+            self._res_mid is not None and _bounce_down_from(self._res_mid)
+        )
+
+        # 2. Clear midpoints immediately upon bounce consumption
+        if bounced_off_actual_grs_mid:
+            self._grs_mid = None
+        if bounced_off_actual_res_mid:
+            self._res_mid = None
+
+        # 3. Detect green/red power candles at S&R levels and establish new midpoints
         grs = bar.is_green and (
             _bounce_up_from(ctx.val) or _bounce_up_from(ctx.cpr_pivot) or
             _bounce_up_from(ctx.L3) or _bounce_up_from(ctx.L4))
@@ -337,23 +350,16 @@ class StrategyEngine:
             _bounce_down_from(ctx.vah) or _bounce_down_from(ctx.cpr_pivot) or
             _bounce_down_from(ctx.H3) or _bounce_down_from(ctx.H4))
 
-        # Update power candle midpoints
         if grs:
             self._grs_mid = bar.midpoint
         if res:
             self._res_mid = bar.midpoint
 
-        # Bounce off midpoint check
-        bounced_off_grs_mid = grs or (
-            self._grs_mid is not None and _bounce_up_from(self._grs_mid))
-        bounced_off_res_mid = res or (
-            self._res_mid is not None and _bounce_down_from(self._res_mid))
-
-        # Clear midpoints on bounce
-        if self._grs_mid is not None and _bounce_up_from(self._grs_mid):
-            self._grs_mid = None
-        if self._res_mid is not None and _bounce_down_from(self._res_mid):
-            self._res_mid = None
+        # 4. Final Bounce Flags used for Signals (Retest-only per updated Pine Script)
+        # Exclusively enters on the retest of the Power Candle Midpoint,
+        # eliminating raw breakout candles from qualifying as the bounce.
+        bounced_off_grs_mid = bounced_off_actual_grs_mid
+        bounced_off_res_mid = bounced_off_actual_res_mid
 
         # ═══════════════════════════════════════════════════════
         # SCALP SIGNALS (lines 3060-3064)
