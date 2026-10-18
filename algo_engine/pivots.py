@@ -686,3 +686,242 @@ def bars_since(condition_series: List[bool], index: int) -> Optional[int]:
         if condition_series[offset]:
             return index - offset
     return None
+
+
+# ════════════════════════════════════════════════════════════════════
+# RMA (RUNNING MOVING AVERAGE / WILDER'S SMOOTHING)
+# ════════════════════════════════════════════════════════════════════
+
+def rma(values: List[float], length: int) -> List[float]:
+    """
+    Compute Running Moving Average (Wilder's Smoothing).
+    Pine Script: ta.rma(source, length)
+    Equivalent to exponential moving average with alpha = 1 / length.
+    """
+    if not values or length <= 0:
+        return []
+    n = len(values)
+    result = [0.0] * n
+    alpha = 1.0 / length
+
+    init_len = min(length, n)
+    result[0] = sum(values[:init_len]) / init_len
+    for i in range(1, n):
+        result[i] = alpha * values[i] + (1.0 - alpha) * result[i - 1]
+    return result
+
+
+# ════════════════════════════════════════════════════════════════════
+# DMI (DIRECTIONAL MOVEMENT INDEX: +DI, -DI)
+# ════════════════════════════════════════════════════════════════════
+
+def compute_dmi(bars: List[OHLC], length: int = 14) -> Tuple[List[float], List[float]]:
+    """
+    Compute +DI and -DI matching Pine Script lines 509-521:
+        up = ta.change(high)
+        down = -ta.change(low)
+        plusDM = na(up) ? na : up > down and up > 0 ? up : 0
+        minusDM = na(down) ? na : down > up and down > 0 ? down : 0
+        trur = ta.rma(ta.tr, len)
+        plus = fixnan(100 * ta.rma(plusDM, len) / trur)
+        minus = fixnan(100 * ta.rma(minusDM, len) / trur)
+    """
+    if not bars:
+        return [], []
+    n = len(bars)
+    plus_dm = [0.0] * n
+    minus_dm = [0.0] * n
+    tr_series = compute_true_range_series(bars)
+
+    for i in range(1, n):
+        up = bars[i].high - bars[i - 1].high
+        down = bars[i - 1].low - bars[i].low
+        plus_dm[i] = up if (up > down and up > 0) else 0.0
+        minus_dm[i] = down if (down > up and down > 0) else 0.0
+
+    rma_tr = rma(tr_series, length)
+    rma_plus = rma(plus_dm, length)
+    rma_minus = rma(minus_dm, length)
+
+    plus_di = [0.0] * n
+    minus_di = [0.0] * n
+    for i in range(n):
+        tr_val = rma_tr[i]
+        if tr_val > 0:
+            plus_di[i] = 100.0 * rma_plus[i] / tr_val
+            minus_di[i] = 100.0 * rma_minus[i] / tr_val
+        else:
+            plus_di[i] = 0.0
+            minus_di[i] = 0.0
+
+    return plus_di, minus_di
+
+
+# ════════════════════════════════════════════════════════════════════
+# OSCILLATOR MOMENTUM (m0, m10)
+# ════════════════════════════════════════════════════════════════════
+
+def compute_m0_m10(bars: List[OHLC],
+                   len0: int = 21,
+                   len1: int = 96,
+                   lookback: int = 92) -> Tuple[List[float], List[float]]:
+    """
+    Compute m0 and m10 matching Pine Script lines 496-504:
+        upper = ta.highest(92)
+        lower = ta.lowest(92)
+        out = 100 * (close - upper) / (upper - lower)
+        m0 = ta.ema(out, len0)
+        m10 = ta.sma(out, len1)
+    """
+    if not bars:
+        return [], []
+    n = len(bars)
+    highs = [b.high for b in bars]
+    lows = [b.low for b in bars]
+    closes = [b.close for b in bars]
+    out = [0.0] * n
+
+    for i in range(n):
+        start = max(0, i - lookback + 1)
+        upper = max(highs[start:i + 1])
+        lower = min(lows[start:i + 1])
+        hl_diff = upper - lower
+        if hl_diff > 0:
+            out[i] = 100.0 * (closes[i] - upper) / hl_diff
+        else:
+            out[i] = 0.0
+
+    m0_series = ema(out, len0)
+    m10_series = sma(out, len1)
+    return m0_series, m10_series
+
+
+# ════════════════════════════════════════════════════════════════════
+# INSTITUTIONAL BIAS (c1) & DAY TYPE (mX) CLASSIFICATIONS
+# ════════════════════════════════════════════════════════════════════
+
+def compute_institutional_bias_c1(
+    close_price: float,
+    open_price: float,
+    dtc: float,
+    dbc: float,
+    ytc: float,
+    ybc: float,
+    h4: float,
+    l4: float,
+    prev_close: float = 0.0,
+    dp: float = 0.0,
+    tp: float = 0.0
+) -> str:
+    """
+    Compute Institutional Bias (c1) matching Pine Script lines 770-798:
+        BULLISH = ((DTc > YTc) and (DBc > YTc))
+        BEARISH = ((DTc < YBc) and (DBc < YBc))
+        MODERATELYBULLISH = ((DTc > YTc) and (DBc > YBc))
+        MODERATELYBEARISH = ((DTc < YTc) and (DBc < YBc))
+        INSIDE = ((DTc < YTc) and (DBc > YBc))
+        OUTSIDE = ((DTc > YTc) and (DBc < YBc))
+        UNCHANGED = ((DP == TP) and (DBc == YBc) and (DTc == YTc))
+
+        CONFIRMEDBULLISH = (((BULLISH or MODERATELYBULLISH) and ((CC > YTc) or (CC < YTc))) and (OO_ > DBc))
+        CONFIRMEDBEARISH = (((BEARISH or MODERATELYBEARISH) and ((CC < YBc) or (CC > YBc))) and (OO_ < DTc))
+        REJECTEDBULLISH = (((BULLISH or MODERATELYBULLISH) and ((CC > YTc) or (CC < YTc))) and (OO_ < DBc))
+        REJECTEDBEARISH = (((BEARISH or MODERATELYBEARISH) and ((CC < YBc) or (CC > YBc))) and (OO_ > DTc))
+        ANYDAY = (BULLISH or MODERATELYBULLISH or BEARISH or MODERATELYBEARISH or INSIDE or OUTSIDE or UNCHANGED)
+
+        c1 = ANYDAY and (close < DTc and close > DBc) ? "WATCH" :
+             CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" :
+             CONFIRMEDBULLISH and (close < DBc) ? "REJECTION" :
+             CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" :
+             CONFIRMEDBEARISH and (close > DTc) ? "REJECTION" :
+             REJECTEDBULLISH and (close < DBc) ? "REJECTED \n BULLISH" :
+             REJECTEDBULLISH and (close > DTc) ? "REJECTION" :
+             REJECTEDBEARISH and (close > DTc) ? "REJECTED \n BEARISH" :
+             REJECTEDBEARISH and (close < DBc) ? "REJECTION" :
+             OUTSIDE ? "SIDEWAYS" :
+             UNCHANGED ? "SIDEWAYS/ BREAKOUT" :
+             ((ANYDAY and ((open_price > h4) or (open_price < l4))) or INSIDE) ? "BREAKOUT" : "DEBUG"
+    """
+    bullish = (dtc > ytc) and (dbc > ytc)
+    bearish = (dtc < ybc) and (dbc < ybc)
+    mod_bullish = (dtc > ytc) and (dbc > ybc)
+    mod_bearish = (dtc < ytc) and (dbc < ybc)
+    inside = (dtc < ytc) and (dbc > ybc)
+    outside = (dtc > ytc) and (dbc < ybc)
+    unchanged = (dp == tp) and (dbc == ybc) and (dtc == ytc)
+
+    confirmed_bullish = (bullish or mod_bullish) and (open_price > dbc)
+    confirmed_bearish = (bearish or mod_bearish) and (open_price < dtc)
+    rejected_bullish = (bullish or mod_bullish) and (open_price < dbc)
+    rejected_bearish = (bearish or mod_bearish) and (open_price > dtc)
+    anyday = bullish or mod_bullish or bearish or mod_bearish or inside or outside or unchanged
+
+    if anyday and (close_price < dtc and close_price > dbc):
+        return "WATCH"
+    elif confirmed_bullish and (close_price > dtc):
+        return "CONFIRMED BULLISH"
+    elif confirmed_bullish and (close_price < dbc):
+        return "REJECTION"
+    elif confirmed_bearish and (close_price < dbc):
+        return "CONFIRMED BEARISH"
+    elif confirmed_bearish and (close_price > dtc):
+        return "REJECTION"
+    elif rejected_bullish and (close_price < dbc):
+        return "REJECTED BULLISH"
+    elif rejected_bullish and (close_price > dtc):
+        return "REJECTION"
+    elif rejected_bearish and (close_price > dtc):
+        return "REJECTED BEARISH"
+    elif rejected_bearish and (close_price < dbc):
+        return "REJECTION"
+    elif outside:
+        return "SIDEWAYS"
+    elif unchanged:
+        return "SIDEWAYS/ BREAKOUT"
+    elif (anyday and ((open_price > h4) or (open_price < l4))) or inside:
+        return "BREAKOUT"
+    else:
+        return "DEBUG"
+
+
+def compute_day_type_mx(
+    open_price: float,
+    close_price: float,
+    dDH: float,
+    dDL: float,
+    vah: float,
+    val: float,
+    ytf_h: float,
+    ytf_l: float,
+    dtc: float,
+    dbc: float
+) -> str:
+    """
+    Compute Day Type (mX) matching Pine Script lines 806-807:
+        mX = INRANGEINVALUE and (((close > dDL_) and (close < dDH_)) and ((close > VAL) and (close < VAH))) ? "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS" :
+             (INRANGEINVALUE and (((close > Ytf_h) and (close > VAH)) or ((close < Ytf_l) and (close < VAL)))) or ((OP < Ytf_l and OP < VAL and OP < DBc) or (OP > Ytf_h and OP > VAH and OP > DTc)) ? "BIG MOVE" :
+             (INRANGEOUTOFVALUE and ((close < Ytf_h) and (close > Ytf_l))) ? "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS" :
+             ((INRANGEOUTOFVALUE) and ((close > Ytf_h) or (close < Ytf_l))) ? "TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL" :
+             (OUTOFRANGEVALUE and ((close < Ytf_l) or (close > Ytf_h))) ? "TREND DAY, \n DOUBLE DISTRIBUTION TREND" :
+             (OUTOFRANGEVALUE and ((close > Ytf_l) and (close < Ytf_h))) ? "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE" : "DEBUG"
+    """
+    in_range_in_val = (open_price > dDL and open_price < dDH) and (open_price > val and open_price < vah)
+    in_range_out_val = (open_price > dDL and open_price < dDH) and (open_price < val or open_price > vah)
+    out_range_val = (open_price < dDL and open_price < val) or (open_price > dDH and open_price > vah)
+
+    if in_range_in_val and (close_price > dDL and close_price < dDH) and (close_price > val and close_price < vah):
+        return "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS"
+    elif (in_range_in_val and (((close_price > ytf_h) and (close_price > vah)) or ((close_price < ytf_l) and (close_price < val)))) or \
+         ((open_price < ytf_l and open_price < val and open_price < dbc) or (open_price > ytf_h and open_price > vah and open_price > dtc)):
+        return "BIG MOVE"
+    elif in_range_out_val and (close_price < ytf_h and close_price > ytf_l):
+        return "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS"
+    elif in_range_out_val and (close_price > ytf_h or close_price < ytf_l):
+        return "TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL"
+    elif out_range_val and (close_price < ytf_l or close_price > ytf_h):
+        return "TREND DAY, \n DOUBLE DISTRIBUTION TREND"
+    elif out_range_val and (close_price > ytf_l and close_price < ytf_h):
+        return "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE"
+    else:
+        return "DEBUG"
+

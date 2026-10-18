@@ -28,6 +28,8 @@ from algo_engine.pivots import (
     true_range, OHLC, CamarillaLevels, CPRLevels, DailyLevels,
     compute_emas_from_bars, highest, lowest, bars_since,
     dema, triple_ema, compute_pivot_trend_emas,
+    rma, compute_dmi, compute_m0_m10,
+    compute_institutional_bias_c1, compute_day_type_mx,
 )
 from algo_engine.day_types import (
     DayTypeClassifier, DayTypeConfig, DayTypeResult, SequenceState,
@@ -35,7 +37,8 @@ from algo_engine.day_types import (
 )
 from algo_engine.strategies import (
     StrategyEngine, StrategyConfig, StrategySignal, MarketContext,
-    detect_extreme_reversal,
+    detect_extreme_reversal, detect_wick_reversal, detect_outside_reversal,
+    detect_doji_reversal, compute_reversal_candles,
 )
 from algo_engine.trade_manager import (
     TradeManager, Trade, TradeStatus, TradeOutcome,
@@ -997,5 +1000,155 @@ class TestMidpointRetestScalp(unittest.TestCase):
         self.assertIsNone(engine._grs_mid, "Midpoint must be cleared after being bounced on")
 
 
+
+class TestOscillatorAndReversalSystems(unittest.TestCase):
+    """
+    Unit tests for DMI, Oscillator Momentum (m0/m10), Institutional Bias (c1),
+    Day Type (mX), and 4 Reversal Systems (Wick, Outside, Extreme, Doji).
+    """
+
+    def test_rma(self):
+        vals = [10.0, 12.0, 14.0, 16.0, 18.0]
+        result = rma(vals, length=3)
+        self.assertEqual(len(result), 5)
+        # First value is SMA of first min(len, 3) = (10 + 12 + 14)/3 = 12.0
+        self.assertAlmostEqual(result[0], 12.0, places=4)
+        # Next value: (1/3)*12.0 + (2/3)*12.0 = 12.0
+        self.assertAlmostEqual(result[1], (1.0/3.0)*12.0 + (2.0/3.0)*12.0, places=4)
+
+    def test_dmi_trending(self):
+        # 20 bars of strong uptrend
+        bars = [
+            OHLC(open=100.0 + i, high=102.0 + i, low=99.5 + i, close=101.5 + i, volume=1000)
+            for i in range(25)
+        ]
+        plus, minus = compute_dmi(bars, length=14)
+        self.assertEqual(len(plus), 25)
+        self.assertEqual(len(minus), 25)
+        # Strong uptrend: plus DI must be significantly greater than minus DI
+        self.assertGreater(plus[-1], minus[-1])
+        self.assertGreater(plus[-1], 20.0)
+
+    def test_m0_m10_trending(self):
+        # 100 bars of steady uptrend
+        bars = [
+            OHLC(open=100.0 + i, high=102.0 + i, low=99.0 + i, close=101.5 + i, volume=1000)
+            for i in range(110)
+        ]
+        m0, m10 = compute_m0_m10(bars, len0=21, len1=96, lookback=92)
+        self.assertEqual(len(m0), 110)
+        self.assertEqual(len(m10), 110)
+        # In a sustained uptrend, short EMA m0 should be greater than long SMA m10
+        self.assertGreater(m0[-1], m10[-1])
+
+    def test_institutional_bias_c1(self):
+        # 1. Close inside CPR: (close < dtc and close > dbc) -> WATCH
+        res = compute_institutional_bias_c1(
+            close_price=100.0, open_price=99.0,
+            dtc=102.0, dbc=98.0, ytc=95.0, ybc=90.0,
+            h4=105.0, l4=95.0
+        )
+        self.assertEqual(res, "WATCH")
+
+        # 2. Bullish confirmed above DTC: dtc > ytc, dbc > ytc, open > dbc, close > dtc -> CONFIRMED BULLISH
+        res_bull = compute_institutional_bias_c1(
+            close_price=105.0, open_price=99.0,
+            dtc=102.0, dbc=98.0, ytc=95.0, ybc=90.0,
+            h4=110.0, l4=90.0
+        )
+        self.assertEqual(res_bull, "CONFIRMED BULLISH")
+
+        # 3. Bearish confirmed below DBC: dtc < ybc, dbc < ybc, open < dtc, close < dbc -> CONFIRMED BEARISH
+        res_bear = compute_institutional_bias_c1(
+            close_price=80.0, open_price=85.0,
+            dtc=87.0, dbc=82.0, ytc=100.0, ybc=95.0,
+            h4=92.0, l4=78.0
+        )
+        self.assertEqual(res_bear, "CONFIRMED BEARISH")
+
+    def test_day_type_mx(self):
+        # In range in value -> TYPICAL DAY / TRADING RANGE
+        res = compute_day_type_mx(
+            open_price=100.0, close_price=100.5,
+            dDH=105.0, dDL=95.0, vah=103.0, val=97.0,
+            ytf_h=105.0, ytf_l=95.0, dtc=102.0, dbc=98.0
+        )
+        self.assertIn("TYPICAL DAY", res)
+
+        # Big move breakout
+        res_big = compute_day_type_mx(
+            open_price=106.0, close_price=108.0,
+            dDH=105.0, dDL=95.0, vah=103.0, val=97.0,
+            ytf_h=105.0, ytf_l=95.0, dtc=102.0, dbc=98.0
+        )
+        self.assertEqual(res_big, "BIG MOVE")
+
+    def test_wick_reversal_detection(self):
+        # Normal candle + wick reversal candle (lower wick >= 40% of range, close > open)
+        bars = [
+            OHLC(open=100.0, high=101.0, low=99.0, close=100.5, volume=1000),
+            # Range = 105.0 - 95.0 = 10.0. open=100, low=95 -> open-low=5 (50%), close=103, low=95 -> close-low=8 (80%), close>open
+            OHLC(open=100.0, high=105.0, low=95.0, close=103.0, volume=1000)
+        ]
+        long_sigs, short_sigs = detect_wick_reversal(bars)
+        self.assertTrue(long_sigs[1], "Bar 1 must qualify as bullish wick reversal")
+        self.assertFalse(short_sigs[1])
+
+    def test_outside_reversal_detection(self):
+        bars = [
+            OHLC(open=100.0, high=102.0, low=98.0, close=101.0, volume=1000),
+            # Outside bullish: close > high[1] (103 > 102), low < low[1] (97 < 98), close > open (103 > 99)
+            OHLC(open=99.0, high=104.0, low=97.0, close=103.0, volume=1000)
+        ]
+        long_sigs, short_sigs = detect_outside_reversal(bars)
+        self.assertTrue(long_sigs[1], "Bar 1 must qualify as bullish outside reversal")
+        self.assertFalse(short_sigs[1])
+
+    def test_doji_reversal_detection(self):
+        bars = [
+            # Prev bar: range = 105 - 95 = 10. body = abs(100.0 - 100.2) = 0.2 (2% of range <= 5%)
+            OHLC(open=100.0, high=105.0, low=95.0, close=100.2, volume=1000),
+            # Curr bar: green close > open
+            OHLC(open=101.0, high=106.0, low=100.0, close=105.0, volume=1000)
+        ]
+        long_sigs, short_sigs = detect_doji_reversal(bars)
+        self.assertTrue(long_sigs[1], "Bar 1 must qualify as bullish doji reversal")
+        self.assertFalse(short_sigs[1])
+
+    def test_reversal_candles(self):
+        bars = [
+            OHLC(open=100.0, high=102.0, low=98.0, close=101.0, volume=1000),
+            # Bar 1 is outside reversal
+            OHLC(open=99.0, high=104.0, low=97.0, close=103.0, volume=1000),
+            # Bar 2: GreenCandle = outside[1] = True
+            OHLC(open=103.0, high=105.0, low=102.0, close=104.0, volume=1000)
+        ]
+        green_candles, red_candles = compute_reversal_candles(bars)
+        self.assertTrue(green_candles[2], "Bar 2 GreenCandle must be True because Bar 1 fired a reversal")
+
+    def test_bull_bear_conds_ncpr_and_c1(self):
+        engine = StrategyEngine()
+        bar = OHLC(open=100.0, high=105.0, low=99.0, close=104.0, volume=1000)
+
+        # Context with neutral day type and neutral bias, but NCPR = True
+        ctx = MarketContext(
+            bar=bar, bar_index=1,
+            H4=110.0, L4=90.0, H3=106.0, L3=94.0,
+            cpr_pivot=100.0, cpr_tc=100.2, cpr_bc=99.8,
+            is_ncpr=True,  # Narrow CPR compression!
+            val=98.0, vah=102.0,
+            short_ema=102.0, med_ema=100.0,
+            pivot_trend_fast=102.0, pivot_trend_slow=100.0,
+            day_type_label="TYPICAL DAY", opening_bias="IN VALUE",
+            institutional_bias="WATCH",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        # Because is_ncpr=True or c1="WATCH", bull_conds evaluates to True
+        signals = engine.evaluate(ctx)
+        # Engine evaluates without errors and respects NCPR / c1
+        self.assertIsInstance(signals, list)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+

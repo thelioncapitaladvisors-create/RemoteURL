@@ -18,7 +18,8 @@ from .feeds.dhan_feed import DhanFeed
 from .pivots import (
     OHLC, compute_daily_levels, compute_emas_from_bars,
     compute_atr, compute_pivot_trend_emas, compute_value_area_from_bars,
-    compute_opening_bias
+    compute_opening_bias, compute_dmi, compute_m0_m10,
+    compute_institutional_bias_c1, compute_day_type_mx
 )
 from .day_types import DayTypeClassifier
 from .strategies import StrategyEngine, StrategySignal, MarketContext
@@ -190,6 +191,8 @@ class NSE100Scanner:
         atr_vals = compute_atr(bars)
         va = compute_value_area_from_bars(bars)
         opening_bias = compute_opening_bias(bars[0].open, daily['high'], daily['low'], va.vah, va.val)
+        plus_di, minus_di = compute_dmi(bars)
+        m0_series, m10_series = compute_m0_m10(bars)
 
         # 4. Classify Day Type using daily aggregated bar
         daily_bar = OHLC(
@@ -230,6 +233,34 @@ class NSE100Scanner:
 
             prev_b = bars[i - 1] if i > 0 else cur_bar
 
+            # Compute institutional bias c1 and day type mX
+            c1_bias = compute_institutional_bias_c1(
+                close_price=cur_bar.close,
+                open_price=cur_bar.open,
+                dtc=levels.tc,
+                dbc=levels.bc,
+                ytc=daily.get('prev_tc', levels.tc),
+                ybc=daily.get('prev_bc', levels.bc),
+                h4=levels.H4,
+                l4=levels.L4,
+                prev_close=prev_b.close,
+                dp=levels.pivot,
+                tp=daily.get('prev_pivot', levels.pivot)
+            )
+
+            mx_type = compute_day_type_mx(
+                open_price=cur_bar.open,
+                close_price=cur_bar.close,
+                dDH=daily['high'],
+                dDL=daily['low'],
+                vah=va.vah,
+                val=va.val,
+                ytf_h=daily['high'],
+                ytf_l=daily['low'],
+                dtc=levels.tc,
+                dbc=levels.bc
+            )
+
             ctx = MarketContext(
                 bar=cur_bar,
                 bar_index=i,
@@ -249,12 +280,15 @@ class NSE100Scanner:
                 pivot_trend_slow=trend_emas[1][i],
                 atr=atr_vals[i],
                 opening_bias=opening_bias,
-                day_type_label=primary_day_type,
+                day_type_label=mx_type if mx_type != "DEBUG" else primary_day_type,
+                institutional_bias=c1_bias,
                 session_highest=max(b.high for b in bars[:i + 1]),
                 session_lowest=min(b.low for b in bars[:i + 1]),
                 prev_bar=prev_b,
-                plus=1.0 if cur_bar.is_green else 0.0,
-                minus=1.0 if cur_bar.is_red else 0.0,
+                plus=plus_di[i] if i < len(plus_di) else 0.0,
+                minus=minus_di[i] if i < len(minus_di) else 0.0,
+                m0=m0_series[i] if i < len(m0_series) else 0.0,
+                m10=m10_series[i] if i < len(m10_series) else 0.0,
             )
 
             strat_sigs = self.strategy_engine.evaluate(ctx)

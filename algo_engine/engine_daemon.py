@@ -23,7 +23,8 @@ from typing import Dict, List, Optional
 
 from .pivots import (
     OHLC, compute_daily_levels, compute_emas_from_bars,
-    compute_atr, compute_pivot_trend_emas
+    compute_atr, compute_pivot_trend_emas, compute_dmi, compute_m0_m10,
+    compute_institutional_bias_c1
 )
 from .day_types import DayTypeClassifier, DayTypeResult
 from .strategies import StrategyEngine, StrategySignal, MarketContext
@@ -186,23 +187,47 @@ class EngineDaemon:
         # 1. Compute Daily Camarilla & CPR Levels
         daily_levels = compute_daily_levels(prev_high, prev_low, prev_close)
 
-        # 2. Compute Intraday Indicators (EMAs on Typical Price, ATR)
+        # 2. Compute Intraday Indicators (EMAs on Typical Price, ATR, DMI, m0/m10)
         if len(bars_15m) >= 14:
             short_emas, med_emas, _ = compute_emas_from_bars(bars_15m)
             p_fast, p_slow = compute_pivot_trend_emas(bars_15m)
             atrs = compute_atr(bars_15m, period=14)
+            plus_di, minus_di = compute_dmi(bars_15m)
+            m0_series, m10_series = compute_m0_m10(bars_15m)
 
             short_ema = short_emas[-1]
             med_ema = med_emas[-1]
             pivot_trend_fast = p_fast[-1]
             pivot_trend_slow = p_slow[-1]
             atr_val = atrs[-1]
+            plus_val = plus_di[-1]
+            minus_val = minus_di[-1]
+            m0_val = m0_series[-1]
+            m10_val = m10_series[-1]
         else:
             short_ema = bar.typical_price
             med_ema = bar.typical_price
             pivot_trend_fast = bar.typical_price
             pivot_trend_slow = bar.typical_price
             atr_val = max(bar.range, 1.0)
+            plus_val = 1.0 if bar.is_green else 0.0
+            minus_val = 1.0 if bar.is_red else 0.0
+            m0_val = 0.0
+            m10_val = 0.0
+
+        c1_bias = compute_institutional_bias_c1(
+            close_price=bar.close,
+            open_price=bar.open,
+            dtc=daily_levels.cpr.tc,
+            dbc=daily_levels.cpr.bc,
+            ytc=daily_levels.cpr.tc,
+            ybc=daily_levels.cpr.bc,
+            h4=daily_levels.camarilla.H4,
+            l4=daily_levels.camarilla.L4,
+            prev_close=bars_15m[-2].close if len(bars_15m) >= 2 else bar.close,
+            dp=daily_levels.cpr.pivot,
+            tp=daily_levels.cpr.pivot
+        )
 
         # 3. Assemble MarketContext
         ctx = MarketContext(
@@ -221,8 +246,13 @@ class EngineDaemon:
             pivot_trend_fast=pivot_trend_fast,
             pivot_trend_slow=pivot_trend_slow,
             atr=atr_val,
+            institutional_bias=c1_bias,
             session_highest=max((b.high for b in bars_15m[-10:]), default=bar.high),
             session_lowest=min((b.low for b in bars_15m[-10:]), default=bar.low),
+            plus=plus_val,
+            minus=minus_val,
+            m0=m0_val,
+            m10=m10_val,
         )
 
         # Check market hours: Never evaluate or trigger trades for closed markets (unless explicit mock simulation)

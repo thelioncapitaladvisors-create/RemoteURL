@@ -78,10 +78,18 @@ class StrategyConfig:
     fast_pivot_period: int = 5      # fFastEMA1 for pivot DEMA (line 430)
     slow_pivot_period: int = 13     # fSlowEMA1 for pivot DEMA (line 431)
 
+    # Wick Reversal parameters
+    wick_body_size: float = 0.40
+    wick_candle_mult: float = 0.9
+
     # Extreme Reversal parameters (lines 608-614)
     bodysize: float = 0.75          # Body must be >= 75% of candle range
     body_multiplier: float = 2.0    # Range must be > 2x avg candle size
     avg_candle_len: int = 50        # Lookback for average candle/body size
+
+    # Doji Reversal parameters
+    doji_body_size: float = 0.05
+    doji_candle_mult: float = 0.9
 
     # Divergence lookback window
     div_lookback: int = 6           # Check divergence within last 6 bars
@@ -130,6 +138,7 @@ class MarketContext:
     # Opening bias & day type
     opening_bias: str = ""          # dX
     day_type_label: str = ""        # mX
+    institutional_bias: str = ""    # c1 (CONFIRMED BULLISH, CONFIRMED BEARISH, WATCH, etc.)
 
     # Previous bar data (for session range / trendLine)
     session_highest: float = 0.0    # Highest high of current session
@@ -227,18 +236,25 @@ class StrategyEngine:
         # ═══════════════════════════════════════════════════════
         dt = ctx.day_type_label.upper() if ctx.day_type_label else ""
         ob = ctx.opening_bias.upper() if ctx.opening_bias else ""
+        c1 = ctx.institutional_bias.upper().replace("\n", "").replace("  ", " ") if ctx.institutional_bias else ""
 
         bull_conds = ("BIG MOVE" in dt or
                       "TREND DAY" in dt or "DOUBLE DISTRIBUTION" in dt or
                       "OUT OF RANGE" in ob or "OUT OF VALUE" in ob or
+                      "CONFIRMED BULLISH" in c1 or "REJECTED BEARISH" in c1 or
+                      "WATCH" in c1 or
                       "CONFIRMED BULLISH" in dt or "REJECTED BEARISH" in dt or
-                      "WATCH" in dt)
+                      "WATCH" in dt or
+                      ctx.is_ncpr)
 
         bear_conds = ("BIG MOVE" in dt or
                       "TREND DAY" in dt or "DOUBLE DISTRIBUTION" in dt or
                       "OUT OF RANGE" in ob or "OUT OF VALUE" in ob or
+                      "CONFIRMED BEARISH" in c1 or "REJECTED BULLISH" in c1 or
+                      "WATCH" in c1 or
                       "CONFIRMED BEARISH" in dt or "REJECTED BULLISH" in dt or
-                      "WATCH" in dt)
+                      "WATCH" in dt or
+                      ctx.is_ncpr)
 
         rising_up = (ctx.plus >= ctx.minus and
                      ctx.pivot_trend_fast >= ctx.pivot_trend_slow and
@@ -327,6 +343,20 @@ class StrategyEngine:
 
         # ═══════════════════════════════════════════════════════
         # POWER CANDLE / S&R BOUNCE DETECTION (lines 2958-2987)
+        # ═══════════════════════════════════════════════════════
+        has_dmi = (ctx.plus != 0.0 or ctx.minus != 0.0)
+        has_m = (ctx.m0 != 0.0 or ctx.m10 != 0.0)
+        if has_dmi or has_m:
+            dmi_green = (ctx.plus > ctx.minus) if has_dmi else True
+            dmi_red = (ctx.minus > ctx.plus) if has_dmi else True
+            m_green = (ctx.m0 > ctx.m10) if has_m else True
+            m_red = (ctx.m0 < ctx.m10) if has_m else True
+            green1 = dmi_green and m_green
+            red1 = dmi_red and m_red
+        else:
+            green1 = bar.is_green
+            red1 = bar.is_red
+
         # 1. Evaluate midpoint retest on existing midpoint from prior bars
         bounced_off_actual_grs_mid = (
             self._grs_mid is not None and _bounce_up_from(self._grs_mid)
@@ -342,13 +372,18 @@ class StrategyEngine:
             self._res_mid = None
 
         # 3. Detect green/red power candles at S&R levels and establish new midpoints
-        grs = bar.is_green and (
+        # Pine Script: GrS = GREEN1 and (bouncedOffSR_Up), ReS = RED1 and (bouncedOffSR_Down)
+        bounced_sr_up = (
             _bounce_up_from(ctx.val) or _bounce_up_from(ctx.cpr_pivot) or
-            _bounce_up_from(ctx.L3) or _bounce_up_from(ctx.L4))
-
-        res = bar.is_red and (
+            _bounce_up_from(ctx.L3) or _bounce_up_from(ctx.L4)
+        )
+        bounced_sr_down = (
             _bounce_down_from(ctx.vah) or _bounce_down_from(ctx.cpr_pivot) or
-            _bounce_down_from(ctx.H3) or _bounce_down_from(ctx.H4))
+            _bounce_down_from(ctx.H3) or _bounce_down_from(ctx.H4)
+        )
+
+        grs = green1 and bounced_sr_up
+        res = red1 and bounced_sr_down
 
         if grs:
             self._grs_mid = bar.midpoint
@@ -628,3 +663,210 @@ def detect_extreme_reversal(bars: List[OHLC],
             short_signals[i] = True
 
     return long_signals, short_signals
+
+
+# ════════════════════════════════════════════════════════════════════
+# WICK REVERSAL DETECTION (lines 571-597)
+# ════════════════════════════════════════════════════════════════════
+
+def detect_wick_reversal(bars: List[OHLC],
+                         config: Optional[StrategyConfig] = None,
+                         pivot_trend_slow: Optional[List[float]] = None,
+                         green_zone: Optional[List[bool]] = None,
+                         red_zone: Optional[List[bool]] = None
+                         ) -> Tuple[List[bool], List[bool]]:
+    """
+    Detect Wick Reversal signals across a series of bars.
+
+    Pine Script Source:
+        Wbodysize = 0.40
+        Wlongsig = GREENZONE and ((high - low) > (AverageCandle * 0.9)) and
+                   (open - low) >= (Wbodysize * (high - low)) and
+                   (close - low) >= (Wbodysize * (high - low)) and (close > open)
+        Wshortsig = REDZONE and ((high - low) > (AverageCandle * 0.9)) and
+                    (high - open) >= (Wbodysize * (high - low)) and
+                    (high - close) >= (Wbodysize * (high - low)) and (close < open)
+        Wlongsignal = ta.rising(fPivotPDEMAS, 1) and Wlongsig
+        Wshortsignal = ta.falling(fPivotPDEMAS, 1) and Wshortsig
+    """
+    cfg = config or StrategyConfig()
+    n = len(bars)
+    long_signals = [False] * n
+    short_signals = [False] * n
+
+    for i in range(n):
+        curr = bars[i]
+        start = max(0, i - cfg.avg_candle_len)
+        candle_sizes = [bars[j].range for j in range(start, i)] if i > 0 else []
+        avg_candle = sum(candle_sizes) / len(candle_sizes) if candle_sizes else curr.range
+
+        rng = curr.range
+        wbodysize = cfg.wick_body_size
+        large_enough = rng > avg_candle * cfg.wick_candle_mult if avg_candle > 0 else True
+
+        gz = green_zone[i] if green_zone is not None and i < len(green_zone) else True
+        rz = red_zone[i] if red_zone is not None and i < len(red_zone) else True
+
+        wlongsig = (gz and large_enough and
+                    (curr.open - curr.low >= wbodysize * rng) and
+                    (curr.close - curr.low >= wbodysize * rng) and
+                    (curr.close > curr.open))
+
+        wshortsig = (rz and large_enough and
+                     (curr.high - curr.open >= wbodysize * rng) and
+                     (curr.high - curr.close >= wbodysize * rng) and
+                     (curr.close < curr.open))
+
+        ema_rising = True
+        ema_falling = True
+        if pivot_trend_slow is not None and i < len(pivot_trend_slow) and i > 0:
+            ema_rising = pivot_trend_slow[i] > pivot_trend_slow[i - 1]
+            ema_falling = pivot_trend_slow[i] < pivot_trend_slow[i - 1]
+
+        long_signals[i] = ema_rising and wlongsig
+        short_signals[i] = ema_falling and wshortsig
+
+    return long_signals, short_signals
+
+
+# ════════════════════════════════════════════════════════════════════
+# OUTSIDE REVERSAL DETECTION (lines 601-616)
+# ════════════════════════════════════════════════════════════════════
+
+def detect_outside_reversal(bars: List[OHLC],
+                           config: Optional[StrategyConfig] = None,
+                           pivot_trend_slow: Optional[List[float]] = None,
+                           green_zone: Optional[List[bool]] = None,
+                           red_zone: Optional[List[bool]] = None
+                           ) -> Tuple[List[bool], List[bool]]:
+    """
+    Detect Outside Reversal signals across a series of bars.
+
+    Pine Script Source:
+        Olongsig = GREENZONE and (close > high[1]) and (low < low[1]) and (close > open)
+        Oshortsig = REDZONE and (close < low[1]) and (high > high[1]) and (close < open)
+        Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
+        Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
+    """
+    cfg = config or StrategyConfig()
+    n = len(bars)
+    long_signals = [False] * n
+    short_signals = [False] * n
+
+    for i in range(1, n):
+        prev = bars[i - 1]
+        curr = bars[i]
+
+        gz = green_zone[i] if green_zone is not None and i < len(green_zone) else True
+        rz = red_zone[i] if red_zone is not None and i < len(red_zone) else True
+
+        olongsig = gz and (curr.close > prev.high) and (curr.low < prev.low) and (curr.close > curr.open)
+        oshortsig = rz and (curr.close < prev.low) and (curr.high > prev.high) and (curr.close < curr.open)
+
+        ema_rising = True
+        ema_falling = True
+        if pivot_trend_slow is not None and i < len(pivot_trend_slow):
+            ema_rising = pivot_trend_slow[i] > pivot_trend_slow[i - 1]
+            ema_falling = pivot_trend_slow[i] < pivot_trend_slow[i - 1]
+
+        long_signals[i] = ema_rising and olongsig
+        short_signals[i] = ema_falling and oshortsig
+
+    return long_signals, short_signals
+
+
+# ════════════════════════════════════════════════════════════════════
+# DOJI REVERSAL DETECTION (lines 638-661)
+# ════════════════════════════════════════════════════════════════════
+
+def detect_doji_reversal(bars: List[OHLC],
+                         config: Optional[StrategyConfig] = None,
+                         pivot_trend_slow: Optional[List[float]] = None,
+                         green_zone: Optional[List[bool]] = None,
+                         red_zone: Optional[List[bool]] = None
+                         ) -> Tuple[List[bool], List[bool]]:
+    """
+    Detect Doji Reversal signals across a series of bars.
+
+    Pine Script Source:
+        Dbodysize = 0.05
+        Dlongsig = GREENZONE and ((high[1] - low[1]) > (AverageCandle * 0.9)) and
+                   (abs(open[1] - close[1]) <= (Dbodysize * (high[1] - low[1]))) and (close > open)
+        Dshortsig = REDZONE and ((high[1] - low[1]) > (AverageCandle * 0.9)) and
+                    (abs(open[1] - close[1]) <= (Dbodysize * (high[1] - low[1]))) and (close < open)
+        Dlongsignal = ta.rising(fPivotPDEMAS, 1) and Dlongsig
+        Dshortsignal = ta.falling(fPivotPDEMAS, 1) and Dshortsig
+    """
+    cfg = config or StrategyConfig()
+    n = len(bars)
+    long_signals = [False] * n
+    short_signals = [False] * n
+
+    for i in range(1, n):
+        prev = bars[i - 1]
+        curr = bars[i]
+
+        start = max(0, (i - 1) - cfg.avg_candle_len)
+        candle_sizes = [bars[j].range for j in range(start, i - 1)] if (i - 1) > 0 else []
+        avg_candle = sum(candle_sizes) / len(candle_sizes) if candle_sizes else prev.range
+
+        prev_rng = prev.range
+        prev_body = prev.body
+        dbodysize = cfg.doji_body_size
+        large_enough = prev_rng > avg_candle * cfg.doji_candle_mult if avg_candle > 0 else True
+
+        gz = green_zone[i] if green_zone is not None and i < len(green_zone) else True
+        rz = red_zone[i] if red_zone is not None and i < len(red_zone) else True
+
+        dlongsig = (gz and large_enough and
+                    (prev_body <= dbodysize * prev_rng) and
+                    (curr.close > curr.open))
+
+        dshortsig = (rz and large_enough and
+                     (prev_body <= dbodysize * prev_rng) and
+                     (curr.close < curr.open))
+
+        ema_rising = True
+        ema_falling = True
+        if pivot_trend_slow is not None and i < len(pivot_trend_slow):
+            ema_rising = pivot_trend_slow[i] > pivot_trend_slow[i - 1]
+            ema_falling = pivot_trend_slow[i] < pivot_trend_slow[i - 1]
+
+        long_signals[i] = ema_rising and dlongsig
+        short_signals[i] = ema_falling and dshortsig
+
+    return long_signals, short_signals
+
+
+# ════════════════════════════════════════════════════════════════════
+# REVERSAL CANDLES (GreenCandle, RedCandle) (lines 667-668)
+# ════════════════════════════════════════════════════════════════════
+
+def compute_reversal_candles(bars: List[OHLC],
+                             green_zone: Optional[List[bool]] = None,
+                             red_zone: Optional[List[bool]] = None,
+                             config: Optional[StrategyConfig] = None
+                             ) -> Tuple[List[bool], List[bool]]:
+    """
+    Compute GreenCandle and RedCandle matching Pine Script lines 667-668:
+        GreenCandle = Wlongsig[1] or Olongsig[1] or Elongsig[1] or Dlongsig[1]
+        RedCandle = Wshortsig[1] or Oshortsig[1] or Eshortsig[1] or Dshortsig[1]
+    """
+    cfg = config or StrategyConfig()
+    n = len(bars)
+    green_candles = [False] * n
+    red_candles = [False] * n
+    if n < 2:
+        return green_candles, red_candles
+
+    # Raw signals without slope gating (representing Wlongsig, Olongsig, Elongsig, Dlongsig)
+    w_long, w_short = detect_wick_reversal(bars, cfg, green_zone=green_zone, red_zone=red_zone)
+    o_long, o_short = detect_outside_reversal(bars, cfg, green_zone=green_zone, red_zone=red_zone)
+    e_long, e_short = detect_extreme_reversal(bars, cfg, green_zone=green_zone, red_zone=red_zone)
+    d_long, d_short = detect_doji_reversal(bars, cfg, green_zone=green_zone, red_zone=red_zone)
+
+    for i in range(1, n):
+        green_candles[i] = w_long[i - 1] or o_long[i - 1] or e_long[i - 1] or d_long[i - 1]
+        red_candles[i] = w_short[i - 1] or o_short[i - 1] or e_short[i - 1] or d_short[i - 1]
+
+    return green_candles, red_candles
