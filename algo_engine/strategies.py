@@ -399,8 +399,10 @@ class StrategyEngine:
         # ═══════════════════════════════════════════════════════
         # SCALP SIGNALS (lines 3060-3064)
         # ═══════════════════════════════════════════════════════
-        step_up = (self._clean_trend_bullish or grs) and bounced_off_grs_mid
-        step_dn = (self._clean_trend_bearish or res) and bounced_off_res_mid
+        # Pine Script: StepUp = (cleanTrendBullish or GREEN1) and bouncedOffGrsMid
+        #              StepDn = (cleanTrendBearish or RED1) and bouncedOffResMid
+        step_up = (self._clean_trend_bullish or green1) and bounced_off_grs_mid
+        step_dn = (self._clean_trend_bearish or red1) and bounced_off_res_mid
 
         scalp_buy = ema_can_buy and step_up
         scalp_sell = ema_can_sell and step_dn
