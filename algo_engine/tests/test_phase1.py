@@ -663,6 +663,38 @@ class TestTradeLifecycle(unittest.TestCase):
         self.assertTrue(trade.is_closed)
         self.assertEqual(trade.status, TradeStatus.CANCELLED)
 
+    def test_pre_tp1_midpoint_moves_sl_to_breakeven(self):
+        """When price reaches 50% midpoint to TP1 before TP1 is hit, SL moves to Entry (Breakeven)."""
+        manager = TradeManager()
+
+        # 1. Long Trade (Entry: 100, SL: 95, TP1: 110 -> Midpoint: 105)
+        long_sig = self._make_signal(direction="LONG", entry=100, sl=95, tp1=110)
+        long_trade = manager.create_trade(long_sig)
+        manager.update(long_trade, OHLC(100, 101, 99, 100.5), bar_index=1)
+        self.assertTrue(long_trade.has_hit_entry)
+        self.assertEqual(long_trade.current_sl, 95.0)
+
+        # Bar reaches 106 (> 105 midpoint, < 110 TP1)
+        manager.update(long_trade, OHLC(102, 106, 102, 104), bar_index=2)
+        self.assertFalse(long_trade.tp1_triggered, "TP1 must NOT be triggered yet")
+        self.assertAlmostEqual(long_trade.current_sl, 100.0, places=6,
+                                msg="Long SL must move to entry breakeven at 50% midpoint")
+        self.assertTrue(long_trade.trailing_sl_activated)
+
+        # 2. Short Trade (Entry: 100, SL: 105, TP1: 90 -> Midpoint: 95)
+        short_sig = self._make_signal(direction="SHORT", entry=100, sl=105, tp1=90)
+        short_trade = manager.create_trade(short_sig)
+        manager.update(short_trade, OHLC(100, 101, 99, 99.5), bar_index=1)
+        self.assertTrue(short_trade.has_hit_entry)
+        self.assertEqual(short_trade.current_sl, 105.0)
+
+        # Bar reaches 94 (< 95 midpoint, > 90 TP1)
+        manager.update(short_trade, OHLC(98, 98, 94, 96), bar_index=2)
+        self.assertFalse(short_trade.tp1_triggered, "TP1 must NOT be triggered yet")
+        self.assertAlmostEqual(short_trade.current_sl, 100.0, places=6,
+                                msg="Short SL must move to entry breakeven at 50% midpoint")
+        self.assertTrue(short_trade.trailing_sl_activated)
+
     def test_tp1_moves_sl_to_breakeven(self):
         """After TP1 hit, SL should move to entry (breakeven)."""
         manager = TradeManager()
