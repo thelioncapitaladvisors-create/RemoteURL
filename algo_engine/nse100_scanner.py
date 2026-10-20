@@ -76,27 +76,52 @@ def get_ist_time(dt: Optional[datetime] = None) -> datetime:
     return dt.astimezone(timezone(timedelta(hours=5, minutes=30)))
 
 
+# Official Indian Exchange Trading Holidays 2026 (NSE & MCX)
+NSE_HOLIDAYS_2026 = {
+    "2026-01-15", "2026-01-26", "2026-03-03", "2026-03-26", "2026-03-31",
+    "2026-04-03", "2026-04-14", "2026-05-01", "2026-05-28", "2026-06-26",
+    "2026-09-14", "2026-10-02", "2026-10-20", "2026-11-10", "2026-11-24",
+    "2026-12-25"
+}
+
+MCX_FULL_HOLIDAYS_2026 = {
+    "2026-01-26", "2026-04-03", "2026-10-02", "2026-12-25"
+}
+
+MCX_MORNING_HOLIDAYS_2026 = {
+    "2026-01-15", "2026-03-03", "2026-03-26", "2026-03-31", "2026-04-14",
+    "2026-05-01", "2026-05-28", "2026-06-26", "2026-09-14", "2026-10-20",
+    "2026-11-10", "2026-11-24"
+}
+
+
 def is_nse_entry_allowed_now() -> bool:
-    """Check if trade entry is allowed for NSE Equities (09:15 to 14:00 IST)."""
+    """Check if trade entry is allowed for NSE Equities (09:15 to 14:00 IST, excluding holidays)."""
     ist = get_ist_time()
     if ist.weekday() >= 5: return False
+    date_str = ist.strftime("%Y-%m-%d")
+    if date_str in NSE_HOLIDAYS_2026: return False
     mins = ist.hour * 60 + ist.minute
     return 555 <= mins < 840
 
 
 def is_mcx_entry_allowed_now() -> bool:
-    """Check if trade entry is allowed for MCX Commodities (09:00 to 22:00 IST)."""
+    """Check if trade entry is allowed for MCX Commodities (09:00 to 22:00 IST, respecting holidays)."""
     ist = get_ist_time()
     if ist.weekday() >= 5: return False
+    date_str = ist.strftime("%Y-%m-%d")
+    if date_str in MCX_FULL_HOLIDAYS_2026: return False
     mins = ist.hour * 60 + ist.minute
+    if date_str in MCX_MORNING_HOLIDAYS_2026:
+        return 1020 <= mins < 1320
     return 540 <= mins < 1320
 
 
 def is_trade_entry_allowed_for_bar(sym: str, timestamp: Optional[float] = None) -> bool:
     """
     Check if trade entry is allowed for a specific symbol and candle timestamp.
-    - NSE: 09:15 to 14:00 IST (2:00 PM cutoff)
-    - MCX: 09:00 to 22:00 IST (10:00 PM cutoff)
+    - NSE: 09:15 to 14:00 IST (2:00 PM cutoff, excluding holidays)
+    - MCX: 09:00 to 22:00 IST (10:00 PM cutoff, respecting morning/full holidays)
     """
     if timestamp is not None:
         t = timestamp / 1000.0 if timestamp > 1e11 else timestamp
@@ -106,26 +131,45 @@ def is_trade_entry_allowed_for_bar(sym: str, timestamp: Optional[float] = None) 
         ist = get_ist_time()
 
     if ist.weekday() >= 5: return False
+    date_str = ist.strftime("%Y-%m-%d")
     mins = ist.hour * 60 + ist.minute
 
     if is_mcx_symbol(sym):
+        if date_str in MCX_FULL_HOLIDAYS_2026:
+            return False
+        if date_str in MCX_MORNING_HOLIDAYS_2026:
+            # Evening session entry: 17:00 to 22:00 IST (cutoff)
+            return 1020 <= mins < 1320
         return 540 <= mins < 1320
+
+    # NSE Equities
+    if date_str in NSE_HOLIDAYS_2026:
+        return False
     return 555 <= mins < 840
 
 
 def is_nse_market_open_now() -> bool:
-    """Check if official NSE trading hours are active (09:15 to 15:30 IST, Mon-Fri)."""
+    """Check if official NSE trading hours are active (09:15 to 15:30 IST, Mon-Fri, excluding holidays)."""
     ist = get_ist_time()
     if ist.weekday() >= 5: return False
+    date_str = ist.strftime("%Y-%m-%d")
+    if date_str in NSE_HOLIDAYS_2026:
+        return False
     mins = ist.hour * 60 + ist.minute
     return 555 <= mins < 930
 
 
 def is_mcx_market_open_now() -> bool:
-    """Check if official MCX trading hours are active (09:00 to 23:30 IST, Mon-Fri)."""
+    """Check if official MCX trading hours are active (09:00 to 23:30 IST, Mon-Fri, respecting morning/full holidays)."""
     ist = get_ist_time()
     if ist.weekday() >= 5: return False
+    date_str = ist.strftime("%Y-%m-%d")
+    if date_str in MCX_FULL_HOLIDAYS_2026:
+        return False
     mins = ist.hour * 60 + ist.minute
+    if date_str in MCX_MORNING_HOLIDAYS_2026:
+        # Evening session: 17:00 to 23:30 IST
+        return 1020 <= mins < 1410
     return 540 <= mins < 1410
 
 
