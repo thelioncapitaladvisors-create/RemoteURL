@@ -327,6 +327,19 @@ class TradeManager:
         # 3. TP EVALUATIONS (lines 2538-2585)
         # ═══════════════════════════════════════════════════════
 
+        # ── Pre-TP1 Midpoint Breakeven: Move SL to Entry at 50% to TP1 ──
+        if not trade.tp1_triggered and self.config.break_even_enabled:
+            mid_tp1 = (trade.entry_price + trade.tp1) / 2.0
+            mid_reached = (bar.high >= mid_tp1 if is_long else bar.low <= mid_tp1)
+            if mid_reached:
+                trade.breakeven_level = trade.entry_price
+                if is_long and trade.current_sl < trade.breakeven_level:
+                    trade.current_sl = trade.breakeven_level
+                    trade.trailing_sl_activated = True
+                elif not is_long and trade.current_sl > trade.breakeven_level:
+                    trade.current_sl = trade.breakeven_level
+                    trade.trailing_sl_activated = True
+
         # TP1 (lines 2539-2549)
         if not trade.tp1_triggered:
             tp1_hit = (bar.high >= trade.tp1 if is_long

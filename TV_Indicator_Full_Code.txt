@@ -2618,6 +2618,16 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
 
     // 3. TAKE PROFIT EVALUATIONS (ONLY run if trade is STILL ACTIVE and NOT stopped out)
     if not trade.isClosed and trade.hasHitEntry
+        // ── 3.0 PRE-TP1 BREAKEVEN: Move SL to Entry when price reaches midpoint to TP1 ──
+        float midTP1Level = (trade.entryLevel + trade.tp1Level) / 2.0
+        bool midTP1Reached = not trade.tp1Triggered and (isLong_ ? high >= midTP1Level : low <= midTP1Level)
+        if midTP1Reached and settings.breakEvenEnabled
+            trade.breakEvenAllowed := true
+            trade.breakEvenLevel   := trade.entryLevel
+            if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
+                trade.slLevel := trade.breakEvenLevel
+                trade.trailingSLActivated := true
+
         // TP1
         float tpLevel = trade.tp1Level
         if not trade.tp1Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel)
