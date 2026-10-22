@@ -3037,14 +3037,14 @@ bool bullConds = (mX == 'BIG MOVE') or
      (dX == 'OUT OF RANGE \n OUT OF VALUE') or
      (c1 == 'CONFIRMED BULLISH') or
      (c1 == 'REJECTED BEARISH') or
-     (c1 == 'WATCH')
+     (c1 == 'WATCH') or NCPR
 
 bool bearConds = (mX == 'BIG MOVE') or
      (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or
      (dX == 'OUT OF RANGE \n OUT OF VALUE') or
      (c1 == 'CONFIRMED BEARISH') or
      (c1 == 'REJECTED BULLISH') or
-     (c1 == 'WATCH')
+     (c1 == 'WATCH') or NCPR
 
 bool RisingUP    = bullConds
 bool FallingDOWN = bearConds
@@ -3106,7 +3106,7 @@ StepDn = (cleanTrendBearish or RED1) and bouncedOffResMid
 bool ScalpBuy  = (emaCanBuy  and StepUp)
 bool ScalpSell = (emaCanSell and StepDn)
 
-// ── SIDEWAYS DAY & REJECTION FILTER (NCPR Ignored) ──
+// ── SIDEWAYS DAY FILTER ──
 bool isSidewaysDay = (mX == 'INRANGEINVALUE') or
                      (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or
                      str.contains(mX, "TRADING RANGE") or
@@ -3114,8 +3114,7 @@ bool isSidewaysDay = (mX == 'INRANGEINVALUE') or
                      str.contains(mX, "TYPICAL DAY") or
                      (dX == 'IN RANGE \n IN VALUE')
 
-bool isRejectionDay = REJECTIONDAY or str.contains(c1, "REJECT") or BounceUp or BounceDown or Elongsignal or Eshortsignal
-bool dayAllowed = not isSidewaysDay or isRejectionDay
+bool dayAllowed = not isSidewaysDay or NCPR
 
 bool longAllowed  = low < H4
 bool shortAllowed = high > L4
@@ -3540,9 +3539,3 @@ if HTF_Candles_to_Show_TF1 >= 10 and show_HTF_for_TF1
     label_C_10_TF1
 
 //\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
-
-
-
-
-
-
