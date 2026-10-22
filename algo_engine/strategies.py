@@ -118,7 +118,7 @@ class MarketContext:
     cpr_pivot: float
     cpr_tc: float
     cpr_bc: float
-    is_ncpr: bool                   # Narrow CPR
+    is_ncpr: bool = False           # Narrow CPR
 
     # Value Area
     vah: float = 0.0
@@ -244,23 +244,71 @@ class StrategyEngine:
         ob = ctx.opening_bias.upper() if ctx.opening_bias else ""
         c1 = ctx.institutional_bias.upper().replace("\n", "").replace("  ", " ") if ctx.institutional_bias else ""
 
-        bull_conds = ("BIG MOVE" in dt or
-                      "TREND DAY" in dt or "DOUBLE DISTRIBUTION" in dt or
-                      "OUT OF RANGE" in ob or "OUT OF VALUE" in ob or
-                      "CONFIRMED BULLISH" in c1 or "REJECTED BEARISH" in c1 or
-                      "WATCH" in c1 or
-                      "CONFIRMED BULLISH" in dt or "REJECTED BEARISH" in dt or
-                      "WATCH" in dt or
-                      ctx.is_ncpr)
+        # CPR Institutional Day Types & Rejection Day (Pine Script lines 771-792, 3054-3066, 3129)
+        dtc = ctx.cpr_tc
+        dbc = ctx.cpr_bc
+        ytc = ctx.prev_cpr_top if ctx.prev_cpr_top > 0 else dtc
+        ybc = ctx.prev_cpr_bottom if ctx.prev_cpr_bottom > 0 else dbc
+        op = bar.open
+        cc = ctx.prev_close
 
-        bear_conds = ("BIG MOVE" in dt or
-                      "TREND DAY" in dt or "DOUBLE DISTRIBUTION" in dt or
-                      "OUT OF RANGE" in ob or "OUT OF VALUE" in ob or
-                      "CONFIRMED BEARISH" in c1 or "REJECTED BULLISH" in c1 or
-                      "WATCH" in c1 or
-                      "CONFIRMED BEARISH" in dt or "REJECTED BULLISH" in dt or
-                      "WATCH" in dt or
-                      ctx.is_ncpr)
+        bullish = (dtc > ytc) and (dbc > ytc)
+        bearish = (dtc < ybc) and (dbc < ybc)
+        mod_bullish = (dtc > ytc) and (dbc > ybc)
+        mod_bearish = (dtc < ytc) and (dbc < ybc)
+        inside = (dtc < ytc) and (dbc > ybc)
+        outside = (dtc > ytc) and (dbc < ybc)
+        unchanged = (dbc == ybc) and (dtc == ytc)
+
+        breakoutday = inside or unchanged
+        otherdays = outside or breakoutday
+
+        cc_cond_bull = (cc != ytc) if (cc != 0.0 and ytc != 0.0) else True
+        cc_cond_bear = (cc != ybc) if (cc != 0.0 and ybc != 0.0) else True
+
+        confirmed_bullish = (bullish or mod_bullish or otherdays) and cc_cond_bull and (op > dbc)
+        confirmed_bearish = (bearish or mod_bearish or otherdays) and cc_cond_bear and (op < dtc)
+        rejected_bullish = (bullish or mod_bullish or otherdays) and cc_cond_bull and (op < dbc)
+        rejected_bearish = (bearish or mod_bearish or otherdays) and cc_cond_bear and (op > dtc)
+
+        rejection_day = (
+            (confirmed_bullish and bar.close < dbc) or
+            (confirmed_bearish and bar.close > dtc) or
+            (rejected_bullish and bar.close < dbc) or
+            (rejected_bullish and bar.close > dtc) or
+            (rejected_bearish and bar.close > dtc) or
+            (rejected_bearish and bar.close < dbc)
+        )
+
+        bull_conds = (
+            ("BIG MOVE" in dt) or
+            ("TREND DAY" in dt and "DOUBLE DISTRIBUTION" in dt) or
+            ("OUT OF RANGE" in ob and "OUT OF VALUE" in ob) or
+            ("CONFIRMED BULLISH" in c1) or
+            ("REJECTED BEARISH" in c1) or
+            ("WATCH" in c1) or
+            (
+                rejected_bearish or
+                (confirmed_bearish and bar.close > dtc) or
+                (rejected_bullish and bar.close > dtc) or
+                (rejected_bearish and bar.close > dtc)
+            )
+        )
+
+        bear_conds = (
+            ("BIG MOVE" in dt) or
+            ("TREND DAY" in dt and "DOUBLE DISTRIBUTION" in dt) or
+            ("OUT OF RANGE" in ob and "OUT OF VALUE" in ob) or
+            ("CONFIRMED BEARISH" in c1) or
+            ("REJECTED BULLISH" in c1) or
+            ("WATCH" in c1) or
+            (
+                rejected_bullish or
+                (confirmed_bullish and bar.close < dbc) or
+                (rejected_bullish and bar.close < dbc) or
+                (rejected_bearish and bar.close < dbc)
+            )
+        )
 
         rising_up = (ctx.plus >= ctx.minus and
                      ctx.pivot_trend_fast >= ctx.pivot_trend_slow and
@@ -414,10 +462,13 @@ class StrategyEngine:
         scalp_sell = ema_can_sell and step_dn
 
         # ═══════════════════════════════════════════════════════
-        # DAY ALLOWED FILTER (lines 3109-3121)
+        # DAY ALLOWED FILTER (lines 3129-3140)
         # ═══════════════════════════════════════════════════════
-        # Pine Script: dayAllowed = not isSidewaysDay or NCPR
-        day_allowed = not is_sideways or ctx.is_ncpr
+        # Pine Script:
+        #   bool isRejectionDay = REJECTIONDAY
+        #   bool dayAllowed = not isSidewaysDay or isRejectionDay
+        is_rejection_day = rejection_day
+        day_allowed = not is_sideways or is_rejection_day
 
         # ═══════════════════════════════════════════════════════
         # HIDDEN DIVERGENCE CONFIRMATION (lines 3082-3093 / 3130-3141)

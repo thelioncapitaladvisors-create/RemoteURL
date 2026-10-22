@@ -9,6 +9,8 @@ indicator('TLCS AIO INDICAOR v7.0', overlay = true, max_lines_count = 500, max_l
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
 enable_alerts = input.bool(false, 'Enable Automated Webhook Alerts')
 
+//======================
+    
 daily_cpr = input.int(title = ' Logic for Daily CPR ', defval = 7, minval = 0)
 //
 new_bar(res) =>
@@ -420,6 +422,7 @@ for i = 0 to MAXN - 1 by 1
     handle_label_overlaps(i, labels, rangeHL)
     handle_label_overlaps(i, prclabels, rangeHL)
 
+
 //=====================================================
 
 FastEMA = input.int(1, minval = 1, title = 'Fast EMA')
@@ -463,6 +466,7 @@ show_labels = input.bool(true, title = 'Show Pivot Lables', group = 'Floor Pivot
 show_next_day_pivot = input.bool(false, title = 'Show Next Time Period Pivots', group = 'Floor Pivots')
 floor_pivots_cpr_color = spanColorx
 
+
 pivot = (high + low + close) / 3.0
 
 // Central Pivot Range 
@@ -471,6 +475,7 @@ temp_tc = pivot - temp_bc + pivot
 
 tc = temp_tc > temp_bc ? temp_tc : temp_bc
 bc = temp_bc < temp_tc ? temp_bc : temp_tc
+
 
 floor_pivot_resolution = floor_pivot_timeframe == '1H' ? '60' : floor_pivot_timeframe == '2H' ? '120' : floor_pivot_timeframe == '4H' ? '240' : floor_pivot_timeframe
 
@@ -484,7 +489,7 @@ var bool show_daily_pivot = true
 
 tcline = plot(show_cpr and show_daily_pivot and timeframe.isintraday ? daily_tc : show_cpr and show_daily_pivot  and timeframe.isintraday ? daily_tc  : show_cpr and show_daily_pivot and not timeframe.isintraday ? daily_tc : na, title = 'TC', color = color.new(floor_pivots_cpr_color,  show_cpr and timeframe.isintraday ? 98 : 100), linewidth = 1, style = plot.style_circles)
 bcline = plot(show_cpr and show_daily_pivot and timeframe.isintraday ? daily_bc : show_cpr and show_daily_pivot  and timeframe.isintraday ? daily_bc : show_cpr and show_daily_pivot and not timeframe.isintraday  ? daily_bc : na, title = 'BC', color = color.new(floor_pivots_cpr_color,  show_cpr and timeframe.isintraday ? 98 : 100), linewidth = 1, style = plot.style_circles)
-fill(tcline, bcline, color = color.new(floor_pivots_cpr_color, show_cpr and show_daily_pivot ? 96 : 100))
+fill(tcline, bcline, color = color.new(floor_pivots_cpr_color, show_cpr and show_daily_pivot ? 98 : 100))
 
 //====================================
 
@@ -538,6 +543,7 @@ AdxCol2 = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? c
 plot(fMedEMA, title = 'PEMAMed', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
 plot(fShortEMA, title = 'PEMASlow', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
 
+
 //====================================
 
 risingX = fShortEMA > fMedEMA
@@ -554,6 +560,7 @@ RED = ((minus > plus) and (m0 < m10))
 
 GREENZONE = GREEN
 REDZONE = RED
+
 
 //====================================
 
@@ -591,6 +598,22 @@ Wshortsignal = ta.falling(fPivotPDEMAS, 1) and Wshortsig
 plotshape(Wlongsig, color = color.new(color.navy, 0), location = location.belowbar, style = shape.triangleup, size = size.small)
 plotshape(Wshortsig, color = color.new(color.navy, 0), location = location.abovebar, style = shape.triangledown, size = size.small)
 
+// outside Reversal System
+
+L03 = input(true, title = 'Enable Outside Reversal System')
+BarMultiplier = input.float(title = 'Body Multiplier', defval = 1.25, step = 0.05, maxval = 3.5)
+BarsBack = input.int(title = 'Bars Back', defval = 50, maxval = 250)
+AverageCandle1 = ta.sma(H - L, BarsBack)
+
+Olongsig = L03 and GREENZONE and L < L[1] and C > H[1] and H - L >= AverageCandle1 * BarMultiplier
+Oshortsig = L03 and REDZONE and H > H[1] and C < L[1] and H - L >= AverageCandle1 * BarMultiplier
+
+Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
+Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
+
+plotshape(Olongsig, color = color.new(color.orange, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
+plotshape(Oshortsig, color = color.new(color.orange, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
+
 // Exteme Reversal System
 
 L02 = input(true, title = 'Enable Exteme Reversal System')
@@ -603,30 +626,14 @@ AverageBody = ta.sma(mybodysize, barsback)
 mycandlesize = H - L
 AverageCandle = ta.sma(mycandlesize, barsback)
 
-Elongsig = GREENZONE and O[1] - C[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and O[1] - C[1] > AverageBody and C > O
-Eshortsig = REDZONE and C[1] - O[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and C[1] - O[1] > AverageBody and O > C
+Elongsig = L02 and GREENZONE and O[1] - C[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and O[1] - C[1] > AverageBody and C > O
+Eshortsig = L02 and REDZONE and C[1] - O[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and C[1] - O[1] > AverageBody and O > C
 
 Elongsignal = ta.rising(fPivotPDEMAS, 1) and Elongsig
 Eshortsignal = ta.falling(fPivotPDEMAS, 1) and Eshortsig
 
 plotshape(Elongsig, color = color.new(color.fuchsia, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
 plotshape(Eshortsig, color = color.new(color.fuchsia, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
-
-// outside Reversal System
-
-L03 = input(true, title = 'Enable Outside Reversal System')
-BarMultiplier = input.float(title = 'Body Multiplier', defval = 1.25, step = 0.05, maxval = 3.5)
-BarsBack = input.int(title = 'Bars Back', defval = 50, maxval = 250)
-AverageCandle1 = ta.sma(mycandlesize, BarsBack)
-
-Olongsig = GREENZONE and L < L[1] and C > H[1] and H - L >= AverageCandle1 * BarMultiplier
-Oshortsig = REDZONE and H > H[1] and C < L[1] and H - L >= AverageCandle1 * BarMultiplier
-
-Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
-Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
-
-plotshape(Olongsig, color = color.new(color.orange, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
-plotshape(Oshortsig, color = color.new(color.orange, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
 
 // Doji Reversal System
 
@@ -643,8 +650,8 @@ DAverageBody = ta.sma(Dmybodysize, Wbarsback)
 Dmycandlesize = H - L
 DAverageCandle = ta.sma(Dmycandlesize, Wbarsback)
 
-Dshort = frangeco <= frangehl * percentage and C < L[1] and L[1] > sma10 and C < O or C < L[2] and C[1] >= L[2] and frangeco <= frangeco * percentage and C < O and L[2] > sma10
-Dlong = frangeco <= frangehl * percentage and C > H[1] and H[1] < sma10 and C > O or C > H[2] and C[1] <= H[2] and frangeco <= frangeco * percentage and C > O and H[2] < sma10
+Dshort = frangeco <= frangehl * percentage and C < L[1] and L[1] > sma10 and C < O or C < L[2] and C[1] >= L[2] and frangeco <= frangehl * percentage and C < O and L[2] > sma10
+Dlong = frangeco <= frangehl * percentage and C > H[1] and H[1] < sma10 and C > O or C > H[2] and C[1] <= H[2] and frangeco <= frangehl * percentage and C > O and H[2] < sma10
 
 Dlongsig = GREENZONE and bool(lowleftempty) and L04 and Dlong and H - L >= WAverageCandle * DBarMultiplier
 Dshortsig = REDZONE and bool(highleftempty) and L04 and Dshort and H - L >= WAverageCandle * DBarMultiplier
@@ -663,8 +670,8 @@ RedCandle = Wshortsig[1] or Oshortsig[1] or Eshortsig[1] or Dshortsig[1]
 
 //====================================================================================================================
 
-barcolor(open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? color.rgb(21, 231, 28, 31) :na :na : na : na : na)
-barcolor(close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? #e82f2f97 :na :na : na : na : na)
+barcolor(open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? color.rgb(5, 220, 12, 31) :na :na : na : na : na)
+barcolor(close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? #ee282897 :na :na : na : na : na)
 
 bullpower = open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? 1 : na : na : na : na : na
 bearpower = close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? 1 : na : na : na : na : na
@@ -686,7 +693,9 @@ plot(intraMid, title = 'Mid Point', color = color.new(color.white, midcolor), st
 Top = ta.highest(bool(bearpower) ? intraMid : na, ta.barssince(k) + 100)
 Bottom = ta.lowest(bool(bullpower) ? intraMid : na, ta.barssince(k) + 100)
 
+
 //====================================================================================================================
+
 
 Range = dDH_ - dDL_
 
@@ -709,7 +718,6 @@ DS = 2 * DP - dDH_
 DR = 2 * DP - dDL_
 
 CPR = DP
-
 //NCPR = 0.2 > math.abs(DPi - DBcf + DPi - DBcf) / DPi * 100
 
 // ====================================================================
@@ -757,28 +765,27 @@ OUTOFRANGEVALUE = (((OO_ < dDL_) and (OO_ < VAL)) or ((OO_ > dDH_) and (OO_ > VA
 
 BIGDAY = (INRANGEINVALUE and ((close > dDH_) or (close < dDL_)))
 
+
 //Opening Bias/Print
 
 BULLISH = ((DTc > YTc) and (DBc > YTc))
 BEARISH = ((DTc < YBc) and (DBc < YBc))
 MODERATELYBULLISH = ((DTc > YTc) and (DBc > YBc))
 MODERATELYBEARISH = ((DTc < YTc) and (DBc < YBc))
-
 INSIDE = ((DTc < YTc) and (DBc > YBc))
 OUTSIDE = ((DTc > YTc) and (DBc < YBc))
 UNCHANGED = ((DP == TP) and (DBc == YBc) and (DTc == YTc))
 
 BREAKOUTDAY = (INSIDE or UNCHANGED)
-
-//OTHERDAYS = OUTSIDE or BREAKOUTDAY
+OTHERDAYS = OUTSIDE or BREAKOUTDAY
 
 //Day day_type
 
-CONFIRMEDBULLISH = (((BULLISH or MODERATELYBULLISH) and ((CC > YTc) or (CC < YTc))) and (OO_ > DBc))
-CONFIRMEDBEARISH = (((BEARISH or MODERATELYBEARISH) and ((CC < YBc) or (CC > YBc))) and (OO_ < DTc))
+CONFIRMEDBULLISH = (((BULLISH or MODERATELYBULLISH or OTHERDAYS) and ((CC > YTc) or (CC < YTc))) and (OO_ > DBc))
+CONFIRMEDBEARISH = (((BEARISH or MODERATELYBEARISH or OTHERDAYS) and ((CC < YBc) or (CC > YBc))) and (OO_ < DTc))
 
-REJECTEDBULLISH = (((BULLISH or MODERATELYBULLISH) and ((CC > YTc) or (CC < YTc))) and (OO_ < DBc))
-REJECTEDBEARISH = (((BEARISH or MODERATELYBEARISH) and ((CC < YBc) or (CC > YBc))) and (OO_ > DTc))
+REJECTEDBULLISH = (((BULLISH or MODERATELYBULLISH or OTHERDAYS) and ((CC > YTc) or (CC < YTc))) and (OO_ < DBc))
+REJECTEDBEARISH = (((BEARISH or MODERATELYBEARISH or OTHERDAYS) and ((CC < YBc) or (CC > YBc))) and (OO_ > DTc))
 
 ANYDAY = (BULLISH or MODERATELYBULLISH or BEARISH or MODERATELYBEARISH or INSIDE or OUTSIDE or UNCHANGED)
 
@@ -788,8 +795,8 @@ REJECTIONDAY = (CONFIRMEDBULLISH and (close < DBc)) or (CONFIRMEDBEARISH and (cl
 
 paint = BULLISH ? color.gray : BEARISH ? color.gray : MODERATELYBULLISH ? color.silver : MODERATELYBEARISH ? color.silver : INSIDE ? color.black : UNCHANGED ? color.black : OUTSIDE ? color.black : color.gray
 
-c1 = ANYDAY and (close < DTc and close > DBc) ? "WATCH" : CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" :CONFIRMEDBULLISH and (close < DBc) ? "REJECTION" : CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" : CONFIRMEDBEARISH and (close > DTc)  ? "REJECTION" : REJECTEDBULLISH and (close < DBc) ? "REJECTED \n BULLISH" : REJECTEDBULLISH and (close > DTc) ? "REJECTION" : REJECTEDBEARISH and (close > DTc)? "REJECTED \n BEARISH" : REJECTEDBEARISH and (close < DBc) ? "REJECTION" : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "DEBUG"
-paintc = ANYDAY and (close < DTc and close > DBc) ? color.gray : CONFIRMEDBULLISH and (close > DTc) ? color.green :CONFIRMEDBULLISH and (close < DBc) ? color.rgb(211, 39, 110) : CONFIRMEDBEARISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close > DTc) ? color.rgb(9, 130, 47) :  REJECTEDBULLISH and (close < DBc)? color.maroon : REJECTEDBULLISH and (close > DTc) ? color.rgb(7, 147, 63) : REJECTEDBEARISH and (close > DTc)? color.teal : REJECTEDBEARISH and (close < DBc) ? #dd2407 : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? color.fuchsia : color.black
+c1 = CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" :CONFIRMEDBULLISH and (close < DBc) ? "REJECTION" : CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" : CONFIRMEDBEARISH and (close > DTc)  ? "REJECTION" : REJECTEDBULLISH and (close < DBc) ? "REJECTED \n BULLISH" : REJECTEDBULLISH and (close > DTc) ? "REJECTION" : REJECTEDBEARISH and (close > DTc)? "REJECTED \n BEARISH" : REJECTEDBEARISH and (close < DBc) ? "REJECTION" : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "DEBUG"
+paintc = CONFIRMEDBULLISH and (close > DTc) ? color.green :CONFIRMEDBULLISH and (close < DBc) ? color.fuchsia : CONFIRMEDBEARISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close > DTc) ? color.fuchsia :  REJECTEDBULLISH and (close < DBc)? color.maroon : REJECTEDBULLISH and (close > DTc) ? color.fuchsia : REJECTEDBEARISH and (close > DTc)? color.teal : REJECTEDBEARISH and (close < DBc) ? color.fuchsia : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? color.fuchsia : color.red
 
 m1 = ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close > h3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close > h3))) or (ANYDAY and ((close > DBc) and (close > DTc)))) ? "LONG \n ZONE" : ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close < l3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close < l3))) or (ANYDAY and (close < DTc) and (close < DBc))) ? "SHORT \n ZONE" : (ANYDAY and (close > DBc) and (close < DTc)) ? "WAIT FOR \n SIGNAL" : na
 paintm = ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close > h3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close > h3))) or (ANYDAY and ((close > DBc) and (close > DTc)))) ? color.black : ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close < l3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close < l3))) or (ANYDAY and (close < DTc) and (close < DBc))) ? color.black : (ANYDAY and (close > DBc) and (close < DTc)) ? color.silver : na
@@ -810,33 +817,38 @@ var color dX_col = paintX
 var color mX_col = paintmX
 var color c1_col = paintc
 
-if c1 == 'WATCH'
-    c1_message := str.tostring(c1)
-    c1_col := paintc
-else if c1 == 'REJECTION'
-    c1_message := str.tostring(c1)
-    c1_col := paintc
+if (close < DTc and close > DBc)
+    c1_message := "WATCH"
+    c1_col := color.gray
+    c1_col
 else if c1 == 'CONFIRMED \n BULLISH'
     c1_message := str.tostring(c1)
     c1_col := paintc
+    c1_col
 else if c1 == 'CONFIRMED \n BEARISH'
     c1_message := str.tostring(c1)
     c1_col := paintc
+    c1_col
 else if c1 == 'REJECTED \n BULLISH'
     c1_message := str.tostring(c1)
     c1_col := paintc
+    c1_col
 else if c1 == 'REJECTED \n BEARISH'
     c1_message := str.tostring(c1)
     c1_col := paintc
+    c1_col
 else if c1 == 'SIDEWAYS'
     c1_message := str.tostring(c1)
     c1_col := paintc
+    c1_col
 else if c1 == 'SIDEWAYS/ BREAKOUT'
     c1_message := str.tostring(c1)
     c1_col := paintc
+    c1_col
 else if c1 == 'BREAKOUT'
     c1_message := str.tostring(c1)
     c1_col := paintc
+    c1_col
 
 if (dX == "IN RANGE \n IN VALUE")
     dX_message := str.tostring(dX)
@@ -3032,19 +3044,27 @@ if ReS and not ReS[1]
 // ====================================================================
 // 5. ZONE DEFINITIONS & BOUNCE CONDITIONS
 // ====================================================================
+//REJECTEDBULLISH = (((BULLISH or MODERATELYBULLISH or OTHERDAYS) and ((CC > YTc) or (CC < YTc))) and (OO_ < DBc))
+//REJECTEDBEARISH = (((BEARISH or MODERATELYBEARISH or OTHERDAYS) and ((CC < YBc) or (CC > YBc))) and (OO_ > DTc))
+
+//REJECTIONDAY = (CONFIRMEDBULLISH and (close < DBc)) or (CONFIRMEDBEARISH and (close > DTc)) or (REJECTEDBULLISH and (close < DBc)) or (REJECTEDBULLISH and (close > DTc)) or (REJECTEDBEARISH and (close > DTc)) or (REJECTEDBEARISH and (close < DBc))
+
+
+
 bool bullConds = (mX == 'BIG MOVE') or
      (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or
      (dX == 'OUT OF RANGE \n OUT OF VALUE') or
      (c1 == 'CONFIRMED BULLISH') or
      (c1 == 'REJECTED BEARISH') or
-     (c1 == 'WATCH') or NCPR
+     (c1 == 'WATCH') or (REJECTEDBEARISH or (CONFIRMEDBEARISH and (close > DTc)) or (REJECTEDBULLISH and (close > DTc)) or (REJECTEDBEARISH and (close > DTc)))
 
 bool bearConds = (mX == 'BIG MOVE') or
      (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or
      (dX == 'OUT OF RANGE \n OUT OF VALUE') or
      (c1 == 'CONFIRMED BEARISH') or
      (c1 == 'REJECTED BULLISH') or
-     (c1 == 'WATCH') or NCPR
+     (c1 == 'WATCH') or (REJECTEDBULLISH or (CONFIRMEDBULLISH and (close < DBc)) or (REJECTEDBULLISH and (close < DBc))  or (REJECTEDBEARISH and (close < DBc)))
+
 
 bool RisingUP    = bullConds
 bool FallingDOWN = bearConds
@@ -3106,6 +3126,9 @@ StepDn = (cleanTrendBearish or RED1) and bouncedOffResMid
 bool ScalpBuy  = (emaCanBuy  and StepUp)
 bool ScalpSell = (emaCanSell and StepDn)
 
+bool isRejectionDay = REJECTIONDAY
+
+
 // ── SIDEWAYS DAY FILTER ──
 bool isSidewaysDay = (mX == 'INRANGEINVALUE') or
                      (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or
@@ -3114,7 +3137,7 @@ bool isSidewaysDay = (mX == 'INRANGEINVALUE') or
                      str.contains(mX, "TYPICAL DAY") or
                      (dX == 'IN RANGE \n IN VALUE')
 
-bool dayAllowed = not isSidewaysDay or NCPR
+bool dayAllowed = not isSidewaysDay or isRejectionDay
 
 bool longAllowed  = low < H4
 bool shortAllowed = high > L4
@@ -3133,6 +3156,7 @@ float cprBottom_1 = math.min(daily_tc[1], daily_bc[1])
 
 // Check if candle [1] (where H was detected) was within Top and Bottom CPR lines
 // (covers candle close within CPR or candle body overlapping the CPR zone)
+
 bool hBullInsideCPR = (ext_bullishHiddenDiv[1] == 1) and ((close[1] >= cprBottom_1 and close[1] <= cprTop_1) or (math.min(open[1], close[1]) <= cprTop_1 and math.max(open[1], close[1]) >= cprBottom_1))
 bool hBearInsideCPR = (ext_bearishHiddenDiv[1] == 1) and ((close[1] >= cprBottom_1 and close[1] <= cprTop_1) or (math.min(open[1], close[1]) <= cprTop_1 and math.max(open[1], close[1]) >= cprBottom_1))
 
@@ -3287,6 +3311,8 @@ plotshape(JustScalpSell and dayAllowed and shortAllowed, title = "Short Scalp", 
 // 🏹 7. BOUNCE PLOTS (Call & Put Arrows)
 plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup,   location = location.belowbar, color = color.green, size = size.large)
 plotshape(BounceDown and not LightningSell, title = 'Long Put',   style = shape.arrowdown, location = location.abovebar, color = color.red,   size = size.large)
+
+
 
 
 

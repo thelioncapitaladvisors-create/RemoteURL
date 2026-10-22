@@ -30,6 +30,7 @@ from algo_engine.pivots import (
     dema, triple_ema, compute_pivot_trend_emas,
     rma, compute_dmi, compute_m0_m10,
     compute_institutional_bias_c1, compute_day_type_mx,
+    compute_rejection_day,
 )
 from algo_engine.day_types import (
     DayTypeClassifier, DayTypeConfig, DayTypeResult, SequenceState,
@@ -1098,6 +1099,46 @@ class TestOscillatorAndReversalSystems(unittest.TestCase):
         )
         self.assertEqual(res_bear, "CONFIRMED BEARISH")
 
+        # 4. OTHERDAYS (e.g. INSIDE: dtc < ytc and dbc > ybc):
+        # With open > dbc and close > dtc -> CONFIRMED BULLISH via OTHERDAYS
+        res_other = compute_institutional_bias_c1(
+            close_price=102.0, open_price=98.0,
+            dtc=100.0, dbc=95.0, ytc=105.0, ybc=90.0,  # inside day CPR
+            h4=110.0, l4=85.0
+        )
+        self.assertEqual(res_other, "CONFIRMED BULLISH")
+
+    def test_compute_rejection_day(self):
+        """Verify REJECTIONDAY evaluation across all confirmed/rejected day types."""
+        # 1. Confirmed Bullish (open > dbc) but close < dbc -> REJECTION DAY
+        self.assertTrue(
+            compute_rejection_day(
+                close_price=92.0, open_price=98.0,
+                dtc=102.0, dbc=95.0, ytc=90.0, ybc=85.0  # bullish opening
+            )
+        )
+        # 2. Confirmed Bearish (open < dtc) but close > dtc -> REJECTION DAY
+        self.assertTrue(
+            compute_rejection_day(
+                close_price=105.0, open_price=96.0,
+                dtc=100.0, dbc=95.0, ytc=115.0, ybc=110.0  # bearish opening
+            )
+        )
+        # 3. Normal Confirmed Bullish (close > dtc) -> NOT REJECTION DAY
+        self.assertFalse(
+            compute_rejection_day(
+                close_price=105.0, open_price=98.0,
+                dtc=102.0, dbc=95.0, ytc=90.0, ybc=85.0
+            )
+        )
+        # 4. Bar inside CPR -> NOT REJECTION DAY
+        self.assertFalse(
+            compute_rejection_day(
+                close_price=98.0, open_price=97.0,
+                dtc=102.0, dbc=95.0, ytc=90.0, ybc=85.0
+            )
+        )
+
     def test_day_type_mx(self):
         # In range in value -> TYPICAL DAY / TRADING RANGE
         res = compute_day_type_mx(
@@ -1183,36 +1224,39 @@ class TestOscillatorAndReversalSystems(unittest.TestCase):
     def test_sideways_day_rejection_gating(self):
         """
         Verify that on TYPICAL DAY, TRADING RANGE, SIDEWAYS days:
-        - dayAllowed is strictly governed by (not isSidewaysDay or NCPR) matching Pine line 3117.
-        - When NCPR is False on sideways days, dayAllowed is False (blocking day-gated signals).
-        - When NCPR is True on sideways days, dayAllowed is True (permitting signals).
+        - dayAllowed is strictly governed by (not isSidewaysDay or isRejectionDay) matching Pine line 3140.
+        - When isRejectionDay is False on sideways days (close inside CPR), dayAllowed is False (blocking day-gated signals).
+        - When isRejectionDay is True on sideways days (close breaks CPR boundary), dayAllowed is True (permitting signals).
         """
         engine = StrategyEngine()
-        bar = OHLC(
-            open=0.8250, high=0.8260, low=0.8245, close=0.8258,
+        # 1. Bar inside CPR: close = 0.8250 (between dbc=0.8245 and dtc=0.8255) -> Not Rejection Day
+        bar_inside_cpr = OHLC(
+            open=0.8250, high=0.8253, low=0.8248, close=0.8250,
             volume=1000
         )
-        # 1. Sideways day without NCPR: dayAllowed is False
-        ctx_no_ncpr = MarketContext(
-            bar=bar,
+        ctx_non_rejection = MarketContext(
+            bar=bar_inside_cpr,
             bar_index=1,
             H4=1.0000, L4=0.7000, H3=0.8300, L3=0.8200,
             cpr_pivot=0.8250, cpr_tc=0.8255, cpr_bc=0.8245,
             day_type_label="TYPICAL DAY, TRADING RANGE, SIDEWAYS",
             opening_bias="IN RANGE IN VALUE",
-            institutional_bias="REJECTION",
+            institutional_bias="WATCH",
             extreme_long_signal=True,
-            is_ncpr=False,
             session_highest=0.8260, session_lowest=0.8240, atr=0.0020
         )
-        signals = engine.evaluate(ctx_no_ncpr)
-        # Without NCPR on a sideways day, day_allowed is False, blocking day-gated Extreme Reversal
+        signals = engine.evaluate(ctx_non_rejection)
+        # Without Rejection Day on a sideways day, day_allowed is False, blocking day-gated Extreme Reversal
         extreme_rev_sigs = [s for s in signals if "EXTREME REVERSAL" in s.name]
-        self.assertEqual(len(extreme_rev_sigs), 0, "Extreme Reversal must be blocked on sideways day when NCPR is False")
+        self.assertEqual(len(extreme_rev_sigs), 0, "Extreme Reversal must be blocked on sideways day when isRejectionDay is False")
 
-        # 2. Sideways day WITH NCPR: dayAllowed is True
-        ctx_with_ncpr = MarketContext(
-            bar=bar,
+        # 2. Bar penetrating CPR: close = 0.8260 > dtc=0.8255 with open < dtc (confirmed_bearish rejection) -> isRejectionDay is True
+        bar_rejection = OHLC(
+            open=0.8250, high=0.8265, low=0.8248, close=0.8260,
+            volume=1000
+        )
+        ctx_rejection = MarketContext(
+            bar=bar_rejection,
             bar_index=1,
             H4=1.0000, L4=0.7000, H3=0.8300, L3=0.8200,
             cpr_pivot=0.8250, cpr_tc=0.8255, cpr_bc=0.8245,
@@ -1220,12 +1264,11 @@ class TestOscillatorAndReversalSystems(unittest.TestCase):
             opening_bias="IN RANGE IN VALUE",
             institutional_bias="REJECTION",
             extreme_long_signal=True,
-            is_ncpr=True,
             session_highest=0.8260, session_lowest=0.8240, atr=0.0020
         )
-        signals_ncpr = engine.evaluate(ctx_with_ncpr)
-        extreme_rev_sigs_ncpr = [s for s in signals_ncpr if "EXTREME REVERSAL" in s.name]
-        self.assertGreaterEqual(len(extreme_rev_sigs_ncpr), 1, "Extreme Reversal must be permitted on sideways day when NCPR is True")
+        signals_rejection = engine.evaluate(ctx_rejection)
+        extreme_rev_sigs_rej = [s for s in signals_rejection if "EXTREME REVERSAL" in s.name]
+        self.assertGreaterEqual(len(extreme_rev_sigs_rej), 1, "Extreme Reversal must be permitted on sideways day when isRejectionDay is True")
 
 
 # ════════════════════════════════════════════════════════════════════

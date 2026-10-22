@@ -823,10 +823,13 @@ def compute_institutional_bias_c1(
         OUTSIDE = ((DTc > YTc) and (DBc < YBc))
         UNCHANGED = ((DP == TP) and (DBc == YBc) and (DTc == YTc))
 
-        CONFIRMEDBULLISH = (((BULLISH or MODERATELYBULLISH) and ((CC > YTc) or (CC < YTc))) and (OO_ > DBc))
-        CONFIRMEDBEARISH = (((BEARISH or MODERATELYBEARISH) and ((CC < YBc) or (CC > YBc))) and (OO_ < DTc))
-        REJECTEDBULLISH = (((BULLISH or MODERATELYBULLISH) and ((CC > YTc) or (CC < YTc))) and (OO_ < DBc))
-        REJECTEDBEARISH = (((BEARISH or MODERATELYBEARISH) and ((CC < YBc) or (CC > YBc))) and (OO_ > DTc))
+        BREAKOUTDAY = (INSIDE or UNCHANGED)
+        OTHERDAYS = OUTSIDE or BREAKOUTDAY
+
+        CONFIRMEDBULLISH = (((BULLISH or MODERATELYBULLISH or OTHERDAYS) and ((CC > YTc) or (CC < YTc))) and (OO_ > DBc))
+        CONFIRMEDBEARISH = (((BEARISH or MODERATELYBEARISH or OTHERDAYS) and ((CC < YBc) or (CC > YBc))) and (OO_ < DTc))
+        REJECTEDBULLISH = (((BULLISH or MODERATELYBULLISH or OTHERDAYS) and ((CC > YTc) or (CC < YTc))) and (OO_ < DBc))
+        REJECTEDBEARISH = (((BEARISH or MODERATELYBEARISH or OTHERDAYS) and ((CC < YBc) or (CC > YBc))) and (OO_ > DTc))
         ANYDAY = (BULLISH or MODERATELYBULLISH or BEARISH or MODERATELYBEARISH or INSIDE or OUTSIDE or UNCHANGED)
 
         c1 = ANYDAY and (close < DTc and close > DBc) ? "WATCH" :
@@ -850,10 +853,16 @@ def compute_institutional_bias_c1(
     outside = (dtc > ytc) and (dbc < ybc)
     unchanged = (dp == tp) and (dbc == ybc) and (dtc == ytc)
 
-    confirmed_bullish = (bullish or mod_bullish) and (open_price > dbc)
-    confirmed_bearish = (bearish or mod_bearish) and (open_price < dtc)
-    rejected_bullish = (bullish or mod_bullish) and (open_price < dbc)
-    rejected_bearish = (bearish or mod_bearish) and (open_price > dtc)
+    breakoutday = inside or unchanged
+    otherdays = outside or breakoutday
+
+    cc_cond_bull = (prev_close != ytc) if (prev_close != 0.0 and ytc != 0.0) else True
+    cc_cond_bear = (prev_close != ybc) if (prev_close != 0.0 and ybc != 0.0) else True
+
+    confirmed_bullish = (bullish or mod_bullish or otherdays) and cc_cond_bull and (open_price > dbc)
+    confirmed_bearish = (bearish or mod_bearish or otherdays) and cc_cond_bear and (open_price < dtc)
+    rejected_bullish = (bullish or mod_bullish or otherdays) and cc_cond_bull and (open_price < dbc)
+    rejected_bearish = (bearish or mod_bearish or otherdays) and cc_cond_bear and (open_price > dtc)
     anyday = bullish or mod_bullish or bearish or mod_bearish or inside or outside or unchanged
 
     if anyday and (close_price < dtc and close_price > dbc):
@@ -882,6 +891,55 @@ def compute_institutional_bias_c1(
         return "BREAKOUT"
     else:
         return "DEBUG"
+
+
+def compute_rejection_day(
+    close_price: float,
+    open_price: float,
+    dtc: float,
+    dbc: float,
+    ytc: float,
+    ybc: float,
+    prev_close: float = 0.0,
+    dp: float = 0.0,
+    tp: float = 0.0
+) -> bool:
+    """
+    Compute REJECTIONDAY matching Pine Script lines 792 / 3050 / 3129:
+        REJECTIONDAY = (CONFIRMEDBULLISH and (close < DBc)) or
+                       (CONFIRMEDBEARISH and (close > DTc)) or
+                       (REJECTEDBULLISH and (close < DBc)) or
+                       (REJECTEDBULLISH and (close > DTc)) or
+                       (REJECTEDBEARISH and (close > DTc)) or
+                       (REJECTEDBEARISH and (close < DBc))
+    """
+    bullish = (dtc > ytc) and (dbc > ytc)
+    bearish = (dtc < ybc) and (dbc < ybc)
+    mod_bullish = (dtc > ytc) and (dbc > ybc)
+    mod_bearish = (dtc < ytc) and (dbc < ybc)
+    inside = (dtc < ytc) and (dbc > ybc)
+    outside = (dtc > ytc) and (dbc < ybc)
+    unchanged = (dp == tp) and (dbc == ybc) and (dtc == ytc)
+
+    breakoutday = inside or unchanged
+    otherdays = outside or breakoutday
+
+    cc_cond_bull = (prev_close != ytc) if (prev_close != 0.0 and ytc != 0.0) else True
+    cc_cond_bear = (prev_close != ybc) if (prev_close != 0.0 and ybc != 0.0) else True
+
+    confirmed_bullish = (bullish or mod_bullish or otherdays) and cc_cond_bull and (open_price > dbc)
+    confirmed_bearish = (bearish or mod_bearish or otherdays) and cc_cond_bear and (open_price < dtc)
+    rejected_bullish = (bullish or mod_bullish or otherdays) and cc_cond_bull and (open_price < dbc)
+    rejected_bearish = (bearish or mod_bearish or otherdays) and cc_cond_bear and (open_price > dtc)
+
+    return (
+        (confirmed_bullish and close_price < dbc) or
+        (confirmed_bearish and close_price > dtc) or
+        (rejected_bullish and close_price < dbc) or
+        (rejected_bullish and close_price > dtc) or
+        (rejected_bearish and close_price > dtc) or
+        (rejected_bearish and close_price < dbc)
+    )
 
 
 def compute_day_type_mx(
