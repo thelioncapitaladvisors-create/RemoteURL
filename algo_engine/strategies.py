@@ -250,8 +250,7 @@ class StrategyEngine:
                       "CONFIRMED BULLISH" in c1 or "REJECTED BEARISH" in c1 or
                       "WATCH" in c1 or
                       "CONFIRMED BULLISH" in dt or "REJECTED BEARISH" in dt or
-                      "WATCH" in dt or
-                      ctx.is_ncpr)
+                      "WATCH" in dt)
 
         bear_conds = ("BIG MOVE" in dt or
                       "TREND DAY" in dt or "DOUBLE DISTRIBUTION" in dt or
@@ -259,8 +258,7 @@ class StrategyEngine:
                       "CONFIRMED BEARISH" in c1 or "REJECTED BULLISH" in c1 or
                       "WATCH" in c1 or
                       "CONFIRMED BEARISH" in dt or "REJECTED BULLISH" in dt or
-                      "WATCH" in dt or
-                      ctx.is_ncpr)
+                      "WATCH" in dt)
 
         rising_up = (ctx.plus >= ctx.minus and
                      ctx.pivot_trend_fast >= ctx.pivot_trend_slow and
@@ -423,11 +421,11 @@ class StrategyEngine:
             ctx.extreme_long_signal or ctx.extreme_short_signal
         )
 
-        # On sideways / trading range days, NO signals are allowed UNLESS it is Narrow CPR (NCPR) or a confirmed Rejection Day
-        day_allowed = not is_sideways or ctx.is_ncpr or is_rejection_day
+        # On sideways / trading range days, NO signals are allowed UNLESS it is a confirmed Rejection Day (NCPR ignored)
+        day_allowed = not is_sideways or is_rejection_day
 
         # On sideways days, missile breakout momentum (miss_u/miss_d) is suppressed; only structural boundary bounces qualify
-        missile_allowed_on_day = not is_sideways or ctx.is_ncpr or (is_rejection_day and (bounce_up or bounce_down))
+        missile_allowed_on_day = not is_sideways or (is_rejection_day and (bounce_up or bounce_down))
 
         # ═══════════════════════════════════════════════════════
         # HIDDEN DIVERGENCE CONFIRMATION (lines 3082-3093 / 3130-3141)
