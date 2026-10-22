@@ -95,6 +95,14 @@ rows.sort((a, b) => {
 2. **Canonical Signal Family Scorecard**:
    - `Rank #1`: `🚀 MISSILE` (28 Trades • 4W / 15L / 9B • 14.3% WR)
    - `Rows #2-#6`: `DIVERGENCE`, `SCALP`, `EXTREME REVERSAL`, `HIDDEN DIVERGENCE`, `LIGHTNING` (0 trades).
+3. **Market-Wise Execution Breakdown Scorecard (`ANALYTICS` Tab Section 4)**:
+   - `Rank #1`: `🌍 World Indices` (4 Trades • 1W / 1L • 25.0% WR • Positive Net Return • exceeds Req WR 22.5%)
+   - `Rank #2`: `💱 Forex Pairs` (14 Trades • 2W / 9L • 14.3% WR • 2 wins)
+   - `Rank #3`: `₿ Crypto Top 25` (7 Trades • 1W / 4L • 14.3% WR • 1 win)
+   - `Rank #4`: `⛽ MCX Commodities` (3 Trades • 0W / 1L • 0.0% WR)
+   - `Rank #5`: `📈 NSE 50 & Equities` (0 Trades • 0W / 0L • 0.0% WR)
+   - `Rank #6`: `🛢️ NYMEX & US Commodities` (0 Trades • Excluded)
+   - Preserves sticky pinned first column (`sticky left-0 bg-background/95 backdrop-blur-sm z-10`) with shadow during horizontal scrolling.
 
 ---
 

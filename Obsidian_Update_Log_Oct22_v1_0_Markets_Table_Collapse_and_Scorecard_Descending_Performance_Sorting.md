@@ -14,15 +14,18 @@
    - Bottom collapse button provided for ergonomic folding on long trade lists.
 
 2. **Descending Order of Performance Arrangement**:
-   - Arranged rows in both the *Day Type & Market Regime* scorecard and the *Canonical Signal Family* scorecard in descending order of performance.
-   - Deterministic sorting hierarchy: `hasTrades` -> `winCount` (desc) -> `winRate` (desc) -> `netReturn` (desc) -> `pfNum` (desc) -> `expectancy` (desc) -> `totalTrades` (desc).
-   - Dynamic crown: The top-performing day type (`🏆 MAX WINS` with `TOP EDGE` badge) automatically heads Row #1 of the Day Type matrix.
-   - Zero-trade categories remain neatly grouped at the bottom.
+   - Arranged rows across all 3 performance scorecards (*Day Type & Market Regime*, *Canonical Signal Family*, and *Market-Wise Execution Breakdown*) in descending order of performance.
+   - Deterministic sorting hierarchy: `hasTrades` -> `winCount` / `wr` (desc) -> `netReturn` (desc) -> `pfNum` (desc) -> `expectancy` (desc) -> `totalTrades` (desc).
+   - Dynamic crowns & leaders:
+     - Day Type: `🎯 IN RANGE / IN VALUE (CONSOLIDATION)` heads row #1 (`🏆 MAX WINS` with `TOP EDGE` badge).
+     - Signal Family: `🚀 MISSILE` (28 trades, 4 wins) heads row #1.
+     - Market-Wise Execution: `🌍 World Indices` (25.0% WR, positive net return) heads row #1, followed by `💱 Forex Pairs` (2 wins), `₿ Crypto Top 25` (1 win), `⛽ MCX Commodities`, and 0-trade segments.
+   - Zero-trade categories remain neatly grouped at the bottom, and pinned sticky columns are 100% preserved.
 
 ---
 
 ## 2. Verification & Commits
 
-- **Tv-Alert-Mobile**: Commits `1694f33` and `74bb3dd` pushed to `origin/main`.
-- **Root Repository**: Commits `de3b037` and `9feb0e3` pushed to `origin/main`.
+- **Tv-Alert-Mobile**: Commits `1694f33`, `74bb3dd`, and `ae8b6c3` pushed to `origin/main`.
+- **Root Repository**: Pushed to `origin/main`.
 - **TypeScript AST**: Validated with `npx tsc --noEmit` — 0 errors.
