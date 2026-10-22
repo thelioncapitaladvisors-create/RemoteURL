@@ -3120,7 +3120,14 @@ bool isSidewaysDay = (mX == 'INRANGEINVALUE') or
                      str.contains(mX, "TYPICAL DAY") or 
                      (dX == 'IN RANGE \n IN VALUE')
 
-bool dayAllowed = not isSidewaysDay or NCPR
+// Rejection Day qualification: institutional CPR rejection, boundary bounces, or extreme/wick reversals
+bool isRejectionDay = (c1 == "REJECTION") or
+                      str.contains(c1, "REJECT") or
+                      BounceUp or BounceDown or
+                      Elongsignal or Eshortsignal
+
+// On sideways / trading range days, NO signals are allowed UNLESS it is a confirmed Rejection Day
+bool dayAllowed = not isSidewaysDay or isRejectionDay
 
 bool inValueArea = close > VAL and close < VAH
 bool inCamarillaZone = close > l3 and close < h3
@@ -3176,9 +3183,12 @@ bool LightningSell = standardLightningSell
 bool ExtremeReversalBuy  = Elongsignal and longAllowed and dayAllowed
 bool ExtremeReversalSell = Eshortsignal and shortAllowed and dayAllowed
 
+// On sideways days, missile breakout momentum (MissU/MissD) is suppressed; only structural boundary bounces qualify
+bool missileAllowedOnDay = not isSidewaysDay or (isRejectionDay and (BounceUp or BounceDown))
+
 // 5. Filter out individual trades so they don't fire when Lightning, Extreme Reversal, or Divergences fire
-bool JustMissileBuy  = CanBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
-bool JustMissileSell = CanSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
+bool JustMissileBuy  = CanBuy and missileAllowedOnDay and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
+bool JustMissileSell = CanSell and missileAllowedOnDay and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
 
 bool JustScalpBuy  = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
 bool JustScalpSell = ScalpSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed

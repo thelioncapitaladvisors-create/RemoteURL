@@ -410,7 +410,18 @@ class StrategyEngine:
         # ═══════════════════════════════════════════════════════
         # DAY ALLOWED FILTER (lines 3067-3072)
         # ═══════════════════════════════════════════════════════
-        day_allowed = not is_sideways or ctx.is_ncpr
+        # Rejection Day qualification: institutional CPR failure/rejection, boundary bounces, or extreme reversals
+        is_rejection_day = (
+            "REJECT" in c1 or
+            bounce_up or bounce_down or
+            ctx.extreme_long_signal or ctx.extreme_short_signal
+        )
+
+        # On sideways / trading range days, NO signals are allowed UNLESS it is a confirmed Rejection Day
+        day_allowed = not is_sideways or is_rejection_day
+
+        # On sideways days, missile breakout momentum (miss_u/miss_d) is suppressed; only structural boundary bounces qualify
+        missile_allowed_on_day = not is_sideways or (is_rejection_day and (bounce_up or bounce_down))
 
         # ═══════════════════════════════════════════════════════
         # HIDDEN DIVERGENCE CONFIRMATION (lines 3082-3093)
@@ -459,10 +470,10 @@ class StrategyEngine:
         extreme_rev_sell = ctx.extreme_short_signal and short_allowed and day_allowed
 
         # 5. Missile (decoupled, lines 3123-3124)
-        just_missile_buy = (can_buy and not lightning_buy and not extreme_rev_buy
+        just_missile_buy = (can_buy and missile_allowed_on_day and not lightning_buy and not extreme_rev_buy
                             and not divergence_buy and not hidden_div_buy
                             and long_allowed and day_allowed)
-        just_missile_sell = (can_sell and not lightning_sell and not extreme_rev_sell
+        just_missile_sell = (can_sell and missile_allowed_on_day and not lightning_sell and not extreme_rev_sell
                              and not divergence_sell and not hidden_div_sell
                              and short_allowed and day_allowed)
 

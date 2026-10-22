@@ -1180,6 +1180,52 @@ class TestOscillatorAndReversalSystems(unittest.TestCase):
         # Engine evaluates without errors and respects NCPR / c1
         self.assertIsInstance(signals, list)
 
+    def test_sideways_day_rejection_gating(self):
+        """
+        Verify that on TYPICAL DAY, TRADING RANGE, SIDEWAYS days:
+        - Trend continuation breakout Missile trades are blocked if there is NO rejection.
+        - Trades are allowed only when a confirmed Rejection is present.
+        """
+        engine = StrategyEngine()
+        bar = OHLC(
+            open=0.8250, high=0.8260, low=0.8245, close=0.8258,
+            volume=1000
+        )
+        # 1. Sideways day with NCPR but NO Rejection
+        ctx_no_rej = MarketContext(
+            bar=bar,
+            bar_index=1,
+            H4=1.0000, L4=0.7000, H3=0.8300, L3=0.8200,
+            cpr_pivot=0.8250, cpr_tc=0.8255, cpr_bc=0.8245,
+            day_type_label="TYPICAL DAY, TRADING RANGE, SIDEWAYS",
+            opening_bias="IN RANGE IN VALUE",
+            institutional_bias="WATCH",
+            is_ncpr=True,
+            session_highest=0.8260, session_lowest=0.8240, atr=0.0020
+        )
+        signals = engine.evaluate(ctx_no_rej)
+        # Verify no breakout missile is emitted
+        missile_sigs = [s for s in signals if "MISSILE" in s.name]
+        self.assertEqual(len(missile_sigs), 0, "Missile breakout must be blocked on sideways days without Rejection")
+
+        # 2. Sideways day WITH confirmed Rejection (Extreme Reversal)
+        ctx_rej = MarketContext(
+            bar=bar,
+            bar_index=1,
+            H4=1.0000, L4=0.7000, H3=0.8300, L3=0.8200,
+            cpr_pivot=0.8250, cpr_tc=0.8255, cpr_bc=0.8245,
+            day_type_label="TYPICAL DAY, TRADING RANGE, SIDEWAYS",
+            opening_bias="IN RANGE IN VALUE",
+            institutional_bias="REJECTION",
+            extreme_long_signal=True,
+            is_ncpr=False,
+            session_highest=0.8260, session_lowest=0.8240, atr=0.0020
+        )
+        signals_rej = engine.evaluate(ctx_rej)
+        # Extreme Reversal is permitted on a rejection day
+        extreme_rev_sigs = [s for s in signals_rej if "EXTREME REVERSAL" in s.name]
+        self.assertGreaterEqual(len(extreme_rev_sigs), 1, "Extreme Reversal must be permitted on confirmed Rejection day")
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
