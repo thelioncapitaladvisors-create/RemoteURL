@@ -1227,6 +1227,103 @@ class TestOscillatorAndReversalSystems(unittest.TestCase):
         self.assertGreaterEqual(len(extreme_rev_sigs), 1, "Extreme Reversal must be permitted on confirmed Rejection day")
 
 
+# ════════════════════════════════════════════════════════════════════
+# TEST 24: TLCS AIO INDICATOR V7.0 PARITY TESTS
+# ════════════════════════════════════════════════════════════════════
+
+class TestV7IndicatorParity(unittest.TestCase):
+    """Verify exact parity with canonical TLCS AIO INDICATOR v7.0 logic."""
+
+    def test_divergence_6bar_lookback(self):
+        """DivergenceBuy triggers when regular bull div was detected within last 6 bars and GrS occurs."""
+        engine = StrategyEngine()
+
+        # Bar 1: Regular bull div detected, but no GrS
+        b1 = OHLC(open=100, high=105, low=98, close=102)
+        ctx1 = MarketContext(
+            bar=b1, bar_index=1, H4=120, L4=80, H3=110, L3=90,
+            cpr_pivot=100, cpr_tc=102, cpr_bc=98, is_ncpr=False,
+            bull_regular_div=True,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105, session_lowest=98, atr=5.0
+        )
+        sigs1 = engine.evaluate(ctx1)
+        # Should not fire DivergenceBuy because no GrS bounce
+        div_sigs1 = [s for s in sigs1 if s.name == "LONG DIVERGENCE"]
+        self.assertEqual(len(div_sigs1), 0)
+
+        # Bar 2-4: Neutral bars
+        for i in range(2, 5):
+            bi = OHLC(open=102, high=104, low=101, close=103)
+            ctxi = MarketContext(
+                bar=bi, bar_index=i, H4=120, L4=80, H3=110, L3=90,
+                cpr_pivot=100, cpr_tc=102, cpr_bc=98, is_ncpr=False,
+                day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+                session_highest=105, session_lowest=98, atr=5.0
+            )
+            engine.evaluate(ctxi)
+
+        # Bar 5 (within 6 bars): GrS occurs (bounced up from CPR pivot with green1)
+        b5 = OHLC(open=101, high=106, low=99.5, close=105)  # touches down to cpr_pivot=100 and closes above
+        ctx5 = MarketContext(
+            bar=b5, bar_index=5, H4=120, L4=80, H3=110, L3=90,
+            cpr_pivot=100, cpr_tc=102, cpr_bc=98, is_ncpr=False,
+            plus=20.0, minus=10.0, m0=10.0, m10=5.0,  # green1 = True
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=106, session_lowest=98, atr=5.0
+        )
+        sigs5 = engine.evaluate(ctx5)
+        div_sigs5 = [s for s in sigs5 if s.name == "LONG DIVERGENCE"]
+        self.assertEqual(len(div_sigs5), 1, "DivergenceBuy must fire on GrS within 6 bars of regBullDiv")
+
+    def test_lightning_requires_scalp_confluence(self):
+        """LightningBuy in v7.0 is strictly (CanBuy and ScalpBuy) and longAllowed and dayAllowed."""
+        engine = StrategyEngine()
+
+        # Regular bull div with GrS does NOT trigger LightningBuy (it triggers Long Divergence)
+        b = OHLC(open=101, high=106, low=99.5, close=105)
+        ctx = MarketContext(
+            bar=b, bar_index=1, H4=120, L4=80, H3=110, L3=90,
+            cpr_pivot=100, cpr_tc=102, cpr_bc=98, is_ncpr=False,
+            bull_regular_div=True,
+            plus=20.0, minus=10.0, m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=106, session_lowest=98, atr=5.0
+        )
+        sigs = engine.evaluate(ctx)
+        lightning_sigs = [s for s in sigs if s.name == "LONG LIGHTNING"]
+        self.assertEqual(len(lightning_sigs), 0, "Divergence alone must never trigger Lightning in v7.0")
+
+    def test_confirmed_divergence_exit(self):
+        """TradeManager exits on 1-bar prior divergence + directional price confirmation."""
+        tm = TradeManager()
+        sig = StrategySignal(
+            name="LONG MISSILE", direction="LONG",
+            entry_price=100.0, stop_loss=95.0,
+            tp1=110.0, tp2=115.0, tp3=120.0, tp4=125.0,
+            bar_index=1
+        )
+        trade = tm.create_trade(sig, symbol="TEST")
+
+        # Bar 2: Trade fills
+        b2 = OHLC(open=101.0, high=102.0, low=99.5, close=101.5)
+        tm.update(trade, b2, bar_index=2)
+        self.assertTrue(trade.has_hit_entry)
+        self.assertFalse(trade.is_closed)
+
+        # Bar 3: Bearish divergence occurs, but candle is green (not confirmed yet)
+        b3 = OHLC(open=101.5, high=104.0, low=101.0, close=103.5)
+        tm.update(trade, b3, bar_index=3, bear_hidden_div=True)
+        self.assertFalse(trade.is_closed, "Trade should not exit on unconfirmed hidden div")
+
+        # Bar 4: Candle closes red and below bar 3 close (confirmation!)
+        b4 = OHLC(open=103.0, high=103.2, low=101.0, close=101.2)
+        tm.update(trade, b4, bar_index=4)
+        self.assertTrue(trade.is_closed, "Trade must exit on confirmed divergence")
+        self.assertEqual(trade.exit_level, "DIV")
+        self.assertEqual(trade.status, TradeStatus.CLOSED_DIV)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
 

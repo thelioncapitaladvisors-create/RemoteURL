@@ -192,6 +192,12 @@ class StrategyEngine:
         self._clean_trend_bullish: bool = False
         self._clean_trend_bearish: bool = False
 
+        # Divergence 6-bar Lookback Buffers (lines 3152-3157)
+        self._bull_div_history: List[bool] = []
+        self._bear_div_history: List[bool] = []
+        self._hidden_bull_history: List[bool] = []
+        self._hidden_bear_history: List[bool] = []
+
         # Track which bars have already generated signals (tick-spam protection)
         self._last_signal_bar: Dict[str, int] = {}
 
@@ -417,14 +423,14 @@ class StrategyEngine:
             ctx.extreme_long_signal or ctx.extreme_short_signal
         )
 
-        # On sideways / trading range days, NO signals are allowed UNLESS it is a confirmed Rejection Day
-        day_allowed = not is_sideways or is_rejection_day
+        # On sideways / trading range days, NO signals are allowed UNLESS it is Narrow CPR (NCPR) or a confirmed Rejection Day
+        day_allowed = not is_sideways or ctx.is_ncpr or is_rejection_day
 
         # On sideways days, missile breakout momentum (miss_u/miss_d) is suppressed; only structural boundary bounces qualify
-        missile_allowed_on_day = not is_sideways or (is_rejection_day and (bounce_up or bounce_down))
+        missile_allowed_on_day = not is_sideways or ctx.is_ncpr or (is_rejection_day and (bounce_up or bounce_down))
 
         # ═══════════════════════════════════════════════════════
-        # HIDDEN DIVERGENCE CONFIRMATION (lines 3082-3093)
+        # HIDDEN DIVERGENCE CONFIRMATION (lines 3082-3093 / 3130-3141)
         # ═══════════════════════════════════════════════════════
         # Check if bar[1]'s hidden divergence was inside previous CPR
         h_bull_inside_cpr = False
@@ -445,31 +451,49 @@ class StrategyEngine:
         hidden_bear_confirmed = (h_bear_inside_cpr and bar.is_red and
                                   bar.close < ctx.prev_close)
 
+        # Update sliding 6-bar history buffers for divergences (matching Pine Script lines 3152-3157)
+        self._bull_div_history.append(bool(ctx.bull_regular_div))
+        self._bear_div_history.append(bool(ctx.bear_regular_div))
+        if len(self._bull_div_history) > self.config.div_lookback:
+            self._bull_div_history.pop(0)
+        if len(self._bear_div_history) > self.config.div_lookback:
+            self._bear_div_history.pop(0)
+
+        self._hidden_bull_history.append(bool(hidden_bull_confirmed))
+        self._hidden_bear_history.append(bool(hidden_bear_confirmed))
+        if len(self._hidden_bull_history) > self.config.div_lookback:
+            self._hidden_bull_history.pop(0)
+        if len(self._hidden_bear_history) > self.config.div_lookback:
+            self._hidden_bear_history.pop(0)
+
+        recent_bull_div = any(self._bull_div_history)
+        recent_bear_div = any(self._bear_div_history)
+        recent_hidden_bull = any(self._hidden_bull_history)
+        recent_hidden_bear = any(self._hidden_bear_history)
+
         # ═══════════════════════════════════════════════════════
-        # COMPUTE ALL 12 STRATEGY TRIGGERS (lines 3098-3127)
+        # COMPUTE ALL 12 STRATEGY TRIGGERS (Pine Script v7.0 lines 3147-3176)
         # ═══════════════════════════════════════════════════════
 
-        # 1. Standard Lightning (lines 3102-3107)
-        trend_lightning_buy = can_buy and scalp_buy and day_allowed
-        trend_lightning_sell = can_sell and scalp_sell and day_allowed
-        reg_div_lightning_buy = ctx.bull_regular_div and grs
-        reg_div_lightning_sell = ctx.bear_regular_div and res
-        lightning_buy = (trend_lightning_buy or reg_div_lightning_buy) and long_allowed
-        lightning_sell = (trend_lightning_sell or reg_div_lightning_sell) and short_allowed
+        # 1. Standard Lightning (Pure Native Missile + Scalp Confluence, lines 3148-3161)
+        standard_lightning_buy = can_buy and scalp_buy and long_allowed and day_allowed
+        standard_lightning_sell = can_sell and scalp_sell and short_allowed and day_allowed
+        lightning_buy = standard_lightning_buy
+        lightning_sell = standard_lightning_sell
 
-        # 2. Hidden Divergence (lines 3111-3112)
-        hidden_div_buy = hidden_bull_confirmed and grs and long_allowed
-        hidden_div_sell = hidden_bear_confirmed and res and short_allowed
+        # 2. Hidden Divergence (Standalone Strategy - Exempt from day types and NCPR, lines 3155-3157)
+        hidden_div_buy = recent_hidden_bull and grs and long_allowed
+        hidden_div_sell = recent_hidden_bear and res and short_allowed
 
-        # 3. Divergence (standalone, lines from TV_Indicator_Full_Code.txt 3098-3099)
-        divergence_buy = ctx.bull_regular_div and grs and long_allowed
-        divergence_sell = ctx.bear_regular_div and res and short_allowed
+        # 3. Regular Divergence (Standalone Strategy - Exempt from day types and NCPR, lines 3152-3153)
+        divergence_buy = recent_bull_div and grs and long_allowed
+        divergence_sell = recent_bear_div and res and short_allowed
 
-        # 4. Extreme Reversal (lines 3119-3120)
+        # 4. Extreme Reversal (Independent signal, standard dayAllowed gate, lines 3166-3168)
         extreme_rev_buy = ctx.extreme_long_signal and long_allowed and day_allowed
         extreme_rev_sell = ctx.extreme_short_signal and short_allowed and day_allowed
 
-        # 5. Missile (decoupled, lines 3123-3124)
+        # 5. Missile (Decoupled, lines 3171-3172)
         just_missile_buy = (can_buy and missile_allowed_on_day and not lightning_buy and not extreme_rev_buy
                             and not divergence_buy and not hidden_div_buy
                             and long_allowed and day_allowed)
@@ -477,7 +501,7 @@ class StrategyEngine:
                              and not divergence_sell and not hidden_div_sell
                              and short_allowed and day_allowed)
 
-        # 6. Scalp (decoupled, lines 3126-3127)
+        # 6. Scalp (Decoupled, lines 3174-3175)
         just_scalp_buy = (scalp_buy and not lightning_buy and not extreme_rev_buy
                           and not divergence_buy and not hidden_div_buy
                           and long_allowed and day_allowed)

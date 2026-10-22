@@ -126,6 +126,13 @@ class Trade:
     div_exit_triggered: bool = False
     force_closed: bool = False
 
+    # ── Prior Bar Divergence Memory (for confirmed divergence exit) ──
+    prev_bear_div: bool = False
+    prev_bull_div: bool = False
+    prev_bear_hidden_div: bool = False
+    prev_bull_hidden_div: bool = False
+    prev_bar_close: float = 0.0
+
     # ── Timing ──
     signal_bar_index: int = 0        # Bar index when signal was generated
     entry_bar_index: Optional[int] = None  # Bar index when limit was filled
@@ -488,16 +495,28 @@ class TradeManager:
                 return
 
         # ═══════════════════════════════════════════════════════
-        # 7. DIVERGENCE EXIT (lines 2637-2680)
+        # 7. DIVERGENCE EXIT (Pine Script v7.0 lines 2698-2715)
         # ═══════════════════════════════════════════════════════
         if self.config.div_exit_enabled and not trade.is_closed:
             # Rule 1: Regular divergence fires NOW → immediate exit
             is_reg_div_exit = ((is_long and bear_regular_div) or
                                (not is_long and bull_regular_div))
 
-            # Rule 2: Confirmed divergence (requires price action confirmation)
-            # Simplified: just check if divergence + price confirms
-            is_confirmed_div_exit = False  # Would need bar[1] divergence tracking
+            # Rule 2: Confirmed divergence (1-bar-prior divergence + directional candle confirmation)
+            any_bearish_div_1ago = trade.prev_bear_div or trade.prev_bear_hidden_div
+            any_bullish_div_1ago = trade.prev_bull_div or trade.prev_bull_hidden_div
+            prev_c = trade.prev_bar_close if trade.prev_bar_close > 0 else bar.open
+            bearish_price_confirm = any_bearish_div_1ago and (bar.close < bar.open) and (bar.close < prev_c)
+            bullish_price_confirm = any_bullish_div_1ago and (bar.close > bar.open) and (bar.close > prev_c)
+            is_confirmed_div_exit = ((is_long and bearish_price_confirm) or
+                                     (not is_long and bullish_price_confirm))
+
+            # Store current bar divergence state for subsequent bar confirmation
+            trade.prev_bear_div = bear_regular_div
+            trade.prev_bull_div = bull_regular_div
+            trade.prev_bear_hidden_div = bear_hidden_div
+            trade.prev_bull_hidden_div = bull_hidden_div
+            trade.prev_bar_close = bar.close
 
             if is_reg_div_exit or is_confirmed_div_exit:
                 trade.is_closed = True
@@ -509,6 +528,12 @@ class TradeManager:
                 trade.exit_level = "DIV"
                 trade.status = TradeStatus.CLOSED_DIV
                 return
+        else:
+            trade.prev_bear_div = bear_regular_div
+            trade.prev_bull_div = bull_regular_div
+            trade.prev_bear_hidden_div = bear_hidden_div
+            trade.prev_bull_hidden_div = bull_hidden_div
+            trade.prev_bar_close = bar.close
 
         # ═══════════════════════════════════════════════════════
         # 8. EOD EXIT (lines 3177-3178)

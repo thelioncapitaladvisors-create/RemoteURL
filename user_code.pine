@@ -1,15 +1,14 @@
-// © TheLionCapitalsolutions.com and market-store.online 
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TheLionCapitalsolutions.com and market-store.online
 
 //@version=6
 
-indicator('TLCS All Signal Alerts (Limits Fixed v11)', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 2000)
+indicator('TLCS AIO INDICAOR v7.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
 // ──── INPUTS ────────────────────────────────────────────────────────
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
 enable_alerts = input.bool(false, 'Enable Automated Webhook Alerts')
 
-//======================
-    
 daily_cpr = input.int(title = ' Logic for Daily CPR ', defval = 7, minval = 0)
 //
 new_bar(res) =>
@@ -421,7 +420,6 @@ for i = 0 to MAXN - 1 by 1
     handle_label_overlaps(i, labels, rangeHL)
     handle_label_overlaps(i, prclabels, rangeHL)
 
-
 //=====================================================
 
 FastEMA = input.int(1, minval = 1, title = 'Fast EMA')
@@ -465,7 +463,6 @@ show_labels = input.bool(true, title = 'Show Pivot Lables', group = 'Floor Pivot
 show_next_day_pivot = input.bool(false, title = 'Show Next Time Period Pivots', group = 'Floor Pivots')
 floor_pivots_cpr_color = spanColorx
 
-
 pivot = (high + low + close) / 3.0
 
 // Central Pivot Range 
@@ -474,7 +471,6 @@ temp_tc = pivot - temp_bc + pivot
 
 tc = temp_tc > temp_bc ? temp_tc : temp_bc
 bc = temp_bc < temp_tc ? temp_bc : temp_tc
-
 
 floor_pivot_resolution = floor_pivot_timeframe == '1H' ? '60' : floor_pivot_timeframe == '2H' ? '120' : floor_pivot_timeframe == '4H' ? '240' : floor_pivot_timeframe
 
@@ -488,7 +484,7 @@ var bool show_daily_pivot = true
 
 tcline = plot(show_cpr and show_daily_pivot and timeframe.isintraday ? daily_tc : show_cpr and show_daily_pivot  and timeframe.isintraday ? daily_tc  : show_cpr and show_daily_pivot and not timeframe.isintraday ? daily_tc : na, title = 'TC', color = color.new(floor_pivots_cpr_color,  show_cpr and timeframe.isintraday ? 98 : 100), linewidth = 1, style = plot.style_circles)
 bcline = plot(show_cpr and show_daily_pivot and timeframe.isintraday ? daily_bc : show_cpr and show_daily_pivot  and timeframe.isintraday ? daily_bc : show_cpr and show_daily_pivot and not timeframe.isintraday  ? daily_bc : na, title = 'BC', color = color.new(floor_pivots_cpr_color,  show_cpr and timeframe.isintraday ? 98 : 100), linewidth = 1, style = plot.style_circles)
-fill(tcline, bcline, color = color.new(floor_pivots_cpr_color, show_cpr and show_daily_pivot ? 98 : 100))
+fill(tcline, bcline, color = color.new(floor_pivots_cpr_color, show_cpr and show_daily_pivot ? 96 : 100))
 
 //====================================
 
@@ -542,7 +538,6 @@ AdxCol2 = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? c
 plot(fMedEMA, title = 'PEMAMed', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
 plot(fShortEMA, title = 'PEMASlow', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
 
-
 //====================================
 
 risingX = fShortEMA > fMedEMA
@@ -559,7 +554,6 @@ RED = ((minus > plus) and (m0 < m10))
 
 GREENZONE = GREEN
 REDZONE = RED
-
 
 //====================================
 
@@ -597,22 +591,6 @@ Wshortsignal = ta.falling(fPivotPDEMAS, 1) and Wshortsig
 plotshape(Wlongsig, color = color.new(color.navy, 0), location = location.belowbar, style = shape.triangleup, size = size.small)
 plotshape(Wshortsig, color = color.new(color.navy, 0), location = location.abovebar, style = shape.triangledown, size = size.small)
 
-// outside Reversal System
-
-L03 = input(true, title = 'Enable Outside Reversal System')
-BarMultiplier = input.float(title = 'Body Multiplier', defval = 1.25, step = 0.05, maxval = 3.5)
-BarsBack = input.int(title = 'Bars Back', defval = 50, maxval = 250)
-AverageCandle1 = ta.sma(H - L, BarsBack)
-
-Olongsig = L03 and GREENZONE and L < L[1] and C > H[1] and H - L >= AverageCandle1 * BarMultiplier
-Oshortsig = L03 and REDZONE and H > H[1] and C < L[1] and H - L >= AverageCandle1 * BarMultiplier
-
-Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
-Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
-
-plotshape(Olongsig, color = color.new(color.orange, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
-plotshape(Oshortsig, color = color.new(color.orange, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
-
 // Exteme Reversal System
 
 L02 = input(true, title = 'Enable Exteme Reversal System')
@@ -625,14 +603,30 @@ AverageBody = ta.sma(mybodysize, barsback)
 mycandlesize = H - L
 AverageCandle = ta.sma(mycandlesize, barsback)
 
-Elongsig = L02 and GREENZONE and O[1] - C[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and O[1] - C[1] > AverageBody and C > O
-Eshortsig = L02 and REDZONE and C[1] - O[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and C[1] - O[1] > AverageBody and O > C
+Elongsig = GREENZONE and O[1] - C[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and O[1] - C[1] > AverageBody and C > O
+Eshortsig = REDZONE and C[1] - O[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and C[1] - O[1] > AverageBody and O > C
 
 Elongsignal = ta.rising(fPivotPDEMAS, 1) and Elongsig
 Eshortsignal = ta.falling(fPivotPDEMAS, 1) and Eshortsig
 
 plotshape(Elongsig, color = color.new(color.fuchsia, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
 plotshape(Eshortsig, color = color.new(color.fuchsia, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
+
+// outside Reversal System
+
+L03 = input(true, title = 'Enable Outside Reversal System')
+BarMultiplier = input.float(title = 'Body Multiplier', defval = 1.25, step = 0.05, maxval = 3.5)
+BarsBack = input.int(title = 'Bars Back', defval = 50, maxval = 250)
+AverageCandle1 = ta.sma(mycandlesize, BarsBack)
+
+Olongsig = GREENZONE and L < L[1] and C > H[1] and H - L >= AverageCandle1 * BarMultiplier
+Oshortsig = REDZONE and H > H[1] and C < L[1] and H - L >= AverageCandle1 * BarMultiplier
+
+Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
+Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
+
+plotshape(Olongsig, color = color.new(color.orange, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
+plotshape(Oshortsig, color = color.new(color.orange, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
 
 // Doji Reversal System
 
@@ -649,8 +643,8 @@ DAverageBody = ta.sma(Dmybodysize, Wbarsback)
 Dmycandlesize = H - L
 DAverageCandle = ta.sma(Dmycandlesize, Wbarsback)
 
-Dshort = frangeco <= frangehl * percentage and C < L[1] and L[1] > sma10 and C < O or C < L[2] and C[1] >= L[2] and frangeco <= frangehl * percentage and C < O and L[2] > sma10
-Dlong = frangeco <= frangehl * percentage and C > H[1] and H[1] < sma10 and C > O or C > H[2] and C[1] <= H[2] and frangeco <= frangehl * percentage and C > O and H[2] < sma10
+Dshort = frangeco <= frangehl * percentage and C < L[1] and L[1] > sma10 and C < O or C < L[2] and C[1] >= L[2] and frangeco <= frangeco * percentage and C < O and L[2] > sma10
+Dlong = frangeco <= frangehl * percentage and C > H[1] and H[1] < sma10 and C > O or C > H[2] and C[1] <= H[2] and frangeco <= frangeco * percentage and C > O and H[2] < sma10
 
 Dlongsig = GREENZONE and bool(lowleftempty) and L04 and Dlong and H - L >= WAverageCandle * DBarMultiplier
 Dshortsig = REDZONE and bool(highleftempty) and L04 and Dshort and H - L >= WAverageCandle * DBarMultiplier
@@ -669,8 +663,8 @@ RedCandle = Wshortsig[1] or Oshortsig[1] or Eshortsig[1] or Dshortsig[1]
 
 //====================================================================================================================
 
-barcolor(open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? color.rgb(5, 220, 12, 31) :na :na : na : na : na)
-barcolor(close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? #ee282897 :na :na : na : na : na)
+barcolor(open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? color.rgb(21, 231, 28, 31) :na :na : na : na : na)
+barcolor(close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? #e82f2f97 :na :na : na : na : na)
 
 bullpower = open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? 1 : na : na : na : na : na
 bearpower = close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? 1 : na : na : na : na : na
@@ -692,9 +686,7 @@ plot(intraMid, title = 'Mid Point', color = color.new(color.white, midcolor), st
 Top = ta.highest(bool(bearpower) ? intraMid : na, ta.barssince(k) + 100)
 Bottom = ta.lowest(bool(bullpower) ? intraMid : na, ta.barssince(k) + 100)
 
-
 //====================================================================================================================
-
 
 Range = dDH_ - dDL_
 
@@ -717,14 +709,27 @@ DS = 2 * DP - dDH_
 DR = 2 * DP - dDL_
 
 CPR = DP
-NCPR = 0.2 > math.abs(DPi - DBcf + DPi - DBcf) / DPi * 100
 
-//plot(TCC, title='PEMA', style=plot.style_line, color=color.new(#d35811, 0), linewidth=3)
-//plot(BCC, title='PEMA', style=plot.style_line, color=color.new(#2e02f3, 0), linewidth=3)
+//NCPR = 0.2 > math.abs(DPi - DBcf + DPi - DBcf) / DPi * 100
 
-Ytf_h = new_period(new_day, dDH_)
-Ytf_l = new_period(new_day, dDL_)
-Ytf_c = new_period(new_day, CL_)
+// ====================================================================
+// NORMALIZED NARROW CPR (NCPR) CHECK
+// ====================================================================
+// Instead of dividing by the asset price (DPi), we normalize the CPR width
+// against the Previous Day's High-Low Range. This scales perfectly across
+// Forex, Indices, and Crypto.
+// Threshold: CPR width must be < 5.0% of yesterday's total range.
+
+float prevDayRange = math.max(DH - DL, syminfo.mintick)
+float cprWidth     = math.abs(DTcf - DBcf)
+bool  NCPR         = 5.0 > (cprWidth / prevDayRange) * 100
+
+getSeries(e, timeFrame) =>
+    request.security(syminfo.tickerid, timeFrame, e, lookahead=barmerge.lookahead_on)
+
+Ytf_h = getSeries(high[1], 'D')
+Ytf_l = getSeries(low[1], 'D')
+Ytf_c = getSeries(close[1], 'D')
 
 TP = (Ytf_h + Ytf_l + Ytf_c) / 3.0
 BOTTOM = (Ytf_h + Ytf_l) / 2
@@ -733,9 +738,9 @@ TOP = TP - BOTTOM + TP
 DTc = math.max(TOP, BOTTOM)
 DBc = math.min(TOP, BOTTOM)
 
-Ytf_h1 = new_period(new_day, dDH_[2])
-Ytf_l1 = new_period(new_day, dDL_[2])
-Ytf_c1 = new_period(new_day, CL_[2])
+Ytf_h1 = getSeries(high[2], 'D')
+Ytf_l1 = getSeries(low[2], 'D')
+Ytf_c1 = getSeries(close[2], 'D')
 
 TP1 = (Ytf_h1 + Ytf_l1 + Ytf_c1) / 3.0
 BOTTOM1 = (Ytf_h1 + Ytf_l1) / 2
@@ -744,78 +749,129 @@ TOP1 = TP1 - BOTTOM1 + TP1
 YTc = math.max(TOP1, BOTTOM1)
 YBc = math.min(TOP1, BOTTOM1)
 
-INRANGEINVALUE = OO_ > dDL_ and OO_ < dDH_ and OO_ > VAL and OO_ < VAH
-INRANGEOUTOFVALUE = OO_ > dDL_ and OO_ < dDH_ and (OO_ < VAL or OO_ > VAH)
-OUTOFRANGEVALUE = OO_ < dDL_ and OO_ < VAL or OO_ > dDH_ and OO_ > VAH
+OP = OO_
+
+INRANGEINVALUE = (((OO_ > dDL_) and (OO_ < dDH_)) and ((OO_ > VAL) and (OO_ < VAH)))
+INRANGEOUTOFVALUE = (((OO_ > dDL_) and (OO_ < dDH_)) and ((OO_ < VAL) or (OO_ > VAH)))
+OUTOFRANGEVALUE = (((OO_ < dDL_) and (OO_ < VAL)) or ((OO_ > dDH_) and (OO_ > VAH)))
 
 BIGDAY = (INRANGEINVALUE and ((close > dDH_) or (close < dDL_)))
 
-
 //Opening Bias/Print
 
-BULLISH = DTc > YTc and DBc > YTc
-BEARISH = DTc < YBc and DBc < YBc
-MODERATELYBULLISH = DTc > YTc and DBc > YBc
-MODERATELYBEARISH = DTc < YTc and DBc < YBc
-INSIDE = DTc < YTc and DBc > YBc
-OUTSIDE = DTc > YTc and DBc < YBc
-UNCHANGED = DP == TP and DBc == YBc and DTc == YTc
+BULLISH = ((DTc > YTc) and (DBc > YTc))
+BEARISH = ((DTc < YBc) and (DBc < YBc))
+MODERATELYBULLISH = ((DTc > YTc) and (DBc > YBc))
+MODERATELYBEARISH = ((DTc < YTc) and (DBc < YBc))
 
-BREAKOUTDAY = INSIDE or UNCHANGED
-OTHERDAYS = OUTSIDE or BREAKOUTDAY
+INSIDE = ((DTc < YTc) and (DBc > YBc))
+OUTSIDE = ((DTc > YTc) and (DBc < YBc))
+UNCHANGED = ((DP == TP) and (DBc == YBc) and (DTc == YTc))
+
+BREAKOUTDAY = (INSIDE or UNCHANGED)
+
+//OTHERDAYS = OUTSIDE or BREAKOUTDAY
 
 //Day day_type
 
-CONFIRMEDBULLISH = (BULLISH or MODERATELYBULLISH or OTHERDAYS) and (CC > YTc or CC < YTc) and OO_ > DBc
-CONFIRMEDBEARISH = (BEARISH or MODERATELYBEARISH or OTHERDAYS) and (CC < YBc or CC > YBc) and OO_ < DTc
+CONFIRMEDBULLISH = (((BULLISH or MODERATELYBULLISH) and ((CC > YTc) or (CC < YTc))) and (OO_ > DBc))
+CONFIRMEDBEARISH = (((BEARISH or MODERATELYBEARISH) and ((CC < YBc) or (CC > YBc))) and (OO_ < DTc))
 
-REJECTEDBULLISH = (BULLISH or MODERATELYBULLISH or OTHERDAYS) and (CC > YTc or CC < YTc) and OO_ < DBc
-REJECTEDBEARISH = (BEARISH or MODERATELYBEARISH or OTHERDAYS) and (CC < YBc or CC > YBc) and OO_ > DTc
+REJECTEDBULLISH = (((BULLISH or MODERATELYBULLISH) and ((CC > YTc) or (CC < YTc))) and (OO_ < DBc))
+REJECTEDBEARISH = (((BEARISH or MODERATELYBEARISH) and ((CC < YBc) or (CC > YBc))) and (OO_ > DTc))
 
-ANYDAY = BULLISH or MODERATELYBULLISH or BEARISH or MODERATELYBEARISH or INSIDE or OUTSIDE or UNCHANGED
+ANYDAY = (BULLISH or MODERATELYBULLISH or BEARISH or MODERATELYBEARISH or INSIDE or OUTSIDE or UNCHANGED)
 
+REJECTIONDAY = (CONFIRMEDBULLISH and (close < DBc)) or (CONFIRMEDBEARISH and (close > DTc)) or (REJECTEDBULLISH and (close < DBc)) or (REJECTEDBULLISH and (close > DTc)) or (REJECTEDBEARISH and (close > DTc)) or (REJECTEDBEARISH and (close < DBc))
 
 // ──── INSTITUTIONAL BIAS LOGIC ───────────────────────────────────
 
-columns = 8
-rows = 6
-
-//var table perfTable = table.new(position.bottom_center, columns, rows, border_width = 3)
-var table perfTablec = table.new(position.top_center, columns, rows, border_width = 5)
-
-f_fillcell(_table, _column, _row, _cellText, _c_color, _t_color) =>
-    table.cell(_table, _column, _row, _cellText, bgcolor = color.new(color.white, 100), text_color = color.new(_c_color, 0), width = 55, text_size = size.small)
-
-f_fillcellc(_table, _column, _row, _cellText, _c_color, _t_color) =>
-    table.cell(_table, _column, _row, _cellText, bgcolor = color.new(color.white, 100), text_color = color.new(_c_color, 0), width = 55, text_size = size.normal)
-
-//d1 = BULLISH ? 'BULLISH' : BEARISH ? 'BEARISH' : MODERATELYBULLISH ? 'MODERATELY \n BULLISH' : MODERATELYBEARISH ? 'MODERATELY \n BEARISH' : INSIDE ? 'INSIDE' : OUTSIDE ? 'OUTSIDE' : UNCHANGED ? 'UNCHANGED' : na
 paint = BULLISH ? color.gray : BEARISH ? color.gray : MODERATELYBULLISH ? color.silver : MODERATELYBEARISH ? color.silver : INSIDE ? color.black : UNCHANGED ? color.black : OUTSIDE ? color.black : color.gray
 
+c1 = ANYDAY and (close < DTc and close > DBc) ? "WATCH" : CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" :CONFIRMEDBULLISH and (close < DBc) ? "REJECTION" : CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" : CONFIRMEDBEARISH and (close > DTc)  ? "REJECTION" : REJECTEDBULLISH and (close < DBc) ? "REJECTED \n BULLISH" : REJECTEDBULLISH and (close > DTc) ? "REJECTION" : REJECTEDBEARISH and (close > DTc)? "REJECTED \n BEARISH" : REJECTEDBEARISH and (close < DBc) ? "REJECTION" : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "SIDEWAYS"
+paintc = ANYDAY and (close < DTc and close > DBc) ? color.gray : CONFIRMEDBULLISH and (close > DTc) ? color.green :CONFIRMEDBULLISH and (close < DBc) ? color.rgb(211, 39, 110) : CONFIRMEDBEARISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close > DTc) ? color.rgb(9, 130, 47) :  REJECTEDBULLISH and (close < DBc)? color.maroon : REJECTEDBULLISH and (close > DTc) ? color.rgb(7, 147, 63) : REJECTEDBEARISH and (close > DTc)? color.teal : REJECTEDBEARISH and (close < DBc) ? #dd2407 : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? color.fuchsia : color.black
 
-c1 = CONFIRMEDBULLISH and close > DTc ? 'CONFIRMED BULLISH' : CONFIRMEDBULLISH and close < DBc ? 'REJECTED BULLISH' : CONFIRMEDBEARISH and close < DBc ? 'CONFIRMED BEARISH' : CONFIRMEDBEARISH and close > DTc ? 'REJECTED BEARISH' : REJECTEDBULLISH and close < DBc ? 'BULLISH REVERSAL' : REJECTEDBEARISH and close > DTc ? 'BEARISH REVERSAL' : OUTSIDE ? 'SIDEWAYS' : UNCHANGED ? 'SIDEWAYS/ BREAKOUT' : ANYDAY and (OO_ > h4 or OO_ < l4) or INSIDE ? 'BREAKOUT' : 'WATCH'
-paintc = CONFIRMEDBULLISH and close > DTc ? color.teal : CONFIRMEDBULLISH and close < DBc ? color.red : CONFIRMEDBEARISH and close < DBc ? color.maroon : CONFIRMEDBEARISH and close > DTc ? color.green : REJECTEDBULLISH and close < DBc ? color.maroon : REJECTEDBEARISH and close > DTc ? color.teal : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ANYDAY and (OO_ > h4 or OO_ < l4) or INSIDE ? color.fuchsia : color.black
+m1 = ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close > h3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close > h3))) or (ANYDAY and ((close > DBc) and (close > DTc)))) ? "LONG \n ZONE" : ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close < l3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close < l3))) or (ANYDAY and (close < DTc) and (close < DBc))) ? "SHORT \n ZONE" : (ANYDAY and (close > DBc) and (close < DTc)) ? "WAIT FOR \n SIGNAL" : na
+paintm = ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close > h3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close > h3))) or (ANYDAY and ((close > DBc) and (close > DTc)))) ? color.black : ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close < l3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close < l3))) or (ANYDAY and (close < DTc) and (close < DBc))) ? color.black : (ANYDAY and (close > DBc) and (close < DTc)) ? color.silver : na
 
-//c1 = CONFIRMEDBULLISH and close > DTc ? 'CONFIRMED BULLISH' : CONFIRMEDBULLISH and close < DBc ? 'REJECTED BULLISH' : CONFIRMEDBEARISH and close < DBc ? 'CONFIRMED BEARISH' : CONFIRMEDBEARISH and close > DTc ? 'REJECTED BEARISH' : REJECTEDBULLISH and close < DBc ? 'BULLISH REVERSAL' : REJECTEDBEARISH and close > DTc ? 'BEARISH REVERSAL' : OUTSIDE ? 'SIDEWAYS' : UNCHANGED ? 'SIDEWAYS/ BREAKOUT' : ANYDAY and (OO_ > h4 or OO_ < l4) or INSIDE ? 'BREAKOUT' : 'WATCH'
-//paintc = CONFIRMEDBULLISH and close > DTc ? color.teal : CONFIRMEDBULLISH and close < DBc ? color.red : CONFIRMEDBEARISH and close < DBc ? color.maroon : CONFIRMEDBEARISH and close > DTc ? color.green : REJECTEDBULLISH and close < DBc ? color.maroon : REJECTEDBEARISH and close > DTc ? color.teal : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ANYDAY and (OO_ > h4 or OO_ < l4) or INSIDE ? color.fuchsia : color.black
+dX = INRANGEINVALUE ? "IN RANGE \n IN VALUE" : INRANGEOUTOFVALUE ? "IN RANGE \n OUT OF VALUE" : OUTOFRANGEVALUE ? "OUT OF RANGE \n OUT OF VALUE" : "IN RANGE \n IN VALUE"
+paintX = INRANGEINVALUE ? color.gray :(INRANGEINVALUE and ((close > dDH_) or (close < dDL_))) ? color.fuchsia : INRANGEOUTOFVALUE ? color.black : ((INRANGEOUTOFVALUE) and ((close > dDH_) or (close < dDL_))) ? color.orange : OUTOFRANGEVALUE ? color.purple : (OUTOFRANGEVALUE and ((close > dDL_) and (close < dDH_))) ? color.black : color.silver
 
-//m1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? 'LONG \n ZONE' : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? 'SHORT \n ZONE' : ANYDAY and close > DBc and close < DTc ? 'WAIT FOR \n SIGNAL' : na
-paintm = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? color.black : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? color.black : ANYDAY and close > DBc and close < DTc ? color.silver : na
+mX = INRANGEINVALUE and (((close > dDL_) and (close < dDH_)) and ((close > VAL) and (close < VAH))) ? "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS" : (INRANGEINVALUE and (((close > Ytf_h) and (close > VAH)) or ((close < Ytf_l) and (close < VAL)))) or ((OP < Ytf_l and OP < VAL and OP < DBc) or (OP > Ytf_h and OP > VAH and OP > DTc)) ? "BIG MOVE" : (INRANGEOUTOFVALUE and ((close < Ytf_h) and (close > Ytf_l))) ? "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS" : ((INRANGEOUTOFVALUE) and ((close > Ytf_h) or (close < Ytf_l))) ? "TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL" : (OUTOFRANGEVALUE and ((close < Ytf_l) or (close > Ytf_h))) ? "TREND DAY, \n DOUBLE DISTRIBUTION TREND" : (OUTOFRANGEVALUE and ((close > Ytf_l) and (close < Ytf_h))) ? "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE"  : "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS"
+paintmX = INRANGEINVALUE and (((close > dDL_) and (close < dDH_)) and ((close > VAL) and (close < VAH))) ? color.gray : (INRANGEINVALUE and (((close > Ytf_h) and (close > VAH)) or ((close < Ytf_l) and (close < VAL)))) or ((OP < Ytf_l and OP < VAL and OP < DBc) or (OP > Ytf_h and OP > VAH and OP > DTc)) ? color.fuchsia : (INRANGEOUTOFVALUE and ((close < Ytf_h) and (close > Ytf_l))) ? color.black : ((INRANGEOUTOFVALUE) and ((close > Ytf_h) or (close < Ytf_l))) ? color.orange  : (OUTOFRANGEVALUE and ((close < Ytf_l) or (close > Ytf_h))) ? color.purple : (OUTOFRANGEVALUE and ((close > Ytf_l) and (close < Ytf_h))) ? color.black : color.silver
 
+Dx = dX
+Mx = mX
 
-dX = INRANGEINVALUE ? 'IN RANGE \n IN VALUE' : INRANGEOUTOFVALUE ? 'IN RANGE \n OUT OF VALUE' : OUTOFRANGEVALUE ? 'OUT OF RANGE \n OUT OF VALUE' : 'IN RANGE \n IN VALUE'
-paintX = INRANGEINVALUE ? color.gray : INRANGEINVALUE and (close > dDH_ or close < dDL_) ? color.fuchsia : INRANGEOUTOFVALUE ? color.black : INRANGEOUTOFVALUE and (close > dDH_ or close < dDL_) ? color.orange : OUTOFRANGEVALUE ? color.purple : OUTOFRANGEVALUE and close > dDL_ and close < dDH_ ? color.black : color.silver
+var string dX_message = ""
+var string mX_message = ""
+var string c1_message = ""
+var color dX_col = paintX
+var color mX_col = paintmX
+var color c1_col = paintc
 
-mX = INRANGEINVALUE and close > dDL_ and close < dDH_ and close > VAL and close < VAH ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEINVALUE and (close > Ytf_h and close > VAH or close < Ytf_l and close < VAL) or OO < Ytf_l and OO < VAL and OO < DBc or OO > Ytf_h and OO > VAH and OO > DTc ? 'BIG MOVE' : INRANGEOUTOFVALUE and close < Ytf_h and close > Ytf_l ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEOUTOFVALUE and (close > Ytf_h or close < Ytf_l) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL' : OUTOFRANGEVALUE and (close < Ytf_l or close > Ytf_h) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND' : OUTOFRANGEVALUE and close > Ytf_l and close < Ytf_h ? 'TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE' : 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS'
-paintmX = INRANGEINVALUE and close > dDL_ and close < dDH_ and close > VAL and close < VAH ? color.gray : INRANGEINVALUE and (close > Ytf_h and close > VAH or close < Ytf_l and close < VAL) or OO < Ytf_l and OO < VAL and OO < DBc or OO > Ytf_h and OO > VAH and OO > DTc ? color.fuchsia : INRANGEOUTOFVALUE and close < Ytf_h and close > Ytf_l ? color.black : INRANGEOUTOFVALUE and (close > Ytf_h or close < Ytf_l) ? color.orange : OUTOFRANGEVALUE and (close < Ytf_l or close > Ytf_h) ? color.purple : OUTOFRANGEVALUE and close > Ytf_l and close < Ytf_h ? color.black : color.silver
+if c1 == 'WATCH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'REJECTION'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'CONFIRMED \n BULLISH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'CONFIRMED \n BEARISH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'REJECTED \n BULLISH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'REJECTED \n BEARISH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'SIDEWAYS'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'SIDEWAYS/ BREAKOUT'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'BREAKOUT'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
 
-Dx = INRANGEINVALUE ? 'IN RANGE \n IN VALUE' : INRANGEOUTOFVALUE ? 'IN RANGE \n OUT OF VALUE' : OUTOFRANGEVALUE ? 'OUT OF RANGE \n OUT OF VALUE' : 'DEBUG'
+if (dX == "IN RANGE \n IN VALUE")
+    dX_message := str.tostring(dX)
+    dX_col := paintX
+else if (dX == "IN RANGE \n OUT OF VALUE")
+    dX_message := str.tostring(dX)
+    dX_col := paintX
+else if (dX == "OUT OF RANGE \n OUT OF VALUE")
+    dX_message := str.tostring(dX)
+    dX_col := paintX
 
-Mx = INRANGEINVALUE and close > dDL_ and close < dDH_ and close > VAL and close < VAH ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEINVALUE and (close > Ytf_h and close > VAH or close < Ytf_l and close < VAL) or OO < Ytf_l and OO < VAL and OO < DBc or OO > Ytf_h and OO > VAH and OO > DTc ? 'BIG MOVE' : INRANGEOUTOFVALUE and close < Ytf_h and close > Ytf_l ? 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' : INRANGEOUTOFVALUE and (close > Ytf_h or close < Ytf_l) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL' : OUTOFRANGEVALUE and (close < Ytf_l or close > Ytf_h) ? 'TREND DAY, \n DOUBLE DISTRIBUTION TREND' : OUTOFRANGEVALUE and close > Ytf_l and close < Ytf_h ? 'TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE' : 'DEBUG'
-
-//Dx = INRANGEINVALUE ? 'IN RANGE IN VALUE' : INRANGEOUTOFVALUE ? 'IN RANGE OUT OF VALUE' : OUTOFRANGEVALUE ? 'OUT OF RANGE OUT OF VALUE' : 'DEBUG'
-
-//Mx = INRANGEINVALUE and close > dDL_ and close < dDH_ and close > VAL and close < VAH ? 'TYPICAL DAY, TRADING RANGE, SIDEWAYS' : INRANGEINVALUE and (close > Ytf_h and close > VAH or close < Ytf_l and close < VAL) or OO < Ytf_l and OO < VAL and OO < DBc or OO > Ytf_h and OO > VAH and OO > DTc ? 'BIG MOVE' : INRANGEOUTOFVALUE and close < Ytf_h and close > Ytf_l ? 'TYPICAL DAY, TRADING RANGE, SIDEWAYS' : INRANGEOUTOFVALUE and (close > Ytf_h or close < Ytf_l) ? 'TREND DAY, DOUBLE DISTRIBUTION TREND, EXPANDED TYPICAL' : OUTOFRANGEVALUE and (close < Ytf_l or close > Ytf_h) ? 'TREND DAY, DOUBLE DISTRIBUTION TREND' : OUTOFRANGEVALUE and close > Ytf_l and close < Ytf_h ? 'TYPICAL DAY, EXPANDED TYPICAL DAY, TRADING RANGE' : 'DEBUG'
+if (mX == "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+else if (mX == "TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+else if (mX == "TREND DAY, \n DOUBLE DISTRIBUTION TREND")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+if (mX == "BIG MOVE")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+if (mX == "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+if (mX == "TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+if (mX == "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
+if (mX == "TREND DAY, \n DOUBLE DISTRIBUTION TREND")
+    mX_message := str.tostring(mX)
+    mX_col := paintmX
 
 HTFx = input.timeframe('D', title="Higher Timeframe for EMA")
 
@@ -824,35 +880,29 @@ smooth2 = input(defval=true, title="EMA2 Smooth")
 smooth3 = input(defval=true, title="EMA3 Smooth")
 smooth4 = input(defval=true, title="EMA4 Smooth")
 
-// ✅ OPTIMIZATION 4: Grouped EMA Arrays
+// Grouped EMA Arrays
 [emaSmooth1, emaSmooth2, emaSmooth3, emaSmooth4] = request.security(syminfo.tickerid, HTFx, [fMedEMA, fShortEMA, fPivotPDEMAF, fPivotPDEMAS], barmerge.gaps_on, barmerge.lookahead_on)
 [emaStep1, emaStep2, emaStep3, emaStep4] = request.security(syminfo.tickerid, HTFx, [fMedEMA, fShortEMA, fPivotPDEMAF, fPivotPDEMAS], barmerge.gaps_off, barmerge.lookahead_on)
 
-
 GREENEMAx = emaSmooth3 > emaSmooth4 and emaSmooth2 > emaSmooth1
-REDEMAx =  emaSmooth3 < emaSmooth4 and emaSmooth2 < emaSmooth1
+REDEMAx   = emaSmooth3 < emaSmooth4 and emaSmooth2 < emaSmooth1
 
 GREENx = ((plus > minus) and (fShortEMA > fMedEMA)) or ((fShortEMA > fMedEMA) and ((low < fShortEMA) and ((low < fMedEMA)) and ((close > fMedEMA) and (close > fShortEMA))))
-REDx = ((minus > plus) and (fShortEMA < fMedEMA)) or ((fShortEMA < fMedEMA) and (((high > fShortEMA) and (high > fMedEMA)) and ((close < fMedEMA) and (close < fShortEMA))))
+REDx   = ((minus > plus) and (fShortEMA < fMedEMA)) or ((fShortEMA < fMedEMA) and (((high > fShortEMA) and (high > fMedEMA)) and ((close < fMedEMA) and (close < fShortEMA))))
 
-TopSwingZ = (REDx or REDEMAx) and minus > plus and open < fShortEMA and open < fMedEMA and high > fShortEMA and high > fMedEMA and (close < fMedEMA and close < fShortEMA or low < fShortEMA and low < fMedEMA)
+TopSwingZ    = (REDx or REDEMAx) and minus > plus and open < fShortEMA and open < fMedEMA and high > fShortEMA and high > fMedEMA and (close < fMedEMA and close < fShortEMA or low < fShortEMA and low < fMedEMA)
 BottomSwingZ = (GREENx or GREENEMAx) and plus > minus and open > fShortEMA and open > fMedEMA and low < fShortEMA and low < fMedEMA and (close > fMedEMA and close > fShortEMA or high > fShortEMA and high > fMedEMA)
 
-BULLS= ((fShortEMA > fMedEMA) and ((low < fShortEMA) and (low < fMedEMA)) and ((close > fMedEMA) and (close > fShortEMA)))
+BULLS = ((fShortEMA > fMedEMA) and ((low < fShortEMA) and (low < fMedEMA)) and ((close > fMedEMA) and (close > fShortEMA)))
 BEARS = ((fShortEMA < fMedEMA) and ((high > fShortEMA) and (high > fMedEMA)) and ((close < fMedEMA) and (close < fShortEMA)))
 
-m1 = ((plus > minus) and (m0 > m10)) ? 'LONG ZONE' : ((minus > plus) and (m0 < m10)) ? 'SHORT ZONE' : 'NO TRADE ZONE'
 d1 = TopSwingZ[1] or BEARS[1] ? 'TOP SWING' : BottomSwingZ[1] or BULLS[1] ? 'BOTTOM SWING' : 'NO SWING'
 paintd = TopSwingZ[1] or BEARS[1] ? color.red : BottomSwingZ[1] or BULLS[1] ? color.green : color.gray
 
 // ──── CHANGE-TRIGGERED PIVOT WEBHOOK ────────────────────────────────────────
-// Only fires to Supabase when c1 (opening bias) or mX (day type) changes.
-// d1 (CPR bias) and dX (market position) are stable — included for completeness.
-// Set ONE alert per symbol chart using "alert() function calls only".
-
-_c1 = str.replace_all(c1, '\n', ' ')
-_mX = str.replace_all(mX, '\n', ' ')
-_dX = str.replace_all(dX, '\n', ' ')
+_c1 = str.replace_all(c1_message, '\n', ' ')
+_mX = str.replace_all(mX_message, '\n', ' ')
+_dX = str.replace_all(dX_message, '\n', ' ')
 _d1 = str.replace_all(d1, '\n', ' ')
 
 var string _prev_c1 = ''
@@ -861,29 +911,52 @@ var string _prev_mX = ''
 bool _pivotChanged = (_c1 != _prev_c1) or (_mX != _prev_mX)
 
 var string d1_message = ''
-var string c1_message = ''
 var string m1_message = ''
 var string n1_message = ''
 
 var color d1_col = paintd
-var color c1_col = paintc
 var color m1_col = paintm
 
-// --- AST OPTIMIZED MESSAGE ASSIGNMENTS ---
 d1_message := str.tostring(d1)
 d1_col     := paint
-
-c1_message := str.tostring(c1)
-c1_col     := paintc
 
 m1_message := str.tostring(m1)
 m1_col     := paintm
 
-f_fillcellc(perfTablec, 0, 0, n1_message, color.new(c1_col,100), color.new(paintc,100))
-f_fillcellc(perfTablec, 0, 1, n1_message, color.new(c1_col,100), color.new(paintc,100))
+// ──── FULLY RESPONSIVE HEADER BAR (DESKTOP & MOBILE COMPATIBLE) ─────
+// 3 Columns with strict percentage widths (35% Left | 30% Center | 35% Right)
+var table tbl_bias = table.new(position.top_center, 3, 3, border_width = 0, bgcolor = color.new(color.white, 100))
 
-f_fillcellc(perfTablec, 0, 2, c1_message, c1_col, paintc)
+if barstate.islast
+    // --- ROW 0 (BLANK SPACER ROW TO BRING DISPLAY DOWN BY ONE LINE) ---
+    table.cell(tbl_bias, 0, 0, " ", width = 35.0, text_size = size.small, bgcolor = color.new(color.white, 100))
+    table.cell(tbl_bias, 1, 0, " ", width = 30.0, text_size = size.small, bgcolor = color.new(color.white, 100))
+    table.cell(tbl_bias, 2, 0, " ", width = 35.0, text_size = size.small, bgcolor = color.new(color.white, 100))
 
+    // --- ROW 1 (PREVIOUS TOP LINE - NOW BROUGHT DOWN BY ONE LINE) ---
+    // Left (35% width, right aligned)
+    table.cell(tbl_bias, 0, 1, dX_message, width = 35.0, text_color = dX_col, text_size = size.tiny, text_halign = text.align_right, bgcolor = color.new(color.white, 100))
+    // Center Top (Empty Spacer)
+    table.cell(tbl_bias, 1, 1, "", width = 30.0, bgcolor = color.new(color.white, 100))
+    // Right (35% width, left aligned)
+    table.cell(tbl_bias, 2, 1, mX_message, width = 35.0, text_color = mX_col, text_size = size.tiny, text_halign = text.align_left, bgcolor = color.new(color.white, 100))
+
+    // --- ROW 2 (PREVIOUS LOWER LINE - NOW BROUGHT DOWN BY ONE LINE) ---
+    // Left Bottom (Empty)
+    table.cell(tbl_bias, 0, 2, "", width = 35.0, bgcolor = color.new(color.white, 100))
+    // Center Bottom (30% width, centered)
+    table.cell(tbl_bias, 1, 2, c1_message, width = 30.0, text_color = c1_col, text_size = size.tiny, text_halign = text.align_center, bgcolor = color.new(color.white, 100))
+    // Right Bottom (Empty)
+    table.cell(tbl_bias, 2, 2, "", width = 35.0, bgcolor = color.new(color.white, 100))
+
+WCPRC = BULLISH ? color.teal : MODERATELYBULLISH ? color.green : BEARISH ? color.maroon : MODERATELYBEARISH ? color.red : color.gray
+
+// ──── ZONE DEFINITIONS & BOUNCE CONDITIONS ────────────────────────────────
+bool Redzone   = (minus > plus) and (fShortEMA < fMedEMA) and (fPivotPDEMAF < fPivotPDEMAS)
+bool Greenzone = (plus > minus) and (fShortEMA > fMedEMA) and (fPivotPDEMAF > fPivotPDEMAS)
+
+bool emaCanBuy  = Greenzone or not Redzone
+bool emaCanSell = Redzone or not Greenzone
 
 //===================================
 
@@ -893,7 +966,7 @@ f_sec_D(_src) => request.security(syminfo.tickerid, 'D', _src, barmerge.gaps_off
 HI  = f_sec_D(high)
 LO  = f_sec_D(low)
 CLo = f_sec_D(close)
-OP  = f_sec_D(open)
+OP := f_sec_D(open)
 
 Op = open
 Hi = high
@@ -1555,53 +1628,9 @@ if not na(DPLine2) and line.get_x2(DPLine2) != bar_index
 
 //=====================================================================================================================
 
-WCPRC = BULLISH ? color.teal : MODERATELYBULLISH ? color.green : BEARISH ? color.maroon : MODERATELYBEARISH ? color.red : color.gray
-
-
 // ====================================================================
 // 5. ZONE DEFINITIONS & BOUNCE CONDITIONS
 // ====================================================================
-
-bool Redzone   = (minus > plus) and (fShortEMA < fMedEMA) and (fPivotPDEMAF < fPivotPDEMAS)
-bool Greenzone = (plus > minus) and (fShortEMA > fMedEMA) and (fPivotPDEMAF > fPivotPDEMAS)
-
-bool emaCanBuy  = Greenzone or not Redzone
-bool emaCanSell = Redzone or not Greenzone
-
-// AST OPTIMIZATION: Extracting repeated string comparisons into single variables
-
-var table perfTablecX = table.new(position.top_right, columns, rows, border_width = 3)
-
-// 5. OPTIMIZED TABLE LOGIC (Deleted 30+ lines of redundant 'if' statements)
-
-// 1. FIRST, define the function
-f_fillcellX(_table, _column, _row, _cellText, _c_color, _t_color) =>
-    table.cell(_table, _column, _row, _cellText, bgcolor = color.new(WCPRC, 100), text_color = _c_color, width = 55, text_size = size.tiny)
-
-// 2. THEN, call the function
-f_fillcellX(perfTablecX, 0, 1, str.tostring(dX), paintX, paintX)
-f_fillcellX(perfTablecX, 1, 1, str.tostring(mX), paintmX, paintmX)
-
-
-// Removing 'var' ensures these variables reset and check properly on every new bar
-string dX_message = ''
-color dX_col = paintX
-string mX_message = ''
-color mX_col = paintmX
-
-// Clean, unified check for dX
-if dX == 'IN RANGE \n IN VALUE' or dX == 'IN RANGE \n OUT OF VALUE' or dX == 'OUT OF RANGE \n OUT OF VALUE'
-    dX_message := str.tostring(dX)
-    dX_col := paintX
-
-// Clean, unified check for mX (removed all duplicate checks)
-if mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS' or 
-   mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL' or 
-   mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND' or 
-   mX == 'BIG MOVE' or 
-   mX == 'TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE'
-    mX_message := str.tostring(mX)
-    mX_col := paintmX
 
 
 //====================================================================================================================
@@ -1919,7 +1948,6 @@ isfros(level) =>
 
 isbreakfailure() =>
     issfp(sup01) ? true : issfp(sup02) ? true : issfp(sup03) ? true : issfp(sup04) ? true : issfp(sup05) ? true : issfp(sup06) ? true : issfp(sup07) ? true : issfp(sup08) ? true : issfp(sup09) ? true : issfp(sup10) ? true : issfp(sup11) ? true : issfp(sup12) ? true : issfp(sup13) ? true : issfp(sup14) ? true : issfp(sup15) ? true : issfp(res01) ? true : issfp(res02) ? true : issfp(res03) ? true : issfp(res04) ? true : issfp(res05) ? true : issfp(res06) ? true : issfp(res07) ? true : issfp(res08) ? true : issfp(res09) ? true : issfp(res10) ? true : issfp(res11) ? true : issfp(res12) ? true : issfp(res13) ? true : issfp(res14) ? true : issfp(res15) ? true : isfros(sup01) ? true : isfros(sup02) ? true : isfros(sup03) ? true : isfros(sup04) ? true : isfros(sup05) ? true : isfros(sup06) ? true : isfros(sup07) ? true : isfros(sup08) ? true : isfros(sup09) ? true : isfros(sup10) ? true : isfros(sup11) ? true : isfros(sup12) ? true : isfros(sup13) ? true : isfros(sup14) ? true : isfros(sup15) ? true : isfros(res01) ? true : isfros(res02) ? true : isfros(res03) ? true : isfros(res04) ? true : isfros(res05) ? true : isfros(res06) ? true : isfros(res07) ? true : isfros(res08) ? true : isfros(res09) ? true : isfros(res10) ? true : isfros(res11) ? true : isfros(res12) ? true : isfros(res13) ? true : isfros(res14) ? true : isfros(res15) ? true : false
-
 // Custom Pivot Function
 
 p = Top // Get pivot
@@ -2027,6 +2055,7 @@ if not na(q)
     else if na(sup15)
         l_sup15 := line.new(bar_index - lb, q, bar_index, q, extend = extend.right, color = color.new(ld, transg), width = dwg)
         sup15 := q
+
 // Break Counter & Invalidation (Resistance)
 if open < res01 and close > res01 or open > res01 and close < res01
     br_res01 := br_res01 + 1
@@ -2541,121 +2570,110 @@ sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string 
          ) + '}'
     alert(_tPay, alert.freq_once_per_bar_close)
 
-sendTradeFillAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
-    string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
-    string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
-    
-    string _fPay = '{' + str.format(
-         '"trigger":"TradeFill","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
-         webhook_secret, syminfo.ticker, trade.tradeDirection, 'Active', 
-         str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
-         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
-         ) + '}'
-    alert(_fPay, alert.freq_once_per_bar_close)
-
 
 evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, float trailRange) =>
     float profit    = 0.0
     bool  justHitTP = false
     bool  isLong_   = str.contains(str.upper(trade.tradeDirection), 'LONG')
 
+    // 🛑 0. GUARD: IF ALREADY CLOSED, DO NOT EVALUATE ANY FURTHER
+    if trade.isClosed
+        trade.profit += profit
+
     // ✅ PREVENT FALSE ENTRY ON THE SIGNAL CANDLE
-    // Real limit orders can only fill on the candles AFTER the signal is sent!
-    if not trade.hasHitEntry and bar_index > trade.startBarIndex
+    if not trade.hasHitEntry and not trade.isClosed and bar_index > trade.startBarIndex
         bool entryHit = isLong_ ? low <= trade.entryLevel : high >= trade.entryLevel
         if entryHit
             trade.startBarIndex := bar_index 
             trade.hasHitEntry   := true
-            trade.entryTime     := time      // <--- MUST BE PRESENT
+            trade.entryTime     := time
 
-    // 1. INVALIDATION CHECK
-    // ✅ Added bar_index guard to prevent instant invalidation on the signal candle
+    // 1. LIMIT ORDER INVALIDATION CHECK
     if not trade.hasHitEntry and not trade.isClosed and bar_index > trade.startBarIndex
         bool isInvalidated = isLong_ ? low <= trade.slLevel : high >= trade.slLevel
         if isInvalidated
             trade.isClosed    := true
             trade.forceClosed := true
 
-    // TP Evaluations
-    // ── 3.0 PRE-TP1 BREAKEVEN: Move SL to Entry when price reaches midpoint to TP1 ──
-    float midTP1Level = (trade.entryLevel + trade.tp1Level) / 2.0
-    bool midTP1Reached = not trade.tp1Triggered and (isLong_ ? high >= midTP1Level : low <= midTP1Level) and trade.hasHitEntry
-    if midTP1Reached and settings.breakEvenEnabled
-        trade.breakEvenAllowed := true
-        trade.breakEvenLevel   := trade.entryLevel
-        if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
-            trade.slLevel := trade.breakEvenLevel
-            trade.trailingSLActivated := true
+    // 2. STOP LOSS CHECK (MANDATORY: Evaluated FIRST on active filled trades)
+    if not trade.slTriggered and not trade.isClosed and trade.hasHitEntry
+        bool isSLHit = isLong_ ? low <= trade.slLevel : high >= trade.slLevel
+        if isSLHit
+            trade.slTriggered       := true
+            trade.isClosed          := true
+            trade.closeLevel        := trade.slLevel
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.slLevel, settings.leverage, isLong_, trade.positionRemaining, false)
+            trade.positionRemaining := 0.0
 
-    float tpLevel = trade.tp1Level
-    if not trade.tp1Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel) and trade.hasHitEntry
-        trade.tp1Triggered        := true
-        justHitTP                 := true
-        trade.positionRemaining   -= settings.tp1ProfitRatio
-        profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp1Level, settings.leverage, isLong_, settings.tp1ProfitRatio)
-        if settings.breakEvenEnabled
+    // 3. TAKE PROFIT EVALUATIONS (ONLY run if trade is STILL ACTIVE and NOT stopped out)
+    if not trade.isClosed and trade.hasHitEntry
+        // ── 3.0 PRE-TP1 BREAKEVEN: Move SL to Entry when price reaches midpoint to TP1 ──
+        float midTP1Level = (trade.entryLevel + trade.tp1Level) / 2.0
+        bool midTP1Reached = not trade.tp1Triggered and (isLong_ ? high >= midTP1Level : low <= midTP1Level)
+        if midTP1Reached and settings.breakEvenEnabled
             trade.breakEvenAllowed := true
             trade.breakEvenLevel   := trade.entryLevel
             if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
                 trade.slLevel := trade.breakEvenLevel
                 trade.trailingSLActivated := true
 
-    tpLevel := trade.tp2Level
-    if not trade.tp2Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel) and trade.hasHitEntry
-        trade.tp2Triggered      := true
-        justHitTP               := true
-        trade.positionRemaining -= settings.tp2ProfitRatio
-        profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp2Level, settings.leverage, isLong_, settings.tp2ProfitRatio)
-        if settings.breakEvenEnabled
-            trade.breakEvenAllowed := true
-            trade.breakEvenLevel   := trade.tp1Level
-            if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
-                trade.slLevel := trade.breakEvenLevel
-                trade.trailingSLActivated := true
+        // TP1
+        float tpLevel = trade.tp1Level
+        if not trade.tp1Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel)
+            trade.tp1Triggered        := true
+            justHitTP                 := true
+            trade.positionRemaining   -= settings.tp1ProfitRatio
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp1Level, settings.leverage, isLong_, settings.tp1ProfitRatio)
+            if settings.breakEvenEnabled
+                trade.breakEvenAllowed := true
+                trade.breakEvenLevel   := trade.entryLevel
+                if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
+                    trade.slLevel := trade.breakEvenLevel
+                    trade.trailingSLActivated := true
 
-    tpLevel := trade.tp3Level
-    if not trade.tp3Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel) and trade.hasHitEntry
-        trade.tp3Triggered      := true
-        justHitTP               := true
-        trade.positionRemaining -= settings.tp3ProfitRatio
-        profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp3Level, settings.leverage, isLong_, settings.tp3ProfitRatio)
-        if settings.breakEvenEnabled
-            trade.breakEvenAllowed := true
-            trade.breakEvenLevel   := trade.tp2Level
-            if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
-                trade.slLevel := trade.breakEvenLevel
-                trade.trailingSLActivated := true
+        // TP2
+        tpLevel := trade.tp2Level
+        if not trade.tp2Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel)
+            trade.tp2Triggered      := true
+            justHitTP               := true
+            trade.positionRemaining -= settings.tp2ProfitRatio
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp2Level, settings.leverage, isLong_, settings.tp2ProfitRatio)
+            if settings.breakEvenEnabled
+                trade.breakEvenAllowed := true
+                trade.breakEvenLevel   := trade.tp1Level
+                if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
+                    trade.slLevel := trade.breakEvenLevel
+                    trade.trailingSLActivated := true
 
-    tpLevel := trade.tp4Level
-    if not trade.tp4Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel) and trade.hasHitEntry
-        trade.tp4Triggered      := true
-        justHitTP               := true
-        trade.positionRemaining -= settings.tp4ProfitRatio
-        profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp4Level, settings.leverage, isLong_, settings.tp4ProfitRatio)
-        if settings.breakEvenEnabled
-            trade.breakEvenAllowed := true
-            trade.breakEvenLevel   := trade.tp3Level
-            if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
-                trade.slLevel := trade.breakEvenLevel
-                trade.trailingSLActivated := true
+        // TP3
+        tpLevel := trade.tp3Level
+        if not trade.tp3Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel)
+            trade.tp3Triggered      := true
+            justHitTP               := true
+            trade.positionRemaining -= settings.tp3ProfitRatio
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp3Level, settings.leverage, isLong_, settings.tp3ProfitRatio)
+            if settings.breakEvenEnabled
+                trade.breakEvenAllowed := true
+                trade.breakEvenLevel   := trade.tp2Level
+                if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
+                    trade.slLevel := trade.breakEvenLevel
+                    trade.trailingSLActivated := true
 
-    // Standard Trailing SL block has been permanently deleted from architecture
+        // TP4
+        tpLevel := trade.tp4Level
+        if not trade.tp4Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel)
+            trade.tp4Triggered      := true
+            justHitTP               := true
+            trade.positionRemaining -= settings.tp4ProfitRatio
+            profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp4Level, settings.leverage, isLong_, settings.tp4ProfitRatio)
+            if settings.breakEvenEnabled
+                trade.breakEvenAllowed := true
+                trade.breakEvenLevel   := trade.tp3Level
+                if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
+                    trade.slLevel := trade.breakEvenLevel
+                    trade.trailingSLActivated := true
 
-    // ✅ Stop Loss Check (Now beautifully accurate on the exact entry candle too!)
-    if not trade.slTriggered and not trade.isClosed and trade.hasHitEntry
-        bool isSLHit = false
-        if justHitTP
-            isSLHit := isLong_ ? close <= trade.slLevel : close >= trade.slLevel
-        else
-            isSLHit := isLong_ ? low <= trade.slLevel : high >= trade.slLevel
-            
-        if isSLHit
-            trade.slTriggered := true
-            trade.isClosed    := true
-            trade.closeLevel  := trade.slLevel
-            profit += calculateProfit(settings, trade, trade.entryLevel, trade.slLevel, settings.leverage, isLong_, trade.positionRemaining, false)
-
-    // EMA Trailing SL (Activates cleanly inside the engine!)
+    // 4. EMA Trailing SL
     if trade.tp4Triggered and not trade.isClosed
         if not na(fMed_EMA)
             float newEmaSL = isLong_ ? math.max(trade.tp3Level, fMed_EMA) : math.min(trade.tp3Level, fMed_EMA)
@@ -2674,43 +2692,26 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
                 trade.slTriggered      := true
             trade.closeLevel       := close
             profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, isLong_, trade.positionRemaining, false)
-            trade.positionRemaining := 0
+            trade.positionRemaining := 0.0
 
-    // Divergence Exit (V1.1: Hidden Div Disabled + Price Action Confirmation)
-    // ─────────────────────────────────────────────────────────────────────
-    // RULE 1 (OR): Regular Divergence fires NOW → exit immediately
-    //   Regular divergences (Price LL + Osc HL, or Price HH + Osc LH) are
-    //   high-conviction reversal signals. No confirmation delay needed.
-    //
-    // RULE 2 (OR): ANY divergence (incl. Hidden) fired 1 bar ago
-    //   → exit ONLY if the NEXT candle confirms the reversal direction.
-    //   This prevents temporary hidden divergences (like the USDCAD case)
-    //   from prematurely closing profitable trades that resume trending.
-    //
-    // Combined: exit = (Regular Div NOW) OR (Any Div [1] + price confirms)
-    // ─────────────────────────────────────────────────────────────────────
-
-      // Divergence Exit (Requires 2 consecutive closed candles to confirm reversal)
+    // 5. Divergence Exit
     if divExitActiveInput and not trade.isClosed and trade.hasHitEntry
+        bool regularBearishDivNow = (ext_bearishDiv == 1)
+        bool regularBullishDivNow = (ext_bullishDiv == 1)
+        bool isRegularDivExit     = (isLong_ and regularBearishDivNow) or (not isLong_ and regularBullishDivNow)
 
-        // --- 2-Candle Confirmed Divergence Exit ---
-        // Prevents premature exits from repainting or 1-bar unconfirmed flashes.
-        // Requires divergence signal on bar [1] or [2] PLUS 2 consecutive closed candles of reversal.
-        bool anyBearishDivActive = (ext_bearishDiv[1] == 1) or (ext_bearishHiddenDiv[1] == 1) or (ext_bearishDiv[2] == 1) or (ext_bearishHiddenDiv[2] == 1)
-        bool anyBullishDivActive = (ext_bullishDiv[1] == 1) or (ext_bullishHiddenDiv[1] == 1) or (ext_bullishDiv[2] == 1) or (ext_bullishHiddenDiv[2] == 1)
+        bool anyBearishDiv1Ago    = (ext_bearishDiv[1] == 1) or (ext_bearishHiddenDiv[1] == 1)
+        bool anyBullishDiv1Ago    = (ext_bullishDiv[1] == 1) or (ext_bullishHiddenDiv[1] == 1)
+        bool bearishPriceConfirm  = anyBearishDiv1Ago and (close < open) and (close < close[1])
+        bool bullishPriceConfirm  = anyBullishDiv1Ago and (close > open) and (close > close[1])
+        bool isConfirmedDivExit   = (isLong_ and bearishPriceConfirm) or (not isLong_ and bullishPriceConfirm)
 
-        // 2 consecutive closed candles confirming direction reversal
-        bool bearish2BarConfirm = anyBearishDivActive and (close < open) and (close[1] < open[1]) and (close < close[1])
-        bool bullish2BarConfirm = anyBullishDivActive and (close > open) and (close[1] > open[1]) and (close > close[1])
-
-        bool isConfirmedDivExit = (isLong_ and bearish2BarConfirm) or (not isLong_ and bullish2BarConfirm)
-
-        if isConfirmedDivExit
+        if isRegularDivExit or isConfirmedDivExit
             trade.isClosed          := true
             trade.divExitTriggered  := true 
             trade.closeLevel        := close
             profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, isLong_, trade.positionRemaining, false)
-            trade.positionRemaining := 0
+            trade.positionRemaining := 0.0
 
     if trade.positionRemaining <= 0
         trade.isClosed := true
@@ -2720,7 +2721,7 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
 terminateTrade(Settings settings, TradeLogic trade) =>
     trade.forceClosed := true
     if not trade.slTriggered
-        trade.closeLevel := close
+        trade.closeLevel := not na(close) and close > 0 ? close : trade.entryLevel
         trade.isClosed := true
         trade.profit += calculateProfit(settings, trade, trade.entryLevel, trade.closeLevel, settings.leverage, str.contains(str.upper(trade.tradeDirection), 'LONG'), trade.positionRemaining)
 
@@ -2746,10 +2747,11 @@ generateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) 
 
     if isRecentTrade
         visuals.entryMarkerLine    := line.new(x1 = trade.startBarIndex, y1 = trade.entryLevel, x2 = bar_index - 1, y2 = trade.entryLevel, color = color.new(entrylevelColor, entryleveltransp), style = line.style_solid, width = 2)
-        visuals.entryMarkerLabel   := label.new(int(math.min(bar_index, trade.startBarIndex) - 10), trade.entryLevel, str.tostring(trade.entryLevel, format.mintick), style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.navy)
+        string initEntryIcon = not trade.hasHitEntry ? '⏳ ' : str.contains(trade.tradeDirection, 'LIGHTNING') ? '⚡ ' : '🔰 '
+        visuals.entryMarkerLabel   := label.new(int(math.min(bar_index, trade.startBarIndex) - 10), trade.entryLevel, initEntryIcon + str.tostring(trade.entryLevel, format.mintick), style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.navy)
         
         visuals.stopLossMarkerLine  := line.new(x1 = trade.startBarIndex, y1 = trade.slLevel, x2 = bar_index - 1, y2 = trade.slLevel, color = color.red, style = line.style_dotted, width = 2)
-        visuals.stopLossMarkerLabel := label.new(int(math.min(bar_index, trade.startBarIndex) - 10), trade.slLevel, str.tostring(trade.slLevel, format.mintick), style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.red)
+        visuals.stopLossMarkerLabel := label.new(int(math.min(bar_index, trade.startBarIndex) - 10), trade.slLevel, '⛔ ' + str.tostring(trade.slLevel, format.mintick), style = label.style_label_right, color = color.rgb(255, 255, 255, 100), textcolor = color.red)
         
         float tpLevel = trade.tp1Level
         visuals.tp1Line  := line.new(x1 = trade.startBarIndex, y1 = tpLevel, x2 = bar_index - 1, y2 = tpLevel, color = color.green, style = line.style_dotted, width = 2)
@@ -2771,20 +2773,16 @@ generateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) 
         linefill.new(visuals.tp3Line, visuals.tp4Line, color = color.new(color.teal, 97))
 
 updateTradeVisuals(Settings settings, TradeLogic trade, TradeVisuals visuals) =>
-    bool isInvalidated = trade.isClosed and not trade.hasHitEntry
-
-    // 1. PERMANENT DELETION — only EMA exits and never-filled limits
-    if trade.emaExitTriggered or isInvalidated
+    // 1. PERMANENT DELETION: Closed trades, hit SL, or EMA exit must immediately delete visuals
+    if trade.isClosed or trade.slTriggered or trade.emaExitTriggered
         deleteTradeVisuals(visuals)
-
-    // 2. DRAW FILLED TRADES ONLY
-    if not (trade.emaExitTriggered or isInvalidated) and trade.hasHitEntry
-        // ✅ Build the levels the split-second the limit fills
+    else
+        // 2. DRAW ACTIVE / PENDING TRADES ONLY
         if na(visuals.entryMarkerLine) and settings.showTPSL
             generateTradeVisuals(settings, trade, visuals)
 
         label.set_xy(visuals.entryMarkerLabel,    int(math.min(bar_index, trade.startBarIndex) - 15), trade.entryLevel)
-        string entryIcon = str.contains(trade.tradeDirection, 'LIGHTNING') ? '⚡ ' : '🔰 '
+        string entryIcon = not trade.hasHitEntry ? '⏳ ' : str.contains(trade.tradeDirection, 'LIGHTNING') ? '⚡ ' : '🔰 '
         label.set_text(visuals.entryMarkerLabel, entryIcon + str.tostring(trade.entryLevel, format.mintick))
         updateLine(visuals.entryMarkerLine,      trade.startBarIndex, trade.entryLevel)
         
@@ -2872,11 +2870,14 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
     else if trade.tp1Triggered
         _outcome := 'Completed TP1'
         
-    
+    if na(trade.closeLevel) or trade.closeLevel <= 0.0
+        trade.closeLevel := (trade.slTriggered and not na(trade.slLevel) and trade.slLevel > 0) ? trade.slLevel : (not na(close) and close > 0 ? close : trade.entryLevel)
+        
     // ✅ Single-line ternary operator prevents indentation syntax errors (CE10013)
     bool isShort = str.contains(str.upper(trade.tradeDirection), 'SHORT')
     float exact_pct = isShort ? ((trade.entryLevel - trade.closeLevel) / trade.entryLevel) * 100 : ((trade.closeLevel - trade.entryLevel) / trade.entryLevel) * 100
     float rMult = riskToReward(trade.entryLevel, trade.slLevel, trade.closeLevel, trade.tradeDirection)
+    float safeClosePrice = (na(trade.closeLevel) or trade.closeLevel <= 0.0) ? (not na(close) and close > 0 ? close : trade.entryLevel) : trade.closeLevel
     
     // Format human-readable UTC datestamps for both entry and exit
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
@@ -2887,7 +2888,7 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
     string _oPay = '{' + str.format(
          '"trigger":"TradeClose","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","closePrice":"{5}","slLevel":"{6}","tpLevel":"{7}","pnlAmount":"{8}","pnlPercent":"{9}","rMultiple":"{10}","zone":"{11}","opening_bias":"{12}","day_type":"{13}","dayType":"{12}","marketType":"{13}","tradeMessage":"{14}","entryTime":"{15}","closeTime":"{16}","rawText":"{17}","entryDate":"{18}","closeDate":"{19}","trade_id":"{20}"',
          webhook_secret, syminfo.ticker, trade.tradeDirection, _outcome, 
-         str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.closeLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
+         str.tostring(trade.entryLevel, format.mintick), str.tostring(safeClosePrice, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
          str.tostring(trade.profit, '#.##'), str.tostring(exact_pct, '#.##'), str.tostring(rMult, '#.##'), 
          z1_zone, dX, mX, d1_message, 
          str.tostring(trade.entryTime), str.tostring(time), _outcome + ' | ' + str.tostring(trade.profit, '#.##'),
@@ -2898,8 +2899,9 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
     _oPay
 
 
+
 // =========================================================================
-// 1. THE COMPLETE FUNCTION (Replace your old initializeTradeSession with this)
+// 1. THE COMPLETE INITIALIZE TRADE SESSION FUNCTION
 // =========================================================================
 initializeTradeSession(Settings settings, string tradeDirection) =>
     TradeLogic trade = TradeLogic.new()
@@ -2911,32 +2913,32 @@ initializeTradeSession(Settings settings, string tradeDirection) =>
     settings.totalExchangeFees += entryFeesRatio * settings.initialCapital / 100
     trade.tradeDirection    := tradeDirection
     trade.entryLevel        := trendLine
-    
-    // ✅ Must be false for the ghost lines to stay hidden until filled!
-    trade.hasHitEntry       := false 
+
+    // ✅ Stays false so ghost lines remain hidden until the limit fills!
+    trade.hasHitEntry       := false
     bool isLong = str.contains(str.upper(tradeDirection), 'LONG')
-    
-    // 🔥 Math applied using standard user inputs
+
+    // 🔥 Dynamic ATR TP/SL Levels
     trade.slLevel  := isLong ? math.round_to_mintick(trade.entryLevel - slAtrMultInput  * atrValue)
                              : math.round_to_mintick(trade.entryLevel + slAtrMultInput  * atrValue)
-                             
+
     trade.tp1Level := isLong ? math.round_to_mintick(trade.entryLevel + tp1AtrMultInput * atrValue)
                              : math.round_to_mintick(trade.entryLevel - tp1AtrMultInput * atrValue)
-                             
+
     trade.tp2Level := isLong ? math.round_to_mintick(trade.entryLevel + tp2AtrMultInput * atrValue)
                              : math.round_to_mintick(trade.entryLevel - tp2AtrMultInput * atrValue)
-                             
+
     trade.tp3Level := isLong ? math.round_to_mintick(trade.entryLevel + tp3AtrMultInput * atrValue)
                              : math.round_to_mintick(trade.entryLevel - tp3AtrMultInput * atrValue)
-                             
+
     trade.tp4Level := isLong ? math.round_to_mintick(trade.entryLevel + tp4AtrMultInput * atrValue)
                              : math.round_to_mintick(trade.entryLevel - tp4AtrMultInput * atrValue)
-    
+
     trade.breakEvenLevel    := trade.entryLevel
     trade.startBarIndex     := bar_index
     trade.positionRemaining := 100.0
     trade.capital           := settings.initialCapital
-    
+
     trade
 
 isValidBounceDown(float srLevel) =>
@@ -2952,26 +2954,28 @@ checkAnyBounceUp(s01, s02, s03, s04, s05, s06, s07, s08, s09, s10, s11, s12, s13
 checkAnyBounceDown(r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r13, r14, r15) => isValidBounceDown(r01) or isValidBounceDown(r02) or isValidBounceDown(r03) or isValidBounceDown(r04) or isValidBounceDown(r05) or isValidBounceDown(r06) or isValidBounceDown(r07) or isValidBounceDown(r08) or isValidBounceDown(r09) or isValidBounceDown(r10) or isValidBounceDown(r11) or isValidBounceDown(r12) or isValidBounceDown(r13) or isValidBounceDown(r14) or isValidBounceDown(r15)
 
 
+
+
 // ====================================================================
 // --- ARRAY HELPER FUNCTIONS TO REDUCE MAIN SCRIPT SIZE ---
 // ====================================================================
 
+// 1. Definition (11 parameters)
 initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message) =>
-    // ── H4/L4 HARD GATE (defensive safety net) ──
-    // No new LONG trades at or above H4, no new SHORT trades at or below L4
+    // ── H4/L4 HARD GATE ──
     bool _buy  = buyCond  and low < H4
     bool _sell = sellCond and high > L4
-    // ✅ Tick-Spam Protection: Ensures only 1 trade per bar per category!
     bool alreadyOpenedThisBar = false
     if array.size(sessionsArr) > 0
         TradeLogic lastTrade = array.get(sessionsArr, array.size(sessionsArr) - 1)
         if lastTrade.startBarIndex == bar_index
             alreadyOpenedThisBar := true
-
     if (_buy or _sell) and not alreadyOpenedThisBar
         TradeLogic newTrade = initializeTradeSession(settings, _buy ? longName : shortName)
         TradeVisuals newVis = TradeVisuals.new()
         sendAlert(settings, newTrade, z1, dX, mX, d1_message)
+        if settings.showTPSL
+            generateTradeVisuals(settings, newTrade, newVis)
         array.push(sessionsArr, newTrade)
         array.push(visualsArr, newVis)
 
@@ -3016,6 +3020,7 @@ if bouncedOffActualResMid
 bool GrS = GREEN1 and bouncedOffSR_Up
 bool ReS = RED1 and bouncedOffSR_Down
 
+// 5. Update / establish Midpoints on fresh Power Candles
 if GrS and not GrS[1]
     grsMid := (high + low) / 2
     grsBar := bar_index
@@ -3027,21 +3032,18 @@ if ReS and not ReS[1]
 // ====================================================================
 // 5. ZONE DEFINITIONS & BOUNCE CONDITIONS
 // ====================================================================
-
-// AST OPTIMIZATION: Extracting repeated string comparisons into single variables
-
-bool bullConds = (mX == 'BIG MOVE') or 
-     (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or 
-     (dX == 'OUT OF RANGE \n OUT OF VALUE') or 
-     (c1 == 'CONFIRMED BULLISH') or 
-     (c1 == 'REJECTED BEARISH') or 
+bool bullConds = (mX == 'BIG MOVE') or
+     (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or
+     (dX == 'OUT OF RANGE \n OUT OF VALUE') or
+     (c1 == 'CONFIRMED BULLISH') or
+     (c1 == 'REJECTED BEARISH') or
      (c1 == 'WATCH') or NCPR
 
-bool bearConds = (mX == 'BIG MOVE') or 
-     (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or 
-     (dX == 'OUT OF RANGE \n OUT OF VALUE') or 
-     (c1 == 'CONFIRMED BEARISH') or 
-     (c1 == 'REJECTED BULLISH') or 
+bool bearConds = (mX == 'BIG MOVE') or
+     (mX == 'TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL') or
+     (dX == 'OUT OF RANGE \n OUT OF VALUE') or
+     (c1 == 'CONFIRMED BEARISH') or
+     (c1 == 'REJECTED BULLISH') or
      (c1 == 'WATCH') or NCPR
 
 bool RisingUP    = bullConds
@@ -3056,28 +3058,26 @@ bool R_dn = FallingDown and close < open
 bool MissUP = (RisingUp or RisingUP) and close > open and (low < VAH and open > VAH and high > VAH and close > VAH)
 bool MissDOWN = (FallingDown or FallingDOWN) and close < open and (high > VAL and open < VAL and low < VAL and close < VAL)
 
-// AST OPTIMIZATION: Compressed highly redundant repetitive conditions
-bool MissU = MissUP or (R_up and ((low < VAH and open > VAH and high > VAH and close > VAH) or 
-     (low < Slower and open > Slower and high > Slower and close > Slower) or 
+bool MissU = MissUP or (R_up and ((low < VAH and open > VAH and high > VAH and close > VAH) or
+     (low < Slower and open > Slower and high > Slower and close > Slower) or
      (low < CPR_Today and open > CPR_Today and high > CPR_Today and close > CPR_Today)))
 
-bool MissD = MissDOWN or (R_dn and ((high > VAL and open < VAL and low < VAL and close < VAL) or 
-     (high > Slower and open < Slower and low < Slower and close < Slower) or 
+bool MissD = MissDOWN or (R_dn and ((high > VAL and open < VAL and low < VAL and close < VAL) or
+     (high > Slower and open < Slower and low < Slower and close < Slower) or
      (high > CPR_Today and open < CPR_Today and low < CPR_Today and close < CPR_Today)))
 
-bool RangingUp   = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) and 
+bool RangingUp   = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) and
      ((mX == 'INRANGEINVALUE') or (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or (dX == 'IN RANGE \n IN VALUE'))
 
-bool RangingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) and 
+bool RangingDown = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) and
      ((mX == 'INRANGEINVALUE') or (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or (dX == 'IN RANGE \n IN VALUE'))
 
-bool BounceUp   = (RangingUp and close > open) and ((low < VAL and open > VAL and high > VAL and close > VAL) or 
+bool BounceUp   = (RangingUp and close > open) and ((low < VAL and open > VAL and high > VAL and close > VAL) or
      (low < CPR_Today and open > CPR_Today and high > CPR_Today and close > CPR_Today))
 
-bool BounceDown = (RangingDown and close < open) and ((high > VAH and open < VAH and low < VAH and close < VAH) or 
+bool BounceDown = (RangingDown and close < open) and ((high > VAH and open < VAH and low < VAH and close < VAH) or
      (high > CPR_Today and open < CPR_Today and low < CPR_Today and close < CPR_Today))
 
-// ✅ Draw the bar colors cleanly using only combined variables (GrS and ReS)
 barcolor(ReS ? color.new(#d90b91, 15) : GrS ? color.new(#1eecd8, 11) : na)
 
 // ====================================================================
@@ -3085,8 +3085,6 @@ barcolor(ReS ? color.new(#d90b91, 15) : GrS ? color.new(#1eecd8, 11) : na)
 // ====================================================================
 bool CanBuy  = (emaCanBuy  and MissU) or (emaCanBuy and BounceUp)
 bool CanSell = (emaCanSell and MissD) or (emaCanSell and BounceDown)
-
-// 👉 Update clean trend using strict ternary logic to avoid AST-heavy global if statements
 
 cleanTrendBullish := CanBuy ? true : CanSell ? false : RisingUp ? true : false
 cleanTrendBearish := CanSell ? true : CanBuy ? false : FallingDown ? true : false
@@ -3105,40 +3103,26 @@ bool bouncedOffResMid = bouncedOffActualResMid
 StepUp = (cleanTrendBullish or GREEN1) and bouncedOffGrsMid
 StepDn = (cleanTrendBearish or RED1) and bouncedOffResMid
 
-bool ScalpBuy  = (emaCanBuy  and StepUp) 
+bool ScalpBuy  = (emaCanBuy  and StepUp)
 bool ScalpSell = (emaCanSell and StepDn)
 
-
-// ── SIDEWAYS DAY FILTER (script-level, matches initializeAndPushTrade logic) ──
-// Suppress signal booleans AND their plotshapes on sideways days
-// NCPR exception preserved: narrow CPR compression days still allow signals
-
-bool isSidewaysDay = (mX == 'INRANGEINVALUE') or 
-                     (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or 
-                     str.contains(mX, "TRADING RANGE") or 
-                     str.contains(mX, "SIDEWAYS") or 
-                     str.contains(mX, "TYPICAL DAY") or 
+// ── SIDEWAYS DAY FILTER ──
+bool isSidewaysDay = (mX == 'INRANGEINVALUE') or
+                     (mX == 'TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS') or
+                     str.contains(mX, "TRADING RANGE") or
+                     str.contains(mX, "SIDEWAYS") or
+                     str.contains(mX, "TYPICAL DAY") or
                      (dX == 'IN RANGE \n IN VALUE')
 
-// Rejection Day qualification: institutional CPR rejection, boundary bounces, or extreme/wick reversals
-bool isRejectionDay = (c1 == "REJECTION") or
-                      str.contains(c1, "REJECT") or
-                      BounceUp or BounceDown or
-                      Elongsignal or Eshortsignal
+bool dayAllowed = not isSidewaysDay or NCPR
 
-// On sideways / trading range days, NO signals are allowed UNLESS it is a confirmed Rejection Day
-bool dayAllowed = not isSidewaysDay or isRejectionDay
-
-bool inValueArea = close > VAL and close < VAH
-bool inCamarillaZone = close > l3 and close < h3
-
-bool longAllowed  = low < H4 and inValueArea and inCamarillaZone
-bool shortAllowed = high > L4 and inValueArea and inCamarillaZone
+bool longAllowed  = low < H4
+bool shortAllowed = high > L4
 
 // ── WEBHOOK ZONE STATUS (z1) ──────────────────────────────────
-
 string z1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close > h3 or ANYDAY and close > DBc and close > DTc ? 'LONG ZONE' : (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close < l3 or (BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and close < l3 or ANYDAY and close < DTc and close < DBc ? 'SHORT ZONE' : ANYDAY and close > DBc and close < DTc ? 'WAIT FOR SIGNAL' : 'WAITING'
 
+// ====================================================================
 // ====================================================================
 // ── LIGHTNING, DIVERGENCE & EXTREME REVERSAL SIGNALS ──────────────────
 // ====================================================================
@@ -3156,42 +3140,39 @@ bool hBearInsideCPR = (ext_bearishHiddenDiv[1] == 1) and ((close[1] >= cprBottom
 bool hiddenBullishConfirmed = hBullInsideCPR and (close > open) and (close > close[1])
 bool hiddenBearishConfirmed = hBearInsideCPR and (close < open) and (close < close[1])
 
-// Regular Divergence (Standard rules, subject to standard day type filters)
+// Regular Divergence (Standard rules)
 bool regBullDiv = (ext_bullishDiv[1] == 1)
 bool regBearDiv = (ext_bearishDiv[1] == 1)
 
-// 1. Standard Lightning (Native Missile+Scalp Confluence)
-// Gated by both longAllowed/shortAllowed AND dayAllowed (day types / NCPR)
+// 1. Standard Lightning (Pure Native Missile + Scalp Confluence)
 bool standardLightningBuy  = (CanBuy and ScalpBuy) and longAllowed and dayAllowed
 bool standardLightningSell = (CanSell and ScalpSell) and shortAllowed and dayAllowed
 
-// 2. Regular Divergence Signals (Decoupled from Lightning, standalone strategy)
-// Gated by both longAllowed/shortAllowed AND dayAllowed
-bool DivergenceBuy  = (regBullDiv and GrS) and longAllowed and dayAllowed
-bool DivergenceSell = (regBearDiv and ReS) and shortAllowed and dayAllowed
+// 2. Regular Divergence Signals (Standalone Strategy - Exempt from day types and NCPR)
+bool DivergenceBuy  = ((regBullDiv or regBullDiv[1] or regBullDiv[2] or regBullDiv[3] or regBullDiv[4] or regBullDiv[5]) and GrS) and longAllowed
+bool DivergenceSell = ((regBearDiv  or regBearDiv[1] or regBearDiv[2] or regBearDiv[3] or regBearDiv[4] or regBearDiv[5]) and ReS) and shortAllowed
 
-// 3. Hidden Divergence Signals (Standalone strategy)
-// EXEMPT from day types and NCPR! Only longAllowed / shortAllowed (H4/L4 boundary) applies
-bool HiddenDivBuy  = (hiddenBullishConfirmed and GrS) and longAllowed
-bool HiddenDivSell = (hiddenBearishConfirmed and ReS) and shortAllowed
+// 3. Hidden Divergence Signals (Standalone Strategy - Exempt from day types and NCPR)
+bool HiddenDivBuy   = ((hiddenBullishConfirmed or hiddenBullishConfirmed[1] or hiddenBullishConfirmed[2] or hiddenBullishConfirmed[3] or hiddenBullishConfirmed[4] or hiddenBullishConfirmed[5]) and GrS) and longAllowed
+bool HiddenDivSell  = ((hiddenBearishConfirmed or hiddenBearishConfirmed[1] or hiddenBearishConfirmed[2] or hiddenBearishConfirmed[3] or hiddenBearishConfirmed[4] or hiddenBearishConfirmed[5]) and ReS) and shortAllowed
 
 // Combined Lightning Buy / Sell
-bool LightningBuy  = standardLightningBuy
-bool LightningSell = standardLightningSell
+bool LightningBuy   = standardLightningBuy
+bool LightningSell  = standardLightningSell
 
-// 4. Extreme Reversal (independent signal, standard dayAllowed gate)
+// Flag to bypass day type / sideways filter inside initializeAndPushTrade when H triggers
+bool lightningBypassDayFilter = HiddenDivBuy or HiddenDivSell
+
+// 4. Extreme Reversal (Independent signal, standard dayAllowed gate)
 bool ExtremeReversalBuy  = Elongsignal and longAllowed and dayAllowed
 bool ExtremeReversalSell = Eshortsignal and shortAllowed and dayAllowed
 
-// On sideways days, missile breakout momentum (MissU/MissD) is suppressed; only structural boundary bounces qualify
-bool missileAllowedOnDay = not isSidewaysDay or (isRejectionDay and (BounceUp or BounceDown))
-
 // 5. Filter out individual trades so they don't fire when Lightning, Extreme Reversal, or Divergences fire
-bool JustMissileBuy  = CanBuy and missileAllowedOnDay and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
-bool JustMissileSell = CanSell and missileAllowedOnDay and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
+bool JustMissileBuy  = CanBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
+bool JustMissileSell = CanSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
 
-bool JustScalpBuy  = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
-bool JustScalpSell = ScalpSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
+bool JustScalpBuy    = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
+bool JustScalpSell   = ScalpSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
 
 
 // ====================================================================
@@ -3215,6 +3196,7 @@ var array<TradeVisuals> hiddenDivVisualsArr  = array.new<TradeVisuals>()
 var array<TradeLogic>   extremeRevSessions   = array.new<TradeLogic>()
 var array<TradeVisuals> extremeRevVisualsArr = array.new<TradeVisuals>()
 
+// ── Initialize & Push Trades for All Decoupled Signal Categories ───
 initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message)
 initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message)
 initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message)
@@ -3222,13 +3204,14 @@ initializeAndPushTrade(settings, DivergenceBuy, DivergenceSell, 'LONG DIVERGENCE
 initializeAndPushTrade(settings, HiddenDivBuy, HiddenDivSell, 'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE', hiddenDivSessions, hiddenDivVisualsArr, z1, dX, mX, d1_message)
 initializeAndPushTrade(settings, ExtremeReversalBuy, ExtremeReversalSell, 'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL', extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message)
 
+
 // ====================================================================
-// 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS ELEGANTLY)
+// 8. MASTER EXECUTION ENGINE (PROCESSES ALL ARRAYS)
 // ====================================================================
 bool  triggerTrailingSL = false
 float rangeTrailingSL   = 0.0
 
-// This single powerful function handles ALL arrays perfectly, including deletions!
+// ⬇️ THIS FUNCTION DEFINITION WAS MISSING — PASTE THIS HERE:
 processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool triggerTrailingSL, float rangeTrailingSL) =>
     if array.size(sessionsArr) > 0
         for i = array.size(sessionsArr) - 1 to 0
@@ -3239,16 +3222,12 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
             if isPastDay
                 trade.isClosed    := true
                 trade.forceClosed := true
+                trade.closeLevel  := not na(close) and close > 0 ? close : trade.entryLevel
 
             float prevSL = trade.slLevel
-            bool wasUnfilled = not trade.hasHitEntry
             
-            // ✅ Evaluates TP, SL, and EMA Exit dynamically!
+            // Evaluates TP, SL, and Trailing Stop
             evaluateTradeProgress(settings, trade, triggerTrailingSL, rangeTrailingSL)
-
-            // ✅ Fire TradeFill webhook the exact moment limit order executes
-            if wasUnfilled and trade.hasHitEntry
-                sendTradeFillAlert(settings, trade, z1, dX, mX, d1_message)
 
             if session.islastbar_regular and timeframe.isintraday and not trade.isClosed
                 terminateTrade(settings, trade)
@@ -3260,17 +3239,14 @@ processTradeArray(Settings settings, array<TradeLogic> sessionsArr, array<TradeV
                 updateTradeVisuals(settings, trade, vis)
                 signalLabelUpdate(settings, trade, vis)
             else
-                // The split-second it mathematically closes, finalize and clean up!
+                // Finalize upon closure & cleanly delete visuals
                 string closePayload = finalizeTrade(settings, trade, z1, dX, mX, d1_message)
+                deleteTradeVisuals(vis) 
+                TradeLogic   _removedTrade = array.remove(sessionsArr, i)
+                TradeVisuals _removedVis   = array.remove(visualsArr, i)
+                signalLabelUpdate(settings, trade, vis)
 
-                // ✅ DELETES VISUALS INSTANTLY
-                deleteTradeVisuals(vis)
-
-                array.remove(sessionsArr, i)
-                array.remove(visualsArr, i)
-                0
-
-// ✅ EXECUTE ALL ARRAYS IN CLEAN LINES
+// ⬇️ NOW THESE CALLS WILL COMPILE WITH ZERO ERRORS:
 processTradeArray(settings, missileSessions,    missileVisualsArr,    z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, scalpSessions,      scalpVisualsArr,      z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, currentSessions,    currentVisualsArr,    z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
@@ -3278,23 +3254,19 @@ processTradeArray(settings, divergenceSessions, divergenceVisualsArr, z1, dX, mX
 processTradeArray(settings, hiddenDivSessions,  hiddenDivVisualsArr,  z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 
-
 // ====================================================================
 // 9. ON-CHART PLOTTINGS & VISUAL MARKERS
 // ====================================================================
 
 // 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS
-plotshape(DivergenceBuy,  title = "Bullish Regular Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "DIV", textcolor = color.black, size = size.small)
-plotshape(DivergenceSell, title = "Bearish Regular Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "DIV", textcolor = color.white, size = size.small)
+plotshape(DivergenceBuy,  title = "Bullish Regular Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
+plotshape(DivergenceSell, title = "Bearish Regular Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
 
 // 🔵 / 🟠 2. HIDDEN DIVERGENCE (CPR CONFLUENCE) PLOTS
-plotshape(HiddenDivBuy,  title = "Bullish Hidden Divergence (CPR)", style = shape.labelup,   location = location.belowbar, color = color.new(color.teal, 0),   text = "HDIV", textcolor = color.white, size = size.small)
-plotshape(HiddenDivSell, title = "Bearish Hidden Divergence (CPR)", style = shape.labeldown, location = location.abovebar, color = color.new(color.orange, 0), text = "HDIV", textcolor = color.black, size = size.small)
+plotshape(HiddenDivBuy,  title = "Bullish Hidden Divergence (CPR)", style = shape.labelup,   location = location.belowbar, color = color.new(color.teal, 0),   text = "H", textcolor = color.white, size = size.small)
+plotshape(HiddenDivSell, title = "Bearish Hidden Divergence (CPR)", style = shape.labeldown, location = location.abovebar, color = color.new(color.orange, 0), text = "H", textcolor = color.black, size = size.small)
 
 // ⚡ 3. LIGHTNING PLOTS
-plotshape(BounceUp and not LightningBuy and dayAllowed and longAllowed,    title = 'Long Call',  style = shape.arrowup  ,   location = location.belowbar, color = color.green,  size = size.large)
-plotshape(BounceDown and not LightningSell and dayAllowed and shortAllowed, title = 'Long Put', style = shape.arrowdown, location = location.abovebar, color = color.red,  size = size.large)
-
 plotchar(LightningBuy  and dayAllowed and longAllowed,  title = "Lightning Buy (Star)",  char = '★', location = location.belowbar, color = color.teal,   size = size.normal)
 plotchar(LightningSell and dayAllowed and shortAllowed, title = "Lightning Sell (Star)", char = '★', location = location.abovebar, color = color.maroon, size = size.normal)
 plotchar(LightningBuy  and dayAllowed and longAllowed,  title = "Lightning Buy (Bolt)",  char = '⚡', location = location.belowbar, color = color.lime,   size = size.normal)
@@ -3305,765 +3277,271 @@ plotshape(ExtremeReversalBuy,  title = "Bullish Extreme Reversal", style = shape
 plotshape(ExtremeReversalSell, title = "Bearish Extreme Reversal", style = shape.arrowdown, location = location.abovebar, color = color.fuchsia, size = size.normal, text = "EXT REV", textcolor = color.fuchsia)
 
 // 🚀 5. MISSILE PLOTS
-plotshape(JustMissileBuy  and dayAllowed and longAllowed,  title = "Long Signal",  style = shape.triangleup,   location = location.belowbar, color = color.green, size = size.small)
-plotshape(JustMissileSell and dayAllowed and shortAllowed, title = "Short Signal", style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
+plotshape(JustMissileBuy  and dayAllowed and longAllowed,  title = "Long Missile",  style = shape.triangleup,   location = location.belowbar, color = color.green, size = size.small)
+plotshape(JustMissileSell and dayAllowed and shortAllowed, title = "Short Missile", style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
 
 // 💎 6. SCALP PLOTS
 plotshape(JustScalpBuy  and dayAllowed and longAllowed,  title = "Long Scalp",  style = shape.diamond, location = location.belowbar, color = color.green, size = size.small)
 plotshape(JustScalpSell and dayAllowed and shortAllowed, title = "Short Scalp", style = shape.diamond, location = location.abovebar, color = color.red,   size = size.small)
 
-// ====================================================================
-// SIGNAL FUNCTIONS 
-// ====================================================================
-LongSignalFunc() => CanBuy
-ShortSignalFunc() => CanSell
-MidSignalFunc() => ScalpBuy
-RejSignalFunc() => ScalpSell
-CanSignalFunc() => LightningBuy
-ERSignalFunc() => LightningSell
+// 🏹 7. BOUNCE PLOTS (Call & Put Arrows)
+plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup,   location = location.belowbar, color = color.green, size = size.large)
+plotshape(BounceDown and not LightningSell, title = 'Long Put',   style = shape.arrowdown, location = location.abovebar, color = color.red,   size = size.large)
+
+
+
+//indicator("Range", overlay = true)
+//Variables and User Inputs
+
+TF1 = input.timeframe('D', group = '========= HTF SETTINGS =========')
+show_HTF_for_TF1 = input.bool(true, title = 'Show HTF Candles', group = '========= HTF SETTINGS =========')
+HTF_Candles_to_Show_TF1 = input.int(2, title = 'Number of HTF Candles (Max: 10)', minval = 1, maxval = 10, step = 1, group = '========= HTF SETTINGS =========')
+offset_TF1 = input.int(7, title = 'HTF Bar/Candle Offset', minval = 5, step = 1, group = '========= HTF SETTINGS =========')
+gap_between_bars = input.int(2, title = 'Gap Between Bars', minval = 1, step = 1, group = '========= HTF SETTINGS =========')
+color_bullish = input.color(#089981, 'Bullish Candle Color', group = 'COLOR SETTINGS')
+color_bearish = input.color(#e44242, 'Bearish Candle Color', group = 'COLOR SETTINGS')
+color_text = input.color(color.rgb(4, 4, 4, 100), 'Text Color', group = 'COLOR SETTINGS')
+
+//Getting OHLC values For TF1
+[O_1_TF1, H_1_TF1, L_1_TF1, C_1_TF1, O_2_TF1, H_2_TF1, L_2_TF1, C_2_TF1, O_3_TF1, H_3_TF1, L_3_TF1, C_3_TF1, O_4_TF1, H_4_TF1, L_4_TF1, C_4_TF1, O_5_TF1, H_5_TF1, L_5_TF1, C_5_TF1, O_6_TF1, H_6_TF1, L_6_TF1, C_6_TF1, O_7_TF1, H_7_TF1, L_7_TF1, C_7_TF1, O_8_TF1, H_8_TF1, L_8_TF1, C_8_TF1, O_9_TF1, H_9_TF1, L_9_TF1, C_9_TF1, O_10_TF1, H_10_TF1, L_10_TF1, C_10_TF1, TF1_, Highest_TF1] = request.security(syminfo.tickerid, TF1, [open[0], high[0], low[0], close[0], open[1], high[1], low[1], close[1], open[2], high[2], low[2], close[2], open[3], high[3], low[3], close[3], open[4], high[4], low[4], close[4], open[5], high[5], low[5], close[5], open[7], high[7], low[7], close[7], open[8], high[8], low[8], close[8], open[9], high[9], low[9], close[9], open[10], high[10], low[10], close[10], TF1, ta.highest(high, HTF_Candles_to_Show_TF1)], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Function to plot HTF Candles
+condition(a, b, c, ax, open_, high_, low_, close_, show_label_, LO, LH, LL, LC, LTF, TF, x) =>
+    //Variables for candles OHLC
+    var line line_O_C_a = a
+    var line line_OC_H_b = b
+    var line line_OC_L_c = c
+    var label label_O_a = LO
+    var label label_H_b = LH
+    var label label_L_c = LL
+    var label label_C_d = LC
+    var label label_TF_e = LTF
+
+    //Cleaning up old candles
+    line.delete(line_O_C_a)
+    line.delete(line_OC_H_b)
+    line.delete(line_OC_L_c)
+    if show_label_
+        label.delete(label_O_a)
+        label.delete(label_H_b)
+        label.delete(label_L_c)
+        label.delete(label_C_d)
+        label.delete(label_TF_e)
+
+    //Plotting Open Close of the candles
+    line_O_C_a := line.new(bar_index + ax, open_, bar_index + ax, close_, color = open_ < close_ ? color_bullish : open_ > close_ ? color_bearish : color_bearish, width = 9)
+
+    //Plotting Wicks => wick above and below the candles
+    line_OC_H_b := line.new(bar_index + ax, open_ < close_ ? close_ : open_, bar_index + ax, high_, color = open_ < close_ ? color_bullish : open_ > close_ ? color_bearish : color_bearish)
+    line_OC_L_c := line.new(bar_index + ax, open_ > close_ ? close_ : open_, bar_index + ax, low_, color = open_ < close_ ? color_bullish : open_ > close_ ? color_bearish : color_bearish)
+
+    //labels
+    // x=10
+    if show_label_
+        // label_O_a := label.new(bar_index + ax + 12, open_, text = "O: " + str.tostring(open_), textcolor=open_<close_?color.lime:color.red, style=label.style_label_left, color = color.new(color.white, 100))
+        // label_H_b := label.new(bar_index + ax + 2, high_, text = "H: " + str.tostring(high_, '#'), textcolor=open_<close_?color.lime:color.red, style=label.style_label_left, color = color.new(color.white, 100))
+        // label_L_c := label.new(bar_index + ax + 2, low_, text = "L: " + str.tostring(low_, '#'), textcolor=open_<close_?color.lime:color.red, style=label.style_label_left, color = color.new(color.white, 100))
+        label_C_d := label.new(bar_index + ax + 1, close_, text = 'C: ' + str.tostring(close_), textcolor = color_text, style = label.style_label_left, color = color.new(color.white, 100))
+        label_TF_e := label.new(bar_index + ax, x, text = 'TF: ' + str.tostring(TF), textcolor = color_text, style = label.style_label_up, color = na, size = size.large)
+        label_TF_e
+    [line_O_C_a, line_OC_H_b, line_OC_L_c, label_O_a, label_H_b, label_L_c, label_C_d, label_TF_e]
+
+
+//HTF Candles for TF1
+if HTF_Candles_to_Show_TF1 >= 1 and show_HTF_for_TF1
+    var line line_O_C_1_TF1 = na
+    var line line_OC_H_1_TF1 = na
+    var line line_OC_L_1_TF1 = na
+    var label label_O_1_TF1 = na
+    var label label_H_1_TF1 = na
+    var label label_L_1_TF1 = na
+    var label label_C_1_TF1 = na
+    var label label_TF_1_TF1 = na
+    [line_O_C_1_TF1_, line_OC_H_1_TF1_, line_OC_L_1_TF1_, label_O_1_TF1_, label_H_1_TF1_, label_L_1_TF1_, label_C_1_TF1_, label_TF_1_] = condition(line_O_C_1_TF1, line_OC_H_1_TF1, line_OC_L_1_TF1, offset_TF1 - 0 * gap_between_bars, O_1_TF1, H_1_TF1, L_1_TF1, C_1_TF1, true, label_O_1_TF1, label_H_1_TF1, label_L_1_TF1, label_C_1_TF1, label_TF_1_TF1, TF1_, Highest_TF1)
+    line_O_C_1_TF1 := line_O_C_1_TF1_
+    line_OC_H_1_TF1 := line_OC_H_1_TF1_
+    line_OC_L_1_TF1 := line_OC_L_1_TF1_
+    label_O_1_TF1_ := label_O_1_TF1_
+    label_H_1_TF1 := label_L_1_TF1_
+    label_L_1_TF1 := label_L_1_TF1_
+    label_C_1_TF1 := label_C_1_TF1_
+    label_C_1_TF1
+
+if HTF_Candles_to_Show_TF1 >= 2 and show_HTF_for_TF1
+    var line line_O_C_2_TF1 = na
+    var line line_OC_H_2_TF1 = na
+    var line line_OC_L_2_TF1 = na
+    var label label_O_2_TF1 = na
+    var label label_H_2_TF1 = na
+    var label label_L_2_TF1 = na
+    var label label_C_2_TF1 = na
+    var label label_TF_2_TF1 = na
+    [line_O_C_2_TF1_, line_OC_H_2_TF1_, line_OC_L_2_TF1_, label_O_2_TF1_, label_H_2_TF1_, label_L_2_TF1_, label_C_2_TF1_, label_TF_1_] = condition(line_O_C_2_TF1, line_OC_H_2_TF1, line_OC_L_2_TF1, offset_TF1 - 1 * gap_between_bars, O_2_TF1, H_2_TF1, L_2_TF1, C_2_TF1, false, label_O_2_TF1, label_H_2_TF1, label_L_2_TF1, label_C_2_TF1, label_TF_2_TF1, TF1_, Highest_TF1)
+    line_O_C_2_TF1 := line_O_C_2_TF1_
+    line_OC_H_2_TF1 := line_OC_H_2_TF1_
+    line_OC_L_2_TF1 := line_OC_L_2_TF1_
+    label_O_2_TF1_ := label_O_2_TF1_
+    label_H_2_TF1 := label_L_2_TF1_
+    label_L_2_TF1 := label_L_2_TF1_
+    label_C_2_TF1 := label_C_2_TF1_
+    label_C_2_TF1
+
+if HTF_Candles_to_Show_TF1 >= 3 and show_HTF_for_TF1
+    var line line_O_C_3_TF1 = na
+    var line line_OC_H_3_TF1 = na
+    var line line_OC_L_3_TF1 = na
+    var label label_O_3_TF1 = na
+    var label label_H_3_TF1 = na
+    var label label_L_3_TF1 = na
+    var label label_C_3_TF1 = na
+    var label label_TF_3_TF1 = na
+    [line_O_C_3_TF1_, line_OC_H_3_TF1_, line_OC_L_3_TF1_, label_O_3_TF1_, label_H_3_TF1_, label_L_3_TF1_, label_C_3_TF1_, label_TF_1_] = condition(line_O_C_3_TF1, line_OC_H_3_TF1, line_OC_L_3_TF1, offset_TF1 - 2 * gap_between_bars, O_3_TF1, H_3_TF1, L_3_TF1, C_3_TF1, false, label_O_3_TF1, label_H_3_TF1, label_L_3_TF1, label_C_3_TF1, label_TF_3_TF1, TF1_, Highest_TF1)
+    line_O_C_3_TF1 := line_O_C_3_TF1_
+    line_OC_H_3_TF1 := line_OC_H_3_TF1_
+    line_OC_L_3_TF1 := line_OC_L_3_TF1_
+    label_O_3_TF1_ := label_O_3_TF1_
+    label_H_3_TF1 := label_L_3_TF1_
+    label_L_3_TF1 := label_L_3_TF1_
+    label_C_3_TF1 := label_C_3_TF1_
+    label_C_3_TF1
+
+if HTF_Candles_to_Show_TF1 >= 4 and show_HTF_for_TF1
+    var line line_O_C_4_TF1 = na
+    var line line_OC_H_4_TF1 = na
+    var line line_OC_L_4_TF1 = na
+    var label label_O_4_TF1 = na
+    var label label_H_4_TF1 = na
+    var label label_L_4_TF1 = na
+    var label label_C_4_TF1 = na
+    var label label_TF_4_TF1 = na
+    [line_O_C_4_TF1_, line_OC_H_4_TF1_, line_OC_L_4_TF1_, label_O_4_TF1_, label_H_4_TF1_, label_L_4_TF1_, label_C_4_TF1_, label_TF_1_] = condition(line_O_C_4_TF1, line_OC_H_4_TF1, line_OC_L_4_TF1, offset_TF1 - 3 * gap_between_bars, O_4_TF1, H_4_TF1, L_4_TF1, C_4_TF1, false, label_O_4_TF1, label_H_4_TF1, label_L_4_TF1, label_C_4_TF1, label_TF_4_TF1, TF1_, Highest_TF1)
+    line_O_C_4_TF1 := line_O_C_4_TF1_
+    line_OC_H_4_TF1 := line_OC_H_4_TF1_
+    line_OC_L_4_TF1 := line_OC_L_4_TF1_
+    label_O_4_TF1_ := label_O_4_TF1_
+    label_H_4_TF1 := label_L_4_TF1_
+    label_L_4_TF1 := label_L_4_TF1_
+    label_C_4_TF1 := label_C_4_TF1_
+    label_C_4_TF1
+
+if HTF_Candles_to_Show_TF1 >= 5 and show_HTF_for_TF1
+    var line line_O_C_5_TF1 = na
+    var line line_OC_H_5_TF1 = na
+    var line line_OC_L_5_TF1 = na
+    var label label_O_5_TF1 = na
+    var label label_H_5_TF1 = na
+    var label label_L_5_TF1 = na
+    var label label_C_5_TF1 = na
+    var label label_TF_5_TF1 = na
+    [line_O_C_5_TF1_, line_OC_H_5_TF1_, line_OC_L_5_TF1_, label_O_5_TF1_, label_H_5_TF1_, label_L_5_TF1_, label_C_5_TF1_, label_TF_1_] = condition(line_O_C_5_TF1, line_OC_H_5_TF1, line_OC_L_5_TF1, offset_TF1 - 4 * gap_between_bars, O_5_TF1, H_5_TF1, L_5_TF1, C_5_TF1, false, label_O_5_TF1, label_H_5_TF1, label_L_5_TF1, label_C_5_TF1, label_TF_5_TF1, TF1_, Highest_TF1)
+    line_O_C_5_TF1 := line_O_C_5_TF1_
+    line_OC_H_5_TF1 := line_OC_H_5_TF1_
+    line_OC_L_5_TF1 := line_OC_L_5_TF1_
+    label_O_5_TF1_ := label_O_5_TF1_
+    label_H_5_TF1 := label_L_5_TF1_
+    label_L_5_TF1 := label_L_5_TF1_
+    label_C_5_TF1 := label_C_5_TF1_
+    label_C_5_TF1
+
+if HTF_Candles_to_Show_TF1 >= 6 and show_HTF_for_TF1
+    var line line_O_C_6_TF1 = na
+    var line line_OC_H_6_TF1 = na
+    var line line_OC_L_6_TF1 = na
+    var label label_O_6_TF1 = na
+    var label label_H_6_TF1 = na
+    var label label_L_6_TF1 = na
+    var label label_C_6_TF1 = na
+    var label label_TF_6_TF1 = na
+    [line_O_C_6_TF1_, line_OC_H_6_TF1_, line_OC_L_6_TF1_, label_O_6_TF1_, label_H_6_TF1_, label_L_6_TF1_, label_C_6_TF1_, label_TF_1_] = condition(line_O_C_6_TF1, line_OC_H_6_TF1, line_OC_L_6_TF1, offset_TF1 - 5 * gap_between_bars, O_6_TF1, H_6_TF1, L_6_TF1, C_6_TF1, false, label_O_6_TF1, label_H_6_TF1, label_L_6_TF1, label_C_6_TF1, label_TF_6_TF1, TF1_, Highest_TF1)
+    line_O_C_6_TF1 := line_O_C_6_TF1_
+    line_OC_H_6_TF1 := line_OC_H_6_TF1_
+    line_OC_L_6_TF1 := line_OC_L_6_TF1_
+    label_O_6_TF1_ := label_O_6_TF1_
+    label_H_6_TF1 := label_L_6_TF1_
+    label_L_6_TF1 := label_L_6_TF1_
+    label_C_6_TF1 := label_C_6_TF1_
+    label_C_6_TF1
+
+if HTF_Candles_to_Show_TF1 >= 7 and show_HTF_for_TF1
+    var line line_O_C_7_TF1 = na
+    var line line_OC_H_7_TF1 = na
+    var line line_OC_L_7_TF1 = na
+    var label label_O_7_TF1 = na
+    var label label_H_7_TF1 = na
+    var label label_L_7_TF1 = na
+    var label label_C_7_TF1 = na
+    var label label_TF_7_TF1 = na
+    [line_O_C_7_TF1_, line_OC_H_7_TF1_, line_OC_L_7_TF1_, label_O_7_TF1_, label_H_7_TF1_, label_L_7_TF1_, label_C_7_TF1_, label_TF_1_] = condition(line_O_C_7_TF1, line_OC_H_7_TF1, line_OC_L_7_TF1, offset_TF1 - 6 * gap_between_bars, O_7_TF1, H_7_TF1, L_7_TF1, C_7_TF1, false, label_O_7_TF1, label_H_7_TF1, label_L_7_TF1, label_C_7_TF1, label_TF_7_TF1, TF1_, Highest_TF1)
+    line_O_C_7_TF1 := line_O_C_7_TF1_
+    line_OC_H_7_TF1 := line_OC_H_7_TF1_
+    line_OC_L_7_TF1 := line_OC_L_7_TF1_
+    label_O_7_TF1_ := label_O_7_TF1_
+    label_H_7_TF1 := label_L_7_TF1_
+    label_L_7_TF1 := label_L_7_TF1_
+    label_C_7_TF1 := label_C_7_TF1_
+    label_C_7_TF1
+
+if HTF_Candles_to_Show_TF1 >= 8 and show_HTF_for_TF1
+    var line line_O_C_8_TF1 = na
+    var line line_OC_H_8_TF1 = na
+    var line line_OC_L_8_TF1 = na
+    var label label_O_8_TF1 = na
+    var label label_H_8_TF1 = na
+    var label label_L_8_TF1 = na
+    var label label_C_8_TF1 = na
+    var label label_TF_8_TF1 = na
+    [line_O_C_8_TF1_, line_OC_H_8_TF1_, line_OC_L_8_TF1_, label_O_8_TF1_, label_H_8_TF1_, label_L_8_TF1_, label_C_8_TF1_, label_TF_1_] = condition(line_O_C_8_TF1, line_OC_H_8_TF1, line_OC_L_8_TF1, offset_TF1 - 7 * gap_between_bars, O_8_TF1, H_8_TF1, L_8_TF1, C_8_TF1, false, label_O_8_TF1, label_H_8_TF1, label_L_8_TF1, label_C_8_TF1, label_TF_8_TF1, TF1_, Highest_TF1)
+    line_O_C_8_TF1 := line_O_C_8_TF1_
+    line_OC_H_8_TF1 := line_OC_H_8_TF1_
+    line_OC_L_8_TF1 := line_OC_L_8_TF1_
+    label_O_8_TF1_ := label_O_8_TF1_
+    label_H_8_TF1 := label_L_8_TF1_
+    label_L_8_TF1 := label_L_8_TF1_
+    label_C_8_TF1 := label_C_8_TF1_
+    label_C_8_TF1
+
+if HTF_Candles_to_Show_TF1 >= 9 and show_HTF_for_TF1
+    var line line_O_C_9_TF1 = na
+    var line line_OC_H_9_TF1 = na
+    var line line_OC_L_9_TF1 = na
+    var label label_O_9_TF1 = na
+    var label label_H_9_TF1 = na
+    var label label_L_9_TF1 = na
+    var label label_C_9_TF1 = na
+    var label label_TF_9_TF1 = na
+    [line_O_C_9_TF1_, line_OC_H_9_TF1_, line_OC_L_9_TF1_, label_O_9_TF1_, label_H_9_TF1_, label_L_9_TF1_, label_C_9_TF1_, label_TF_1_] = condition(line_O_C_9_TF1, line_OC_H_9_TF1, line_OC_L_9_TF1, offset_TF1 - 8 * gap_between_bars, O_9_TF1, H_9_TF1, L_9_TF1, C_9_TF1, false, label_O_9_TF1, label_H_9_TF1, label_L_9_TF1, label_C_9_TF1, label_TF_9_TF1, TF1_, Highest_TF1)
+    line_O_C_9_TF1 := line_O_C_9_TF1_
+    line_OC_H_9_TF1 := line_OC_H_9_TF1_
+    line_OC_L_9_TF1 := line_OC_L_9_TF1_
+    label_O_9_TF1_ := label_O_9_TF1_
+    label_H_9_TF1 := label_L_9_TF1_
+    label_L_9_TF1 := label_L_9_TF1_
+    label_C_9_TF1 := label_C_9_TF1_
+    label_C_9_TF1
+
+if HTF_Candles_to_Show_TF1 >= 10 and show_HTF_for_TF1
+    var line line_O_C_10_TF1 = na
+    var line line_OC_H_10_TF1 = na
+    var line line_OC_L_10_TF1 = na
+    var label label_O_10_TF1 = na
+    var label label_H_10_TF1 = na
+    var label label_L_10_TF1 = na
+    var label label_C_10_TF1 = na
+    var label label_TF_10_TF1 = na
+    [line_O_C_10_TF1_, line_OC_H_10_TF1_, line_OC_L_10_TF1_, label_O_10_TF1_, label_H_10_TF1_, label_L_10_TF1_, label_C_10_TF1_, label_TF_1_] = condition(line_O_C_10_TF1, line_OC_H_10_TF1, line_OC_L_10_TF1, offset_TF1 - 9 * gap_between_bars, O_10_TF1, H_10_TF1, L_10_TF1, C_10_TF1, false, label_O_10_TF1, label_H_10_TF1, label_L_10_TF1, label_C_10_TF1, label_TF_10_TF1, TF1_, Highest_TF1)
+    line_O_C_10_TF1 := line_O_C_10_TF1_
+    line_OC_H_10_TF1 := line_OC_H_10_TF1_
+    line_OC_L_10_TF1 := line_OC_L_10_TF1_
+    label_O_10_TF1_ := label_O_10_TF1_
+    label_H_10_TF1 := label_L_10_TF1_
+    label_L_10_TF1 := label_L_10_TF1_
+    label_C_10_TF1 := label_C_10_TF1_
+    label_C_10_TF1
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
 
-// AST OPTIMIZATION: Call the booleans directly instead of triggering 6 wrapper functions
-SignalFunc() =>
-    [CanBuy, CanSell, ScalpBuy, ScalpSell, LightningBuy, LightningSell]
-    
-// ====================================================================
-// TICKER PROCESSING ENGINE & SUBSCRIBER INPUTS
-// ====================================================================
-ProcessTicker(triggeredLong, triggeredShort, triggeredMid, triggeredRej, triggeredCan, triggeredER, ticker, customName) =>
-    displayName = customName != "" ? customName : ticker
-    _scrLabelLong  = triggeredLong  and displayName != "" ? displayName + "\n" : ""
-    _scrLabelShort = triggeredShort and displayName != "" ? displayName + "\n" : ""
-    _scrLabelMid   = triggeredMid   and displayName != "" ? displayName + "\n" : ""
-    _scrLabelRej   = triggeredRej   and displayName != "" ? displayName + "\n" : ""
-    _scrLabelCan   = triggeredCan   and displayName != "" ? displayName + "\n" : ""
-    _scrLabelER    = triggeredER    and displayName != "" ? displayName + "\n" : ""
-    
-    [_scrLabelLong, _scrLabelShort, _scrLabelMid, _scrLabelRej, _scrLabelCan, _scrLabelER]
 
-scrLabelLong  = ""
-scrLabelShort = ""
-scrLabelMid   = ""
-scrLabelRej   = ""
-scrLabelCan   = ""
-scrLabelER    = ""
 
-// Ticker 1
-ticker1 = input.symbol(defval = "SI1!", title = "Ticker 1 Symbol")
-name1   = input.string(defval = "", title = "Ticker 1 Custom Display Name (Optional)")
-[triggered1Long, triggered1Short, triggered1Mid, triggered1Rej, triggered1Can, triggered1ER] = request.security(ticker1, timeframe.period, SignalFunc())
-[scrLabelLong1, scrLabelShort1, scrLabelMid1, scrLabelRej1, scrLabelCan1, scrLabelER1] = ProcessTicker(triggered1Long, triggered1Short, triggered1Mid, triggered1Rej, triggered1Can, triggered1ER, ticker1, name1)
-scrLabelLong  += scrLabelLong1
-scrLabelShort += scrLabelShort1
-scrLabelMid   += scrLabelMid1
-scrLabelRej   += scrLabelRej1
-scrLabelCan   += scrLabelCan1
-scrLabelER    += scrLabelER1
 
-// Ticker 2
-ticker2 = input.symbol(defval = "NIFTY", title = "Ticker 2 Symbol")
-name2   = input.string(defval = "", title = "Ticker 2 Custom Display Name (Optional)")
-[triggered2Long, triggered2Short, triggered2Mid, triggered2Rej, triggered2Can, triggered2ER] = request.security(ticker2, timeframe.period, SignalFunc())
-[scrLabelLong2, scrLabelShort2, scrLabelMid2, scrLabelRej2, scrLabelCan2, scrLabelER2] = ProcessTicker(triggered2Long, triggered2Short, triggered2Mid, triggered2Rej, triggered2Can, triggered2ER, ticker2, name2)
-scrLabelLong  += scrLabelLong2
-scrLabelShort += scrLabelShort2
-scrLabelMid   += scrLabelMid2
-scrLabelRej   += scrLabelRej2
-scrLabelCan   += scrLabelCan2
-scrLabelER    += scrLabelER2
 
-// Ticker 3
-ticker3 = input.symbol(defval = "GC1!", title = "Ticker 3 Symbol")
-name3   = input.string(defval = "", title = "Ticker 3 Custom Display Name (Optional)")
-[triggered3Long, triggered3Short, triggered3Mid, triggered3Rej, triggered3Can, triggered3ER] = request.security(ticker3, timeframe.period, SignalFunc())
-[scrLabelLong3, scrLabelShort3, scrLabelMid3, scrLabelRej3, scrLabelCan3, scrLabelER3] = ProcessTicker(triggered3Long, triggered3Short, triggered3Mid, triggered3Rej, triggered3Can, triggered3ER, ticker3, name3)
-scrLabelLong  += scrLabelLong3
-scrLabelShort += scrLabelShort3
-scrLabelMid   += scrLabelMid3
-scrLabelRej   += scrLabelRej3
-scrLabelCan   += scrLabelCan3
-scrLabelER    += scrLabelER3
 
-// Ticker 4
-ticker4 = input.symbol(defval = "CL1!", title = "Ticker 4 Symbol")
-name4   = input.string(defval = "", title = "Ticker 4 Custom Display Name (Optional)")
-[triggered4Long, triggered4Short, triggered4Mid, triggered4Rej, triggered4Can, triggered4ER] = request.security(ticker4, timeframe.period, SignalFunc())
-[scrLabelLong4, scrLabelShort4, scrLabelMid4, scrLabelRej4, scrLabelCan4, scrLabelER4] = ProcessTicker(triggered4Long, triggered4Short, triggered4Mid, triggered4Rej, triggered4Can, triggered4ER, ticker4, name4)
-scrLabelLong  += scrLabelLong4
-scrLabelShort += scrLabelShort4
-scrLabelMid   += scrLabelMid4
-scrLabelRej   += scrLabelRej4
-scrLabelCan   += scrLabelCan4
-scrLabelER    += scrLabelER4
-
-// Ticker 5
-ticker5 = input.symbol(defval = "NG1!", title = "Ticker 5 Symbol")
-name5   = input.string(defval = "", title = "Ticker 5 Custom Display Name (Optional)")
-[triggered5Long, triggered5Short, triggered5Mid, triggered5Rej, triggered5Can, triggered5ER] = request.security(ticker5, timeframe.period, SignalFunc())
-[scrLabelLong5, scrLabelShort5, scrLabelMid5, scrLabelRej5, scrLabelCan5, scrLabelER5] = ProcessTicker(triggered5Long, triggered5Short, triggered5Mid, triggered5Rej, triggered5Can, triggered5ER, ticker5, name5)
-scrLabelLong  += scrLabelLong5
-scrLabelShort += scrLabelShort5
-scrLabelMid   += scrLabelMid5
-scrLabelRej   += scrLabelRej5
-scrLabelCan   += scrLabelCan5
-scrLabelER    += scrLabelER5
-//========================================================
-
-
-dash_loc = input.string('Bottom Left', 'Dashboard Location', options = ['Top Right', 'Bottom Right', 'Top Left', 'Bottom Left'], group = 'Dashboard')
-
-text_size = input.string('Tiny', 'Dashboard Size', options = ['Tiny', 'Small', 'Normal', 'Large'], group = 'Dashboard')
-
-txt_col = input.color(#5a0ae4, 'Text/Frame Color', group = 'Dashboard')
-
-//----
-sPrice = close
-//condition = INSIDEDAY
-//Table
-var table_position = dash_loc == 'Top Left' ? position.top_left : dash_loc == 'Bottom Left' ? position.bottom_left : dash_loc == 'Top Right' ? position.top_right : position.top_left
-//var table_text_size = text_size == 'Tiny' ? size.tiny : text_size == 'Small' ? size.tiny : text_size == 'Normal' ? size.tiny : size.tiny
-var table_text_size = INSIDEDAY ? size.small : sPrice > DBCn and sPrice < DTCn ? size.small : size.tiny
-var table_text_size1 = INSIDEDAY ? size.large : sPrice > DBCn and sPrice < DTCn ? size.large : size.large
-//var table_text_size = INSIDEDAY ? size.normal : MAGNET_BULL ? size.normal : MAGNET_BEAR ? size.normal : (sPrice > DBCn and sPrice < DTCn) ? size.tiny : size.tiny
-
-//new_table = table.new(position.bottom_right, 8, 20, bgcolor = color.white, border_color=txt_col, border_width=1, frame_color=txt_col, frame_width=1)
-//new_table1 = table.new(position.top_center, 5, 10, bgcolor = color.new(color.white, 100), border_color = color.new(color.white, 100), border_width = 1, frame_color = color.new(color.white, 100), frame_width = 1)
-new_table2 = table.new(position.bottom_center, 8, 10, bgcolor = color.new(color.white, 100), border_color = color.new(color.white, 100), border_width = 1, frame_color = color.new(color.white, 100), frame_width = 1)
-
-if barstate.islast
-
-    table.cell(new_table2, 0, 4, text = str.tostring(scrLabelMid),  text_halign = text.align_center, text_color=color.new(#096c32,100), text_size = table_text_size, bgcolor = color.new(color.white, 100))
-    table.cell(new_table2, 0, 3, text = str.tostring(scrLabelRej),  text_halign = text.align_center, text_color=color.new(#d52525, 100), text_size = table_text_size, bgcolor = color.new(color.white, 100))
-    table.cell(new_table2, 0, 2, text = str.tostring(scrLabelMid),  text_halign = text.align_center, text_color=#096c32, text_size = table_text_size, bgcolor = color.new(color.white, 100))
-    table.cell(new_table2, 0, 1, text = str.tostring(scrLabelRej),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = table_text_size, bgcolor = color.new(color.white, 100))
-//    table.cell(new_table2, 0, 4, text = str.tostring(scrLabelCan),  text_halign = text.align_center, text_color=#096c32, text_size = size.large, bgcolor = color.new(color.white, 100))
-//    table.cell(new_table2, 0, 3, text = str.tostring(scrLabelER),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = size.large, bgcolor = color.new(color.white, 100))
-
-var table new_table3 = table.new(position.middle_center, 3, 3,  border_color = color.new(color.yellow, 90),  border_width = 2)
-
-if barstate.islast
-
-    table.cell(new_table3, 0, 2, text = str.tostring(scrLabelCan),  text_halign = text.align_center, text_color=#096c32, text_size = size.huge, bgcolor = color.new(color.white, 100))
-    table.cell(new_table3, 0, 1, text = str.tostring(scrLabelER),  text_halign = text.align_center, text_color=color.new(#d52525, 23), text_size = size.huge, bgcolor = color.new(color.white, 100))
-
-//========================================================
-//=======================================================================================================================================
-
-//VISHANT MESHRAM DIVERGENCE INDICATOR INSPIRED BY TRENDOSCOPE INDICATORS. BUILD WITH THE HELP OF AI ANTIGRAVITY AT MUMBAI ON 18-07-2020. TODAY IS GREAT DAY I handle_label_overlaps
-// TODAY I DEBUGGED MY WEBSITE AND MOBILE APPLICATIONS AND ALSO BUILT HBOM DASHBOARD AS MY WORK COMPANION
-//I RECEIVED MONEY FROM INDIRA SCHOOL FOR MANASVI AND PAID SONAM'S FEE AS MONEY GIVEN BY ASHISH WERE LOST IN TRADING
-//HENCEFORTH ONLY TRADING FOR WINNING. NO GREED OR FEAR. JUST BUILD THE ALGO TRADING TO TRADE MARKETS AND SPEND LIFE READING AND ON HOBBIES AND SOCIAL WORK.
-
-// =========================================================================
-// 1. INLINED 'OOTA' LIBRARY (Pruned for CustomSeries & MA)
-// =========================================================================
-enum CustomSeries
-    EMA
-    SMA
-    RMA
-    HMA
-    WMA
-    VWMA
-    SWMA
-    LINREG
-    MEDIAN
-    MOM
-    HIGH
-    LOW
-    MEDIAN_HIGH
-    MEDIAN_LOW
-    PERCENTRANK
-    HIGHLOW
-    
-customseries(float source = close, simple CustomSeries maType = CustomSeries.SMA, simple int length) =>
-    switch maType
-        CustomSeries.EMA => ta.ema(source, length)
-        CustomSeries.SMA => ta.sma(source, length)
-        CustomSeries.RMA => ta.rma(source, length)
-        CustomSeries.HMA => ta.hma(source, length)
-        CustomSeries.WMA => ta.wma(source, length)
-        CustomSeries.VWMA => ta.vwma(source, length)
-        CustomSeries.SWMA => ta.swma(source)
-        CustomSeries.LINREG => ta.linreg(source, length, 0)
-        CustomSeries.MEDIAN => ta.median(source, length)
-        CustomSeries.MOM => ta.mom(source, length)
-        CustomSeries.HIGH => ta.highest(source, length)
-        CustomSeries.LOW => ta.lowest(source, length)
-        CustomSeries.MEDIAN_HIGH => ta.median(ta.highest(source, length), length)
-        CustomSeries.MEDIAN_LOW => ta.median(ta.lowest(source, length), length)
-        CustomSeries.PERCENTRANK => ta.percentrank(source, length)
-        => (ta.highest(length) + ta.lowest(length)) / 2
-
-method ma(simple CustomSeries maType = CustomSeries.SMA, simple int length, float source = close) =>
-    customseries(source, maType, length)
-
-// =========================================================================
-// 2. INLINED 'DRAWING' LIBRARY (Pruned for Line & Label logic)
-// =========================================================================
-type LineProperties
-	string xloc = xloc.bar_index
-	string extend = extend.none
-	color color = color.blue
-	string style = line.style_solid
-	int width = 1
-    bool force_overlay = false
-
-type Line
-	chart.point start
-	chart.point end
-	LineProperties properties
-	line object
-
-method get_price(Line this, int bar) =>
-    stepPerBar = (this.end.price - this.start.price) / (this.end.index - this.start.index)
-    distance = bar - this.start.index
-    this.start.price + distance * stepPerBar
-
-type LabelProperties
-	string xloc = xloc.bar_index
-	string yloc = yloc.price
-	color color = color.blue
-	string style = label.style_none
-	color textcolor = color.black
-	string size = size.normal
-	string textalign = text.align_center
-	string text_font_family = font.family_default
-    bool force_overlay = false
-
-type Label
-	chart.point point
-	string lblText
-	string tooltip = na
-	LabelProperties properties
-	label object
-
-deleteObj(this) =>
-    this.object.delete()
-    this
-
-method delete(Line this) =>
-    deleteObj(this)
-
-method delete(Label this) =>
-    deleteObj(this)
-
-method draw(Line this) =>
-    this.object.delete()
-    this.properties := na(this.properties) ? LineProperties.new() : this.properties
-    if(this.properties.force_overlay)
-        this.object := line.new(this.properties.xloc == xloc.bar_index ? this.start.index : this.start.time, this.start.price, this.properties.xloc == xloc.bar_index ? this.end.index : this.end.time, this.end.price, this.properties.xloc, this.properties.extend, this.properties.color, this.properties.style, this.properties.width, true)
-    else
-        this.object := line.new(this.properties.xloc == xloc.bar_index ? this.start.index : this.start.time, this.start.price, this.properties.xloc == xloc.bar_index ? this.end.index : this.end.time, this.end.price, this.properties.xloc, this.properties.extend, this.properties.color, this.properties.style, this.properties.width)
-    this.object
-
-method draw(Label this) =>
-    this.object.delete()
-    this.properties := na(this.properties) ? LabelProperties.new() : this.properties
-    if(this.properties.force_overlay)
-        this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family, true)
-    else
-        this.object := label.new(this.properties.xloc == xloc.bar_index ? this.point.index : this.point.time, this.point.price, this.lblText, this.properties.xloc, this.properties.yloc, this.properties.color, this.properties.style, this.properties.textcolor, this.properties.size, this.properties.textalign, this.tooltip, this.properties.text_font_family)
-    this.object
-
-
-// =========================================================================
-// 3. INLINED 'ZIGZAG' LIBRARY (Pruned OOP Version)
-// =========================================================================
-type Indicator
-	float indicatorHigh
-	float indicatorLow
-
-type PivotCandle
-	float _high = high
-	float _low = low
-	int length = 5
-	int pHighBar
-	int pLowBar
-	float pHigh
-	float pLow
-	array<Indicator> indicators
-
-type Pivot
-	chart.point point
-	int dir
-	int level = 0
-	int componentIndex = 0
-	int subComponents = 0
-	int microComponents = 1
-	float ratio = 1.0
-	float sizeRatio = 1.0
-	float barRatio = 1.0
-	array<Pivot> subPivots
-	array<Pivot> micropivots
-	array<string> indicatorNames
-	array<float> indicatorValues
-	array<float> indicatorRatios
-
-type ZigzagFlags
-	bool newPivot = false
-	bool doublePivot = false
-	bool updateLastPivot = false
-
-type Zigzag
-	int length = 5
-	int numberOfPivots = 20
-	int offset = 0
-	int level = 0
-	array<Pivot> zigzagPivots
-	ZigzagFlags flags
-	
-method init(array<Indicator> indicators, matrix<float> indicatorValues) =>
-    for i = 0 to na(indicatorValues) or indicatorValues.rows() == 0 ? na : indicatorValues.rows() - 1 by 1
-        iRow = indicatorValues.row(i)
-        Indicator indicator = Indicator.new(iRow.first(), iRow.last())
-        indicators.push(indicator)
-    indicators
-
-method init(PivotCandle candle, matrix<float> indicators = na) =>
-    candle.pHighBar := ta.highestbars(candle._high, candle.length)
-    candle.pLowBar := ta.lowestbars(candle._low, candle.length)
-    candle.pHigh := ta.highest(candle._high, candle.length)
-    candle.pLow := ta.lowest(candle._low, candle.length)
-    candle.indicators := array.new<Indicator>()
-    candle.indicators.init(indicators)
-    candle
-
-method unshift(array<Pivot> arr, Pivot val, int maxItems) =>
-    arr.unshift(val)
-    if arr.size() > maxItems
-        arr.pop()
-
-method update(Pivot this, PivotCandle candle, array<string> indicatorNames) =>
-    dir = math.sign(this.dir)
-    array<float> _indicators = array.new<float>()
-    for indicator in candle.indicators
-        indicatorValue = dir > 0 ? indicator.indicatorHigh : indicator.indicatorLow
-        _indicators.push(indicatorValue)
-    this.indicatorNames := indicatorNames
-    this.indicatorValues := _indicators
-    this.indicatorRatios := array.new<float>()
-    this
-
-method init(Zigzag this) =>
-    if na(this.zigzagPivots)
-        this.zigzagPivots := array.new<Pivot>()
-        this.flags := ZigzagFlags.new()
-        this.flags
-    this
-
-method addnewpivot(Zigzag this, Pivot pivot, array<Pivot> components = na) =>
-    dir = math.sign(pivot.dir)
-    if this.zigzagPivots.size() >= 1
-        lastPivot = this.zigzagPivots.get(0)
-        lastValue = lastPivot.point.price
-        pivot.subComponents := lastPivot.componentIndex - pivot.componentIndex
-        if not na(components) ? components.size() > lastPivot.componentIndex : false
-            pivot.subPivots := components.slice(pivot.componentIndex, lastPivot.componentIndex + 1)
-            microComponents = 0
-            for [index, subPivot] in pivot.subPivots
-                if index != pivot.subPivots.size() - 1
-                    microComponents := microComponents + subPivot.microComponents
-                    if na(subPivot.micropivots) or subPivot.micropivots.size() == 0
-                        pivot.micropivots.push(subPivot)
-                    else
-                        pivot.micropivots.concat(subPivot.micropivots)
-                else if pivot.level == 1
-                    pivot.micropivots.push(subPivot)
-            pivot.microComponents := microComponents
-
-        if math.sign(lastPivot.dir) == math.sign(dir)
-            runtime.error('Direction mismatch')
-        if this.zigzagPivots.size() >= 2
-            llastPivot = this.zigzagPivots.get(1)
-            value = pivot.point.price
-            llastValue = llastPivot.point.price
-            newDir = dir * value > dir * llastValue ? dir * 2 : dir
-            pivot.dir := int(newDir)
-            pivot.ratio := math.round(math.abs(lastValue - value) / math.abs(llastValue - lastValue), 3)
-            pivot.barRatio := math.round(math.abs(lastPivot.point.index - pivot.point.index) / math.abs(llastPivot.point.index - lastPivot.point.index), 3)
-
-            if this.zigzagPivots.size() >= 3
-                lllastPivot = this.zigzagPivots.get(2)
-                lllastValue = lllastPivot.point.price
-                pivot.sizeRatio := math.round(math.abs(lastValue - value) / math.abs(lllastValue - llastValue), 3)
-
-            llastIndicators = llastPivot.indicatorValues
-            indicators = pivot.indicatorValues
-            lastIndicators = lastPivot.indicatorValues
-            pivot.indicatorRatios.clear()
-            for [index, indicatorValue] in indicators
-                lastIndicatorValue = lastIndicators.get(index)
-                llastIndicatorValue = llastIndicators.get(index)
-                indicatorRatio = math.round(math.abs(lastIndicatorValue - indicatorValue) / math.abs(llastIndicatorValue - lastIndicatorValue), 3)
-                pivot.indicatorRatios.push(indicatorRatio)
-    this.zigzagPivots.unshift(pivot, this.numberOfPivots)
-    this
-
-method addnewpivot(Zigzag this, Pivot pivot, PivotCandle candle, array<string> indicatorNames, array<Pivot> components = na) =>
-    pivot.update(candle, indicatorNames)
-    this.addnewpivot(pivot, components)
-
-method calculate(Zigzag this, array<float> ohlc, matrix<float> indicators, array<string> indicatorNames, int ltfHighTime = time, int ltfLowTime = time) =>
-    _ohlc = na(ohlc[this.offset]) ? ohlc : ohlc[this.offset]
-    _indicators = na(indicators[this.offset]) ? indicators : indicators[this.offset]
-    this.init()
-    PivotCandle candle = PivotCandle.new(_ohlc.max(), _ohlc.min(), this.length)
-    candle.init(_indicators)
-    pDir = 1
-    Pivot lastPivot = na
-    this.flags.updateLastPivot := false
-    this.flags.newPivot := false
-    this.flags.doublePivot := false
-    newBar = bar_index - this.offset
-    newbartime = time[this.offset]
-    distanceFromLastPivot = 0
-    var counter = 0
-    var lastCounterBar = 0
-    forceDoublePivot = false
-
-    if this.zigzagPivots.size() > 0
-        lastPivot := this.zigzagPivots.get(0)
-        pDir := int(math.sign(lastPivot.dir))
-        distanceFromLastPivot := newBar - lastPivot.point.index
-
-    if this.zigzagPivots.size() > 1
-        llastPivot = this.zigzagPivots.get(1)
-        llastDir = int(math.sign(llastPivot.dir))
-        forceDoublePivot := pDir == 1 and candle.pLowBar == 0 ? candle.pLow < llastPivot.point.price : pDir == -1 and candle.pHighBar == 0 ? candle.pHigh > llastPivot.point.price : false
-
-    overflow = distanceFromLastPivot >= this.length
-
-    if (pDir == 1 and candle.pHighBar == 0 or pDir == -1 and candle.pLowBar == 0) and this.zigzagPivots.size() >= 1
-        value = pDir == 1 ? candle.pHigh : candle.pLow
-        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
-        inewbartime = pDir == 1 ? ltfHighTime[this.offset] : ltfLowTime[this.offset]
-        removeOld = value * lastPivot.dir >= lastPivot.point.price * lastPivot.dir
-        if removeOld
-            this.flags.updateLastPivot := true
-            this.flags.newPivot := true
-            this.zigzagPivots.shift()
-            newPivotObject = Pivot.new(chart.point.from_index(newBar, value), pDir, micropivots = array.new<Pivot>())
-            newPivotObject.point.time := inewbartime
-            this.addnewpivot(newPivotObject, candle, indicatorNames)
-
-    if pDir == 1 and candle.pLowBar == 0 or pDir == -1 and candle.pHighBar == 0 and (not this.flags.newPivot or forceDoublePivot)
-        value = pDir == 1 ? candle.pLow : candle.pHigh
-        inewbartime = pDir == 1 ? ltfLowTime[this.offset] : ltfHighTime[this.offset]
-        newPivotObject = Pivot.new(chart.point.from_index(newBar, value), -pDir, micropivots = array.new<Pivot>())
-        newPivotObject.point.time := inewbartime
-        this.addnewpivot(newPivotObject, candle, indicatorNames)
-        this.flags.doublePivot := this.flags.newPivot
-        this.flags.newPivot := true
-
-    if overflow and not this.flags.newPivot
-        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
-        ipivotbar = pDir == 1 ? newBar + candle.pLowBar : newBar + candle.pHighBar
-        ipivottime = pDir == 1 ? ltfLowTime[newBar - ipivotbar + this.offset] : ltfHighTime[newBar - ipivotbar + this.offset]
-        iCandle = candle[newBar - ipivotbar]
-        newPivotObject = Pivot.new(chart.point.from_index(ipivotbar, ipivot), -pDir, micropivots = array.new<Pivot>())
-        newPivotObject.point.time := ipivottime
-        this.addnewpivot(newPivotObject, iCandle, indicatorNames)
-        this.flags.newPivot := true
-    this
-    
-// =========================================================================
-// 4. TLCS DIVERGENCE SCREENER CODE (Optimized for Main Chart Overlay)
-// =========================================================================
-oscillator(simple string type = 'rsi', simple int length = 14, float source = close, float highSource = high, float lowSource = low) =>
-    oscillator = switch type
-        'cci' => ta.cci(source, length)
-        'cmo' => ta.cmo(source, length)
-        'cog' => ta.cog(source, length)
-        'mfi' => ta.mfi(source, length)
-        'roc' => ta.roc(source, length)
-        'rsi' => ta.rsi(source, length)
-        'stoch' => ta.stoch(source, highSource, lowSource, length)
-        'wpr' => ta.wpr(length)
-        => ta.rsi(source, length)
-    oscillator
-
-oscillatorType = input.string('rsi', 'Oscillator', ['rsi', 'cci', 'cmo', 'cog', 'mfi', 'roc', 'stoch', 'wpr'], inline = 'osc', group = 'Oscillator', display = display.none)
-length = input.int(14, '', group = 'Oscillator', inline = 'osc', tooltip = 'Built in Oscillator Type and Length', display = display.none)
-useExternalOscillator = input.bool(false, 'Use External Oscillator', inline = 'eosc', group = 'Oscillator', display = display.none)
-externalOscillator = input.source(close, '', 'Use external oscillator instead of the built ins', inline = 'eosc', group = 'Oscillator', display = display.none)
-
-safeExternalOscillator = externalOscillator > 1000 or externalOscillator < -1000 ? ta.rsi(close, 14) : externalOscillator
-oscillator = useExternalOscillator ? safeExternalOscillator : oscillator(oscillatorType, length)
-
-trendTypeTooltip = 'Method to identify trend. \n' + '\tZigzag - HH, HL on the starting pivot of divergence line is considered as uptrend and LL, LH on the starting pivot of divergence line is considered as downtrend\n' + '\tMA Difference - Difference between moving average of divergence line pivot will define the trend\n' + '\tExternal - Use External Oscillator Input'
-trendMethod = input.string('Zigzag', 'Trend Detection Method', ['Zigzag', 'MA Difference', 'External'], group = 'Trend', display = display.none, tooltip = trendTypeTooltip)
-maType = input.enum(CustomSeries.SMA, 'MA Filter', inline = 'ma', group = 'Trend', display = display.none)
-maLength = input.int(200, '', minval = 5, step = 50, inline = 'ma', group = 'Trend', display = display.none, tooltip = 'Moving Average to identify trend.')
-externalTrendSignal = input.source(close, 'External Trend Signal', 'Use External trend signal', group = 'Trend', display = display.none)
-
-zigzagLength = input.int(13, 'Length', group = 'Zigzag', tooltip = 'Zigzag Length', display = display.none)
-repaint = input.bool(true, 'Repaint', 'If selected, divergence lines repaint as per the latest info.', group = 'Miscellaneous', display = display.none)
-
-bullishDivergenceAlert = input.bool(true, 'Bullish Divergence', 'Alert on bullish divergence', group = 'Alerts', display = display.none)
-bullishHiddenDivergenceAlert = input.bool(true, 'Bullish Hidden Divergence', 'Alert on bullish hidden divergence', group = 'Alerts', display = display.none)
-bearishDivergenceAlert = input.bool(true, 'Bearish Divergence', 'Alert on bearish divergence', group = 'Alerts', display = display.none)
-bearishHiddenDivergenceAlert = input.bool(true, 'Bearish Hidden Divergence', 'Alert on bearish hidden divergence', group = 'Alerts', display = display.none)
-
-textColor = chart.bg_color
-trendMethodInt = trendMethod == 'Zigzag' ? 1 : trendMethod == 'External' ? 3 : 2
-var map<int, float> priceMap = map.new<int, float>()
-var map<int, float> oscillatorMap = map.new<int, float>()
-priceMap.put(bar_index, close)
-
-enum DivergenceType
-    BullishDivergence = "Bullish Divergence"
-    BearishDivergence = "Bearish Divergence"
-    BullishHiddenDivergence = "Bullish Hidden Divergence"
-    BearishHiddenDivergence = "Bearish Hidden Divergence"
-    None = "None"
-
-type DivergenceObject
-    Line priceLine
-    Label priceLabel
-    Label xcrossLabel
-    chart.point pricePoint
-    DivergenceType divergenceType
-    bool broken = false
-
-method delete(DivergenceObject this)=>
-    this.priceLine.delete()
-    this.priceLabel.delete()
-    this.xcrossLabel.delete()
-    this
-
-method draw(DivergenceObject this)=>
-    this.delete()
-    // this.priceLine.draw() // HIDDEN as per user request
-    this.priceLabel.draw()
-    this.xcrossLabel.draw()
-    this
-
-type ZigzagProperties
-	color textColor = color.black
-	int trendMethod = 1
-	bool repaint = false
-
-enum PivotDirection
-    HH = "Higher High"
-    LH = "Lower High"
-    HL = "Higher Low"
-    LL = "Lower Low"
-
-getDivergenceType(direction, divergence)=>
-    direction > 0?
-         (divergence > 0 ? DivergenceType.BearishDivergence : DivergenceType.BearishHiddenDivergence):
-         (divergence > 0 ? DivergenceType.BullishDivergence : DivergenceType.BullishHiddenDivergence)
-
-getPivotDirection(dir, ratio) =>
-    dir > 0 ? (ratio > 1 ? PivotDirection.HH : PivotDirection.LH) : ratio > 1 ? PivotDirection.LL : PivotDirection.HL
-
-getLinePropertiesMap()=>
-    linePropertiesMap = map.new<DivergenceType, LineProperties>()
-    linePropertiesMap.put(DivergenceType.BullishDivergence, LineProperties.new(xloc.bar_time, extend.none, color.green, line.style_solid, 1, false))
-    linePropertiesMap.put(DivergenceType.BearishDivergence, LineProperties.new(xloc.bar_time, extend.none, color.red, line.style_solid, 1, false))
-    linePropertiesMap.put(DivergenceType.BullishHiddenDivergence, LineProperties.new(xloc.bar_time, extend.none, color.lime, line.style_solid, 1, false))
-    linePropertiesMap.put(DivergenceType.BearishHiddenDivergence, LineProperties.new(xloc.bar_time, extend.none, color.orange, line.style_solid, 1, false))
-    linePropertiesMap
-
-getLabelPropertiesMap()=>
-    labelPropertiesMap = map.new<DivergenceType, LabelProperties>()
-    labelPropertiesMap.put(DivergenceType.BullishDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.green, label.style_label_up, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BearishDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.red, label.style_label_down, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BullishHiddenDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.lime, label.style_label_up, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap.put(DivergenceType.BearishHiddenDivergence, LabelProperties.new(xloc.bar_time, yloc.price, color.orange, label.style_label_down, chart.bg_color, size.small, force_overlay = false))
-    labelPropertiesMap
-
-getAllowedDivergenceTypes()=>
-    allowedDivergenceTypes = map.new<DivergenceType, bool>()
-    allowedDivergenceTypes.put(DivergenceType.BullishDivergence, bullishDivergenceAlert)
-    allowedDivergenceTypes.put(DivergenceType.BullishHiddenDivergence, bullishHiddenDivergenceAlert)
-    allowedDivergenceTypes.put(DivergenceType.BearishDivergence, bearishDivergenceAlert)
-    allowedDivergenceTypes.put(DivergenceType.BearishHiddenDivergence, bearishHiddenDivergenceAlert)
-    allowedDivergenceTypes
-
-const map<DivergenceType, bool> allowedDivergenceTypes = getAllowedDivergenceTypes()
-const map<DivergenceType, LineProperties> priceLinePropertiesMap = getLinePropertiesMap()
-const map<DivergenceType, LabelProperties> priceLabelPropertiesMap = getLabelPropertiesMap()
-
-method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, ZigzagProperties properties) =>
-    startIndex = properties.repaint ? 0 : 1
-    DivergenceType divergenceType = DivergenceType.None
-    if this.zigzagPivots.size() > 2 + startIndex
-        lastPivot = this.zigzagPivots.get(startIndex)
-        llastPivot = this.zigzagPivots.get(startIndex + 2)
-        skip = false
-        if this.flags.updateLastPivot
-            if divergenceObjects.size() > 0
-                lastDivergence = divergenceObjects.last()
-                divergenceStartBar = lastDivergence.priceLine.start.index
-                llastPivotBar = llastPivot.point.index
-
-                divergenceEndBar = lastDivergence.priceLine.end.index
-                lastPivotBar = lastPivot.point.index
-                if llastPivotBar == divergenceStartBar and lastPivotBar > divergenceEndBar
-                    divergenceObjects.pop().delete()
-                skip := llastPivotBar == divergenceStartBar and lastPivotBar == divergenceEndBar
-                skip
-
-        if this.flags.newPivot and not skip
-            dir = math.sign(lastPivot.dir)
-            lastOsc = lastPivot.point.price
-            lastPrice = lastPivot.indicatorValues.get(0)
-            oscRatio = lastPivot.ratio
-            priceRatio = lastPivot.indicatorRatios.get(0)
-
-            priceDirection = getPivotDirection(lastPivot.dir, priceRatio)
-            oscillatorDirection = getPivotDirection(lastPivot.dir, oscRatio)
-
-            lastTrend = lastPivot.indicatorValues.get(2)
-            lastMa = lastPivot.indicatorValues.get(1)
-
-            pricePoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPrice)
-            oscillatorPoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPivot.point.price)
-
-            if priceDirection != oscillatorDirection and llastPivot.indicatorRatios.size() > 0
-                llastPrice = llastPivot.indicatorValues.get(0)
-                llastRatio = llastPivot.indicatorRatios.get(0)
-                llastMa = llastPivot.indicatorValues.get(1)
-                lastPricePoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPrice)
-                llastOscillatorPoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPivot.point.price)
-
-                sentiment = math.sign(oscRatio - priceRatio)
-                trend = properties.trendMethod == 3 ? math.sign(lastTrend) : properties.trendMethod == 1 ? math.sign(dir * (llastRatio - 1)) : math.sign(llastMa - lastMa)
-                divergence = trend == dir and sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
-                
-                if divergence != 0
-                    divergenceType := getDivergenceType(dir, divergence)
-                    
-                    priceDivergenceLine = Line.new(lastPricePoint, pricePoint, priceLinePropertiesMap.get(divergenceType))
-
-                    validDivergence = true
-                    for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
-                        priceAtBar = priceMap.get(bar)
-                        oscillatorAtBar = oscillatorMap.get(bar)
-                        
-                        x1 = llastOscillatorPoint.index
-                        y1 = llastOscillatorPoint.price
-                        x2 = oscillatorPoint.index
-                        y2 = oscillatorPoint.price
-                        oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
-                        
-                        if priceAtBar * dir > priceDivergenceLine.get_price(bar) * dir
-                            validDivergence := false
-                            break
-
-                    if validDivergence
-                        priceLabelText = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BearishDivergence ? 'D' : 'H'
-                        priceTooltipText = str.tostring(divergenceType) + '\nPrice : ' + str.tostring(lastPrice) + ' ( ' + str.tostring(priceRatio) + ' ) - ' +
-                                         str.tostring(priceDirection) + '\n' + 'Oscillator :' + str.tostring(lastMa) + ' ( ' + str.tostring(oscRatio) + ' ) - ' + str.tostring(oscillatorDirection)
-                        
-                        priceDivergenceLabel = Label.new(pricePoint, priceLabelText, priceTooltipText, priceLabelPropertiesMap.get(divergenceType))
-                        
-                        if allowedDivergenceTypes.get(divergenceType)
-                            alert('Alert : ' + priceTooltipText, alert.freq_once_per_bar_close)
-                            
-                        color xColor = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? color.green : color.red
-                        string xcrossText = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? "\n\n✖" : "✖\n \n "
-                        string xStyle = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BullishHiddenDivergence ? label.style_label_up : label.style_label_down
-                        LabelProperties xcrossProps = LabelProperties.new(xloc.bar_time, yloc.price, color.new(color.white, 100), xStyle, xColor, size.normal, force_overlay = false)
-                        Label xcrossLabelObj = Label.new(pricePoint, xcrossText, "", xcrossProps)
-                        
-                        isDuplicate = false
-                        if divergenceObjects.size() > 0
-                            lastObj = divergenceObjects.last()
-                            if lastObj.pricePoint.index == pricePoint.index and lastObj.divergenceType == divergenceType
-                                isDuplicate := true
-                        
-                        if not isDuplicate
-                            divergenceObject = DivergenceObject.new(priceDivergenceLine, priceDivergenceLabel, xcrossLabelObj, pricePoint, divergenceType)
-                            divergenceObject.delete()
-                            divergenceObjects.push(divergenceObject.draw())
-                        true
-                    else
-                        priceDivergenceLine.delete()
-                        false
-
-    divergenceType
-    
-ma = maType.ma(maLength)
-oscillatorMap.put(bar_index, oscillator)
-indicators = matrix.new<float>()
-indicatorNames = array.from('Price', str.tostring(maType) +'-' +str.tostring(maLength), 'External Trend')
-
-indicators.add_row(0, array.from(close, close, close))
-indicators.add_row(1, array.from(ma, ma, ma))
-indicators.add_row(2, array.from(externalTrendSignal, externalTrendSignal, externalTrendSignal))
-
-var Zigzag zigzag = Zigzag.new(zigzagLength, 300, 0)
-var ZigzagProperties properties = ZigzagProperties.new(textColor, trendMethodInt, repaint)
-var divergenceObjects = array.new<DivergenceObject>()
-zigzag.calculate(array.from(oscillator), indicators, indicatorNames)
-currentDivergence = zigzag.divergence(divergenceObjects, properties)
-
-for divergence in divergenceObjects
-    direction = divergence.divergenceType == DivergenceType.BullishDivergence or divergence.divergenceType == DivergenceType.BullishHiddenDivergence ? 1 : -1
-    if(not divergence.broken and divergence.pricePoint.price*direction > close*direction)
-        divergence.broken := true
-
-lastDivergence = divergenceObjects.size()==0 or divergenceObjects.last().broken? DivergenceType.None : divergenceObjects.last().divergenceType
-
-bool isBullishDiv = currentDivergence == DivergenceType.BullishDivergence
-bool isBullishHiddenDiv = currentDivergence == DivergenceType.BullishHiddenDivergence
-bool isBearishDiv = currentDivergence == DivergenceType.BearishDivergence
-bool isBearishHiddenDiv = currentDivergence == DivergenceType.BearishHiddenDivergence
-plot(isBullishDiv ? 1 : isBearishDiv ? -1 : 0, title="Div Signal", display=display.none)
-
-
-
-// ====================================================================
-// --- LIVE ON-CHART TICKER & STATUS MESSAGE PANEL ---
-// ====================================================================
-showTickerPanel = input.bool(false, "Show On-Chart Live Ticker Panel", group = "Panel Settings")
-panelPosition   = input.string("Top Right", "Panel Position", options = ["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group = "Panel Settings")
-panelThemeColor = input.color(color.blue, "Panel Header Color", group = "Panel Settings")
-
-// ====================================================================
-// --- NYMEX HELPER FUNCTION ---
-// ====================================================================
-isNYMEXSymbol(sym) =>
-    string clean = str.replace_all(str.replace_all(sym, "1!", ""), "!", "")
-    clean == "CL" or clean == "GC" or clean == "HG" or clean == "HO" or clean == "NG" or clean == "PA" or clean == "PL" or clean == "RB" or clean == "SI"
-
-// ====================================================================
-// --- LIVE ON-CHART TICKER & STATUS MESSAGE PANEL ---
-// ====================================================================
-
-getPanelPos(posStr) =>
-    posStr == "Top Left" ? position.top_left : posStr == "Bottom Right" ? position.bottom_right : posStr == "Bottom Left" ? position.bottom_left : position.top_right
-
-var table tickerPanel = table.new(getPanelPos(panelPosition), 2, 5, bgcolor = color.new(#0c1220, 15), border_width = 1, border_color = color.new(color.gray, 50))
-
-if showTickerPanel and barstate.islast
-    // 1. Symbol & Timeframe Line
-    string symInfoStr = syminfo.ticker + " (" + timeframe.period + ")"
-    table.cell(tickerPanel, 0, 0, "SYMBOL", bgcolor = panelThemeColor, text_color = color.white, text_size = size.small)
-    table.cell(tickerPanel, 1, 0, symInfoStr, bgcolor = color.new(#040810, 30), text_color = color.yellow, text_size = size.small)
-    
-    // 2. Opening Bias Message
-    string biasText = dX != "" ? dX : "NO BIAS DETECTED"
-    table.cell(tickerPanel, 0, 1, "BIAS", bgcolor = color.purple, text_color = color.white, text_size = size.small)
-    table.cell(tickerPanel, 1, 1, biasText, bgcolor = color.new(#040810, 30), text_color = color.white, text_size = size.small)
-    
-    // 3. Day Type Message
-    string dayTypeText = mX != "" ? mX : "NORMAL DAY"
-    table.cell(tickerPanel, 0, 2, "DAY TYPE", bgcolor = color.teal, text_color = color.white, text_size = size.small)
-    table.cell(tickerPanel, 1, 2, dayTypeText, bgcolor = color.new(#040810, 30), text_color = color.lime, text_size = size.small)
-    
-    // 4. Live Swing Direction
-    bool isBearSwing = (TopSwingZ[1] == true) or (BEARS[1] == true)
-    bool isBullSwing = (BottomSwingZ[1] == true) or (BULLS[1] == true)
-    string swingText = isBearSwing ? "BEARISH SWING" : isBullSwing ? "BULLISH SWING" : "SIDEWAYS"
-    color  swingColor = isBearSwing ? color.red : isBullSwing ? color.green : color.gray
-    table.cell(tickerPanel, 0, 3, "SWING", bgcolor = color.gray, text_color = color.white, text_size = size.small)
-    table.cell(tickerPanel, 1, 3, swingText, bgcolor = color.new(#040810, 30), text_color = swingColor, text_size = size.small)
-
-    // 5. Custom Status / Telegram Alert Status
-    bool   isNymex     = isNYMEXSymbol(syminfo.ticker)
-    string statusMsg   = isNymex ? "⚡ NYMEX TELEGRAM ACTIVE" : "📊 WEB & MOBILE DISPATCH ONLY"
-    color  statusColor = isNymex ? color.lime : color.orange
-    table.cell(tickerPanel, 0, 4, "STATUS", bgcolor = color.navy, text_color = color.white, text_size = size.small)
-    table.cell(tickerPanel, 1, 4, statusMsg, bgcolor = color.new(#040810, 30), text_color = statusColor, text_size = size.small)

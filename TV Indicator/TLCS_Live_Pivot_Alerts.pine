@@ -9,8 +9,6 @@ indicator('TLCS AIO INDICAOR v7.0', overlay = true, max_lines_count = 500, max_l
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
 enable_alerts = input.bool(false, 'Enable Automated Webhook Alerts')
 
-//======================
-    
 daily_cpr = input.int(title = ' Logic for Daily CPR ', defval = 7, minval = 0)
 //
 new_bar(res) =>
@@ -422,7 +420,6 @@ for i = 0 to MAXN - 1 by 1
     handle_label_overlaps(i, labels, rangeHL)
     handle_label_overlaps(i, prclabels, rangeHL)
 
-
 //=====================================================
 
 FastEMA = input.int(1, minval = 1, title = 'Fast EMA')
@@ -466,7 +463,6 @@ show_labels = input.bool(true, title = 'Show Pivot Lables', group = 'Floor Pivot
 show_next_day_pivot = input.bool(false, title = 'Show Next Time Period Pivots', group = 'Floor Pivots')
 floor_pivots_cpr_color = spanColorx
 
-
 pivot = (high + low + close) / 3.0
 
 // Central Pivot Range 
@@ -475,7 +471,6 @@ temp_tc = pivot - temp_bc + pivot
 
 tc = temp_tc > temp_bc ? temp_tc : temp_bc
 bc = temp_bc < temp_tc ? temp_bc : temp_tc
-
 
 floor_pivot_resolution = floor_pivot_timeframe == '1H' ? '60' : floor_pivot_timeframe == '2H' ? '120' : floor_pivot_timeframe == '4H' ? '240' : floor_pivot_timeframe
 
@@ -489,7 +484,7 @@ var bool show_daily_pivot = true
 
 tcline = plot(show_cpr and show_daily_pivot and timeframe.isintraday ? daily_tc : show_cpr and show_daily_pivot  and timeframe.isintraday ? daily_tc  : show_cpr and show_daily_pivot and not timeframe.isintraday ? daily_tc : na, title = 'TC', color = color.new(floor_pivots_cpr_color,  show_cpr and timeframe.isintraday ? 98 : 100), linewidth = 1, style = plot.style_circles)
 bcline = plot(show_cpr and show_daily_pivot and timeframe.isintraday ? daily_bc : show_cpr and show_daily_pivot  and timeframe.isintraday ? daily_bc : show_cpr and show_daily_pivot and not timeframe.isintraday  ? daily_bc : na, title = 'BC', color = color.new(floor_pivots_cpr_color,  show_cpr and timeframe.isintraday ? 98 : 100), linewidth = 1, style = plot.style_circles)
-fill(tcline, bcline, color = color.new(floor_pivots_cpr_color, show_cpr and show_daily_pivot ? 98 : 100))
+fill(tcline, bcline, color = color.new(floor_pivots_cpr_color, show_cpr and show_daily_pivot ? 96 : 100))
 
 //====================================
 
@@ -543,7 +538,6 @@ AdxCol2 = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? c
 plot(fMedEMA, title = 'PEMAMed', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
 plot(fShortEMA, title = 'PEMASlow', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
 
-
 //====================================
 
 risingX = fShortEMA > fMedEMA
@@ -560,7 +554,6 @@ RED = ((minus > plus) and (m0 < m10))
 
 GREENZONE = GREEN
 REDZONE = RED
-
 
 //====================================
 
@@ -598,22 +591,6 @@ Wshortsignal = ta.falling(fPivotPDEMAS, 1) and Wshortsig
 plotshape(Wlongsig, color = color.new(color.navy, 0), location = location.belowbar, style = shape.triangleup, size = size.small)
 plotshape(Wshortsig, color = color.new(color.navy, 0), location = location.abovebar, style = shape.triangledown, size = size.small)
 
-// outside Reversal System
-
-L03 = input(true, title = 'Enable Outside Reversal System')
-BarMultiplier = input.float(title = 'Body Multiplier', defval = 1.25, step = 0.05, maxval = 3.5)
-BarsBack = input.int(title = 'Bars Back', defval = 50, maxval = 250)
-AverageCandle1 = ta.sma(H - L, BarsBack)
-
-Olongsig = L03 and GREENZONE and L < L[1] and C > H[1] and H - L >= AverageCandle1 * BarMultiplier
-Oshortsig = L03 and REDZONE and H > H[1] and C < L[1] and H - L >= AverageCandle1 * BarMultiplier
-
-Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
-Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
-
-plotshape(Olongsig, color = color.new(color.orange, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
-plotshape(Oshortsig, color = color.new(color.orange, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
-
 // Exteme Reversal System
 
 L02 = input(true, title = 'Enable Exteme Reversal System')
@@ -626,14 +603,30 @@ AverageBody = ta.sma(mybodysize, barsback)
 mycandlesize = H - L
 AverageCandle = ta.sma(mycandlesize, barsback)
 
-Elongsig = L02 and GREENZONE and O[1] - C[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and O[1] - C[1] > AverageBody and C > O
-Eshortsig = L02 and REDZONE and C[1] - O[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and C[1] - O[1] > AverageBody and O > C
+Elongsig = GREENZONE and O[1] - C[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and O[1] - C[1] > AverageBody and C > O
+Eshortsig = REDZONE and C[1] - O[1] >= bodysize * (H[1] - L[1]) and H[1] - L[1] > AverageCandle * bodymultiplier and C[1] - O[1] > AverageBody and O > C
 
 Elongsignal = ta.rising(fPivotPDEMAS, 1) and Elongsig
 Eshortsignal = ta.falling(fPivotPDEMAS, 1) and Eshortsig
 
 plotshape(Elongsig, color = color.new(color.fuchsia, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
 plotshape(Eshortsig, color = color.new(color.fuchsia, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
+
+// outside Reversal System
+
+L03 = input(true, title = 'Enable Outside Reversal System')
+BarMultiplier = input.float(title = 'Body Multiplier', defval = 1.25, step = 0.05, maxval = 3.5)
+BarsBack = input.int(title = 'Bars Back', defval = 50, maxval = 250)
+AverageCandle1 = ta.sma(mycandlesize, BarsBack)
+
+Olongsig = GREENZONE and L < L[1] and C > H[1] and H - L >= AverageCandle1 * BarMultiplier
+Oshortsig = REDZONE and H > H[1] and C < L[1] and H - L >= AverageCandle1 * BarMultiplier
+
+Olongsignal = ta.rising(fPivotPDEMAS, 1) and Olongsig
+Oshortsignal = ta.falling(fPivotPDEMAS, 1) and Oshortsig
+
+plotshape(Olongsig, color = color.new(color.orange, 0), location = location.belowbar, style = shape.triangleup, size = size.tiny)
+plotshape(Oshortsig, color = color.new(color.orange, 0), location = location.abovebar, style = shape.triangledown, size = size.tiny)
 
 // Doji Reversal System
 
@@ -650,8 +643,8 @@ DAverageBody = ta.sma(Dmybodysize, Wbarsback)
 Dmycandlesize = H - L
 DAverageCandle = ta.sma(Dmycandlesize, Wbarsback)
 
-Dshort = frangeco <= frangehl * percentage and C < L[1] and L[1] > sma10 and C < O or C < L[2] and C[1] >= L[2] and frangeco <= frangehl * percentage and C < O and L[2] > sma10
-Dlong = frangeco <= frangehl * percentage and C > H[1] and H[1] < sma10 and C > O or C > H[2] and C[1] <= H[2] and frangeco <= frangehl * percentage and C > O and H[2] < sma10
+Dshort = frangeco <= frangehl * percentage and C < L[1] and L[1] > sma10 and C < O or C < L[2] and C[1] >= L[2] and frangeco <= frangeco * percentage and C < O and L[2] > sma10
+Dlong = frangeco <= frangehl * percentage and C > H[1] and H[1] < sma10 and C > O or C > H[2] and C[1] <= H[2] and frangeco <= frangeco * percentage and C > O and H[2] < sma10
 
 Dlongsig = GREENZONE and bool(lowleftempty) and L04 and Dlong and H - L >= WAverageCandle * DBarMultiplier
 Dshortsig = REDZONE and bool(highleftempty) and L04 and Dshort and H - L >= WAverageCandle * DBarMultiplier
@@ -670,8 +663,8 @@ RedCandle = Wshortsig[1] or Oshortsig[1] or Eshortsig[1] or Dshortsig[1]
 
 //====================================================================================================================
 
-barcolor(open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? color.rgb(5, 220, 12, 31) :na :na : na : na : na)
-barcolor(close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? #ee282897 :na :na : na : na : na)
+barcolor(open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? color.rgb(21, 231, 28, 31) :na :na : na : na : na)
+barcolor(close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? #e82f2f97 :na :na : na : na : na)
 
 bullpower = open[1] > close[1] ? close > open ? close >= open[1] ? close[1] >= open ? close - open > open[1] - close[1] ? 1 : na : na : na : na : na
 bearpower = close[1] > open[1] ? open > close ? open >= close[1] ? open[1] >= close ? open - close > close[1] - open[1] ? 1 : na : na : na : na : na
@@ -693,9 +686,7 @@ plot(intraMid, title = 'Mid Point', color = color.new(color.white, midcolor), st
 Top = ta.highest(bool(bearpower) ? intraMid : na, ta.barssince(k) + 100)
 Bottom = ta.lowest(bool(bullpower) ? intraMid : na, ta.barssince(k) + 100)
 
-
 //====================================================================================================================
-
 
 Range = dDH_ - dDL_
 
@@ -718,6 +709,7 @@ DS = 2 * DP - dDH_
 DR = 2 * DP - dDL_
 
 CPR = DP
+
 //NCPR = 0.2 > math.abs(DPi - DBcf + DPi - DBcf) / DPi * 100
 
 // ====================================================================
@@ -765,37 +757,39 @@ OUTOFRANGEVALUE = (((OO_ < dDL_) and (OO_ < VAL)) or ((OO_ > dDH_) and (OO_ > VA
 
 BIGDAY = (INRANGEINVALUE and ((close > dDH_) or (close < dDL_)))
 
-
 //Opening Bias/Print
 
 BULLISH = ((DTc > YTc) and (DBc > YTc))
 BEARISH = ((DTc < YBc) and (DBc < YBc))
 MODERATELYBULLISH = ((DTc > YTc) and (DBc > YBc))
 MODERATELYBEARISH = ((DTc < YTc) and (DBc < YBc))
+
 INSIDE = ((DTc < YTc) and (DBc > YBc))
 OUTSIDE = ((DTc > YTc) and (DBc < YBc))
 UNCHANGED = ((DP == TP) and (DBc == YBc) and (DTc == YTc))
 
 BREAKOUTDAY = (INSIDE or UNCHANGED)
-OTHERDAYS = OUTSIDE or BREAKOUTDAY
+
+//OTHERDAYS = OUTSIDE or BREAKOUTDAY
 
 //Day day_type
 
-CONFIRMEDBULLISH = (((BULLISH or MODERATELYBULLISH or OTHERDAYS) and ((CC > YTc) or (CC < YTc))) and (OO_ > DBc))
-CONFIRMEDBEARISH = (((BEARISH or MODERATELYBEARISH or OTHERDAYS) and ((CC < YBc) or (CC > YBc))) and (OO_ < DTc))
+CONFIRMEDBULLISH = (((BULLISH or MODERATELYBULLISH) and ((CC > YTc) or (CC < YTc))) and (OO_ > DBc))
+CONFIRMEDBEARISH = (((BEARISH or MODERATELYBEARISH) and ((CC < YBc) or (CC > YBc))) and (OO_ < DTc))
 
-REJECTEDBULLISH = (((BULLISH or MODERATELYBULLISH or OTHERDAYS) and ((CC > YTc) or (CC < YTc))) and (OO_ < DBc))
-REJECTEDBEARISH = (((BEARISH or MODERATELYBEARISH or OTHERDAYS) and ((CC < YBc) or (CC > YBc))) and (OO_ > DTc))
+REJECTEDBULLISH = (((BULLISH or MODERATELYBULLISH) and ((CC > YTc) or (CC < YTc))) and (OO_ < DBc))
+REJECTEDBEARISH = (((BEARISH or MODERATELYBEARISH) and ((CC < YBc) or (CC > YBc))) and (OO_ > DTc))
 
 ANYDAY = (BULLISH or MODERATELYBULLISH or BEARISH or MODERATELYBEARISH or INSIDE or OUTSIDE or UNCHANGED)
 
+REJECTIONDAY = (CONFIRMEDBULLISH and (close < DBc)) or (CONFIRMEDBEARISH and (close > DTc)) or (REJECTEDBULLISH and (close < DBc)) or (REJECTEDBULLISH and (close > DTc)) or (REJECTEDBEARISH and (close > DTc)) or (REJECTEDBEARISH and (close < DBc))
 
 // ──── INSTITUTIONAL BIAS LOGIC ───────────────────────────────────
 
 paint = BULLISH ? color.gray : BEARISH ? color.gray : MODERATELYBULLISH ? color.silver : MODERATELYBEARISH ? color.silver : INSIDE ? color.black : UNCHANGED ? color.black : OUTSIDE ? color.black : color.gray
 
-c1 = CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" :CONFIRMEDBULLISH and (close < DBc) ? "REJECTION" : CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" : CONFIRMEDBEARISH and (close > DTc)  ? "REJECTION" : REJECTEDBULLISH and (close < DBc) ? "REJECTED \n BULLISH" : REJECTEDBULLISH and (close > DTc) ? "REJECTION" : REJECTEDBEARISH and (close > DTc)? "REJECTED \n BEARISH" : REJECTEDBEARISH and (close < DBc) ? "REJECTION" : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "SIDEWAYS"
-paintc = CONFIRMEDBULLISH and (close > DTc) ? color.green :CONFIRMEDBULLISH and (close < DBc) ? color.fuchsia : CONFIRMEDBEARISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close > DTc) ? color.fuchsia :  REJECTEDBULLISH and (close < DBc)? color.maroon : REJECTEDBULLISH and (close > DTc) ? color.fuchsia : REJECTEDBEARISH and (close > DTc)? color.teal : REJECTEDBEARISH and (close < DBc) ? color.fuchsia : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? color.fuchsia : color.red
+c1 = ANYDAY and (close < DTc and close > DBc) ? "WATCH" : CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" :CONFIRMEDBULLISH and (close < DBc) ? "REJECTION" : CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" : CONFIRMEDBEARISH and (close > DTc)  ? "REJECTION" : REJECTEDBULLISH and (close < DBc) ? "REJECTED \n BULLISH" : REJECTEDBULLISH and (close > DTc) ? "REJECTION" : REJECTEDBEARISH and (close > DTc)? "REJECTED \n BEARISH" : REJECTEDBEARISH and (close < DBc) ? "REJECTION" : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "SIDEWAYS"
+paintc = ANYDAY and (close < DTc and close > DBc) ? color.gray : CONFIRMEDBULLISH and (close > DTc) ? color.green :CONFIRMEDBULLISH and (close < DBc) ? color.rgb(211, 39, 110) : CONFIRMEDBEARISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close > DTc) ? color.rgb(9, 130, 47) :  REJECTEDBULLISH and (close < DBc)? color.maroon : REJECTEDBULLISH and (close > DTc) ? color.rgb(7, 147, 63) : REJECTEDBEARISH and (close > DTc)? color.teal : REJECTEDBEARISH and (close < DBc) ? #dd2407 : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? color.fuchsia : color.black
 
 m1 = ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close > h3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close > h3))) or (ANYDAY and ((close > DBc) and (close > DTc)))) ? "LONG \n ZONE" : ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close < l3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close < l3))) or (ANYDAY and (close < DTc) and (close < DBc))) ? "SHORT \n ZONE" : (ANYDAY and (close > DBc) and (close < DTc)) ? "WAIT FOR \n SIGNAL" : na
 paintm = ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close > h3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close > h3))) or (ANYDAY and ((close > DBc) and (close > DTc)))) ? color.black : ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close < l3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close < l3))) or (ANYDAY and (close < DTc) and (close < DBc))) ? color.black : (ANYDAY and (close > DBc) and (close < DTc)) ? color.silver : na
@@ -816,38 +810,33 @@ var color dX_col = paintX
 var color mX_col = paintmX
 var color c1_col = paintc
 
-if (close < DTc and close > DBc)
-    c1_message := "WATCH"
-    c1_col := color.gray
-    c1_col
+if c1 == 'WATCH'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
+else if c1 == 'REJECTION'
+    c1_message := str.tostring(c1)
+    c1_col := paintc
 else if c1 == 'CONFIRMED \n BULLISH'
     c1_message := str.tostring(c1)
     c1_col := paintc
-    c1_col
 else if c1 == 'CONFIRMED \n BEARISH'
     c1_message := str.tostring(c1)
     c1_col := paintc
-    c1_col
 else if c1 == 'REJECTED \n BULLISH'
     c1_message := str.tostring(c1)
     c1_col := paintc
-    c1_col
 else if c1 == 'REJECTED \n BEARISH'
     c1_message := str.tostring(c1)
     c1_col := paintc
-    c1_col
 else if c1 == 'SIDEWAYS'
     c1_message := str.tostring(c1)
     c1_col := paintc
-    c1_col
 else if c1 == 'SIDEWAYS/ BREAKOUT'
     c1_message := str.tostring(c1)
     c1_col := paintc
-    c1_col
 else if c1 == 'BREAKOUT'
     c1_message := str.tostring(c1)
     c1_col := paintc
-    c1_col
 
 if (dX == "IN RANGE \n IN VALUE")
     dX_message := str.tostring(dX)
@@ -3125,14 +3114,7 @@ bool isSidewaysDay = (mX == 'INRANGEINVALUE') or
                      str.contains(mX, "TYPICAL DAY") or
                      (dX == 'IN RANGE \n IN VALUE')
 
-// Rejection Day qualification: institutional CPR rejection, boundary bounces, or extreme/wick reversals
-bool isRejectionDay = (c1 == "REJECTION") or
-                      str.contains(c1, "REJECT") or
-                      BounceUp or BounceDown or
-                      Elongsignal or Eshortsignal
-
-// On sideways / trading range days, NO signals are allowed UNLESS it is a confirmed Rejection Day
-bool dayAllowed = not isSidewaysDay or isRejectionDay
+bool dayAllowed = not isSidewaysDay or NCPR
 
 bool longAllowed  = low < H4
 bool shortAllowed = high > L4
@@ -3185,12 +3167,9 @@ bool lightningBypassDayFilter = HiddenDivBuy or HiddenDivSell
 bool ExtremeReversalBuy  = Elongsignal and longAllowed and dayAllowed
 bool ExtremeReversalSell = Eshortsignal and shortAllowed and dayAllowed
 
-// On sideways days, missile breakout momentum (MissU/MissD) is suppressed; only structural boundary bounces qualify
-bool missileAllowedOnDay = not isSidewaysDay or (isRejectionDay and (BounceUp or BounceDown))
-
 // 5. Filter out individual trades so they don't fire when Lightning, Extreme Reversal, or Divergences fire
-bool JustMissileBuy  = CanBuy and missileAllowedOnDay and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
-bool JustMissileSell = CanSell and missileAllowedOnDay and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
+bool JustMissileBuy  = CanBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
+bool JustMissileSell = CanSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
 
 bool JustScalpBuy    = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
 bool JustScalpSell   = ScalpSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
@@ -3308,6 +3287,261 @@ plotshape(JustScalpSell and dayAllowed and shortAllowed, title = "Short Scalp", 
 // 🏹 7. BOUNCE PLOTS (Call & Put Arrows)
 plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup,   location = location.belowbar, color = color.green, size = size.large)
 plotshape(BounceDown and not LightningSell, title = 'Long Put',   style = shape.arrowdown, location = location.abovebar, color = color.red,   size = size.large)
+
+
+
+//indicator("Range", overlay = true)
+//Variables and User Inputs
+
+TF1 = input.timeframe('D', group = '========= HTF SETTINGS =========')
+show_HTF_for_TF1 = input.bool(true, title = 'Show HTF Candles', group = '========= HTF SETTINGS =========')
+HTF_Candles_to_Show_TF1 = input.int(2, title = 'Number of HTF Candles (Max: 10)', minval = 1, maxval = 10, step = 1, group = '========= HTF SETTINGS =========')
+offset_TF1 = input.int(7, title = 'HTF Bar/Candle Offset', minval = 5, step = 1, group = '========= HTF SETTINGS =========')
+gap_between_bars = input.int(2, title = 'Gap Between Bars', minval = 1, step = 1, group = '========= HTF SETTINGS =========')
+color_bullish = input.color(#089981, 'Bullish Candle Color', group = 'COLOR SETTINGS')
+color_bearish = input.color(#e44242, 'Bearish Candle Color', group = 'COLOR SETTINGS')
+color_text = input.color(color.rgb(4, 4, 4, 100), 'Text Color', group = 'COLOR SETTINGS')
+
+//Getting OHLC values For TF1
+[O_1_TF1, H_1_TF1, L_1_TF1, C_1_TF1, O_2_TF1, H_2_TF1, L_2_TF1, C_2_TF1, O_3_TF1, H_3_TF1, L_3_TF1, C_3_TF1, O_4_TF1, H_4_TF1, L_4_TF1, C_4_TF1, O_5_TF1, H_5_TF1, L_5_TF1, C_5_TF1, O_6_TF1, H_6_TF1, L_6_TF1, C_6_TF1, O_7_TF1, H_7_TF1, L_7_TF1, C_7_TF1, O_8_TF1, H_8_TF1, L_8_TF1, C_8_TF1, O_9_TF1, H_9_TF1, L_9_TF1, C_9_TF1, O_10_TF1, H_10_TF1, L_10_TF1, C_10_TF1, TF1_, Highest_TF1] = request.security(syminfo.tickerid, TF1, [open[0], high[0], low[0], close[0], open[1], high[1], low[1], close[1], open[2], high[2], low[2], close[2], open[3], high[3], low[3], close[3], open[4], high[4], low[4], close[4], open[5], high[5], low[5], close[5], open[7], high[7], low[7], close[7], open[8], high[8], low[8], close[8], open[9], high[9], low[9], close[9], open[10], high[10], low[10], close[10], TF1, ta.highest(high, HTF_Candles_to_Show_TF1)], barmerge.gaps_off, barmerge.lookahead_on)
+
+//Function to plot HTF Candles
+condition(a, b, c, ax, open_, high_, low_, close_, show_label_, LO, LH, LL, LC, LTF, TF, x) =>
+    //Variables for candles OHLC
+    var line line_O_C_a = a
+    var line line_OC_H_b = b
+    var line line_OC_L_c = c
+    var label label_O_a = LO
+    var label label_H_b = LH
+    var label label_L_c = LL
+    var label label_C_d = LC
+    var label label_TF_e = LTF
+
+    //Cleaning up old candles
+    line.delete(line_O_C_a)
+    line.delete(line_OC_H_b)
+    line.delete(line_OC_L_c)
+    if show_label_
+        label.delete(label_O_a)
+        label.delete(label_H_b)
+        label.delete(label_L_c)
+        label.delete(label_C_d)
+        label.delete(label_TF_e)
+
+    //Plotting Open Close of the candles
+    line_O_C_a := line.new(bar_index + ax, open_, bar_index + ax, close_, color = open_ < close_ ? color_bullish : open_ > close_ ? color_bearish : color_bearish, width = 9)
+
+    //Plotting Wicks => wick above and below the candles
+    line_OC_H_b := line.new(bar_index + ax, open_ < close_ ? close_ : open_, bar_index + ax, high_, color = open_ < close_ ? color_bullish : open_ > close_ ? color_bearish : color_bearish)
+    line_OC_L_c := line.new(bar_index + ax, open_ > close_ ? close_ : open_, bar_index + ax, low_, color = open_ < close_ ? color_bullish : open_ > close_ ? color_bearish : color_bearish)
+
+    //labels
+    // x=10
+    if show_label_
+        // label_O_a := label.new(bar_index + ax + 12, open_, text = "O: " + str.tostring(open_), textcolor=open_<close_?color.lime:color.red, style=label.style_label_left, color = color.new(color.white, 100))
+        // label_H_b := label.new(bar_index + ax + 2, high_, text = "H: " + str.tostring(high_, '#'), textcolor=open_<close_?color.lime:color.red, style=label.style_label_left, color = color.new(color.white, 100))
+        // label_L_c := label.new(bar_index + ax + 2, low_, text = "L: " + str.tostring(low_, '#'), textcolor=open_<close_?color.lime:color.red, style=label.style_label_left, color = color.new(color.white, 100))
+        label_C_d := label.new(bar_index + ax + 1, close_, text = 'C: ' + str.tostring(close_), textcolor = color_text, style = label.style_label_left, color = color.new(color.white, 100))
+        label_TF_e := label.new(bar_index + ax, x, text = 'TF: ' + str.tostring(TF), textcolor = color_text, style = label.style_label_up, color = na, size = size.large)
+        label_TF_e
+    [line_O_C_a, line_OC_H_b, line_OC_L_c, label_O_a, label_H_b, label_L_c, label_C_d, label_TF_e]
+
+
+//HTF Candles for TF1
+if HTF_Candles_to_Show_TF1 >= 1 and show_HTF_for_TF1
+    var line line_O_C_1_TF1 = na
+    var line line_OC_H_1_TF1 = na
+    var line line_OC_L_1_TF1 = na
+    var label label_O_1_TF1 = na
+    var label label_H_1_TF1 = na
+    var label label_L_1_TF1 = na
+    var label label_C_1_TF1 = na
+    var label label_TF_1_TF1 = na
+    [line_O_C_1_TF1_, line_OC_H_1_TF1_, line_OC_L_1_TF1_, label_O_1_TF1_, label_H_1_TF1_, label_L_1_TF1_, label_C_1_TF1_, label_TF_1_] = condition(line_O_C_1_TF1, line_OC_H_1_TF1, line_OC_L_1_TF1, offset_TF1 - 0 * gap_between_bars, O_1_TF1, H_1_TF1, L_1_TF1, C_1_TF1, true, label_O_1_TF1, label_H_1_TF1, label_L_1_TF1, label_C_1_TF1, label_TF_1_TF1, TF1_, Highest_TF1)
+    line_O_C_1_TF1 := line_O_C_1_TF1_
+    line_OC_H_1_TF1 := line_OC_H_1_TF1_
+    line_OC_L_1_TF1 := line_OC_L_1_TF1_
+    label_O_1_TF1_ := label_O_1_TF1_
+    label_H_1_TF1 := label_L_1_TF1_
+    label_L_1_TF1 := label_L_1_TF1_
+    label_C_1_TF1 := label_C_1_TF1_
+    label_C_1_TF1
+
+if HTF_Candles_to_Show_TF1 >= 2 and show_HTF_for_TF1
+    var line line_O_C_2_TF1 = na
+    var line line_OC_H_2_TF1 = na
+    var line line_OC_L_2_TF1 = na
+    var label label_O_2_TF1 = na
+    var label label_H_2_TF1 = na
+    var label label_L_2_TF1 = na
+    var label label_C_2_TF1 = na
+    var label label_TF_2_TF1 = na
+    [line_O_C_2_TF1_, line_OC_H_2_TF1_, line_OC_L_2_TF1_, label_O_2_TF1_, label_H_2_TF1_, label_L_2_TF1_, label_C_2_TF1_, label_TF_1_] = condition(line_O_C_2_TF1, line_OC_H_2_TF1, line_OC_L_2_TF1, offset_TF1 - 1 * gap_between_bars, O_2_TF1, H_2_TF1, L_2_TF1, C_2_TF1, false, label_O_2_TF1, label_H_2_TF1, label_L_2_TF1, label_C_2_TF1, label_TF_2_TF1, TF1_, Highest_TF1)
+    line_O_C_2_TF1 := line_O_C_2_TF1_
+    line_OC_H_2_TF1 := line_OC_H_2_TF1_
+    line_OC_L_2_TF1 := line_OC_L_2_TF1_
+    label_O_2_TF1_ := label_O_2_TF1_
+    label_H_2_TF1 := label_L_2_TF1_
+    label_L_2_TF1 := label_L_2_TF1_
+    label_C_2_TF1 := label_C_2_TF1_
+    label_C_2_TF1
+
+if HTF_Candles_to_Show_TF1 >= 3 and show_HTF_for_TF1
+    var line line_O_C_3_TF1 = na
+    var line line_OC_H_3_TF1 = na
+    var line line_OC_L_3_TF1 = na
+    var label label_O_3_TF1 = na
+    var label label_H_3_TF1 = na
+    var label label_L_3_TF1 = na
+    var label label_C_3_TF1 = na
+    var label label_TF_3_TF1 = na
+    [line_O_C_3_TF1_, line_OC_H_3_TF1_, line_OC_L_3_TF1_, label_O_3_TF1_, label_H_3_TF1_, label_L_3_TF1_, label_C_3_TF1_, label_TF_1_] = condition(line_O_C_3_TF1, line_OC_H_3_TF1, line_OC_L_3_TF1, offset_TF1 - 2 * gap_between_bars, O_3_TF1, H_3_TF1, L_3_TF1, C_3_TF1, false, label_O_3_TF1, label_H_3_TF1, label_L_3_TF1, label_C_3_TF1, label_TF_3_TF1, TF1_, Highest_TF1)
+    line_O_C_3_TF1 := line_O_C_3_TF1_
+    line_OC_H_3_TF1 := line_OC_H_3_TF1_
+    line_OC_L_3_TF1 := line_OC_L_3_TF1_
+    label_O_3_TF1_ := label_O_3_TF1_
+    label_H_3_TF1 := label_L_3_TF1_
+    label_L_3_TF1 := label_L_3_TF1_
+    label_C_3_TF1 := label_C_3_TF1_
+    label_C_3_TF1
+
+if HTF_Candles_to_Show_TF1 >= 4 and show_HTF_for_TF1
+    var line line_O_C_4_TF1 = na
+    var line line_OC_H_4_TF1 = na
+    var line line_OC_L_4_TF1 = na
+    var label label_O_4_TF1 = na
+    var label label_H_4_TF1 = na
+    var label label_L_4_TF1 = na
+    var label label_C_4_TF1 = na
+    var label label_TF_4_TF1 = na
+    [line_O_C_4_TF1_, line_OC_H_4_TF1_, line_OC_L_4_TF1_, label_O_4_TF1_, label_H_4_TF1_, label_L_4_TF1_, label_C_4_TF1_, label_TF_1_] = condition(line_O_C_4_TF1, line_OC_H_4_TF1, line_OC_L_4_TF1, offset_TF1 - 3 * gap_between_bars, O_4_TF1, H_4_TF1, L_4_TF1, C_4_TF1, false, label_O_4_TF1, label_H_4_TF1, label_L_4_TF1, label_C_4_TF1, label_TF_4_TF1, TF1_, Highest_TF1)
+    line_O_C_4_TF1 := line_O_C_4_TF1_
+    line_OC_H_4_TF1 := line_OC_H_4_TF1_
+    line_OC_L_4_TF1 := line_OC_L_4_TF1_
+    label_O_4_TF1_ := label_O_4_TF1_
+    label_H_4_TF1 := label_L_4_TF1_
+    label_L_4_TF1 := label_L_4_TF1_
+    label_C_4_TF1 := label_C_4_TF1_
+    label_C_4_TF1
+
+if HTF_Candles_to_Show_TF1 >= 5 and show_HTF_for_TF1
+    var line line_O_C_5_TF1 = na
+    var line line_OC_H_5_TF1 = na
+    var line line_OC_L_5_TF1 = na
+    var label label_O_5_TF1 = na
+    var label label_H_5_TF1 = na
+    var label label_L_5_TF1 = na
+    var label label_C_5_TF1 = na
+    var label label_TF_5_TF1 = na
+    [line_O_C_5_TF1_, line_OC_H_5_TF1_, line_OC_L_5_TF1_, label_O_5_TF1_, label_H_5_TF1_, label_L_5_TF1_, label_C_5_TF1_, label_TF_1_] = condition(line_O_C_5_TF1, line_OC_H_5_TF1, line_OC_L_5_TF1, offset_TF1 - 4 * gap_between_bars, O_5_TF1, H_5_TF1, L_5_TF1, C_5_TF1, false, label_O_5_TF1, label_H_5_TF1, label_L_5_TF1, label_C_5_TF1, label_TF_5_TF1, TF1_, Highest_TF1)
+    line_O_C_5_TF1 := line_O_C_5_TF1_
+    line_OC_H_5_TF1 := line_OC_H_5_TF1_
+    line_OC_L_5_TF1 := line_OC_L_5_TF1_
+    label_O_5_TF1_ := label_O_5_TF1_
+    label_H_5_TF1 := label_L_5_TF1_
+    label_L_5_TF1 := label_L_5_TF1_
+    label_C_5_TF1 := label_C_5_TF1_
+    label_C_5_TF1
+
+if HTF_Candles_to_Show_TF1 >= 6 and show_HTF_for_TF1
+    var line line_O_C_6_TF1 = na
+    var line line_OC_H_6_TF1 = na
+    var line line_OC_L_6_TF1 = na
+    var label label_O_6_TF1 = na
+    var label label_H_6_TF1 = na
+    var label label_L_6_TF1 = na
+    var label label_C_6_TF1 = na
+    var label label_TF_6_TF1 = na
+    [line_O_C_6_TF1_, line_OC_H_6_TF1_, line_OC_L_6_TF1_, label_O_6_TF1_, label_H_6_TF1_, label_L_6_TF1_, label_C_6_TF1_, label_TF_1_] = condition(line_O_C_6_TF1, line_OC_H_6_TF1, line_OC_L_6_TF1, offset_TF1 - 5 * gap_between_bars, O_6_TF1, H_6_TF1, L_6_TF1, C_6_TF1, false, label_O_6_TF1, label_H_6_TF1, label_L_6_TF1, label_C_6_TF1, label_TF_6_TF1, TF1_, Highest_TF1)
+    line_O_C_6_TF1 := line_O_C_6_TF1_
+    line_OC_H_6_TF1 := line_OC_H_6_TF1_
+    line_OC_L_6_TF1 := line_OC_L_6_TF1_
+    label_O_6_TF1_ := label_O_6_TF1_
+    label_H_6_TF1 := label_L_6_TF1_
+    label_L_6_TF1 := label_L_6_TF1_
+    label_C_6_TF1 := label_C_6_TF1_
+    label_C_6_TF1
+
+if HTF_Candles_to_Show_TF1 >= 7 and show_HTF_for_TF1
+    var line line_O_C_7_TF1 = na
+    var line line_OC_H_7_TF1 = na
+    var line line_OC_L_7_TF1 = na
+    var label label_O_7_TF1 = na
+    var label label_H_7_TF1 = na
+    var label label_L_7_TF1 = na
+    var label label_C_7_TF1 = na
+    var label label_TF_7_TF1 = na
+    [line_O_C_7_TF1_, line_OC_H_7_TF1_, line_OC_L_7_TF1_, label_O_7_TF1_, label_H_7_TF1_, label_L_7_TF1_, label_C_7_TF1_, label_TF_1_] = condition(line_O_C_7_TF1, line_OC_H_7_TF1, line_OC_L_7_TF1, offset_TF1 - 6 * gap_between_bars, O_7_TF1, H_7_TF1, L_7_TF1, C_7_TF1, false, label_O_7_TF1, label_H_7_TF1, label_L_7_TF1, label_C_7_TF1, label_TF_7_TF1, TF1_, Highest_TF1)
+    line_O_C_7_TF1 := line_O_C_7_TF1_
+    line_OC_H_7_TF1 := line_OC_H_7_TF1_
+    line_OC_L_7_TF1 := line_OC_L_7_TF1_
+    label_O_7_TF1_ := label_O_7_TF1_
+    label_H_7_TF1 := label_L_7_TF1_
+    label_L_7_TF1 := label_L_7_TF1_
+    label_C_7_TF1 := label_C_7_TF1_
+    label_C_7_TF1
+
+if HTF_Candles_to_Show_TF1 >= 8 and show_HTF_for_TF1
+    var line line_O_C_8_TF1 = na
+    var line line_OC_H_8_TF1 = na
+    var line line_OC_L_8_TF1 = na
+    var label label_O_8_TF1 = na
+    var label label_H_8_TF1 = na
+    var label label_L_8_TF1 = na
+    var label label_C_8_TF1 = na
+    var label label_TF_8_TF1 = na
+    [line_O_C_8_TF1_, line_OC_H_8_TF1_, line_OC_L_8_TF1_, label_O_8_TF1_, label_H_8_TF1_, label_L_8_TF1_, label_C_8_TF1_, label_TF_1_] = condition(line_O_C_8_TF1, line_OC_H_8_TF1, line_OC_L_8_TF1, offset_TF1 - 7 * gap_between_bars, O_8_TF1, H_8_TF1, L_8_TF1, C_8_TF1, false, label_O_8_TF1, label_H_8_TF1, label_L_8_TF1, label_C_8_TF1, label_TF_8_TF1, TF1_, Highest_TF1)
+    line_O_C_8_TF1 := line_O_C_8_TF1_
+    line_OC_H_8_TF1 := line_OC_H_8_TF1_
+    line_OC_L_8_TF1 := line_OC_L_8_TF1_
+    label_O_8_TF1_ := label_O_8_TF1_
+    label_H_8_TF1 := label_L_8_TF1_
+    label_L_8_TF1 := label_L_8_TF1_
+    label_C_8_TF1 := label_C_8_TF1_
+    label_C_8_TF1
+
+if HTF_Candles_to_Show_TF1 >= 9 and show_HTF_for_TF1
+    var line line_O_C_9_TF1 = na
+    var line line_OC_H_9_TF1 = na
+    var line line_OC_L_9_TF1 = na
+    var label label_O_9_TF1 = na
+    var label label_H_9_TF1 = na
+    var label label_L_9_TF1 = na
+    var label label_C_9_TF1 = na
+    var label label_TF_9_TF1 = na
+    [line_O_C_9_TF1_, line_OC_H_9_TF1_, line_OC_L_9_TF1_, label_O_9_TF1_, label_H_9_TF1_, label_L_9_TF1_, label_C_9_TF1_, label_TF_1_] = condition(line_O_C_9_TF1, line_OC_H_9_TF1, line_OC_L_9_TF1, offset_TF1 - 8 * gap_between_bars, O_9_TF1, H_9_TF1, L_9_TF1, C_9_TF1, false, label_O_9_TF1, label_H_9_TF1, label_L_9_TF1, label_C_9_TF1, label_TF_9_TF1, TF1_, Highest_TF1)
+    line_O_C_9_TF1 := line_O_C_9_TF1_
+    line_OC_H_9_TF1 := line_OC_H_9_TF1_
+    line_OC_L_9_TF1 := line_OC_L_9_TF1_
+    label_O_9_TF1_ := label_O_9_TF1_
+    label_H_9_TF1 := label_L_9_TF1_
+    label_L_9_TF1 := label_L_9_TF1_
+    label_C_9_TF1 := label_C_9_TF1_
+    label_C_9_TF1
+
+if HTF_Candles_to_Show_TF1 >= 10 and show_HTF_for_TF1
+    var line line_O_C_10_TF1 = na
+    var line line_OC_H_10_TF1 = na
+    var line line_OC_L_10_TF1 = na
+    var label label_O_10_TF1 = na
+    var label label_H_10_TF1 = na
+    var label label_L_10_TF1 = na
+    var label label_C_10_TF1 = na
+    var label label_TF_10_TF1 = na
+    [line_O_C_10_TF1_, line_OC_H_10_TF1_, line_OC_L_10_TF1_, label_O_10_TF1_, label_H_10_TF1_, label_L_10_TF1_, label_C_10_TF1_, label_TF_1_] = condition(line_O_C_10_TF1, line_OC_H_10_TF1, line_OC_L_10_TF1, offset_TF1 - 9 * gap_between_bars, O_10_TF1, H_10_TF1, L_10_TF1, C_10_TF1, false, label_O_10_TF1, label_H_10_TF1, label_L_10_TF1, label_C_10_TF1, label_TF_10_TF1, TF1_, Highest_TF1)
+    line_O_C_10_TF1 := line_O_C_10_TF1_
+    line_OC_H_10_TF1 := line_OC_H_10_TF1_
+    line_OC_L_10_TF1 := line_OC_L_10_TF1_
+    label_O_10_TF1_ := label_O_10_TF1_
+    label_H_10_TF1 := label_L_10_TF1_
+    label_L_10_TF1 := label_L_10_TF1_
+    label_C_10_TF1 := label_C_10_TF1_
+    label_C_10_TF1
+
+//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//\\//
+
+
+
 
 
 
