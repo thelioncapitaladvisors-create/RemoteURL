@@ -16,6 +16,16 @@
 - **CANONICAL WIN RATE & SUCCESS RATE FORMULA**: Win Rate / Success Rate across ALL tabs (`HUB`, `MARKETS`, `ANALYTICS`, `Research`, `Dashboard`) MUST ALWAYS use total realized closed trades (`wins.length / totalClosed.length * 100`) in the denominator. Breakeven trades MUST NOT be omitted from the closed trades denominator. `(Wins + Losses)` denominator is strictly prohibited.
 
 ## Version 1.0: Clean Start Baseline & Complete Production Anchor (Effective October 4, 2026)
+- **Version 1.0 Strict PivotBoss Market Regime & Zero-General Regime Mandate (Effective October 22, 2026)**:
+  - **Zero "General" or "Unclassified" Regime Policy**: There is strictly no such concept as "General Regime" or "UNCLASSIFIED" in the quantitative architecture. All trading days and trade setups must strictly map to authentic PivotBoss / Pine Script market regimes:
+    1. `TYPICAL DAY, TRADING RANGE, SIDEWAYS`
+    2. `TREND DAY, DOUBLE DISTRIBUTION TREND, EXPANDED TYPICAL`
+    3. `TREND DAY, DOUBLE DISTRIBUTION TREND`
+    4. `BIG MOVE / BREAKOUT DAY`
+    5. `TYPICAL DAY, EXPANDED TYPICAL DAY, TRADING RANGE`
+    along with opening relationship biases (`IN RANGE / IN VALUE`, `IN RANGE / OUT OF VALUE`, `OUT OF RANGE / OUT OF VALUE`).
+  - **Elimination of Debug Fallbacks**: Eliminated `: "DEBUG"` fallback leaks across Pine Script indicators (`c1`, `dX`, `mX`) and Python BlackBox (`compute_day_type_mx`, `compute_institutional_bias_c1`). Edge conditions cleanly default to `TYPICAL DAY, TRADING RANGE, SIDEWAYS` (the canonical PivotBoss baseline day).
+  - **Scorecard Purification**: The `DAY TYPE / REGIME` matrix on the `INSIGHTS` tab completely eliminates the `UNCLASSIFIED / GENERAL REGIME` row. All historical and live trades evaluate valid candidate metadata (`opening_bias`, `mX`, `dX`, `cpr_type`) with canonical fallback to `TYPICAL_RANGE`.
 - **Version 1.0 Markets Table Trade Outcomes Collapse & Scorecard Descending Performance Sorting Mandate (Effective October 22, 2026)**:
   - **Markets Consolidated Table Trade Outcome Folding**: On the `MARKETS` tab in `Tv-Alert-Mobile/src/app/page.tsx`, the Consolidated Today's Signal Performance table integrates an interactive `EXPAND` / `COLLAPSE` toggle defaulting to collapsed (`isTodayTradesExpanded = false`). When collapsed, the column header (`MARKET | SYMBOL | OUTCOME | R:R | P&L`), sticky consolidated summary row, and intraday equity trajectory curve remain anchored, while individual trade outcome rows are folded up so lower market segments (such as MCX COMMODITIES) are immediately accessible without vertical scrolling. When expanded, all individual trade rows render with full metrics, complemented by an ergonomic bottom collapse button.
   - **Descending Order of Performance Arrangement**: All performance breakdown and segregation tables across the mobile terminal strictly arrange rows in descending order of performance:
