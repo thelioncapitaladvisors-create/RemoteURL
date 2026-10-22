@@ -24,7 +24,7 @@ from typing import Dict, List, Optional
 from .pivots import (
     OHLC, compute_daily_levels, compute_emas_from_bars,
     compute_atr, compute_pivot_trend_emas, compute_dmi, compute_m0_m10,
-    compute_institutional_bias_c1
+    compute_institutional_bias_c1, compute_day_type_mx
 )
 from .day_types import DayTypeClassifier, DayTypeResult
 from .strategies import StrategyEngine, StrategySignal, MarketContext
@@ -229,7 +229,21 @@ class EngineDaemon:
             tp=daily_levels.cpr.pivot
         )
 
-        # 3. Assemble MarketContext
+        # 3. Compute Day Type (mX)
+        mx_day_type = compute_day_type_mx(
+            open_price=bar.open,
+            close_price=bar.close,
+            dDH=prev_high,
+            dDL=prev_low,
+            vah=daily_levels.cpr.tc,
+            val=daily_levels.cpr.bc,
+            ytf_h=prev_high,
+            ytf_l=prev_low,
+            dtc=daily_levels.cpr.tc,
+            dbc=daily_levels.cpr.bc
+        )
+
+        # 4. Assemble MarketContext
         ctx = MarketContext(
             bar=bar,
             bar_index=len(bars_15m),
@@ -247,6 +261,7 @@ class EngineDaemon:
             pivot_trend_slow=pivot_trend_slow,
             atr=atr_val,
             institutional_bias=c1_bias,
+            day_type_label=mx_day_type,
             session_highest=max((b.high for b in bars_15m[-10:]), default=bar.high),
             session_lowest=min((b.low for b in bars_15m[-10:]), default=bar.low),
             plus=plus_val,

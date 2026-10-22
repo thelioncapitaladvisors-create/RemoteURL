@@ -881,7 +881,7 @@ def compute_institutional_bias_c1(
     elif (anyday and ((open_price > h4) or (open_price < l4))) or inside:
         return "BREAKOUT"
     else:
-        return "DEBUG"
+        return "SIDEWAYS"
 
 
 def compute_day_type_mx(
@@ -903,7 +903,7 @@ def compute_day_type_mx(
              (INRANGEOUTOFVALUE and ((close < Ytf_h) and (close > Ytf_l))) ? "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS" :
              ((INRANGEOUTOFVALUE) and ((close > Ytf_h) or (close < Ytf_l))) ? "TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL" :
              (OUTOFRANGEVALUE and ((close < Ytf_l) or (close > Ytf_h))) ? "TREND DAY, \n DOUBLE DISTRIBUTION TREND" :
-             (OUTOFRANGEVALUE and ((close > Ytf_l) and (close < Ytf_h))) ? "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE" : "DEBUG"
+             (OUTOFRANGEVALUE and ((close > Ytf_l) and (close < Ytf_h))) ? "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE" : "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS"
     """
     in_range_in_val = (open_price > dDL and open_price < dDH) and (open_price > val and open_price < vah)
     in_range_out_val = (open_price > dDL and open_price < dDH) and (open_price < val or open_price > vah)
@@ -923,5 +923,6 @@ def compute_day_type_mx(
     elif out_range_val and (close_price > ytf_l and close_price < ytf_h):
         return "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE"
     else:
-        return "DEBUG"
+        # Default canonical baseline regime (never DEBUG or General)
+        return "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS"
 
