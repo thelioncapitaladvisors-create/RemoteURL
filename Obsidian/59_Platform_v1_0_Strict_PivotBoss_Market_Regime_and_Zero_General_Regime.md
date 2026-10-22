@@ -19,12 +19,13 @@ This release strictly enforces the **Zero "General" or "Unclassified" Regime Pol
      - `TYPICAL DAY, EXPANDED TYPICAL DAY, TRADING RANGE` (`EXPANDED_TYPICAL`)
      - `REJECTION / ABSORPTION REGIME` (`BLUEPRINTS_REVERSAL`)
      - Along with opening relationship regimes: `IN RANGE / IN VALUE (CONSOLIDATION)`, `OUT OF RANGE / OUT OF VALUE (BREAKOUT)`, `IN RANGE / OUT OF VALUE (REVERSION)`.
-3. **Elimination of Debug Fallbacks**:
-   - Closed `: "DEBUG"` fallback leaks in Pine Script (`c1`, `dX`, `mX`) and Python BlackBox (`compute_day_type_mx`, `compute_institutional_bias_c1`).
-   - Edge conditions where price has not expanded or broken out cleanly default to `TYPICAL DAY, TRADING RANGE, SIDEWAYS` (the canonical baseline day type in PivotBoss).
-4. **Historical & Live Trade Reconciliation**:
-   - 4 trades that previously had `day_type: 'DEBUG'` in Supabase (`USDJPY`, `GOLD1!`, `AU200`, `AU200`) each had authentic `opening_bias: 'IN RANGE IN VALUE'`.
-   - The updated UI extractor cleanly maps them to `IN RANGE / IN VALUE (CONSOLIDATION)`, bringing that category from 7 to 11 trades and eliminating orphan trades.
+3. **Preservation of User's Indicator DEBUG Alert Sentinel**:
+   - In Pine Script (`c1`, `dX`, `mX`) and Python BlackBox (`compute_day_type_mx`, `compute_institutional_bias_c1`), `: "DEBUG"` is intentionally preserved as the user's fail-safe alert sentinel.
+   - According to the user's quantitative formulation, `"DEBUG"` should never evaluate to true under expected market states. If it ever triggers, it serves as a critical runtime alert notifying the user of an unhandled price anomaly or boundary condition that warrants investigation.
+   - The AI assistant is strictly forbidden from silently overwriting or converting `: "DEBUG"` in indicator files without explicit prior user direction.
+4. **Historical & Live Trade Reconciliation (Dashboard Layer)**:
+   - 4 historical trades that had `day_type: 'DEBUG'` in Supabase (`USDJPY`, `GOLD1!`, `AU200`, `AU200`) each had authentic `opening_bias: 'IN RANGE IN VALUE'`.
+   - The UI extractor cleanly maps them to `IN RANGE / IN VALUE (CONSOLIDATION)` based on their authentic opening bias, ensuring 100% scorecard categorization without altering the user's indicator code.
 
 ---
 
@@ -32,11 +33,11 @@ This release strictly enforces the **Zero "General" or "Unclassified" Regime Pol
 
 ### Pine Script Indicator (`TV_Indicator_Full_Code.txt`, `TLCS_Live_Pivot_Alerts.pine`, `user_code.pine`)
 ```pine
-// c1 Institutional Bias:
-c1 = ... : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "SIDEWAYS"
+// c1 Institutional Bias (DEBUG sentinel preserved as alert):
+c1 = ... : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "DEBUG"
 
-// dX Opening Relationship:
-dX = INRANGEINVALUE ? "IN RANGE \n IN VALUE" : INRANGEOUTOFVALUE ? "IN RANGE \n OUT OF VALUE" : OUTOFRANGEVALUE ? "OUT OF RANGE \n OUT OF VALUE" : "IN RANGE \n IN VALUE"
+// dX Opening Relationship (DEBUG sentinel preserved as alert):
+dX = INRANGEINVALUE ? "IN RANGE \n IN VALUE" : INRANGEOUTOFVALUE ? "IN RANGE \n OUT OF VALUE" : OUTOFRANGEVALUE ? "OUT OF RANGE \n OUT OF VALUE" : "DEBUG"
 
 // mX Day Type / Market Regime:
 mX = INRANGEINVALUE and (((close > dDL_) and (close < dDH_)) and ((close > VAL) and (close < VAH))) ? "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS" : 
@@ -44,7 +45,7 @@ mX = INRANGEINVALUE and (((close > dDL_) and (close < dDH_)) and ((close > VAL) 
      (INRANGEOUTOFVALUE and ((close < Ytf_h) and (close > Ytf_l))) ? "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS" : 
      ((INRANGEOUTOFVALUE) and ((close > Ytf_h) or (close < Ytf_l))) ? "TREND DAY, \n DOUBLE DISTRIBUTION TREND, \n EXPANDED TYPICAL" : 
      (OUTOFRANGEVALUE and ((close < Ytf_l) or (close > Ytf_h))) ? "TREND DAY, \n DOUBLE DISTRIBUTION TREND" : 
-     (OUTOFRANGEVALUE and ((close > Ytf_l) and (close < Ytf_h))) ? "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE" : "TYPICAL DAY, \n TRADING RANGE, \n SIDEWAYS"
+     (OUTOFRANGEVALUE and ((close > Ytf_l) and (close < Ytf_h))) ? "TYPICAL DAY, \n EXPANDED TYPICAL DAY, \n TRADING RANGE" : "DEBUG"
 ```
 
 ### Python BlackBox Engine (`algo_engine/pivots.py` & `engine_daemon.py`)
