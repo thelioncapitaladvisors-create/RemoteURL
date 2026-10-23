@@ -86,7 +86,7 @@
   - **Oscillator Momentum & DMI Parity**: In the DhanHQ Python Signal Engine (`algo_engine/pivots.py`), $m0$ (21 EMA) and $m10$ (96 SMA) are computed over the 92-bar highest/lowest percentage oscillator $100 \times (close - upper) / (upper - lower)$. Directional Movement Index ($plus, minus$) is smoothed via Wilder's Running Moving Average ($ta.rma$ with length 14).
   - **Dual Zone Decoupling**: $GREEN1 = (plus > minus \land m0 > m10)$ and $RED1 = (minus > plus \land m0 < m10)$ strictly gate Power Candle impulses ($GrS / ReS$) and Scalp triggers. $GREENZONE$ and $REDZONE$ gate the 4 Candle Reversal Systems.
   - **4 Candle Reversal Systems & GreenCandle/RedCandle**: Implemented Wick Reversal ($Wlongsig / Wshortsig$, lower wick $\ge 40\%$ and range $> 0.9 \times avgCandle$), Extreme Reversal ($Elongsig / Eshortsig$, body $\ge 75\%$ and range $> 2 \times avgCandle$), Outside Reversal ($Olongsig / Oshortsig$, engulfing range), and Doji Reversal ($Dlongsig / Dshortsig$, prior bar body $\le 5\%$ of range). $GreenCandle = Wlongsig[1] \lor Olongsig[1] \lor Elongsig[1] \lor Dlongsig[1]$ and $RedCandle = Wshortsig[1] \lor Oshortsig[1] \lor Eshortsig[1] \lor Dshortsig[1]$ provide 1-bar shifted confirmation.
-  - **Normalized CPR & Institutional Bias Gating**: Normalized Narrow CPR ($NCPR = (cprWidth / prevDayRange) \times 100 < 5.0\%$) and Institutional Bias ($c1$) are natively integrated into $bull\_conds$ and $bear\_conds$, ensuring compression breakouts and institutional bias shifts are never suppressed.
+  - **CPR Boundary & Institutional Bias Gating**: Authentic CPR boundary penetrations (`close > DTc` / `close < DBc`) and Institutional Bias ($c1$) are natively integrated into $bull\_conds$ and $bear\_conds$, replacing legacy NCPR gating to ensure boundary rejections and institutional bias shifts are never suppressed.
 - **Version 1.0 Power Candle Midpoint Retest-Only Scalp Synchronization Mandate (Effective October 18, 2026)**:
   - **Decoupled Breakout Impulse from Scalp Entry**: In both Pine Script (`TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) and the DhanHQ Python Signal Engine (`algo_engine/strategies.py`), Scalp signal triggers (`bouncedOffGrsMid` / `bouncedOffResMid`) strictly require **50% Midpoint Retests** (`bouncedOffActualGrsMid` / `bouncedOffActualResMid`). Macro support/resistance breakout bounces (`bouncedOffSR_Up` / `bouncedOffSR_Down`) establish the Power Candle and record its midpoint, but are strictly prohibited from qualifying as the scalp entry on the impulse bar itself.
   - **Sequential Midpoint State Management**: The evaluation lifecycle strictly enforces: (1) Evaluate bounce retest against active midpoint carried over from prior bars $\rightarrow$ (2) Consume/clear midpoint immediately to prevent double-triggering $\rightarrow$ (3) Establish fresh midpoint if a new power candle forms on the current bar $\rightarrow$ (4) Gate scalp setups on retest qualification.
@@ -1133,10 +1133,13 @@ function resolveOutcome(s) {
 - **Trade Cards Timestamps**: The UI MUST differentiate between Signal Time and Real Entry. The top-right header of trade cards (or equivalent) MUST strictly display the **SIGNAL TIME** (limit order placement time, `signal_ts` or `created_at`), while the `ENTRY` block inside the card MUST strictly display the **REAL ENTRY TIME** (the exact time the order filled, `real_entry_time`). Do not duplicate `real_entry_time` in both places.
 - **Analytics Filtering**: Analytics tables for `Day Type Blueprints` and `Trade Sequences` MUST conditionally hide empty rows. If a sequence or blueprint contains 0 active signals (both Bullish and Bearish values are `--`), the row must NOT render, keeping the UI clean on low-volume days.
 
-## Sideways Day & Normalized NCPR Rules
-- **NEVER** remove the `NCPR` exception from the sideways day filter. 
-- **Normalized CPR Width**: Because measuring CPR width against absolute asset prices (e.g. `DPi`) breaks across different markets (Forex vs Crypto), the CPR width MUST always be mathematically normalized against the **Daily Average True Range (ATR)**. Normalizing against the single previous day's range (`DH - DL`) fails during back-to-back compressed days because the denominator shrinks too much.
-- The canonical, universal Normalized NCPR formula is: `NCPR = 11.11 > (math.abs(DTcf - DBcf) / math.max(daily_atr, syminfo.mintick)) * 100`. This strictly identifies Narrow CPR days as those where the CPR width is less than 11.11% (the exact bottom third of the theoretical maximum 33.33% CPR width) of the asset's normal daily volatility. Do NOT revert to price-based normalization.
+## Canonical Sideways Day Gating & Rejection Day Mandate
+- In accordance with the user's authentic Pine Script v7.0 source code, `NCPR` has been completely decommissioned from trade gating.
+- `dayAllowed` across all indicator engines (`TV_Indicator_Full_Code.txt`, `TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `user_code.pine`), Python BlackBox (`algo_engine/strategies.py`, `algo_engine/pivots.py`), and Netlify scanner (`dhan-scanner-background.js`) strictly adheres to:
+  `bool isRejectionDay = REJECTIONDAY`
+  `bool dayAllowed = not isSidewaysDay or isRejectionDay`
+- `REJECTIONDAY` is deterministically computed from confirmed/rejected bullish/bearish conditions penetrating CPR boundaries:
+  `REJECTIONDAY = (CONFIRMEDBULLISH and (close < DBc)) or (CONFIRMEDBEARISH and (close > DTc)) or (REJECTEDBULLISH and (close < DBc)) or (REJECTEDBULLISH and (close > DTc)) or (REJECTEDBEARISH and (close > DTc)) or (REJECTEDBEARISH and (close < DBc))`
 - Because `mX` is a dynamic, tick-by-tick evaluation based on `close`, the sideways day label on the final bar may differ from the classification at the moment a trade originally fired. If a trade fires and `mX` later evaluates to `TYPICAL DAY, TRADING RANGE, SIDEWAYS`, the trade remains perfectly valid according to the engine logic at the time of execution.
 
 ## Strict Scope Adherence
@@ -1367,10 +1370,10 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 - **Pure Touch-Based Execution Model**: Entry, Take Profit, and Stop Loss executions MUST remain strictly based on the user's original touch-based price levels (high/low price action). Do NOT alter stop distances or force bar-close delays.
 - **Zero Backend Interference**: The backend webhook processors, Netlify functions, mobile application, and web dashboards must strictly record, reflect, and faithfully execute the exact empirical levels and alert payloads transmitted by the user's indicator without modification.
 
-## NCPR Trade Consideration: Unconditional Signal Allowance on Narrow CPR Days
+## Rejection Day Trade Consideration: Unconditional Signal Allowance on CPR Rejection Days
 - **Validity of Day Type Classification**: Classifying the session into Day Types (`TYPICAL DAY`, `TRADING RANGE`, `EXPANDED TYPICAL DAY`, etc.) is legitimate and vital for market context and structural analysis. Session classification is not flawed.
-- **Flaw of Ignoring Trades on NCPR**: The actual flaw is failing to consider or discarding trades when a Narrow Central Pivot Range (NCPR) is available.
-- **NCPR Overrides Trade Suppression**: Because NCPR indicates volatility compression that typically resolves into breakout expansion, trades MUST ALWAYS be considered and allowed when NCPR is present, regardless of early sideways session classifications. The presence of NCPR ensures signals (`MISSILE`, `SCALP`, `LIGHTNING`) are fully considered and never suppressed.
+- **Decommissioning of NCPR Gating**: In previous legacy versions, NCPR was used to override sideways day filters. In the authentic v7.0 master indicator, NCPR has been replaced by authentic `REJECTIONDAY`.
+- **REJECTIONDAY Overrides Sideways Day Filter**: When price action rejects or penetrates CPR boundaries (`REJECTIONDAY = true`), trades are allowed even if the session is otherwise classified as sideways or trading range (`dayAllowed = not isSidewaysDay or isRejectionDay`). This ensures signals (`MISSILE`, `SCALP`, `LIGHTNING`) are fully considered on legitimate structural rejections.
 
 ## Strict Prohibition on Proposing Logic Alterations (Inviolability of User's Trading System)
 - **Zero Counter-Proposals to User Trading Logics**: The assistant must **NEVER** suggest, recommend, or propose modifications, buffers, wider stops, swing-level shifts, or logic redesigns that run contrary to or modify the user's established trading systems and Pine Script rules.
@@ -1504,7 +1507,7 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   6. `extremeRevSessions`: `LONG EXTREME REVERSAL` / `SHORT EXTREME REVERSAL` (`ExtremeReversalBuy` / `ExtremeReversalSell`)
 - **Divergence Strategies Exemption (Regular `D` & Hidden `H`)**:
   - **No H4 / L4 Boundary Constraints**: Divergence signals do **NOT** follow any H4 / L4 level rules or Camarilla boundary gating. They are pure oscillator-to-price momentum divergence patterns.
-  - **Exempt from Day Types**: Strictly **EXEMPT** from day types, NCPR gating, and breakout level filters (`dayAllowed` / `longAllowed` / `shortAllowed`).
+  - **Exempt from Day Types**: Strictly **EXEMPT** from day types, sideways filters, and breakout level filters (`dayAllowed` / `longAllowed` / `shortAllowed`).
   - **Hidden Divergence (`H`)**: Initiated when candle structure develops within CPR boundaries (`hBullInsideCPR` / `hBearInsideCPR`).
   - **Regular Divergence (`D`)**: Decoupled standalone strategy triggered directly upon confirmed multi-swing momentum divergence.
 - **Power Candle Midpoint Bounce & Scalp Architecture**:
@@ -1536,7 +1539,7 @@ When a trade exits but its `exit_price` or canonical exit level was not register
 
 ## Standalone Black Box Signal Engine & Parity Verification Protocol
 - **Autonomous Python Core (`algo_engine/`)**: The system includes a fully standalone, tick-by-tick Python algorithmic engine operating independently of TradingView webhook dependencies:
-  - **Pivots & CPR Core (`pivots.py`)**: Camarilla $H_1\text{–}H_5, L_1\text{–}L_5$, Central Pivot Range (Pivot, TC, BC, NCPR), and triple Typical Price EMAs (8, 21, 34).
+  - **Pivots & CPR Core (`pivots.py`)**: Camarilla $H_1\text{–}H_5, L_1\text{–}L_5$, Central Pivot Range (Pivot, TC, BC), and triple Typical Price EMAs (8, 21, 34).
   - **Day Type Classifier (`day_types.py`)**: Port of all 5 Day Type Blueprints (*Rejection Day, Absorption Day, Failed New High/Low, Outside Day, Stop Run Day*) and 4 Trade Sequences.
   - **12 Strategy Triggers (`strategies.py`)**: All 6 Long and 6 Short setups with strict touch-point gating (`low < H4` for buy / `high > L4` for sell).
   - **Stateful Trade Manager (`trade_manager.py`)**: Immutable limit order level locking, fill gating on subsequent bars (`bar_index > signal_bar_index`), TP1 break-even stop shifts, step trailing to TP3, dynamic EMA exits, and EOD session closures.
@@ -1827,7 +1830,7 @@ When a trade exits but its `exit_price` or canonical exit level was not register
   - Opening Bias ($\text{dX}$): `IN RANGE IN VALUE`, `IN RANGE OUT OF VALUE`, `OUT OF RANGE OUT OF VALUE`, `BULLISH`, `BEARISH`.
   - Institutional Bias ($\text{c1}$): Inside CPR evaluates to `"WATCH"`. Confirmed extremes evaluate to `"CONFIRMED BULLISH"`, `"CONFIRMED BEARISH"`, `"REJECTION"`, `"SIDEWAYS"`, or `"BREAKOUT"`.
   - Day Type ($\text{mX}$): Evaluates `TYPICAL DAY, TRADING RANGE, SIDEWAYS`, `BIG MOVE`, `TREND DAY, DOUBLE DISTRIBUTION TREND, EXPANDED TYPICAL`, etc.
-  - `isSidewaysDay` & `dayAllowed`: NCPR overrides sideways day filter for trend strategies; Divergence strategies are exempt from `dayAllowed`.
+  - `isSidewaysDay` & `dayAllowed`: Authentic `REJECTIONDAY` overrides sideways day filter for trend strategies (`dayAllowed = !isSidewaysDay || isRejectionDay`); Divergence strategies are exempt from `dayAllowed`.
 - **Technical Subsystems & Dynamic Pivot S/R Swings**:
   - Dual Exponential Moving Averages: DEMA 5 and DEMA 13 calculated on typical price $(H+L+C)/3$.
   - 14-period DMI (+DI / -DI) using Wilder's RMA.
