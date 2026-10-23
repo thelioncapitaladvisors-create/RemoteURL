@@ -74,3 +74,10 @@ This release resolves two critical architectural components of the TLCS quantita
 * **Fact-Backed Verification**: Verified database row, webhook routes, and mobile client logic.
 * **Single Source of Truth**: All trade metrics, P&L, and points derive from verified metadata.
 * **Exchange Gating**: DhanHQ Screener strictly serves Indian market constituents.
+
+---
+
+## 4. Production Webhook Lexical Scope & Exact Pts Sign Lock Fix
+* **Lexical Scope Fix**: Hoisted `let profitAmount: number | null = null;` to function scope in `Tv-Alert-Mobile/src/app/api/webhook/route.ts` to resolve TypeScript compilation error (`Cannot find name 'profitAmount'`) during Next.js Netlify build.
+* **Directional Sign Lock**: Injected explicit directional guards ensuring `exact_pts` is strictly negative for `LOSS`, strictly positive for `WIN`, and zero for `BREAKEVEN`.
+* **Build Verification**: Local `npm run build` completed with exit code 0 (`Compiled successfully`, `Generating static pages 8/8`).
