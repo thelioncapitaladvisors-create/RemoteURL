@@ -795,7 +795,7 @@ REJECTIONDAY = (CONFIRMEDBULLISH and (close < DBc)) or (CONFIRMEDBEARISH and (cl
 
 paint = BULLISH ? color.gray : BEARISH ? color.gray : MODERATELYBULLISH ? color.silver : MODERATELYBEARISH ? color.silver : INSIDE ? color.black : UNCHANGED ? color.black : OUTSIDE ? color.black : color.gray
 
-c1 = CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" : CONFIRMEDBULLISH and (close < DBc) ? "BEARISH \n REJECTION" : CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" : CONFIRMEDBEARISH and (close > DTc)  ? "BULLISH \n REJECTION" : REJECTEDBULLISH and (close < DBc) ? "REJECTED \n BULLISH" : REJECTEDBULLISH and (close > DTc) ? "BULLISH \n REJECTION" : REJECTEDBEARISH and (close > DTc)? "REJECTED \n BEARISH" : REJECTEDBEARISH and (close < DBc) ? "BEARISH \n REJECTION" : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "DEBUG"
+c1 = CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" : CONFIRMEDBULLISH and (close < DBc) ? "BULLISH \n REJECTION" : CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" : CONFIRMEDBEARISH and (close > DTc)  ? "BEARISH \n REJECTION" : REJECTEDBULLISH and (close < DBc) ? "REJECTED \n BULLISH" : REJECTEDBULLISH and (close > DTc) ? "BEARISH \n REJECTION" : REJECTEDBEARISH and (close > DTc)? "REJECTED \n BEARISH" : REJECTEDBEARISH and (close < DBc) ? "BULLISH \n REJECTION" : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "DEBUG"
 paintc = CONFIRMEDBULLISH and (close > DTc) ? color.green : CONFIRMEDBULLISH and (close < DBc) ? color.fuchsia : CONFIRMEDBEARISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close > DTc) ? color.teal :  REJECTEDBULLISH and (close < DBc)? color.maroon : REJECTEDBULLISH and (close > DTc) ? color.teal : REJECTEDBEARISH and (close > DTc)? color.teal : REJECTEDBEARISH and (close < DBc) ? color.fuchsia : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? color.fuchsia : color.red
 
 m1 = ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close > h3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close > h3))) or (ANYDAY and ((close > DBc) and (close > DTc)))) ? "LONG \n ZONE" : ((((BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and (close < l3)) or ((BEARISH or MODERATELYBEARISH or REJECTEDBULLISH) and (close < l3))) or (ANYDAY and (close < DTc) and (close < DBc))) ? "SHORT \n ZONE" : (ANYDAY and (close > DBc) and (close < DTc)) ? "WAIT FOR \n SIGNAL" : na
@@ -846,7 +846,7 @@ else if c1 == 'REJECTED \n BEARISH'
     c1_col := paintc
     c1_col
 else if c1 == 'REJECTION'
-    c1_message := (close > DTc ? "BULLISH \n REJECTION" : "BEARISH \n REJECTION")
+    c1_message := (close > DTc ? "BEARISH \n REJECTION" : "BULLISH \n REJECTION")
     c1_col := (close > DTc ? color.teal : color.fuchsia)
     c1_col
 else if c1 == 'SIDEWAYS'
@@ -3068,8 +3068,8 @@ bool bullConds = (mX == 'BIG MOVE') or
      (dX == 'OUT OF RANGE \n OUT OF VALUE') or
      (c1 == 'CONFIRMED BULLISH') or
      (c1 == 'CONFIRMED \n BULLISH') or
-     (c1 == 'BULLISH REJECTION') or
-     (c1 == 'BULLISH \n REJECTION') or
+     (c1 == 'BEARISH REJECTION') or
+     (c1 == 'BEARISH \n REJECTION') or
      (c1 == 'REJECTED BEARISH') or
      (c1 == 'REJECTED \n BEARISH') or
      (c1 == 'WATCH') or (REJECTEDBEARISH or (CONFIRMEDBEARISH and (close > DTc)) or (REJECTEDBULLISH and (close > DTc)) or (REJECTEDBEARISH and (close > DTc)))
@@ -3079,8 +3079,8 @@ bool bearConds = (mX == 'BIG MOVE') or
      (dX == 'OUT OF RANGE \n OUT OF VALUE') or
      (c1 == 'CONFIRMED BEARISH') or
      (c1 == 'CONFIRMED \n BEARISH') or
-     (c1 == 'BEARISH REJECTION') or
-     (c1 == 'BEARISH \n REJECTION') or
+     (c1 == 'BULLISH REJECTION') or
+     (c1 == 'BULLISH \n REJECTION') or
      (c1 == 'REJECTED BULLISH') or
      (c1 == 'REJECTED \n BULLISH') or
      (c1 == 'WATCH') or (REJECTEDBULLISH or (CONFIRMEDBULLISH and (close < DBc)) or (REJECTEDBULLISH and (close < DBc))  or (REJECTEDBEARISH and (close < DBc)))
