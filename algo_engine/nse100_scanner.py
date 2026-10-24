@@ -360,7 +360,16 @@ class NSE100Scanner:
                         'market_category': market_category,
                         'source_feed': 'DhanHQ',
                         'h4': levels.H4,
-                        'l4': levels.L4
+                        'l4': levels.L4,
+                        'vah': round(float(va.vah), 2),
+                        'val': round(float(va.val), 2),
+                        'va_width': round(float(abs(va.vah - va.val)), 2),
+                        'va_ratio': round(float((abs(va.vah - va.val) / max(daily['high'] - daily['low'], 0.01)) * 100), 2),
+                        'is_nva': bool((abs(va.vah - va.val) / max(daily['high'] - daily['low'], 0.01)) * 100 < 35.0),
+                        'cpr_pivot': round(float(levels.pivot), 2),
+                        'cpr_tc': round(float(levels.tc), 2),
+                        'cpr_bc': round(float(levels.bc), 2),
+                        'is_ncpr': bool(levels.is_narrow)
                     }
                 })
 
