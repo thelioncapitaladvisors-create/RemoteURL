@@ -1108,6 +1108,22 @@ class TestOscillatorAndReversalSystems(unittest.TestCase):
         )
         self.assertEqual(res_other, "CONFIRMED BULLISH")
 
+        # 5. Option B Rejections: Bullish open (open > dbc) but close < dbc -> BEARISH REJECTION
+        res_rej_bear = compute_institutional_bias_c1(
+            close_price=92.0, open_price=99.0,
+            dtc=102.0, dbc=98.0, ytc=95.0, ybc=90.0,
+            h4=110.0, l4=90.0
+        )
+        self.assertEqual(res_rej_bear, "BEARISH REJECTION")
+
+        # 6. Option B Rejections: Bearish open (open < dtc) but close > dtc -> BULLISH REJECTION
+        res_rej_bull = compute_institutional_bias_c1(
+            close_price=90.0, open_price=85.0,
+            dtc=87.0, dbc=82.0, ytc=100.0, ybc=95.0,
+            h4=92.0, l4=78.0
+        )
+        self.assertEqual(res_rej_bull, "BULLISH REJECTION")
+
     def test_compute_rejection_day(self):
         """Verify REJECTIONDAY evaluation across all confirmed/rejected day types."""
         # 1. Confirmed Bullish (open > dbc) but close < dbc -> REJECTION DAY

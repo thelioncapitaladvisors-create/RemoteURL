@@ -285,6 +285,7 @@ class StrategyEngine:
             ("TREND DAY" in dt and "DOUBLE DISTRIBUTION" in dt) or
             ("OUT OF RANGE" in ob and "OUT OF VALUE" in ob) or
             ("CONFIRMED BULLISH" in c1) or
+            ("BULLISH REJECTION" in c1) or
             ("REJECTED BEARISH" in c1) or
             ("WATCH" in c1) or
             (
@@ -300,6 +301,7 @@ class StrategyEngine:
             ("TREND DAY" in dt and "DOUBLE DISTRIBUTION" in dt) or
             ("OUT OF RANGE" in ob and "OUT OF VALUE" in ob) or
             ("CONFIRMED BEARISH" in c1) or
+            ("BEARISH REJECTION" in c1) or
             ("REJECTED BULLISH" in c1) or
             ("WATCH" in c1) or
             (
