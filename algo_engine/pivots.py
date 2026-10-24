@@ -870,19 +870,19 @@ def compute_institutional_bias_c1(
     elif confirmed_bullish and (close_price > dtc):
         return "CONFIRMED BULLISH"
     elif confirmed_bullish and (close_price < dbc):
-        return "BULLISH REJECTION"
+        return "BEARISH CONTINUATION"
     elif confirmed_bearish and (close_price < dbc):
         return "CONFIRMED BEARISH"
     elif confirmed_bearish and (close_price > dtc):
-        return "BEARISH REJECTION"
+        return "BULLISH CONTINUATION"
     elif rejected_bullish and (close_price < dbc):
-        return "REJECTED BULLISH"
+        return "BEARISH CONTINUATION"
     elif rejected_bullish and (close_price > dtc):
-        return "BEARISH REJECTION"
+        return "BULLISH CONTINUATION"
     elif rejected_bearish and (close_price > dtc):
-        return "REJECTED BEARISH"
+        return "BULLISH CONTINUATION"
     elif rejected_bearish and (close_price < dbc):
-        return "BULLISH REJECTION"
+        return "BEARISH CONTINUATION"
     elif outside:
         return "SIDEWAYS"
     elif unchanged:
