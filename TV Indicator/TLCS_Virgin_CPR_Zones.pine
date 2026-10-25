@@ -46,11 +46,14 @@ yCol   = input.color(#ef4444d5, 'Yearly colour', group = GY)
 // ============================================================
 f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, string tag, bool showLabels) =>
 
+    // --- Normalize yearly timeframe string ('Y' / '1Y' -> '12M') because TradingView security requires '12M'
+    string reqTf = (tf == 'Y' or tf == '1Y') ? '12M' : tf
+
     // --- Guard: the CPR timeframe must be >= the chart timeframe.
-    bool tfOk = timeframe.in_seconds() <= timeframe.in_seconds(tf)
+    bool tfOk = timeframe.in_seconds() <= timeframe.in_seconds(reqTf)
 
     // --- Developing HTF OHLC (no lookahead).
-    [hh, ll, cc] = request.security(syminfo.tickerid, tf, [high, low, close], gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_off)
+    [hh, ll, cc] = request.security(syminfo.tickerid, reqTf, [high, low, close], gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_off)
 
     float p     = (hh + ll + cc) / 3.0
     float bc    = (hh + ll) / 2.0
@@ -58,7 +61,7 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, 
     float hiRaw = math.max(tc, bc)
     float loRaw = math.min(tc, bc)
 
-    bool isNew = ta.change(time(tf)) != 0
+    bool isNew = ta.change(time(reqTf)) != 0
 
     // --- Latch the CPR once per period so it never moves.
     //     On the first bar of a new period, [1] is the last bar of the
@@ -181,7 +184,7 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, 
 [dHi, dP, dLo, dBull, dBear, dTop, dBot] = f_virginCPR('D', dLines, dZones, dMax, dCol, 'D', showSignalLabels)
 [wHi, wP, wLo, wBull, wBear, wTop, wBot] = f_virginCPR('W', wLines, wZones, wMax, wCol, 'W', showSignalLabels)
 [mHi, mP, mLo, mBull, mBear, mTop, mBot] = f_virginCPR('M', mLines, mZones, mMax, mCol, 'M', showSignalLabels)
-[yHi, yP, yLo, yBull, yBear, yTop, yBot] = f_virginCPR('Y', yLines, yZones, yMax, yCol, 'Y', showSignalLabels)
+[yHi, yP, yLo, yBull, yBear, yTop, yBot] = f_virginCPR('12M', yLines, yZones, yMax, yCol, 'Y', showSignalLabels)
 
 bool anyBullTouch = dBull or wBull or mBull or yBull
 bool anyBearTouch = dBear or wBear or mBear or yBear
@@ -332,6 +335,14 @@ plot(dLines ? dLo : na, 'Daily CPR Low',  dCol, 1)
 plot(wLines ? wHi : na, 'Weekly CPR High', wCol, 1)
 plot(wLines ? wP : na,  'Weekly CPR Pivot', color.new(wCol, 40), style = plot.style_circles)
 plot(wLines ? wLo : na, 'Weekly CPR Low',  wCol, 1)
+
+plot(mLines ? mHi : na, 'Monthly CPR High', mCol, 1)
+plot(mLines ? mP : na,  'Monthly CPR Pivot', color.new(mCol, 40), style = plot.style_circles)
+plot(mLines ? mLo : na, 'Monthly CPR Low',  mCol, 1)
+
+plot(yLines ? yHi : na, 'Yearly CPR High', yCol, 1)
+plot(yLines ? yP : na,  'Yearly CPR Pivot', color.new(yCol, 40), style = plot.style_circles)
+plot(yLines ? yLo : na, 'Yearly CPR Low',  yCol, 1)
 
 
 // ============================================================

@@ -162,6 +162,21 @@ File location: `TV Indicator/TLCS_Virgin_CPR_Zones.pine`
 - **On-Chart HUD Card**: Pinned table displaying active ticker, status, zone coordinates, touch price, and bar count since touch.
 - **TradingView Alertcondition Hooks**: Provides 9 pre-configured `alertcondition()` hooks across Daily, Weekly, Monthly, Yearly, and Any Touch for native mobile and desktop push notifications.
 
+### 5.3 TradingView Security Timeframe Resolution (`'Y'` vs `'12M'`)
+- **Problem**: When evaluating Yearly Virgin CPR, passing `'Y'` into `request.security(syminfo.tickerid, tf, ...)` triggers runtime error:
+  `Invalid value of the 'timeframe' argument ('Y') in the 'security' function. at #global():53`
+  TradingView's Pine Script parser and security engine do not accept `'Y'` or `'1Y'` as valid timeframe resolutions; TradingView requires `'12M'` for 12-month / yearly aggregation.
+- **Solution**:
+  1. Implemented defensive input sanitization inside `f_virginCPR(...)`:
+     ```pinescript
+     string reqTf = (tf == 'Y' or tf == '1Y') ? '12M' : tf
+     ```
+  2. Passed `'12M'` as the underlying timeframe in the top-level call while preserving `'Y'` for chart visual tags and pop-up badge labels:
+     ```pinescript
+     [yHi, yP, yLo, yBull, yBear, yTop, yBot] = f_virginCPR('12M', yLines, yZones, yMax, yCol, 'Y', showSignalLabels)
+     ```
+  3. Ensured `timeframe.in_seconds(reqTf)` and `ta.change(time(reqTf))` seamlessly track yearly period transitions without runtime exceptions.
+
 ---
 
 ## 6. Verification & Automated Test Results
