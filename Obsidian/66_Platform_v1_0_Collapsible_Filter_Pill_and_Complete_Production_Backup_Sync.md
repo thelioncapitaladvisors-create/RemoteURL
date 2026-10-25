@@ -14,47 +14,40 @@ In conjunction with the morning's expansion of the **7th Canonical Signal Family
 
 ---
 
-## 2. Collapsible Filter Pill Architecture (`Tv-Alert-Mobile`)
+## 2. Vibrant Collapsible Filter Pill & Intuitive Filter Architecture (`Tv-Alert-Mobile`)
 
-### 2.1 Problem Statement & Ergonomics
-- The previous unified screener rendered the full 1-row Interactive Filter Strip (Market chips, Direction chips, Session toggle, and Search input) unconditionally expanded.
-- On mobile viewports (< 400px width), this occupied unnecessary vertical space when users were simply reviewing setup cards or switching between sub-tabs.
-- Requirement: Keep filter controls collapsed by default, but surface real-time qualifying counts outside on the pill so users have immediate visibility of market depth.
+### 2.1 Problem Statement & Elimination of Pale, Low-Contrast Typography
+- User feedback indicated that the default filter pill and screener card fonts appeared overly pale, dull, microscopic (`text-[8.5px]`), and difficult to read on mobile viewports.
+- Buttons lacked vibrancy and color identity, feeling flat and washed out in lighter theme palettes.
+- Solution: Systematically elevated typography across all metrics, badges, and controls (`text-[10px]` -> `text-xs`/`text-[13px]`, `font-bold` and `font-black`), eradicated low-contrast `text-dim` in favor of high-contrast theme-adaptive colors (`text-slate-950 dark:text-white`, `text-slate-800 dark:text-slate-200`), and gave buttons vibrant, subtle color identities.
 
 ### 2.2 Component State & Reactive Integration
 - State declaration in `Tv-Alert-Mobile/src/app/page.tsx`:
   ```tsx
   const [isDhanBiasFilterExpanded, setIsDhanBiasFilterExpanded] = useState<boolean>(false);
   ```
-- **Default State**: Collapsed (`false`), ensuring immediate ~36px micro-pill height without dead vertical space.
+- **Default State**: Collapsed (`false`), presenting an ergonomic, high-density exterior pill without dead vertical space.
 
-### 2.3 Live Outside Count Display
-- The collapsed pill bar exterior dynamically renders:
-  ```tsx
-  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[9px] sm:text-[9.5px] font-mono font-bold bg-primary/10 text-primary border border-primary/15">
-    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-    <span>{cfg.stats.stocksCount} {cfg.stats.stocksCount === 1 ? 'Stock' : 'Stocks'}</span>
-    <span className="text-dim">•</span>
-    <span>{cfg.stats.mcxCount} {cfg.stats.mcxCount === 1 ? 'Commodity' : 'Commodities'}</span>
-  </span>
-  ```
-- **Example Exterior Output**:
-  `[ 🔍 FILTERS • ● 14 Stocks • 2 Commodities [EXPAND ▼] ]`
+### 2.3 Live Outside Asset Count Pill
+- The collapsed pill bar exterior prominently renders two distinct, vibrant chips:
+  - **Stocks**: `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-black bg-blue-500/15 text-blue-900 dark:text-blue-200 border border-blue-500/35 shadow-2xs` with an emerald pulse dot (`● {cfg.stats.stocksCount} Stocks`).
+  - **Commodities**: `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-black bg-amber-500/15 text-amber-900 dark:text-amber-200 border border-amber-500/35 shadow-2xs` with an amber indicator dot (`● {cfg.stats.mcxCount} Commodities`).
+- Exterior FILTERS badge rendered in solid vibrant indigo (`bg-indigo-600 text-white font-mono font-black text-xs px-2.5 py-1 rounded-lg shadow-2xs`) with clear `SlidersHorizontal` icon.
 
-### 2.4 Contextual Filter Badges & Fast Reset
-- When non-default parameters are set (`cfg.marketFilter !== 'ALL'`, `cfg.directionFilter !== 'ALL'`, `cfg.sessionFilter !== 'TODAY'`, or active search query), compact indicator chips display on the pill exterior:
-  - Market: `NSE` / `MCX`
-  - Direction: `▲` / `▼`
-  - Session: `HIST`
-  - Search: `"[query]"`
-- A high-visibility `[RESET]` button appears directly on the exterior pill, allowing instantaneous filter clearance without expanding the drawer.
-
-### 2.5 Smooth Expansion Drawer
-- Tapping anywhere on the pill bar or the chevron button smoothly reveals the full suite of controls:
-  - **Market Buttons**: `ALL MKTS` | `NSE STOCKS` | `MCX COMM`
-  - **Direction Buttons**: `ALL BIAS` | `▲ BULLISH` | `▼ BEARISH`
-  - **Session Selector**: `📅 LATEST SESSION` | `📚 ALL RECENT`
-  - **Symbol Search**: Instant real-time filtering with clear button (`✕`).
+### 2.4 Intuitive, Grouped Expanded Filter Drawer
+When expanded, the filter section is logically segmented into structured, intuitive rows:
+1. **Market Universe Segment**:
+   - `🌐 ALL MKTS (N)`: Active in solid vibrant indigo (`bg-indigo-600 text-white shadow-xs font-black`).
+   - `🏢 NSE STOCKS (N)`: Active in rich corporate blue (`bg-blue-600 text-white shadow-xs font-black`).
+   - `🛢️ MCX COMM (N)`: Active in institutional commodity amber (`bg-amber-600 text-white shadow-xs font-black`).
+2. **Directional Opening Bias Segment**:
+   - `ALL BIAS`: Active in vibrant purple (`bg-purple-600 text-white shadow-xs font-black`).
+   - `▲ BULLISH (N)`: Active in emerald (`bg-emerald-600 text-white shadow-xs font-black`), inactive in subtle green tint (`bg-emerald-500/10 text-emerald-800 border-emerald-500/30`).
+   - `▼ BEARISH (N)`: Active in vibrant rose (`bg-rose-600 text-white shadow-xs font-black`), inactive in subtle rose tint (`bg-rose-500/10 text-rose-800 border-rose-500/30`).
+3. **Session Mode & High-Contrast Symbol Search**:
+   - High-contrast search input (`text-xs font-mono font-bold text-slate-950 dark:text-white bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 rounded-lg pl-8 pr-7 py-1.5`) with clear icon and instant dismiss button.
+   - Quick-toggle session button (`📅 LATEST SESSION ONLY` vs `📚 ALL RECENT SESSIONS`) with distinct active borders.
+   - Fast `[RESET ALL FILTERS]` button in vibrant rose (`bg-rose-600 hover:bg-rose-700 text-white`).
 
 ---
 
