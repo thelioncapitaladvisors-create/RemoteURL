@@ -184,3 +184,22 @@ File location: `TV Indicator/TLCS_Virgin_CPR_Zones.pine`
 1. **Strict Fact-Backed Verification Mandate**: Zero speculation, touch detection mathematically verified on wick penetration without relying on close.
 2. **Canonical Exact Percentage Mandate**: All performance tracking across new VCPR signals evaluated via `metadata.exact_pct`.
 3. **Zero Unilateral Logic Alteration**: All existing 12 canonical triggers and PivotBoss indicators preserved without side effects.
+
+---
+
+## 8. Version 1.0 Unified Pivot Regime & Compression Screener Architecture (Effective October 25, 2026)
+
+### 8.1 Problem Statement & Elimination of Clunky Section Stack
+- Previously, DhanHQ BlackBox Opening Bias & Multi-Day Compression screeners were rendered as 5 separate, vertically stacked mega-cards labeled `SECTION 4A`, `SECTION 4B`, `SECTION 4C`, `SECTION 4D`, and `SECTION 4E`.
+- This legacy structure occupied excessive vertical viewport real estate (>1,800px on mobile screens), suffered from redundant whitespace, and employed loud neon fuchsia/amber/cyan full card backgrounds that overwhelmed institutional visual hierarchy.
+
+### 8.2 Space-Saving Master Architecture & Sub-Tab Switcher
+- **Unified Master Container**: Consolidated into a single sleek card titled `PIVOT REGIME & COMPRESSION SCREENER` (`renderDhanUnifiedBiasScreener()`), equipped with an instant Master Collapse / Expand control that contracts the entire component to a single ~44px row when collapsed, saving >85% vertical scrolling space.
+- **5-Segment Institutional Sub-Tab Switcher**: Replaced mechanical section lettering with clean setup terminology in a high-density, horizontal tab bar:
+  1. `⚡ Out of Range (N)`: Assets opening completely outside prior session high-low range and Value Area (`OUT OF RANGE / OUT OF VALUE`).
+  2. `🎯 Inside CPR (N)`: 2-day Central Pivot Range compression (`DTc < YTc & DBc > YBc`) anticipating high-energy breakout expansion.
+  3. `📐 Narrow CPR (N)`: Normalized CPR width < 5.0% of prior day's range indicating extreme price coil.
+  4. `📊 Narrow Value (N)`: Value Area width (`|VAH - VAL|`) narrowing below 38% of day's range.
+  5. `🧲 Virgin CPR (N)`: Untouched Central Pivot Range levels from rolling 1-month lookback acting as high-probability price magnets.
+- **Subtle Institutional Color Harmonization**: Loud neon borders and background fills replaced with subtle, theme-adaptive styling (`border-primary/10`, `bg-secondary/30 dark:bg-black/25`, compact `bg-black/[0.02] dark:bg-white/[0.02]` KPI tiles).
+- **High Information Density**: 5-card KPI summary, interactive Market/Direction/Session filters, compact search input, and responsive asset cards grid all preserve full functionality with zero dead zones.

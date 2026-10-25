@@ -27,12 +27,19 @@
    - Resolved TradingView CE10123 series-string compilation error by migrating alert logic to global scope with literal `alert.freq_once_per_bar` and `alert.freq_once_per_bar_close` constants.
    - Added on-chart pop-up badges, dashed tested zone styling, real-time HUD telemetry card, and 5 native alertconditions.
 
+5. **Unified Pivot Regime & Compression Screener Architecture (`Tv-Alert-Mobile`)**:
+   - Consolidated 5 separate vertically stacked mega-cards (`SECTION 4A` through `4E`) into a single master component `PIVOT REGIME & COMPRESSION SCREENER` (`renderDhanUnifiedBiasScreener()`).
+   - Implemented sleek 5-segment sub-tab switcher: `⚡ Out of Range`, `🎯 Inside CPR`, `📐 Narrow CPR`, `📊 Narrow Value`, and `🧲 Virgin CPR`, each displaying live asset counts.
+   - Added master `COLLAPSE` / `EXPAND` toggle, compressing the entire screener to a single ~44px row when collapsed, saving >85% of mobile vertical scroll space.
+   - Harmonized colors to subtle institutional Bloomberg styling, eliminating loud neon fuchsia/amber/cyan full card backgrounds and redundant whitespace.
+   - PWA cache bumped to `tlcs-cache-v1.0.0-rev6`.
+
 ---
 
 ## 2. Verification Checklist
 - [x] All 113 Python BlackBox unit tests passing (`python3 -m unittest discover -s algo_engine/tests`).
 - [x] Next.js mobile terminal builds with exit code 0 (`npm run build`).
-- [x] PWA service worker cache bumped to `tlcs-cache-v1.0.0-rev5`.
+- [x] PWA service worker cache bumped to `tlcs-cache-v1.0.0-rev6`.
 - [x] Pine Script compilation error CE10123 eliminated.
 - [x] 14 Canonical Triggers enforced across Python, SQL, and Netlify workers.
 - [x] Complete documentation stored in Obsidian architecture document 65 and update log.
