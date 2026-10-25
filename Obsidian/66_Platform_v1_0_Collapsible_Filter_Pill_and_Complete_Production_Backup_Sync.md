@@ -128,4 +128,9 @@ When expanded, the filter section is logically segmented into structured, intuit
   - Left: `[FILTERS]` pill, `[3 Stocks]` (blue), and `[2 MCX]` (amber).
   - Right: `[EXPAND ⌄]` gradient button.
 - Completely prevents multi-line wrapping and dead vertical whitespace.
-- Service worker bumped to `tlcs-cache-v1.0.0-rev9`.
+
+### 6.4 Search Symbol Input Removal
+- **Problem**: The expanded filter drawer previously included a full-width `Search symbol...` input box below the session toggle button. Since the DhanHQ screener already groups assets dynamically by market universe (`NSE STOCKS` vs `MCX COMM`) and directional bias (`BULLISH` vs `BEARISH`), the text search box was redundant and added unnecessary vertical clutter.
+- **Solution**: Completely removed the `Search symbol...` input field and its clear button from the filter drawer. Row 2 of the filter drawer now exclusively houses the session selector (`LATEST SESSION ONLY` / `ALL RECENT SESSIONS`) and `RESET ALL FILTERS`, maximizing compactness and touch efficiency.
+- Service worker bumped to `tlcs-cache-v1.0.0-rev10`.
+
