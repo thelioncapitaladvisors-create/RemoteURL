@@ -156,11 +156,11 @@ File location: `TV Indicator/TLCS_Virgin_CPR_Zones.pine`
      ```
   3. Result: 100% clean compilation in TradingView Pine Editor v6 with 0 warnings and 0 errors.
 
-### 5.2 Visual Features
-- **Auto-Dashed Tested Zones**: When price penetrates an untouched box, its border style switches to `line.style_dashed` and background transparency increases, visually confirming the test.
-- **On-Chart Pop-Up Labels**: Displays `🧲 Daily VCPR Support Touch` or `🧲 Daily VCPR Resistance Touch` with price and zone coordinates directly on the candle.
+### 5.2 Visual Features & Formula Preservation
+- **Authentic Formula Preservation**: Sourced strictly from the user's authentic `Virgin CPR Zones — D / W / M / Y` formula, preserving the exact latching mechanism (`curHi := hiRaw[1]`), untouched period snapshot (`hiPrev = curHi[1]`, `tchPrev = touched[1]`), and clean freezing on touch (`box.set_right(b, bar_index)` with `array.set(zAct, i, false)`).
+- **On-Chart Pop-Up Labels**: Displays `🧲 Daily/Weekly/Monthly/Yearly VCPR Support Touch` or `🧲 VCPR Resistance Touch` with price and zone coordinates directly on the candle.
 - **On-Chart HUD Card**: Pinned table displaying active ticker, status, zone coordinates, touch price, and bar count since touch.
-- **TradingView Alertcondition Hooks**: Provides 5 pre-configured `alertcondition()` hooks for native mobile and desktop push notifications.
+- **TradingView Alertcondition Hooks**: Provides 9 pre-configured `alertcondition()` hooks across Daily, Weekly, Monthly, Yearly, and Any Touch for native mobile and desktop push notifications.
 
 ---
 
