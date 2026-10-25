@@ -401,10 +401,43 @@ class DhanFeed(BaseFeed):
                     lows = data.get("low", [])
                     closes = data.get("close", [])
                     if len(highs) >= 2:
+                        y_h = float(highs[-2])
+                        y_l = float(lows[-2])
+                        y_c = float(closes[-2])
+
+                        ytc = 0.0
+                        ybc = 0.0
+                        tp1 = 0.0
+                        y1_h = 0.0
+                        y1_l = 0.0
+                        y1_c = 0.0
+
+                        if len(highs) >= 3:
+                            y1_h = float(highs[-3])
+                            y1_l = float(lows[-3])
+                            y1_c = float(closes[-3])
+                            # Pine Script lines 749-758:
+                            # TP1 = (Ytf_h1 + Ytf_l1 + Ytf_c1) / 3.0
+                            # BOTTOM1 = (Ytf_h1 + Ytf_l1) / 2
+                            # TOP1 = TP1 - BOTTOM1 + TP1
+                            # YTc = math.max(TOP1, BOTTOM1)
+                            # YBc = math.min(TOP1, BOTTOM1)
+                            tp1 = (y1_h + y1_l + y1_c) / 3.0
+                            bottom1 = (y1_h + y1_l) / 2.0
+                            top1 = tp1 - bottom1 + tp1
+                            ytc = max(top1, bottom1)
+                            ybc = min(top1, bottom1)
+
                         return {
-                            "high": float(highs[-2]),
-                            "low": float(lows[-2]),
-                            "close": float(closes[-2])
+                            "high": y_h,
+                            "low": y_l,
+                            "close": y_c,
+                            "prev_tc": ytc,
+                            "prev_bc": ybc,
+                            "prev_pivot": tp1,
+                            "prev2_high": y1_h,
+                            "prev2_low": y1_l,
+                            "prev2_close": y1_c
                         }
             except Exception as e:
                 logger.debug(f"[DhanFeed] Historical daily fetch error for {symbol}: {e}")
@@ -480,9 +513,30 @@ class DhanFeed(BaseFeed):
         elif symbol.startswith("ZINC"): base_price = 270.0
         elif symbol.startswith("ALUMINI"): base_price = 240.0
 
+        y_h = round(base_price * 1.015, 2)
+        y_l = round(base_price * 0.985, 2)
+        y_c = round(base_price * 1.002, 2)
+
+        # Day before yesterday
+        y1_h = round(base_price * 1.025, 2)
+        y1_l = round(base_price * 0.975, 2)
+        y1_c = round(base_price * 0.995, 2)
+
+        tp1 = (y1_h + y1_l + y1_c) / 3.0
+        bottom1 = (y1_h + y1_l) / 2.0
+        top1 = tp1 - bottom1 + tp1
+        ytc = max(top1, bottom1)
+        ybc = min(top1, bottom1)
+
         return {
-            "high": round(base_price * 1.015, 2),
-            "low": round(base_price * 0.985, 2),
-            "close": round(base_price * 1.002, 2)
+            "high": y_h,
+            "low": y_l,
+            "close": y_c,
+            "prev_tc": round(ytc, 2),
+            "prev_bc": round(ybc, 2),
+            "prev_pivot": round(tp1, 2),
+            "prev2_high": y1_h,
+            "prev2_low": y1_l,
+            "prev2_close": y1_c
         }
 
