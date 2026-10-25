@@ -19,7 +19,8 @@ from .pivots import (
     OHLC, compute_daily_levels, compute_emas_from_bars,
     compute_atr, compute_pivot_trend_emas, compute_value_area_from_bars,
     compute_opening_bias, compute_dmi, compute_m0_m10,
-    compute_institutional_bias_c1, compute_day_type_mx
+    compute_institutional_bias_c1, compute_day_type_mx,
+    detect_virgin_cpr_zones
 )
 from .day_types import DayTypeClassifier
 from .strategies import StrategyEngine, StrategySignal, MarketContext
@@ -265,6 +266,13 @@ class NSE100Scanner:
         market_category = 'MCX' if market_name == 'mcx' else 'NIFTY'
         signals: List[dict] = []
 
+        # 4b. Compute Virgin CPR (VCPR) zones over the past week (1-week lookback)
+        history_bars = daily.get('history_bars', [])
+        current_close = bars[-1].close if bars else daily['close']
+        vcpr_zones = detect_virgin_cpr_zones(history_bars, current_price=current_close, max_lookback_days=7)
+        is_vcpr = len(vcpr_zones) > 0
+        nearest_vcpr = vcpr_zones[0] if is_vcpr else None
+
         # 5. Evaluate strategy engine across completed bars of the session
         # Check latest bars for active trading signals
         eval_window = min(len(bars), 10)
@@ -383,7 +391,28 @@ class NSE100Scanner:
                         'is_nva': bool((abs(levels.tc - levels.bc) / max(daily['high'] - daily['low'], 0.01)) * 100 < 5.0),
                         'cpr_pivot': round(float(levels.pivot), 2),
                         'cpr_tc': round(float(levels.tc), 2),
-                        'cpr_bc': round(float(levels.bc), 2)
+                        'cpr_bc': round(float(levels.bc), 2),
+                        'is_vcpr': is_vcpr,
+                        'vcpr_count': len(vcpr_zones),
+                        'vcpr_direction': ('BULLISH' if nearest_vcpr and current_close > nearest_vcpr.top else 'BEARISH') if is_vcpr else None,
+                        'vcpr_top': nearest_vcpr.top if nearest_vcpr else None,
+                        'vcpr_bottom': nearest_vcpr.bottom if nearest_vcpr else None,
+                        'vcpr_pivot': nearest_vcpr.pivot if nearest_vcpr else None,
+                        'vcpr_distance_pts': nearest_vcpr.distance_pts if nearest_vcpr else 0.0,
+                        'vcpr_distance_pct': nearest_vcpr.distance_pct if nearest_vcpr else 0.0,
+                        'vcpr_zones': [
+                            {
+                                'date': z.date,
+                                'top': z.top,
+                                'bottom': z.bottom,
+                                'pivot': z.pivot,
+                                'width': z.width,
+                                'position': z.position,
+                                'distance_pts': z.distance_pts,
+                                'distance_pct': z.distance_pct
+                            }
+                            for z in vcpr_zones
+                        ]
                     }
                 })
 

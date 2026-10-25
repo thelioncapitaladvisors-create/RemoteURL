@@ -41,7 +41,7 @@ Mathematical Formulas:
 
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 import math
 
 
@@ -72,6 +72,25 @@ class CPRLevels:
     bc: float          # Bottom Central (min of raw TC and BC)
     width: float       # abs(tc - bc)
     is_narrow: bool    # NCPR: width/range < 5% (or 0.2% of pivot)
+
+
+@dataclass
+class VirginCPRZone:
+    """
+    Represents an active Virgin (Untouched) CPR zone from a past session.
+    
+    Source Reference:
+        Pine Script f_virginCPR(tf, drawLines, drawZones, maxZones, col, tag)
+    """
+    date: str
+    top: float
+    bottom: float
+    pivot: float
+    width: float
+    is_active: bool = True
+    position: str = "BELOW"       # 'BELOW' (Price > Top -> Support) or 'ABOVE' (Price < Bottom -> Resistance)
+    distance_pts: float = 0.0
+    distance_pct: float = 0.0
 
 
 @dataclass
@@ -309,6 +328,112 @@ def compute_daily_levels(prev_high: float, prev_low: float, prev_close: float) -
         prev_close=prev_close,
         prev_range=prev_high - prev_low
     )
+
+
+# ════════════════════════════════════════════════════════════════════
+# VIRGIN CPR (VCPR) DETECTION (1-WEEK LOOKBACK)
+# ════════════════════════════════════════════════════════════════════
+
+def detect_virgin_cpr_zones(
+    daily_bars: List[Dict[str, Any]],
+    current_price: Optional[float] = None,
+    max_lookback_days: int = 7
+) -> List[VirginCPRZone]:
+    """
+    Detect Virgin CPR (VCPR) zones over the lookback window (e.g. past week).
+    
+    Pine Script Ground-Truth (f_virginCPR):
+        p     = (hh + ll + cc) / 3.0
+        bc    = (hh + ll) / 2.0
+        tc    = 2.0 * p - bc
+        hiRaw = math.max(tc, bc)
+        loRaw = math.min(tc, bc)
+        
+        // Touch condition during the session:
+        touched = high >= curLo and low <= curHi
+        
+        // A CPR is virgin only once its own period closed untouched:
+        wasVirgin = not na(hiPrev) and not tchPrev
+        
+        // Extend live zones; freeze/deactivate the moment price trades in:
+        if high >= bt and low <= t:
+            array.set(zAct, i, false)
+            
+    Args:
+        daily_bars: List of daily dicts ordered chronologically:
+                    [{"high": ..., "low": ..., "close": ..., "date": ...}, ...]
+        current_price: Current market price for distance & position calculations.
+        max_lookback_days: Maximum number of completed sessions to evaluate (default 7).
+        
+    Returns:
+        List of active, untouched VirginCPRZone objects.
+    """
+    if not daily_bars or len(daily_bars) < 2:
+        return []
+
+    # Window slice: evaluate up to max_lookback_days completed sessions
+    bars = daily_bars[- (max_lookback_days + 1):] if len(daily_bars) > (max_lookback_days + 1) else daily_bars
+    n = len(bars)
+    virgin_zones: List[VirginCPRZone] = []
+
+    for i in range(1, n):
+        prev = bars[i - 1]
+        cur = bars[i]
+
+        p = (prev['high'] + prev['low'] + prev['close']) / 3.0
+        bc = (prev['high'] + prev['low']) / 2.0
+        tc = 2.0 * p - bc
+        top = max(tc, bc)
+        bottom = min(tc, bc)
+        width = abs(top - bottom)
+
+        # Did day i touch its own CPR during its session?
+        # Pine Script: touched = touched or (high >= curLo and low <= curHi)
+        own_touched = (cur['high'] >= bottom and cur['low'] <= top)
+
+        if not own_touched:
+            # Check if any subsequent day j > i traded into [bottom, top]
+            touched_later = False
+            for j in range(i + 1, n):
+                sub = bars[j]
+                if sub['high'] >= bottom and sub['low'] <= top:
+                    touched_later = True
+                    break
+
+            # If still untouched, check current_price if provided
+            if not touched_later:
+                if current_price is not None and (bottom <= current_price <= top):
+                    # Current price is inside the CPR, currently testing/touching
+                    continue
+
+                pos = "BELOW"
+                dist_pts = 0.0
+                dist_pct = 0.0
+                if current_price is not None and current_price > 0:
+                    if current_price > top:
+                        pos = "BELOW"  # VCPR is below current price (Support)
+                    else:
+                        pos = "ABOVE"  # VCPR is above current price (Resistance)
+                    dist_pts = round(abs(current_price - p), 2)
+                    dist_pct = round((dist_pts / current_price) * 100.0, 2)
+
+                date_str = cur.get('date') or cur.get('timestamp') or f"Day-{i}"
+                if isinstance(date_str, str) and 'T' in date_str:
+                    date_str = date_str.split('T')[0]
+
+                virgin_zones.append(VirginCPRZone(
+                    date=str(date_str),
+                    top=round(top, 2),
+                    bottom=round(bottom, 2),
+                    pivot=round(p, 2),
+                    width=round(width, 2),
+                    is_active=True,
+                    position=pos,
+                    distance_pts=dist_pts,
+                    distance_pct=dist_pct
+                ))
+
+    return virgin_zones
 
 
 # ════════════════════════════════════════════════════════════════════

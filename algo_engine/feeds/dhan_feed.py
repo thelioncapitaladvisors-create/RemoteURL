@@ -437,7 +437,15 @@ class DhanFeed(BaseFeed):
                             "prev_pivot": tp1,
                             "prev2_high": y1_h,
                             "prev2_low": y1_l,
-                            "prev2_close": y1_c
+                            "prev2_close": y1_c,
+                            "history_bars": [
+                                {
+                                    "high": float(highs[k]),
+                                    "low": float(lows[k]),
+                                    "close": float(closes[k])
+                                }
+                                for k in range(len(highs))
+                            ]
                         }
             except Exception as e:
                 logger.debug(f"[DhanFeed] Historical daily fetch error for {symbol}: {e}")
@@ -537,6 +545,11 @@ class DhanFeed(BaseFeed):
             "prev_pivot": round(tp1, 2),
             "prev2_high": y1_h,
             "prev2_low": y1_l,
-            "prev2_close": y1_c
+            "prev2_close": y1_c,
+            "history_bars": [
+                {"high": round(base_price * 1.01, 2), "low": round(base_price * 0.99, 2), "close": round(base_price * 1.005, 2)},
+                {"high": y1_h, "low": y1_l, "close": y1_c},
+                {"high": y_h, "low": y_l, "close": y_c}
+            ]
         }
 

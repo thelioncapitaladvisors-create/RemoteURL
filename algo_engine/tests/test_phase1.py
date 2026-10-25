@@ -30,7 +30,7 @@ from algo_engine.pivots import (
     dema, triple_ema, compute_pivot_trend_emas,
     rma, compute_dmi, compute_m0_m10,
     compute_institutional_bias_c1, compute_day_type_mx,
-    compute_rejection_day,
+    compute_rejection_day, detect_virgin_cpr_zones, VirginCPRZone
 )
 from algo_engine.day_types import (
     DayTypeClassifier, DayTypeConfig, DayTypeResult, SequenceState,
@@ -1382,6 +1382,52 @@ class TestV7IndicatorParity(unittest.TestCase):
         self.assertTrue(trade.is_closed, "Trade must exit on confirmed divergence")
         self.assertEqual(trade.exit_level, "DIV")
         self.assertEqual(trade.status, TradeStatus.CLOSED_DIV)
+
+
+# ════════════════════════════════════════════════════════════════════
+# TEST 17: VIRGIN CPR (VCPR) UNTOUCHED ZONES (1-WEEK LOOKBACK)
+# ════════════════════════════════════════════════════════════════════
+
+class TestVirginCPR(unittest.TestCase):
+    """
+    Tests Virgin CPR detection matching Pine Script f_virginCPR logic:
+    1. Untouched day CPR creates active Virgin zone
+    2. Subsequent touch deactivates / invalidates the zone
+    3. Zones untouched over 1-week remain active
+    4. Current price position evaluates support/resistance correctly
+    """
+
+    def test_vcpr_creation_and_preservation(self):
+        """CPR that is untouched during its session and subsequent sessions remains active VCPR."""
+        # Day 0: H=100, L=90, C=95 -> Day 1 CPR: Pivot=95, BC=95, TC=95
+        # Day 1: H=110, L=102, C=108 -> Untouched! (Low 102 > Top 95)
+        # Day 2: H=115, L=108, C=112 -> Untouched! (Low 108 > Top 95)
+        bars = [
+            {'high': 100.0, 'low': 90.0, 'close': 95.0, 'date': '2026-10-20'},
+            {'high': 110.0, 'low': 102.0, 'close': 108.0, 'date': '2026-10-21'},
+            {'high': 115.0, 'low': 108.0, 'close': 112.0, 'date': '2026-10-22'}
+        ]
+        zones = detect_virgin_cpr_zones(bars, current_price=114.0, max_lookback_days=7)
+        self.assertGreaterEqual(len(zones), 1)
+        oct21_zone = next((z for z in zones if z.date == '2026-10-21'), None)
+        self.assertIsNotNone(oct21_zone)
+        self.assertEqual(oct21_zone.top, 95.0)
+        self.assertEqual(oct21_zone.bottom, 95.0)
+        self.assertTrue(oct21_zone.is_active)
+        self.assertEqual(oct21_zone.position, 'BELOW')  # Current price 114 > 95 (Support)
+        self.assertEqual(oct21_zone.distance_pts, 19.0)
+
+    def test_vcpr_invalidation_on_touch(self):
+        """VCPR is invalidated as soon as a subsequent candle trades into [bottom, top]."""
+        bars = [
+            {'high': 100.0, 'low': 90.0, 'close': 95.0, 'date': '2026-10-20'},
+            {'high': 110.0, 'low': 102.0, 'close': 108.0, 'date': '2026-10-21'},
+            {'high': 115.0, 'low': 108.0, 'close': 112.0, 'date': '2026-10-22'},
+            {'high': 108.0, 'low': 94.0, 'close': 96.0, 'date': '2026-10-23'}  # Trades into 95!
+        ]
+        zones = detect_virgin_cpr_zones(bars, current_price=96.0, max_lookback_days=7)
+        oct21_zone = next((z for z in zones if z.date == '2026-10-21'), None)
+        self.assertIsNone(oct21_zone, "Oct 21 VCPR must be invalidated after Day 3 penetrates 95")
 
 
 if __name__ == '__main__':
