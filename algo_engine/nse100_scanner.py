@@ -361,8 +361,12 @@ class NSE100Scanner:
                         'source_feed': 'DhanHQ',
                         'prev_high': round(float(daily['high']), 2),
                         'prev_low': round(float(daily['low']), 2),
+                        'prev_range': round(float(max(daily['high'] - daily['low'], 0.01)), 2),
+                        'open_price': round(float(bars[0].open), 2),
                         'dtc': round(float(levels.tc), 2),
                         'dbc': round(float(levels.bc), 2),
+                        'cpr_width': round(float(abs(levels.tc - levels.bc)), 2),
+                        'cpr_ratio': round(float((abs(levels.tc - levels.bc) / max(daily['high'] - daily['low'], 0.01)) * 100), 2),
                         'ytc': round(float(daily.get('prev_tc', 0.0)), 2),
                         'ybc': round(float(daily.get('prev_bc', 0.0)), 2),
                         'is_inside_cpr': bool(levels.tc < daily.get('prev_tc', 0.0) and levels.bc > daily.get('prev_bc', 0.0)) if (daily.get('prev_tc', 0.0) > 0 and daily.get('prev_bc', 0.0) > 0) else False,
@@ -373,13 +377,13 @@ class NSE100Scanner:
                         'l4': levels.L4,
                         'vah': round(float(va.vah), 2),
                         'val': round(float(va.val), 2),
-                        'va_width': round(float(abs(va.vah - va.val)), 2),
-                        'va_ratio': round(float((abs(va.vah - va.val) / max(daily['high'] - daily['low'], 0.01)) * 100), 2),
-                        'is_nva': bool((abs(va.vah - va.val) / max(daily['high'] - daily['low'], 0.01)) * 100 < 38.0),
+                        'is_oor': bool((bars[0].open < daily['low'] and bars[0].open < va.val) or (bars[0].open > daily['high'] and bars[0].open > va.vah)),
+                        'is_ncpr': bool((abs(levels.tc - levels.bc) / max(daily['high'] - daily['low'], 0.01)) * 100 < 5.0),
+                        'is_nval': bool((abs(levels.tc - levels.bc) / max(daily['high'] - daily['low'], 0.01)) * 100 < 5.0),
+                        'is_nva': bool((abs(levels.tc - levels.bc) / max(daily['high'] - daily['low'], 0.01)) * 100 < 5.0),
                         'cpr_pivot': round(float(levels.pivot), 2),
                         'cpr_tc': round(float(levels.tc), 2),
-                        'cpr_bc': round(float(levels.bc), 2),
-                        'is_ncpr': bool(levels.is_narrow)
+                        'cpr_bc': round(float(levels.bc), 2)
                     }
                 })
 

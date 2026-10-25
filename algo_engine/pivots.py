@@ -642,14 +642,17 @@ def compute_opening_bias(open_price: float,
     in_range = prev_low < open_price < prev_high
     in_value = val < open_price < vah
 
+    # Pine Script: OUTOFRANGEVALUE = (((OO_ < dDL_) and (OO_ < VAL)) or ((OO_ > dDH_) and (OO_ > VAH)))
+    is_oor_val = (open_price < prev_low and open_price < val) or (open_price > prev_high and open_price > vah)
+
     if in_range and in_value:
         return "IN RANGE IN VALUE"
     elif in_range and not in_value:
         return "IN RANGE OUT OF VALUE"
-    elif not in_range:
+    elif is_oor_val:
         return "OUT OF RANGE OUT OF VALUE"
     else:
-        return "DEBUG"
+        return "OUT OF RANGE IN VALUE"
 
 
 # ════════════════════════════════════════════════════════════════════
