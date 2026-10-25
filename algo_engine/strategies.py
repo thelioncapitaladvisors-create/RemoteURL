@@ -1,17 +1,18 @@
 """
-algo_engine.strategies — 12 Canonical Strategy Triggers
+algo_engine.strategies — 14 Canonical Strategy Triggers
 =======================================================
 
 Port of Pine Script strategy trigger conditions from
-TLCS_Dashboards_4_Commodities_Merged.pine (lines 2990-3156).
+TLCS_Dashboards_4_Commodities_Merged.pine (lines 2990-3156) & PivotBoss STP 2.0.
 
-All 12 Strategies (6 Long + 6 Short):
+All 14 Canonical Execution Strategies (7 Long + 7 Short):
     1. LONG MISSILE / SHORT MISSILE
     2. LONG SCALP / SHORT SCALP
     3. LONG LIGHTNING / SHORT LIGHTNING
     4. LONG DIVERGENCE / SHORT DIVERGENCE
     5. LONG HIDDEN DIVERGENCE / SHORT HIDDEN DIVERGENCE
     6. LONG EXTREME REVERSAL / SHORT EXTREME REVERSAL
+    7. LONG VIRGIN CPR / SHORT VIRGIN CPR
 
 H4/L4 Touch-Point Gating (CRITICAL — MUST NEVER USE CLOSE):
     Long trades:  qualified strictly on low < H4
@@ -31,7 +32,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 from .pivots import (
-    OHLC, CamarillaLevels, CPRLevels, DailyLevels, ValueArea,
+    OHLC, CamarillaLevels, CPRLevels, DailyLevels, ValueArea, VirginCPRZone,
     ema, compute_pivot_trend_emas
 )
 
@@ -170,6 +171,9 @@ class MarketContext:
     # m0 / m10 for ranging detection
     m0: float = 0.0
     m10: float = 0.0
+
+    # Virgin CPR Zones (active untouched zones over past 1 month)
+    virgin_cpr_zones: List[VirginCPRZone] = field(default_factory=list)
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -554,6 +558,19 @@ class StrategyEngine:
                            and not divergence_sell and not hidden_div_sell
                            and short_allowed and day_allowed)
 
+        # 7. Virgin CPR (VCPR) Retest / Touch (PivotBoss STP 2.0, 1-Month Lookback)
+        matching_buy_z = next(
+            (z for z in ctx.virgin_cpr_zones if bar.low <= z.top and bar.high >= z.bottom and (ctx.prev_close > z.top or bar.open > z.top)),
+            None
+        )
+        vcpr_buy = (matching_buy_z is not None) and long_allowed and day_allowed
+
+        matching_sell_z = next(
+            (z for z in ctx.virgin_cpr_zones if bar.high >= z.bottom and bar.low <= z.top and (ctx.prev_close < z.bottom or bar.open < z.bottom)),
+            None
+        )
+        vcpr_sell = (matching_sell_z is not None) and short_allowed and day_allowed
+
         # ═══════════════════════════════════════════════════════
         # COMPUTE ENTRY / SL / TP LEVELS (lines 2865-2893)
         # ═══════════════════════════════════════════════════════
@@ -575,6 +592,8 @@ class StrategyEngine:
             (hidden_div_sell,   "SHORT HIDDEN DIVERGENCE"),
             (extreme_rev_buy,   "LONG EXTREME REVERSAL"),
             (extreme_rev_sell,  "SHORT EXTREME REVERSAL"),
+            (vcpr_buy,          "LONG VIRGIN CPR"),
+            (vcpr_sell,         "SHORT VIRGIN CPR"),
         ]
 
         for triggered, name in trigger_map:
@@ -587,10 +606,16 @@ class StrategyEngine:
             self._last_signal_bar[name] = ctx.bar_index
 
             is_long = name.startswith("LONG")
+            sig_entry = entry_price
+            if name == "LONG VIRGIN CPR" and matching_buy_z:
+                sig_entry = matching_buy_z.top
+            elif name == "SHORT VIRGIN CPR" and matching_sell_z:
+                sig_entry = matching_sell_z.bottom
+
             signal = self._build_signal(
                 name=name,
                 is_long=is_long,
-                entry_price=entry_price,
+                entry_price=sig_entry,
                 atr_val=atr_val,
                 bar_index=ctx.bar_index,
                 timestamp=bar.timestamp,

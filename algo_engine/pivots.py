@@ -337,10 +337,10 @@ def compute_daily_levels(prev_high: float, prev_low: float, prev_close: float) -
 def detect_virgin_cpr_zones(
     daily_bars: List[Dict[str, Any]],
     current_price: Optional[float] = None,
-    max_lookback_days: int = 7
+    max_lookback_days: int = 30
 ) -> List[VirginCPRZone]:
     """
-    Detect Virgin CPR (VCPR) zones over the lookback window (e.g. past week).
+    Detect Virgin CPR (VCPR) zones over the lookback window (past 1 month / 30 days).
     
     Pine Script Ground-Truth (f_virginCPR):
         p     = (hh + ll + cc) / 3.0
@@ -363,7 +363,7 @@ def detect_virgin_cpr_zones(
         daily_bars: List of daily dicts ordered chronologically:
                     [{"high": ..., "low": ..., "close": ..., "date": ...}, ...]
         current_price: Current market price for distance & position calculations.
-        max_lookback_days: Maximum number of completed sessions to evaluate (default 7).
+        max_lookback_days: Maximum number of completed sessions to evaluate (default 30 / past 1 month).
         
     Returns:
         List of active, untouched VirginCPRZone objects.
@@ -371,7 +371,7 @@ def detect_virgin_cpr_zones(
     if not daily_bars or len(daily_bars) < 2:
         return []
 
-    # Window slice: evaluate up to max_lookback_days completed sessions
+    # Window slice: evaluate up to max_lookback_days completed sessions (past 1 month)
     bars = daily_bars[- (max_lookback_days + 1):] if len(daily_bars) > (max_lookback_days + 1) else daily_bars
     n = len(bars)
     virgin_zones: List[VirginCPRZone] = []
@@ -434,6 +434,113 @@ def detect_virgin_cpr_zones(
                 ))
 
     return virgin_zones
+
+
+def detect_virgin_cpr_touches(
+    daily_bars: List[Dict[str, Any]],
+    current_price: Optional[float] = None,
+    high_price: Optional[float] = None,
+    low_price: Optional[float] = None,
+    prev_close: Optional[float] = None,
+    max_lookback_days: int = 30
+) -> List[Dict[str, Any]]:
+    """
+    Detect if the current bar or market price is touching any active Virgin CPR (VCPR)
+    zones from the past one month (default 30 calendar days / ~22 trading sessions).
+    
+    Returns:
+        List of dicts representing triggered touches:
+        [
+            {
+                'zone': VirginCPRZone,
+                'direction': 'LONG' | 'SHORT',
+                'entry_price': float,
+                'touch_price': float,
+                'top': float,
+                'bottom': float,
+                'pivot': float
+            },
+            ...
+        ]
+    """
+    if not daily_bars or len(daily_bars) < 2:
+        return []
+
+    bars = daily_bars[- (max_lookback_days + 1):] if len(daily_bars) > (max_lookback_days + 1) else daily_bars
+    n = len(bars)
+    touches: List[Dict[str, Any]] = []
+
+    for i in range(1, n):
+        prev = bars[i - 1]
+        cur = bars[i]
+
+        p = (prev['high'] + prev['low'] + prev['close']) / 3.0
+        bc = (prev['high'] + prev['low']) / 2.0
+        tc = 2.0 * p - bc
+        top = max(tc, bc)
+        bottom = min(tc, bc)
+        width = abs(top - bottom)
+
+        # Did day i touch its own CPR during its session?
+        own_touched = (cur['high'] >= bottom and cur['low'] <= top)
+        if not own_touched:
+            touched_later = False
+            for j in range(i + 1, n):
+                sub = bars[j]
+                if sub['high'] >= bottom and sub['low'] <= top:
+                    touched_later = True
+                    break
+
+            if not touched_later:
+                # This zone was virgin prior to current test!
+                h = high_price if high_price is not None else current_price
+                l = low_price if low_price is not None else current_price
+
+                is_touch = False
+                if h is not None and l is not None:
+                    is_touch = (h >= bottom and l <= top)
+                elif current_price is not None:
+                    is_touch = (bottom <= current_price <= top)
+
+                if is_touch:
+                    if prev_close is not None:
+                        is_long = prev_close > top or (prev_close >= bottom and (current_price or p) >= p)
+                    elif current_price is not None:
+                        is_long = current_price >= p
+                    else:
+                        is_long = True
+
+                    direction = "LONG" if is_long else "SHORT"
+                    entry = top if is_long else bottom
+                    touch_val = current_price if current_price is not None else ((top + bottom) / 2.0)
+
+                    date_str = cur.get('date') or cur.get('timestamp') or f"Day-{i}"
+                    if isinstance(date_str, str) and 'T' in date_str:
+                        date_str = date_str.split('T')[0]
+
+                    zone_obj = VirginCPRZone(
+                        date=str(date_str),
+                        top=round(top, 2),
+                        bottom=round(bottom, 2),
+                        pivot=round(p, 2),
+                        width=round(width, 2),
+                        is_active=True,
+                        position="BELOW" if is_long else "ABOVE",
+                        distance_pts=0.0,
+                        distance_pct=0.0
+                    )
+
+                    touches.append({
+                        'zone': zone_obj,
+                        'direction': direction,
+                        'entry_price': round(entry, 2),
+                        'touch_price': round(touch_val, 2),
+                        'top': round(top, 2),
+                        'bottom': round(bottom, 2),
+                        'pivot': round(p, 2)
+                    })
+
+    return touches
 
 
 # ════════════════════════════════════════════════════════════════════

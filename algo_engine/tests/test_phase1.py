@@ -30,7 +30,7 @@ from algo_engine.pivots import (
     dema, triple_ema, compute_pivot_trend_emas,
     rma, compute_dmi, compute_m0_m10,
     compute_institutional_bias_c1, compute_day_type_mx,
-    compute_rejection_day, detect_virgin_cpr_zones, VirginCPRZone
+    compute_rejection_day, detect_virgin_cpr_zones, detect_virgin_cpr_touches, VirginCPRZone
 )
 from algo_engine.day_types import (
     DayTypeClassifier, DayTypeConfig, DayTypeResult, SequenceState,
@@ -1428,6 +1428,100 @@ class TestVirginCPR(unittest.TestCase):
         zones = detect_virgin_cpr_zones(bars, current_price=96.0, max_lookback_days=7)
         oct21_zone = next((z for z in zones if z.date == '2026-10-21'), None)
         self.assertIsNone(oct21_zone, "Oct 21 VCPR must be invalidated after Day 3 penetrates 95")
+
+    def test_vcpr_touch_detection_long_and_short(self):
+        """detect_virgin_cpr_touches correctly identifies support and resistance touches."""
+        # Zone at 95.0 untouched on Day 1 & 2
+        bars = [
+            {'high': 100.0, 'low': 90.0, 'close': 95.0, 'date': '2026-10-20'},
+            {'high': 110.0, 'low': 102.0, 'close': 108.0, 'date': '2026-10-21'},
+            {'high': 115.0, 'low': 108.0, 'close': 112.0, 'date': '2026-10-22'}
+        ]
+        # Current bar tests 95.0 from above (prev_close 108 > 95, low 94 <= 95) -> LONG
+        touches_long = detect_virgin_cpr_touches(
+            bars, current_price=95.0, high_price=98.0, low_price=94.0, prev_close=108.0, max_lookback_days=30
+        )
+        self.assertGreaterEqual(len(touches_long), 1)
+        self.assertEqual(touches_long[0]['direction'], 'LONG')
+        self.assertEqual(touches_long[0]['entry_price'], 95.0)
+
+        # Zone at 115.0 untouched on Day 1 & 2
+        bars_short = [
+            {'high': 120.0, 'low': 110.0, 'close': 115.0, 'date': '2026-10-20'},
+            {'high': 105.0, 'low': 95.0, 'close': 100.0, 'date': '2026-10-21'},
+            {'high': 108.0, 'low': 98.0, 'close': 102.0, 'date': '2026-10-22'}
+        ]
+        # Current bar tests 115.0 from below (prev_close 102 < 115, high 116 >= 115) -> SHORT
+        touches_short = detect_virgin_cpr_touches(
+            bars_short, current_price=115.0, high_price=116.0, low_price=110.0, prev_close=102.0, max_lookback_days=30
+        )
+        self.assertGreaterEqual(len(touches_short), 1)
+        self.assertEqual(touches_short[0]['direction'], 'SHORT')
+        self.assertEqual(touches_short[0]['entry_price'], 115.0)
+
+    def test_strategy_engine_vcpr_signals(self):
+        """StrategyEngine produces LONG VIRGIN CPR and SHORT VIRGIN CPR signals."""
+        engine = StrategyEngine(StrategyConfig())
+
+        # Long VCPR context
+        vcpr_long = VirginCPRZone(
+            date='2026-10-20', top=100.0, bottom=98.0, pivot=99.0, width=2.0,
+            is_active=True, position='BELOW', distance_pts=0.0, distance_pct=0.0
+        )
+        bar_long = OHLC(open=102.0, high=103.0, low=99.0, close=101.0, volume=1000)
+        ctx_long = MarketContext(
+            bar=bar_long,
+            bar_index=1,
+            H4=110.0,  # low (99.0) < H4 (110.0) -> long_allowed True
+            L4=90.0,
+            H3=105.0,
+            L3=95.0,
+            cpr_pivot=100.0,
+            cpr_tc=101.0,
+            cpr_bc=99.0,
+            atr=2.0,
+            day_type_label="TREND DAY",
+            opening_bias="OUT OF RANGE",
+            prev_close=104.0,  # Came from above
+            session_highest=105.0,
+            session_lowest=98.0,
+            virgin_cpr_zones=[vcpr_long]
+        )
+        signals_long = engine.evaluate(ctx_long)
+        vcpr_sig = next((s for s in signals_long if s.name == 'LONG VIRGIN CPR'), None)
+        self.assertIsNotNone(vcpr_sig, "LONG VIRGIN CPR must be triggered when dipping into VCPR from above")
+        self.assertEqual(vcpr_sig.direction, 'LONG')
+        self.assertEqual(vcpr_sig.entry_price, 100.0)
+
+        # Short VCPR context
+        vcpr_short = VirginCPRZone(
+            date='2026-10-20', top=102.0, bottom=100.0, pivot=101.0, width=2.0,
+            is_active=True, position='ABOVE', distance_pts=0.0, distance_pct=0.0
+        )
+        bar_short = OHLC(open=98.0, high=101.0, low=97.0, close=99.0, volume=1000)
+        ctx_short = MarketContext(
+            bar=bar_short,
+            bar_index=2,
+            H4=110.0,
+            L4=95.0,  # high (101.0) > L4 (95.0) -> short_allowed True
+            H3=105.0,
+            L3=95.0,
+            cpr_pivot=100.0,
+            cpr_tc=101.0,
+            cpr_bc=99.0,
+            atr=2.0,
+            day_type_label="TREND DAY",
+            opening_bias="OUT OF RANGE",
+            prev_close=96.0,  # Came from below
+            session_highest=102.0,
+            session_lowest=95.0,
+            virgin_cpr_zones=[vcpr_short]
+        )
+        signals_short = engine.evaluate(ctx_short)
+        vcpr_short_sig = next((s for s in signals_short if s.name == 'SHORT VIRGIN CPR'), None)
+        self.assertIsNotNone(vcpr_short_sig, "SHORT VIRGIN CPR must be triggered when rallying into VCPR from below")
+        self.assertEqual(vcpr_short_sig.direction, 'SHORT')
+        self.assertEqual(vcpr_short_sig.entry_price, 100.0)
 
 
 if __name__ == '__main__':

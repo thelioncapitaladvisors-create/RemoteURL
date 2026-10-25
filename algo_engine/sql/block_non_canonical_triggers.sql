@@ -24,16 +24,17 @@ BEGIN
         RAISE EXCEPTION 'Non-canonical execution rejected: % is a market regime context, not a valid trade trigger.', NEW.type;
     END IF;
 
-    -- Enforce 12 Canonical Triggers
+    -- Enforce 14 Canonical Triggers
     IF clean_type NOT IN (
         'LONG MISSILE', 'SHORT MISSILE',
         'LONG LIGHTNING', 'SHORT LIGHTNING',
         'LONG SCALP', 'SHORT SCALP',
         'LONG DIVERGENCE', 'SHORT DIVERGENCE',
         'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE',
-        'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL'
+        'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL',
+        'LONG VIRGIN CPR', 'SHORT VIRGIN CPR'
     ) THEN
-        RAISE EXCEPTION 'Non-canonical execution rejected: % does not match any of the 12 Canonical Strategy Archetypes.', NEW.type;
+        RAISE EXCEPTION 'Non-canonical execution rejected: % does not match any of the 14 Canonical Strategy Archetypes.', NEW.type;
     END IF;
 
     RETURN NEW;

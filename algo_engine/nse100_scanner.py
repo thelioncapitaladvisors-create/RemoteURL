@@ -38,14 +38,15 @@ MCX_COMMODITIES: List[str] = [
     'CRUDEOILM', 'GOLDM', 'SILVERM', 'NATURALGASM', 'ZINCM', 'ALUMINI'
 ]
 
-# 12 Canonical Strategy Triggers (Zero Speculation STP 2.0 Execution Rule)
+# 14 Canonical Strategy Triggers (Zero Speculation STP 2.0 Execution Rule)
 CANONICAL_EXECUTION_TRIGGERS = {
     'LONG MISSILE', 'SHORT MISSILE',
     'LONG SCALP', 'SHORT SCALP',
     'LONG LIGHTNING', 'SHORT LIGHTNING',
     'LONG DIVERGENCE', 'SHORT DIVERGENCE',
     'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE',
-    'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL'
+    'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL',
+    'LONG VIRGIN CPR', 'SHORT VIRGIN CPR'
 }
 
 
@@ -266,10 +267,10 @@ class NSE100Scanner:
         market_category = 'MCX' if market_name == 'mcx' else 'NIFTY'
         signals: List[dict] = []
 
-        # 4b. Compute Virgin CPR (VCPR) zones over the past week (1-week lookback)
+        # 4b. Compute Virgin CPR (VCPR) zones over the past month (1-month / 30-day lookback)
         history_bars = daily.get('history_bars', [])
         current_close = bars[-1].close if bars else daily['close']
-        vcpr_zones = detect_virgin_cpr_zones(history_bars, current_price=current_close, max_lookback_days=7)
+        vcpr_zones = detect_virgin_cpr_zones(history_bars, current_price=current_close, max_lookback_days=30)
         is_vcpr = len(vcpr_zones) > 0
         nearest_vcpr = vcpr_zones[0] if is_vcpr else None
 
@@ -341,6 +342,7 @@ class NSE100Scanner:
                 minus=minus_di[i] if i < len(minus_di) else 0.0,
                 m0=m0_series[i] if i < len(m0_series) else 0.0,
                 m10=m10_series[i] if i < len(m10_series) else 0.0,
+                virgin_cpr_zones=vcpr_zones,
             )
 
             strat_sigs = self.strategy_engine.evaluate(ctx)
