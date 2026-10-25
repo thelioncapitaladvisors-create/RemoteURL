@@ -2,40 +2,49 @@
 // © TheLionCapital
 
 //@version=6
-indicator('TLCS Virgin CPR Zones', overlay = true, max_boxes_count = 500, max_labels_count = 500)
+indicator('Virgin CPR Zones — D / W / M / Y', overlay = true, max_boxes_count = 500, max_labels_count = 500)
 
 // ============================================================
 //  INPUTS
 // ============================================================
-GEN = 'General & 1-Month Lookback'
-maxLookbackDays  = input.int(30, 'Max Lookback (Calendar Days)', minval = 1, maxval = 60, group = GEN, tooltip = 'Only monitor and alert on Virgin CPR zones formed within the past 1 month (default 30 days / ~22 trading sessions)')
+GEN = 'General'
 showTags         = input.bool(true, 'Label zones (D / W / M / Y)', group = GEN)
+showSignalLabels = input.bool(true, 'Show On-Chart Pop-Up Labels', group = GEN, tooltip = 'Draws prominent on-chart pop-up badges directly above/below the candle where price touches a virgin level')
+showShapes       = input.bool(true, 'Show On-Chart Triangles', group = GEN, tooltip = 'Plots directional signal arrows at the touch point')
+showHud          = input.bool(true, 'Show On-Chart Signal HUD Card', group = GEN, tooltip = 'Displays a real-time HUD pop-up table on the chart with touch telemetry')
+hudPos           = input.string(position.top_right, 'HUD Position', options = [position.top_right, position.bottom_right, position.top_left, position.bottom_left], group = GEN)
+enableAlerts     = input.bool(true, 'Trigger Pop-up Dialog Alerts', group = GEN, tooltip = 'Triggers TradingView native popup notifications and audio chimes when a virgin level is touched')
+alertFrequency   = input.string('Once Per Bar', 'Alert Frequency', options = ['Once Per Bar', 'Once Per Bar Close'], group = GEN)
 
-SIG = 'On-Chart Signal Pop-Up & Alerts'
-showSignalLabels = input.bool(true, 'Show On-Chart Pop-Up Labels', group = SIG, tooltip = 'Draws prominent on-chart pop-up badges directly above/below the candle where price touches a virgin level')
-showShapes       = input.bool(true, 'Show On-Chart Triangles', group = SIG, tooltip = 'Plots directional signal arrows at the touch point')
-showHud          = input.bool(true, 'Show On-Chart Signal HUD Card', group = SIG, tooltip = 'Displays a real-time HUD pop-up table on the chart with touch telemetry')
-hudPos           = input.string(position.top_right, 'HUD Position', options = [position.top_right, position.bottom_right, position.top_left, position.bottom_left], group = SIG)
-enableAlerts     = input.bool(true, 'Trigger Pop-up Dialog Alerts', group = SIG, tooltip = 'Triggers TradingView native popup notifications and audio chimes when a virgin level is touched')
-alertFrequency   = input.string('Once Per Bar', 'Alert Frequency', options = ['Once Per Bar', 'Once Per Bar Close'], group = SIG)
-
-GD = 'Daily Sessions (Past 1 Month)'
+GD = 'Daily'
 dLines = input.bool(false, 'Show Daily CPR lines', group = GD)
 dZones = input.bool(true, 'Show Daily Virgin CPR', group = GD)
-dMax   = input.int(22, 'Max Daily zones (~1 Month Sessions)', minval = 1, maxval = 50, group = GD, tooltip = '1 trading month contains approximately 20-22 sessions')
-dCol   = input.color(#38bdf8d5, 'Daily colour', group = GD)
+dMax   = input.int(4, 'Max Daily zones', minval = 1, maxval = 22, group = GD, tooltip = 'Default 4 zones. Can be set up to 22 zones for ~1 month of sessions')
+dCol   = input.color(#d6cdead5, 'Daily colour', group = GD)
 
-GW = 'Weekly Sessions (Past 1 Month)'
+GW = 'Weekly'
 wLines = input.bool(false, 'Show Weekly CPR lines', group = GW)
 wZones = input.bool(true, 'Show Weekly Virgin CPR', group = GW)
-wMax   = input.int(5, 'Max Weekly zones (~4-5 Weeks in 1 Month)', minval = 1, maxval = 15, group = GW)
+wMax   = input.int(4, 'Max Weekly zones', minval = 1, maxval = 12, group = GW)
 wCol   = input.color(#a855f7d5, 'Weekly colour', group = GW)
 
+GM = 'Monthly'
+mLines = input.bool(false, 'Show Monthly CPR lines', group = GM)
+mZones = input.bool(false, 'Show Monthly Virgin CPR', group = GM)
+mMax   = input.int(4, 'Max Monthly zones', minval = 1, maxval = 12, group = GM)
+mCol   = input.color(#f59e0bd5, 'Monthly colour', group = GM)
+
+GY = 'Yearly'
+yLines = input.bool(false, 'Show Yearly CPR lines', group = GY)
+yZones = input.bool(false, 'Show Yearly Virgin CPR', group = GY)
+yMax   = input.int(2, 'Max Yearly zones', minval = 1, maxval = 5, group = GY)
+yCol   = input.color(#ef4444d5, 'Yearly colour', group = GY)
+
 
 // ============================================================
-//  CORE VIRGIN CPR ENGINE WITH TOUCH DETECTION
+//  CORE VIRGIN CPR ENGINE (AUTHENTIC PIVOTBOSS STP 2.0 FORMULA)
 // ============================================================
-f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, int lookbackDays, color col, string tag, bool showLabels) =>
+f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, string tag, bool showLabels) =>
 
     // --- Guard: the CPR timeframe must be >= the chart timeframe.
     bool tfOk = timeframe.in_seconds() <= timeframe.in_seconds(tf)
@@ -52,6 +61,8 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, int lookbac
     bool isNew = ta.change(time(tf)) != 0
 
     // --- Latch the CPR once per period so it never moves.
+    //     On the first bar of a new period, [1] is the last bar of the
+    //     previous period, i.e. that period's completed HLC.
     var float curHi = na
     var float curLo = na
     var float curP  = na
@@ -67,13 +78,12 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, int lookbac
     float loPrev  = curLo[1]
     bool  tchPrev = touched[1]
 
-    // --- Zone storage arrays.
-    var array<box>   zBox  = array.new_box()
-    var array<label> zLab  = array.new_label()
-    var array<float> zTop  = array.new_float()
-    var array<float> zBot  = array.new_float()
-    var array<bool>  zAct  = array.new_bool()
-    var array<int>   zTime = array.new_int()
+    // --- Zone storage.
+    var array<box>   zBox = array.new_box()
+    var array<label> zLab = array.new_label()
+    var array<float> zTop = array.new_float()
+    var array<float> zBot = array.new_float()
+    var array<bool>  zAct = array.new_bool()
 
     // --- A CPR is virgin only once its own period closed untouched.
     if isNew and tfOk and drawZones
@@ -86,9 +96,9 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, int lookbac
                 array.shift(zTop)
                 array.shift(zBot)
                 array.shift(zAct)
-                array.shift(zTime)
 
             box nb = box.new(left = bar_index, top = hiPrev, right = bar_index + 1, bottom = loPrev, border_color = color.new(col, 20), bgcolor = color.new(col, 88), border_width = 1)
+
             label nl = label.new(x = bar_index, y = hiPrev, text = showTags ? tag : '', style = label.style_none, textcolor = col, size = size.tiny)
 
             array.push(zBox, nb)
@@ -96,12 +106,13 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, int lookbac
             array.push(zTop, hiPrev)
             array.push(zBot, loPrev)
             array.push(zAct, true)
-            array.push(zTime, time)
 
-    // --- Reset touched state on new period
+    // --- Reset the flag BEFORE testing this bar, so the very first
+    //     candle of the new period can count as a touch.
     if isNew
         touched := false
 
+    // --- `not na(curHi)` keeps the flag from ever becoming na and sticking.
     touched := touched or (not na(curHi) and high >= curLo and low <= curHi)
 
     // --- Signal trackers for the current bar
@@ -110,98 +121,82 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, int lookbac
     float touchedTop = na
     float touchedBot = na
 
-    // --- Extend active zones & monitor for price touches within past 1 month
+    // --- Extend live zones; freeze them the moment price trades in.
     int n = array.size(zBox)
     if n > 0
         for i = 0 to n - 1
             if array.get(zAct, i)
-                int zTimeVal = array.get(zTime, i)
-                bool isWithinMonth = (time - zTimeVal) <= (lookbackDays * 86400000)
+                box   b  = array.get(zBox, i)
+                label lb = array.get(zLab, i)
+                float t  = array.get(zTop, i)
+                float bt = array.get(zBot, i)
 
-                // Deactivate zones that exceeded the 1-month lookback
-                if not isWithinMonth
+                box.set_right(b, bar_index)
+                label.set_x(lb, bar_index)
+                label.set_y(lb, t)
+
+                // ── TOUCH TRIGGER: Price touches or penetrates active Virgin CPR zone ──
+                if high >= bt and low <= t
                     array.set(zAct, i, false)
-                    box bOld = array.get(zBox, i)
-                    box.set_border_style(bOld, line.style_dotted)
-                    box.set_border_color(bOld, color.new(color.gray, 80))
-                    box.set_bgcolor(bOld, color.new(color.gray, 95))
-                else
-                    box   b  = array.get(zBox, i)
-                    label lb = array.get(zLab, i)
-                    float t  = array.get(zTop, i)
-                    float bt = array.get(zBot, i)
 
-                    box.set_right(b, bar_index)
-                    label.set_x(lb, bar_index)
-                    label.set_y(lb, t)
+                    // Directional classification:
+                    bool fromAbove = (close[1] > t) or (open > t)
+                    bool fromBelow = (close[1] < bt) or (open < bt)
+                    bool isSupport = fromAbove or (not fromBelow and open >= (t + bt) / 2.0)
 
-                    // ── TOUCH TRIGGER: Current bar penetrates or touches the Virgin CPR zone ──
-                    if high >= bt and low <= t
-                        array.set(zAct, i, false)
+                    if isSupport
+                        touchedBull := true
+                    else
+                        touchedBear := true
 
-                        // Visual feedback on box: switch to dashed tested line
-                        box.set_border_style(b, line.style_dashed)
-                        box.set_border_color(b, color.new(col, 50))
-                        box.set_bgcolor(b, color.new(col, 94))
+                    touchedTop := t
+                    touchedBot := bt
 
-                        // Directional classification:
-                        // Price approached from above -> Support Test (Bounce)
-                        // Price approached from below -> Resistance Test (Rejection)
-                        bool fromAbove = (close[1] > t) or (open > t)
-                        bool fromBelow = (close[1] < bt) or (open < bt)
-                        bool isSupport = fromAbove or (not fromBelow and open >= (t + bt) / 2.0)
+                    // ── ON-CHART SIGNAL POP-UP LABEL ──
+                    if showLabels
+                        string tfTitle = tag == 'D' ? 'Daily' : tag == 'W' ? 'Weekly' : tag == 'M' ? 'Monthly' : tag == 'Y' ? 'Yearly' : tag
+                        string signalTitle = isSupport ? '🧲 ' + tfTitle + ' VCPR SUPPORT TOUCH' : '🧲 ' + tfTitle + ' VCPR RESISTANCE TOUCH'
+                        string zoneStr = str.tostring(bt, '#.##') + ' - ' + str.tostring(t, '#.##')
+                        string labelText = signalTitle + '\nZone: [' + zoneStr + ']\nPrice: ' + str.tostring(close, '#.##')
 
-                        if isSupport
-                            touchedBull := true
-                        else
-                            touchedBear := true
+                        color bgCol = isSupport ? color.new(#10b981, 10) : color.new(#ef4444, 10)
 
-                        touchedTop := t
-                        touchedBot := bt
-
-                        // ── ON-CHART SIGNAL POP-UP LABEL ──
-                        if showLabels
-                            string tfTitle = tag == 'D' ? 'Daily' : tag == 'W' ? 'Weekly' : tag
-                            string signalTitle = isSupport ? '🧲 ' + tfTitle + ' VCPR SUPPORT TOUCH' : '🧲 ' + tfTitle + ' VCPR RESISTANCE TOUCH'
-                            string zoneStr = str.tostring(bt, '#.##') + ' - ' + str.tostring(t, '#.##')
-                            string labelText = signalTitle + '\nZone: [' + zoneStr + ']\nPrice: ' + str.tostring(close, '#.##')
-
-                            color bgCol = isSupport ? color.new(#10b981, 10) : color.new(#ef4444, 10)
-
-                            label.new(
-                                 x = bar_index,
-                                 y = isSupport ? low : high,
-                                 text = labelText,
-                                 style = isSupport ? label.style_label_up : label.style_label_down,
-                                 color = bgCol,
-                                 textcolor = color.white,
-                                 size = size.normal,
-                                 tooltip = tfTitle + ' Virgin CPR from past 1 month tested on this bar!\nZone: [' + zoneStr + ']'
-                            )
+                        label.new(
+                             x = bar_index,
+                             y = isSupport ? low : high,
+                             text = labelText,
+                             style = isSupport ? label.style_label_up : label.style_label_down,
+                             color = bgCol,
+                             textcolor = color.white,
+                             size = size.normal,
+                             tooltip = tfTitle + ' Virgin CPR tested on this bar!\nZone: [' + zoneStr + ']'
+                        )
 
     [tfOk and drawLines ? curHi : na, tfOk and drawLines ? curP : na, tfOk and drawLines ? curLo : na, touchedBull, touchedBear, touchedTop, touchedBot]
 
 
 // ============================================================
-//  CALLS
+//  CALLS — always unconditional; toggles gate the drawing only.
 // ============================================================
-[dHi, dP, dLo, dBull, dBear, dTop, dBot] = f_virginCPR('D', dLines, dZones, dMax, maxLookbackDays, dCol, 'D', showSignalLabels)
-[wHi, wP, wLo, wBull, wBear, wTop, wBot] = f_virginCPR('W', wLines, wZones, wMax, maxLookbackDays, wCol, 'W', showSignalLabels)
+[dHi, dP, dLo, dBull, dBear, dTop, dBot] = f_virginCPR('D', dLines, dZones, dMax, dCol, 'D', showSignalLabels)
+[wHi, wP, wLo, wBull, wBear, wTop, wBot] = f_virginCPR('W', wLines, wZones, wMax, wCol, 'W', showSignalLabels)
+[mHi, mP, mLo, mBull, mBear, mTop, mBot] = f_virginCPR('M', mLines, mZones, mMax, mCol, 'M', showSignalLabels)
+[yHi, yP, yLo, yBull, yBear, yTop, yBot] = f_virginCPR('Y', yLines, yZones, yMax, yCol, 'Y', showSignalLabels)
 
-bool anyBullTouch = dBull or wBull
-bool anyBearTouch = dBear or wBear
+bool anyBullTouch = dBull or wBull or mBull or yBull
+bool anyBearTouch = dBear or wBear or mBear or yBear
 bool anyTouch     = anyBullTouch or anyBearTouch
 
 
 // ============================================================
-//  REAL-TIME POP-UP DIALOG ALERTS (ZERO SERIES-STRING ERROR)
+//  REAL-TIME POP-UP DIALOG ALERTS (ZERO COMPILATION WARNINGS)
 // ============================================================
 if enableAlerts
     if dBull or dBear
         string dTitle = syminfo.ticker + ' (Daily VCPR)'
         string dSig = dBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
         string dZone = str.tostring(dBot, '#.##') + ' - ' + str.tostring(dTop, '#.##')
-        string dMsg = '🚨 [' + dTitle + '] ' + dSig + '\nZone: [' + dZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##') + '\nLookback: Past 1 Month'
+        string dMsg = '🚨 [' + dTitle + '] ' + dSig + '\nZone: [' + dZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
         if alertFrequency == 'Once Per Bar'
             alert(dMsg, alert.freq_once_per_bar)
         else
@@ -211,11 +206,31 @@ if enableAlerts
         string wTitle = syminfo.ticker + ' (Weekly VCPR)'
         string wSig = wBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
         string wZone = str.tostring(wBot, '#.##') + ' - ' + str.tostring(wTop, '#.##')
-        string wMsg = '🚨 [' + wTitle + '] ' + wSig + '\nZone: [' + wZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##') + '\nLookback: Past 1 Month'
+        string wMsg = '🚨 [' + wTitle + '] ' + wSig + '\nZone: [' + wZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
         if alertFrequency == 'Once Per Bar'
             alert(wMsg, alert.freq_once_per_bar)
         else
             alert(wMsg, alert.freq_once_per_bar_close)
+
+    if mBull or mBear
+        string mTitle = syminfo.ticker + ' (Monthly VCPR)'
+        string mSig = mBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
+        string mZone = str.tostring(mBot, '#.##') + ' - ' + str.tostring(mTop, '#.##')
+        string mMsg = '🚨 [' + mTitle + '] ' + mSig + '\nZone: [' + mZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
+        if alertFrequency == 'Once Per Bar'
+            alert(mMsg, alert.freq_once_per_bar)
+        else
+            alert(mMsg, alert.freq_once_per_bar_close)
+
+    if yBull or yBear
+        string yTitle = syminfo.ticker + ' (Yearly VCPR)'
+        string ySig = yBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
+        string yZone = str.tostring(yBot, '#.##') + ' - ' + str.tostring(yTop, '#.##')
+        string yMsg = '🚨 [' + yTitle + '] ' + ySig + '\nZone: [' + yZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
+        if alertFrequency == 'Once Per Bar'
+            alert(yMsg, alert.freq_once_per_bar)
+        else
+            alert(yMsg, alert.freq_once_per_bar_close)
 
 
 // ============================================================
@@ -230,7 +245,7 @@ plotshape(showShapes and anyBearTouch, title = 'VCPR Resistance Touch (Bearish)'
 // ============================================================
 var table hud = table.new(hudPos, 2, 6, bgcolor = color.new(#0f172a, 12), border_color = color.new(#334155, 40), border_width = 1)
 
-var string lastSigTitle = "MONITORING (PAST 1 MONTH)"
+var string lastSigTitle = "MONITORING VCPR ZONES"
 var string lastSigType  = "NO TOUCH YET"
 var string lastZoneStr  = "---"
 var float  lastPrice    = na
@@ -260,6 +275,26 @@ if anyTouch
         lastSigType  := "▼ BEARISH RESISTANCE TEST"
         lastZoneStr  := str.tostring(wBot, "#.##") + " - " + str.tostring(wTop, "#.##")
         lastSigCol   := #ef4444
+    else if mBull
+        lastSigTitle := "MONTHLY VCPR SUPPORT"
+        lastSigType  := "▲ BULLISH SUPPORT TEST"
+        lastZoneStr  := str.tostring(mBot, "#.##") + " - " + str.tostring(mTop, "#.##")
+        lastSigCol   := #10b981
+    else if mBear
+        lastSigTitle := "MONTHLY VCPR RESISTANCE"
+        lastSigType  := "▼ BEARISH RESISTANCE TEST"
+        lastZoneStr  := str.tostring(mBot, "#.##") + " - " + str.tostring(mTop, "#.##")
+        lastSigCol   := #ef4444
+    else if yBull
+        lastSigTitle := "YEARLY VCPR SUPPORT"
+        lastSigType  := "▲ BULLISH SUPPORT TEST"
+        lastZoneStr  := str.tostring(yBot, "#.##") + " - " + str.tostring(yTop, "#.##")
+        lastSigCol   := #10b981
+    else if yBear
+        lastSigTitle := "YEARLY VCPR RESISTANCE"
+        lastSigType  := "▼ BEARISH RESISTANCE TEST"
+        lastZoneStr  := str.tostring(yBot, "#.##") + " - " + str.tostring(yTop, "#.##")
+        lastSigCol   := #ef4444
 
 if showHud and barstate.islast
     bool isLiveTouchNow = anyTouch
@@ -267,7 +302,7 @@ if showHud and barstate.islast
     color headerTextCol = isLiveTouchNow ? color.white : #94a3b8
 
     table.cell(hud, 0, 0, isLiveTouchNow ? "⚡ LIVE VCPR TOUCH POP-UP" : "🧲 VCPR POP-UP MONITOR", bgcolor = headerBg, text_color = headerTextCol, text_size = size.small)
-    table.cell(hud, 1, 0, "1-MONTH LOOKBACK", bgcolor = headerBg, text_color = headerTextCol, text_size = size.small)
+    table.cell(hud, 1, 0, "D / W / M / Y", bgcolor = headerBg, text_color = headerTextCol, text_size = size.small)
 
     table.cell(hud, 0, 1, "TICKER / TF", text_color = #94a3b8, text_size = size.tiny)
     table.cell(hud, 1, 1, syminfo.ticker + " (" + timeframe.period + ")", text_color = color.white, text_size = size.tiny)
@@ -288,10 +323,26 @@ if showHud and barstate.islast
 
 
 // ============================================================
+//  CPR LINES (OPTIONAL PLOTS)
+// ============================================================
+plot(dLines ? dHi : na, 'Daily CPR High', dCol, 1)
+plot(dLines ? dP : na,  'Daily CPR Pivot', color.new(dCol, 40), style = plot.style_circles)
+plot(dLines ? dLo : na, 'Daily CPR Low',  dCol, 1)
+
+plot(wLines ? wHi : na, 'Weekly CPR High', wCol, 1)
+plot(wLines ? wP : na,  'Weekly CPR Pivot', color.new(wCol, 40), style = plot.style_circles)
+plot(wLines ? wLo : na, 'Weekly CPR Low',  wCol, 1)
+
+
+// ============================================================
 //  ALERT CONDITIONS (FOR TRADINGVIEW ALERT DIALOG)
 // ============================================================
 alertcondition(dBull, title = 'Daily VCPR Support Touch (Bullish)', message = '🔔 [VCPR Alert] {{ticker}} touched Daily Virgin CPR Support at {{close}}!')
 alertcondition(dBear, title = 'Daily VCPR Resistance Touch (Bearish)', message = '🔔 [VCPR Alert] {{ticker}} touched Daily Virgin CPR Resistance at {{close}}!')
 alertcondition(wBull, title = 'Weekly VCPR Support Touch (Bullish)', message = '🔔 [VCPR Alert] {{ticker}} touched Weekly Virgin CPR Support at {{close}}!')
 alertcondition(wBear, title = 'Weekly VCPR Resistance Touch (Bearish)', message = '🔔 [VCPR Alert] {{ticker}} touched Weekly Virgin CPR Resistance at {{close}}!')
-alertcondition(anyTouch, title = 'Any Virgin CPR Touch (D / W)', message = '🔔 [VCPR Alert] {{ticker}} touched Virgin CPR zone at {{close}}!')
+alertcondition(mBull, title = 'Monthly VCPR Support Touch (Bullish)', message = '🔔 [VCPR Alert] {{ticker}} touched Monthly Virgin CPR Support at {{close}}!')
+alertcondition(mBear, title = 'Monthly VCPR Resistance Touch (Bearish)', message = '🔔 [VCPR Alert] {{ticker}} touched Monthly Virgin CPR Resistance at {{close}}!')
+alertcondition(yBull, title = 'Yearly VCPR Support Touch (Bullish)', message = '🔔 [VCPR Alert] {{ticker}} touched Yearly Virgin CPR Support at {{close}}!')
+alertcondition(yBear, title = 'Yearly VCPR Resistance Touch (Bearish)', message = '🔔 [VCPR Alert] {{ticker}} touched Yearly Virgin CPR Resistance at {{close}}!')
+alertcondition(anyTouch, title = 'Any Virgin CPR Touch (D / W / M / Y)', message = '🔔 [VCPR Alert] {{ticker}} touched Virgin CPR zone at {{close}}!')
