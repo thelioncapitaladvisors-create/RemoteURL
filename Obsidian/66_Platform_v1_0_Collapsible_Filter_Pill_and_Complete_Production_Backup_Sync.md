@@ -98,3 +98,34 @@ When expanded, the filter section is logically segmented into structured, intuit
 - `TLCS_v1.0_Complete_Backup_20261025_150200/`
 - `TLCS_v1.0_Complete_Backup_20261025_150200.zip`
 - `TLCS_Applications_v1.0_20261025.zip`
+
+---
+
+## 6. Compact 2-Row Subtabs & KPI Strip Calibration (Post-Launch Refinement)
+
+### 6.1 Sub-Tab Switcher Compact 2-Row Architecture
+- **Problem**: The 5 screener category tabs (`Out of Range`, `Inside CPR`, `Narrow CPR`, `Narrow Value`, `Virgin CPR`) were previously laid out in a single horizontal scrolling row (`overflow-x-auto`), causing 2–3 tabs to be cut off and requiring horizontal swiping.
+- **Solution**: Restructured the sub-tab switcher into a responsive 6-column grid (`grid grid-cols-6 sm:grid-cols-5 gap-1 sm:gap-1.5`):
+  - **Row 1 (3 tabs, col-span-2 each)**:
+    - `⚡ Out of Range` (`OOR Bias`) with dynamic count badge.
+    - `🎯 Inside CPR` with dynamic count badge.
+    - `📐 Narrow CPR` with dynamic count badge.
+  - **Row 2 (2 tabs, col-span-3 each)**:
+    - `📊 Narrow Value` with dynamic count badge.
+    - `🧲 Virgin CPR` with dynamic count badge.
+  - **Desktop (`sm:grid-cols-5`)**: Automatically consolidates into a single 5-column row (`sm:col-span-1`).
+  - **Result**: Zero horizontal scrolling; all 5 tabs are visible simultaneously at a glance.
+
+### 6.2 5-Card KPI Summary Strip 2-Row Layout
+- **Problem**: On mobile screens (`< 540px`), the 5 KPI summary cards previously rendered in 3 vertical rows under `grid-cols-2`, leaving an isolated card in Row 3 and consuming ~220px of vertical space.
+- **Solution**: Refactored the KPI summary strip into an aligned 2-row grid:
+  - **Row 1 (3 count cards, col-span-2 each)**: `TOTAL`, `▲ BULLISH`, `▼ BEARISH`.
+  - **Row 2 (2 outcome cards, col-span-3 each)**: `DAY AVG MOVE`, `WIN RATE`.
+  - **Compact Styling**: Reduced card height to `min-h-[58px]` with calibrated padding `p-1.5 sm:p-2`, saving ~95px of vertical screen real estate while improving typography contrast.
+
+### 6.3 Single-Row Compact Filter Control Strip
+- Tightened the collapsed filter pill into a clean single-row bar on mobile (`gap-1.5 py-1.5 px-2.5 sm:px-3`):
+  - Left: `[FILTERS]` pill, `[3 Stocks]` (blue), and `[2 MCX]` (amber).
+  - Right: `[EXPAND ⌄]` gradient button.
+- Completely prevents multi-line wrapping and dead vertical whitespace.
+- Service worker bumped to `tlcs-cache-v1.0.0-rev9`.
