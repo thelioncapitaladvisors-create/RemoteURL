@@ -218,3 +218,11 @@ File location: `TV Indicator/TLCS_Virgin_CPR_Zones.pine`
   5. `🧲 Virgin CPR (N)`: Untouched Central Pivot Range levels from rolling 1-month lookback acting as high-probability price magnets.
 - **Subtle Institutional Color Harmonization**: Loud neon borders and background fills replaced with subtle, theme-adaptive styling (`border-primary/10`, `bg-secondary/30 dark:bg-black/25`, compact `bg-black/[0.02] dark:bg-white/[0.02]` KPI tiles).
 - **High Information Density**: 5-card KPI summary, interactive Market/Direction/Session filters, compact search input, and responsive asset cards grid all preserve full functionality with zero dead zones.
+
+### 8.3 Collapsible Filter Pill Standard with Outside Live Asset Counts
+- **Collapsed by Default**: The interactive filter panel defaults to collapsed (`isDhanBiasFilterExpanded = false`), presenting a compact, ergonomic ~36px pill row directly underneath the KPI metrics grid.
+- **Outside Dynamic Count Display**: The collapsed pill bar prominently features real-time qualifying asset counts for the active setup:
+  `[ 🔍 FILTERS • {cfg.stats.stocksCount} Stocks • {cfg.stats.mcxCount} Commodities [EXPAND ▼] ]`
+- **Contextual Active Filter Badges & Fast Reset**: When non-default filters (e.g. Market `NSE STOCKS` or Direction `▲ BULLISH` or Symbol Search) are active, compact badge chips display on the pill exterior, accompanied by an instantaneous `RESET` button.
+- **Smooth Expansion**: Clicking anywhere on the pill or toggle chevron smoothly expands the panel, revealing the full suite of interactive Market chips (`ALL MKTS`, `NSE STOCKS`, `MCX COMM`), Direction chips (`ALL BIAS`, `▲ BULLISH`, `▼ BEARISH`), Session selector (`📅 LATEST SESSION` / `📚 ALL RECENT`), and the Symbol search input.
+- **PWA Service Worker Update**: Service worker cache bumped to `tlcs-cache-v1.0.0-rev7` for immediate client propagation.

@@ -31,15 +31,17 @@
    - Consolidated 5 separate vertically stacked mega-cards (`SECTION 4A` through `4E`) into a single master component `PIVOT REGIME & COMPRESSION SCREENER` (`renderDhanUnifiedBiasScreener()`).
    - Implemented sleek 5-segment sub-tab switcher: `⚡ Out of Range`, `🎯 Inside CPR`, `📐 Narrow CPR`, `📊 Narrow Value`, and `🧲 Virgin CPR`, each displaying live asset counts.
    - Added master `COLLAPSE` / `EXPAND` toggle, compressing the entire screener to a single ~44px row when collapsed, saving >85% of mobile vertical scroll space.
+   - **Collapsible Filter Pill with Live Asset Counts**: Kept the Interactive Filter Strip collapsed by default (`isDhanBiasFilterExpanded = false`), displaying a sleek, ergonomic pill bar with live active asset counts: `{cfg.stats.stocksCount} Stocks • {cfg.stats.mcxCount} Commodities`. Clicking the pill seamlessly expands the Market (`ALL MKTS`, `NSE STOCKS`, `MCX COMM`), Direction (`ALL BIAS`, `▲ BULLISH`, `▼ BEARISH`), Session (`LATEST SESSION` / `ALL RECENT`), and Search controls, with an instant `RESET` chip when non-default filters are active.
    - Harmonized colors to subtle institutional Bloomberg styling, eliminating loud neon fuchsia/amber/cyan full card backgrounds and redundant whitespace.
-   - PWA cache bumped to `tlcs-cache-v1.0.0-rev6`.
+   - PWA cache bumped to `tlcs-cache-v1.0.0-rev7`.
 
 ---
 
 ## 2. Verification Checklist
 - [x] All 113 Python BlackBox unit tests passing (`python3 -m unittest discover -s algo_engine/tests`).
 - [x] Next.js mobile terminal builds with exit code 0 (`npm run build`).
-- [x] PWA service worker cache bumped to `tlcs-cache-v1.0.0-rev6`.
+- [x] Collapsible filter pill integrated with default collapsed state and dynamic stock/commodity count display.
+- [x] PWA service worker cache bumped to `tlcs-cache-v1.0.0-rev7`.
 - [x] Pine Script compilation error CE10123 eliminated.
 - [x] 14 Canonical Triggers enforced across Python, SQL, and Netlify workers.
 - [x] Complete documentation stored in Obsidian architecture document 65 and update log.
