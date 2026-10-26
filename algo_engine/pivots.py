@@ -1069,13 +1069,13 @@ def compute_institutional_bias_c1(
 
         c1 = ANYDAY and (close < DTc and close > DBc) ? "WATCH" :
              CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" :
-             CONFIRMEDBULLISH and (close < DBc) ? "REJECTION" :
+             CONFIRMEDBULLISH and (close < DBc) ? "BULLISH \n REJECTION" :
              CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" :
-             CONFIRMEDBEARISH and (close > DTc) ? "REJECTION" :
-             REJECTEDBULLISH and (close < DBc) ? "REJECTED \n BULLISH" :
-             REJECTEDBULLISH and (close > DTc) ? "REJECTION" :
-             REJECTEDBEARISH and (close > DTc) ? "REJECTED \n BEARISH" :
-             REJECTEDBEARISH and (close < DBc) ? "REJECTION" :
+             CONFIRMEDBEARISH and (close > DTc) ? "BEARISH \n REJECTION" :
+             REJECTEDBULLISH and (close < DBc) ? "BULLISH \n REJECTION" :
+             REJECTEDBULLISH and (BULLISH or MODERATELYBULLISH) and (close > DTc) ? "BULLISH \n CONTINUATION" :
+             REJECTEDBEARISH and (close > DTc) ? "BEARISH \n REJECTION" :
+             REJECTEDBEARISH and (BEARISH or MODERATELYBEARISH) and (close < DBc) ? "BEARISH \n CONTINUATION" :
              OUTSIDE ? "SIDEWAYS" :
              UNCHANGED ? "SIDEWAYS/ BREAKOUT" :
              ((ANYDAY and ((open_price > h4) or (open_price < l4))) or INSIDE) ? "BREAKOUT" : "DEBUG"
@@ -1105,18 +1105,18 @@ def compute_institutional_bias_c1(
     elif confirmed_bullish and (close_price > dtc):
         return "CONFIRMED BULLISH"
     elif confirmed_bullish and (close_price < dbc):
-        return "BEARISH CONTINUATION"
+        return "BULLISH REJECTION"
     elif confirmed_bearish and (close_price < dbc):
         return "CONFIRMED BEARISH"
     elif confirmed_bearish and (close_price > dtc):
-        return "BULLISH CONTINUATION"
+        return "BEARISH REJECTION"
     elif rejected_bullish and (close_price < dbc):
-        return "BEARISH CONTINUATION"
-    elif rejected_bullish and (close_price > dtc):
+        return "BULLISH REJECTION"
+    elif rejected_bullish and (bullish or mod_bullish) and (close_price > dtc):
         return "BULLISH CONTINUATION"
     elif rejected_bearish and (close_price > dtc):
-        return "BULLISH CONTINUATION"
-    elif rejected_bearish and (close_price < dbc):
+        return "BEARISH REJECTION"
+    elif rejected_bearish and (bearish or mod_bearish) and (close_price < dbc):
         return "BEARISH CONTINUATION"
     elif outside:
         return "SIDEWAYS"

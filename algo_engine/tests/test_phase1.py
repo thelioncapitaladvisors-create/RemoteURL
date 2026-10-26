@@ -1108,21 +1108,45 @@ class TestOscillatorAndReversalSystems(unittest.TestCase):
         )
         self.assertEqual(res_other, "CONFIRMED BULLISH")
 
-        # 5. Bullish open (open > dbc) but close < dbc -> BEARISH CONTINUATION (price broke down below CPR)
+        # 5. Bullish open (open > dbc) but close < dbc -> BULLISH REJECTION (bullish CPR rejected, price broke down below CPR)
         res_rej_bull = compute_institutional_bias_c1(
             close_price=92.0, open_price=99.0,
             dtc=102.0, dbc=98.0, ytc=95.0, ybc=90.0,
             h4=110.0, l4=90.0
         )
-        self.assertEqual(res_rej_bull, "BEARISH CONTINUATION")
+        self.assertEqual(res_rej_bull, "BULLISH REJECTION")
 
-        # 6. Bearish open (open < dtc) but close > dtc -> BULLISH CONTINUATION (price broke out above CPR)
+        # 6. Bearish open (open < dtc) but close > dtc -> BEARISH REJECTION (bearish CPR rejected, price broke out above CPR)
         res_rej_bear = compute_institutional_bias_c1(
             close_price=90.0, open_price=85.0,
             dtc=87.0, dbc=82.0, ytc=100.0, ybc=95.0,
             h4=92.0, l4=78.0
         )
-        self.assertEqual(res_rej_bear, "BULLISH CONTINUATION")
+        self.assertEqual(res_rej_bear, "BEARISH REJECTION")
+
+        # 7. User Mandate: Bullish continuation ONLY if CPR is Bullish or Moderately Bullish and open < dbc and close > dtc
+        res_bull_cont = compute_institutional_bias_c1(
+            close_price=105.0, open_price=94.0,
+            dtc=102.0, dbc=98.0, ytc=95.0, ybc=90.0,  # Bullish CPR
+            h4=110.0, l4=90.0
+        )
+        self.assertEqual(res_bull_cont, "BULLISH CONTINUATION")
+
+        # 8. User Mandate: Bearish rejection when price opens above CPR (open > dtc) on Bearish CPR and close > dtc
+        res_bear_rej_open_above = compute_institutional_bias_c1(
+            close_price=90.0, open_price=89.0,
+            dtc=87.0, dbc=82.0, ytc=100.0, ybc=95.0,  # Bearish CPR
+            h4=92.0, l4=78.0
+        )
+        self.assertEqual(res_bear_rej_open_above, "BEARISH REJECTION")
+
+        # 9. Bearish continuation when price opens above CPR (open > dtc) on Bearish CPR and close < dbc
+        res_bear_cont = compute_institutional_bias_c1(
+            close_price=80.0, open_price=89.0,
+            dtc=87.0, dbc=82.0, ytc=100.0, ybc=95.0,  # Bearish CPR
+            h4=92.0, l4=78.0
+        )
+        self.assertEqual(res_bear_cont, "BEARISH CONTINUATION")
 
     def test_compute_rejection_day(self):
         """Verify REJECTIONDAY evaluation across all confirmed/rejected day types."""
