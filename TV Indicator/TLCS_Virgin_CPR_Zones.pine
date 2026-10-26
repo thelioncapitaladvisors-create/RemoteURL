@@ -10,6 +10,8 @@ indicator('Virgin CPR Zones — D / W / M / Y', overlay = true, max_boxes_count 
 GEN = 'General'
 showTags         = input.bool(true, 'Label zones (D / W / M / Y)', group = GEN)
 showSignalLabels = input.bool(true, 'Show On-Chart Pop-Up Labels', group = GEN, tooltip = 'Draws prominent on-chart pop-up badges directly above/below the candle where price touches a virgin level')
+labelFormat      = input.string('Compact (Date Only)', 'Pop-Up Label Display', options = ['Compact (Date Only)', 'Full (Date + Zone + Price)'], group = GEN, tooltip = 'Choose whether the on-chart pop-up label displays "VCPR Dated <Date>" cleanly or includes Zone and Price lines')
+vcprDateFormat   = input.string('dd-MMM-yyyy', 'Pop-Up Date Format', options = ['dd-MMM-yyyy', 'dd-MM-yyyy', 'yyyy-MM-dd', 'dd MMM yyyy'], group = GEN, tooltip = 'Format for the VCPR creation date')
 showShapes       = input.bool(true, 'Show On-Chart Triangles', group = GEN, tooltip = 'Plots directional signal arrows at the touch point')
 showHud          = input.bool(true, 'Show On-Chart Signal HUD Card', group = GEN, tooltip = 'Displays a real-time HUD pop-up table on the chart with touch telemetry')
 hudPos           = input.string(position.top_right, 'HUD Position', options = [position.top_right, position.bottom_right, position.top_left, position.bottom_left], group = GEN)
@@ -44,7 +46,7 @@ yCol   = input.color(#ef4444d5, 'Yearly colour', group = GY)
 // ============================================================
 //  CORE VIRGIN CPR ENGINE (AUTHENTIC PIVOTBOSS STP 2.0 FORMULA)
 // ============================================================
-f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, string tag, bool showLabels) =>
+f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, string tag, bool showLabels, string lblFmt, string dtFmt) =>
 
     // --- Normalize yearly timeframe string ('Y' / '1Y' -> '12M') because TradingView security requires '12M'
     string reqTf = (tf == 'Y' or tf == '1Y') ? '12M' : tf
@@ -66,27 +68,31 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, 
     // --- Latch the CPR once per period so it never moves.
     //     On the first bar of a new period, [1] is the last bar of the
     //     previous period, i.e. that period's completed HLC.
-    var float curHi = na
-    var float curLo = na
-    var float curP  = na
+    var float curHi   = na
+    var float curLo   = na
+    var float curP    = na
+    var int   curTime = na
 
     if isNew
-        curHi := hiRaw[1]
-        curLo := loRaw[1]
-        curP  := p[1]
+        curHi   := hiRaw[1]
+        curLo   := loRaw[1]
+        curP    := p[1]
+        curTime := time(reqTf)
 
     // --- Snapshot of the period that just ended (read BEFORE any reset).
-    var bool touched = false
-    float hiPrev  = curHi[1]
-    float loPrev  = curLo[1]
-    bool  tchPrev = touched[1]
+    var bool touched  = false
+    float hiPrev   = curHi[1]
+    float loPrev   = curLo[1]
+    bool  tchPrev  = touched[1]
+    int   timePrev = curTime[1]
 
     // --- Zone storage.
-    var array<box>   zBox = array.new_box()
-    var array<label> zLab = array.new_label()
-    var array<float> zTop = array.new_float()
-    var array<float> zBot = array.new_float()
-    var array<bool>  zAct = array.new_bool()
+    var array<box>   zBox  = array.new_box()
+    var array<label> zLab  = array.new_label()
+    var array<float> zTop  = array.new_float()
+    var array<float> zBot  = array.new_float()
+    var array<bool>  zAct  = array.new_bool()
+    var array<int>   zTime = array.new_int()
 
     // --- A CPR is virgin only once its own period closed untouched.
     if isNew and tfOk and drawZones
@@ -99,6 +105,7 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, 
                 array.shift(zTop)
                 array.shift(zBot)
                 array.shift(zAct)
+                array.shift(zTime)
 
             box nb = box.new(left = bar_index, top = hiPrev, right = bar_index + 1, bottom = loPrev, border_color = color.new(col, 20), bgcolor = color.new(col, 88), border_width = 1)
 
@@ -109,6 +116,7 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, 
             array.push(zTop, hiPrev)
             array.push(zBot, loPrev)
             array.push(zAct, true)
+            array.push(zTime, timePrev)
 
     // --- Reset the flag BEFORE testing this bar, so the very first
     //     candle of the new period can count as a touch.
@@ -119,10 +127,11 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, 
     touched := touched or (not na(curHi) and high >= curLo and low <= curHi)
 
     // --- Signal trackers for the current bar
-    bool touchedBull = false
-    bool touchedBear = false
-    float touchedTop = na
-    float touchedBot = na
+    bool  touchedBull = false
+    bool  touchedBear = false
+    float touchedTop  = na
+    float touchedBot  = na
+    int   touchedTime = na
 
     // --- Extend live zones; freeze them the moment price trades in.
     int n = array.size(zBox)
@@ -152,15 +161,18 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, 
                     else
                         touchedBear := true
 
-                    touchedTop := t
-                    touchedBot := bt
+                    touchedTop  := t
+                    touchedBot  := bt
+                    int zT       = array.get(zTime, i)
+                    touchedTime := zT
 
                     // ── ON-CHART SIGNAL POP-UP LABEL ──
                     if showLabels
-                        string tfTitle = tag == 'D' ? 'Daily' : tag == 'W' ? 'Weekly' : tag == 'M' ? 'Monthly' : tag == 'Y' ? 'Yearly' : tag
-                        string signalTitle = isSupport ? '🧲 ' + tfTitle + ' VCPR SUPPORT TOUCH' : '🧲 ' + tfTitle + ' VCPR RESISTANCE TOUCH'
+                        string dateStr = not na(zT) ? str.format_time(zT, dtFmt, syminfo.timezone) : ''
+                        string tfPrefix = tag == 'D' ? 'VCPR Dated ' : (tag == 'W' ? 'Weekly VCPR Dated ' : (tag == 'M' ? 'Monthly VCPR Dated ' : 'Yearly VCPR Dated '))
+                        string signalTitle = tfPrefix + dateStr
                         string zoneStr = str.tostring(bt, '#.##') + ' - ' + str.tostring(t, '#.##')
-                        string labelText = signalTitle + '\nZone: [' + zoneStr + ']\nPrice: ' + str.tostring(close, '#.##')
+                        string labelText = signalTitle + (lblFmt == 'Full (Date + Zone + Price)' ? '\nZone: [' + zoneStr + ']\nPrice: ' + str.tostring(close, '#.##') : '')
 
                         color bgCol = isSupport ? color.new(#10b981, 10) : color.new(#ef4444, 10)
 
@@ -172,19 +184,19 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, 
                              color = bgCol,
                              textcolor = color.white,
                              size = size.normal,
-                             tooltip = tfTitle + ' Virgin CPR tested on this bar!\nZone: [' + zoneStr + ']'
+                             tooltip = signalTitle + '\nZone: [' + zoneStr + ']\nTouch Price: ' + str.tostring(close, '#.##')
                         )
 
-    [tfOk and drawLines ? curHi : na, tfOk and drawLines ? curP : na, tfOk and drawLines ? curLo : na, touchedBull, touchedBear, touchedTop, touchedBot]
+    [tfOk and drawLines ? curHi : na, tfOk and drawLines ? curP : na, tfOk and drawLines ? curLo : na, touchedBull, touchedBear, touchedTop, touchedBot, touchedTime]
 
 
 // ============================================================
 //  CALLS — always unconditional; toggles gate the drawing only.
 // ============================================================
-[dHi, dP, dLo, dBull, dBear, dTop, dBot] = f_virginCPR('D', dLines, dZones, dMax, dCol, 'D', showSignalLabels)
-[wHi, wP, wLo, wBull, wBear, wTop, wBot] = f_virginCPR('W', wLines, wZones, wMax, wCol, 'W', showSignalLabels)
-[mHi, mP, mLo, mBull, mBear, mTop, mBot] = f_virginCPR('M', mLines, mZones, mMax, mCol, 'M', showSignalLabels)
-[yHi, yP, yLo, yBull, yBear, yTop, yBot] = f_virginCPR('12M', yLines, yZones, yMax, yCol, 'Y', showSignalLabels)
+[dHi, dP, dLo, dBull, dBear, dTop, dBot, dTime] = f_virginCPR('D', dLines, dZones, dMax, dCol, 'D', showSignalLabels, labelFormat, vcprDateFormat)
+[wHi, wP, wLo, wBull, wBear, wTop, wBot, wTime] = f_virginCPR('W', wLines, wZones, wMax, wCol, 'W', showSignalLabels, labelFormat, vcprDateFormat)
+[mHi, mP, mLo, mBull, mBear, mTop, mBot, mTime] = f_virginCPR('M', mLines, mZones, mMax, mCol, 'M', showSignalLabels, labelFormat, vcprDateFormat)
+[yHi, yP, yLo, yBull, yBear, yTop, yBot, yTime] = f_virginCPR('12M', yLines, yZones, yMax, yCol, 'Y', showSignalLabels, labelFormat, vcprDateFormat)
 
 bool anyBullTouch = dBull or wBull or mBull or yBull
 bool anyBearTouch = dBear or wBear or mBear or yBear
@@ -196,7 +208,8 @@ bool anyTouch     = anyBullTouch or anyBearTouch
 // ============================================================
 if enableAlerts
     if dBull or dBear
-        string dTitle = syminfo.ticker + ' (Daily VCPR)'
+        string dDate = not na(dTime) ? ' (VCPR Dated ' + str.format_time(dTime, vcprDateFormat, syminfo.timezone) + ')' : ' (Daily VCPR)'
+        string dTitle = syminfo.ticker + dDate
         string dSig = dBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
         string dZone = str.tostring(dBot, '#.##') + ' - ' + str.tostring(dTop, '#.##')
         string dMsg = '🚨 [' + dTitle + '] ' + dSig + '\nZone: [' + dZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
@@ -206,7 +219,8 @@ if enableAlerts
             alert(dMsg, alert.freq_once_per_bar_close)
 
     if wBull or wBear
-        string wTitle = syminfo.ticker + ' (Weekly VCPR)'
+        string wDate = not na(wTime) ? ' (Weekly VCPR Dated ' + str.format_time(wTime, vcprDateFormat, syminfo.timezone) + ')' : ' (Weekly VCPR)'
+        string wTitle = syminfo.ticker + wDate
         string wSig = wBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
         string wZone = str.tostring(wBot, '#.##') + ' - ' + str.tostring(wTop, '#.##')
         string wMsg = '🚨 [' + wTitle + '] ' + wSig + '\nZone: [' + wZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
@@ -216,7 +230,8 @@ if enableAlerts
             alert(wMsg, alert.freq_once_per_bar_close)
 
     if mBull or mBear
-        string mTitle = syminfo.ticker + ' (Monthly VCPR)'
+        string mDate = not na(mTime) ? ' (Monthly VCPR Dated ' + str.format_time(mTime, vcprDateFormat, syminfo.timezone) + ')' : ' (Monthly VCPR)'
+        string mTitle = syminfo.ticker + mDate
         string mSig = mBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
         string mZone = str.tostring(mBot, '#.##') + ' - ' + str.tostring(mTop, '#.##')
         string mMsg = '🚨 [' + mTitle + '] ' + mSig + '\nZone: [' + mZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
@@ -226,7 +241,8 @@ if enableAlerts
             alert(mMsg, alert.freq_once_per_bar_close)
 
     if yBull or yBear
-        string yTitle = syminfo.ticker + ' (Yearly VCPR)'
+        string yDate = not na(yTime) ? ' (Yearly VCPR Dated ' + str.format_time(yTime, vcprDateFormat, syminfo.timezone) + ')' : ' (Yearly VCPR)'
+        string yTitle = syminfo.ticker + yDate
         string ySig = yBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
         string yZone = str.tostring(yBot, '#.##') + ' - ' + str.tostring(yTop, '#.##')
         string yMsg = '🚨 [' + yTitle + '] ' + ySig + '\nZone: [' + yZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
@@ -259,43 +275,51 @@ if anyTouch
     lastTouchBar := bar_index
     lastPrice    := close
     if dBull
-        lastSigTitle := "DAILY VCPR SUPPORT"
-        lastSigType  := "▲ BULLISH SUPPORT TEST"
+        string dDate = not na(dTime) ? ' (' + str.format_time(dTime, vcprDateFormat, syminfo.timezone) + ')' : ''
+        lastSigTitle := "VCPR DATED " + str.upper(not na(dTime) ? str.format_time(dTime, vcprDateFormat, syminfo.timezone) : "DAILY")
+        lastSigType  := "▲ BULLISH SUPPORT TEST" + dDate
         lastZoneStr  := str.tostring(dBot, "#.##") + " - " + str.tostring(dTop, "#.##")
         lastSigCol   := #10b981
     else if dBear
-        lastSigTitle := "DAILY VCPR RESISTANCE"
-        lastSigType  := "▼ BEARISH RESISTANCE TEST"
+        string dDate = not na(dTime) ? ' (' + str.format_time(dTime, vcprDateFormat, syminfo.timezone) + ')' : ''
+        lastSigTitle := "VCPR DATED " + str.upper(not na(dTime) ? str.format_time(dTime, vcprDateFormat, syminfo.timezone) : "DAILY")
+        lastSigType  := "▼ BEARISH RESISTANCE TEST" + dDate
         lastZoneStr  := str.tostring(dBot, "#.##") + " - " + str.tostring(dTop, "#.##")
         lastSigCol   := #ef4444
     else if wBull
-        lastSigTitle := "WEEKLY VCPR SUPPORT"
-        lastSigType  := "▲ BULLISH SUPPORT TEST"
+        string wDate = not na(wTime) ? ' (' + str.format_time(wTime, vcprDateFormat, syminfo.timezone) + ')' : ''
+        lastSigTitle := "WEEKLY VCPR DATED " + str.upper(not na(wTime) ? str.format_time(wTime, vcprDateFormat, syminfo.timezone) : "")
+        lastSigType  := "▲ BULLISH SUPPORT TEST" + wDate
         lastZoneStr  := str.tostring(wBot, "#.##") + " - " + str.tostring(wTop, "#.##")
         lastSigCol   := #10b981
     else if wBear
-        lastSigTitle := "WEEKLY VCPR RESISTANCE"
-        lastSigType  := "▼ BEARISH RESISTANCE TEST"
+        string wDate = not na(wTime) ? ' (' + str.format_time(wTime, vcprDateFormat, syminfo.timezone) + ')' : ''
+        lastSigTitle := "WEEKLY VCPR DATED " + str.upper(not na(wTime) ? str.format_time(wTime, vcprDateFormat, syminfo.timezone) : "")
+        lastSigType  := "▼ BEARISH RESISTANCE TEST" + wDate
         lastZoneStr  := str.tostring(wBot, "#.##") + " - " + str.tostring(wTop, "#.##")
         lastSigCol   := #ef4444
     else if mBull
-        lastSigTitle := "MONTHLY VCPR SUPPORT"
-        lastSigType  := "▲ BULLISH SUPPORT TEST"
+        string mDate = not na(mTime) ? ' (' + str.format_time(mTime, vcprDateFormat, syminfo.timezone) + ')' : ''
+        lastSigTitle := "MONTHLY VCPR DATED " + str.upper(not na(mTime) ? str.format_time(mTime, vcprDateFormat, syminfo.timezone) : "")
+        lastSigType  := "▲ BULLISH SUPPORT TEST" + mDate
         lastZoneStr  := str.tostring(mBot, "#.##") + " - " + str.tostring(mTop, "#.##")
         lastSigCol   := #10b981
     else if mBear
-        lastSigTitle := "MONTHLY VCPR RESISTANCE"
-        lastSigType  := "▼ BEARISH RESISTANCE TEST"
+        string mDate = not na(mTime) ? ' (' + str.format_time(mTime, vcprDateFormat, syminfo.timezone) + ')' : ''
+        lastSigTitle := "MONTHLY VCPR DATED " + str.upper(not na(mTime) ? str.format_time(mTime, vcprDateFormat, syminfo.timezone) : "")
+        lastSigType  := "▼ BEARISH RESISTANCE TEST" + mDate
         lastZoneStr  := str.tostring(mBot, "#.##") + " - " + str.tostring(mTop, "#.##")
         lastSigCol   := #ef4444
     else if yBull
-        lastSigTitle := "YEARLY VCPR SUPPORT"
-        lastSigType  := "▲ BULLISH SUPPORT TEST"
+        string yDate = not na(yTime) ? ' (' + str.format_time(yTime, vcprDateFormat, syminfo.timezone) + ')' : ''
+        lastSigTitle := "YEARLY VCPR DATED " + str.upper(not na(yTime) ? str.format_time(yTime, vcprDateFormat, syminfo.timezone) : "")
+        lastSigType  := "▲ BULLISH SUPPORT TEST" + yDate
         lastZoneStr  := str.tostring(yBot, "#.##") + " - " + str.tostring(yTop, "#.##")
         lastSigCol   := #10b981
     else if yBear
-        lastSigTitle := "YEARLY VCPR RESISTANCE"
-        lastSigType  := "▼ BEARISH RESISTANCE TEST"
+        string yDate = not na(yTime) ? ' (' + str.format_time(yTime, vcprDateFormat, syminfo.timezone) + ')' : ''
+        lastSigTitle := "YEARLY VCPR DATED " + str.upper(not na(yTime) ? str.format_time(yTime, vcprDateFormat, syminfo.timezone) : "")
+        lastSigType  := "▼ BEARISH RESISTANCE TEST" + yDate
         lastZoneStr  := str.tostring(yBot, "#.##") + " - " + str.tostring(yTop, "#.##")
         lastSigCol   := #ef4444
 
