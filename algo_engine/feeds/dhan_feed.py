@@ -400,10 +400,29 @@ class DhanFeed(BaseFeed):
                     highs = data.get("high", [])
                     lows = data.get("low", [])
                     closes = data.get("close", [])
+                    timestamps = data.get("timestamp") or data.get("start_Time") or data.get("time") or []
+
                     if len(highs) >= 2:
-                        y_h = float(highs[-2])
-                        y_l = float(lows[-2])
-                        y_c = float(closes[-2])
+                        from datetime import datetime, timezone, timedelta
+                        ist = timezone(timedelta(hours=5, minutes=30))
+                        today_ist = datetime.now(ist).date()
+
+                        # Determine if the last bar in the array is today's developing candle or yesterday's closed candle
+                        is_last_bar_today = False
+                        if timestamps and len(timestamps) >= len(highs):
+                            last_ts = timestamps[-1]
+                            if last_ts > 1e11:
+                                last_ts = last_ts / 1000.0
+                            last_bar_date = datetime.fromtimestamp(last_ts, tz=ist).date()
+                            if last_bar_date >= today_ist:
+                                is_last_bar_today = True
+
+                        idx_y = -2 if is_last_bar_today else -1
+                        idx_prev2 = -3 if (is_last_bar_today and len(highs) >= 3) else (-2 if (not is_last_bar_today and len(highs) >= 2) else None)
+
+                        y_h = float(highs[idx_y])
+                        y_l = float(lows[idx_y])
+                        y_c = float(closes[idx_y])
 
                         ytc = 0.0
                         ybc = 0.0
@@ -412,10 +431,10 @@ class DhanFeed(BaseFeed):
                         y1_l = 0.0
                         y1_c = 0.0
 
-                        if len(highs) >= 3:
-                            y1_h = float(highs[-3])
-                            y1_l = float(lows[-3])
-                            y1_c = float(closes[-3])
+                        if idx_prev2 is not None and abs(idx_prev2) <= len(highs):
+                            y1_h = float(highs[idx_prev2])
+                            y1_l = float(lows[idx_prev2])
+                            y1_c = float(closes[idx_prev2])
                             # Pine Script lines 749-758:
                             # TP1 = (Ytf_h1 + Ytf_l1 + Ytf_c1) / 3.0
                             # BOTTOM1 = (Ytf_h1 + Ytf_l1) / 2

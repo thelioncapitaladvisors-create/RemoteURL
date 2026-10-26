@@ -232,6 +232,58 @@ class TestDhanFeed(unittest.TestCase):
         self.assertGreater(len(ticks), 0, "Mock feed must stream ticks")
         self.assertIn(ticks[0].symbol, ["RELIANCE", "CRUDEOIL"])
 
+    def test_dhan_historical_daily_levels_indexing(self):
+        """Verify fetch_daily_levels correctly distinguishes closed yesterday bars from live today bars."""
+        from unittest.mock import patch, MagicMock
+        from datetime import datetime, timezone, timedelta
+
+        ist = timezone(timedelta(hours=5, minutes=30))
+        now_ist = datetime.now(ist)
+        today_ts = int(now_ist.timestamp())
+        yesterday_ts = int((now_ist - timedelta(days=1)).timestamp())
+        prev2_ts = int((now_ist - timedelta(days=2)).timestamp())
+
+        dhan = DhanFeed(mock_mode=False)
+        dhan.client_id = "TEST_CLIENT"
+        dhan.access_token = "TEST_TOKEN"
+        dhan.register_symbol("ONGC", 1, "2475")
+
+        # Scenario A: DhanHQ returns only closed daily bars (last bar is yesterday)
+        mock_resp_a = MagicMock()
+        mock_resp_a.status_code = 200
+        mock_resp_a.json.return_value = {
+            "high": [226.20, 227.50],
+            "low": [224.00, 223.69],
+            "close": [225.00, 227.50],
+            "timestamp": [prev2_ts, yesterday_ts]
+        }
+
+        with patch("requests.post", return_value=mock_resp_a):
+            res_a = dhan.fetch_daily_levels("ONGC")
+            self.assertIsNotNone(res_a)
+            # Must take index -1 (yesterday: 227.50), NOT index -2 (Thursday: 226.20)
+            self.assertEqual(res_a["high"], 227.50)
+            self.assertEqual(res_a["low"], 223.69)
+            self.assertEqual(res_a["close"], 227.50)
+
+        # Scenario B: DhanHQ returns developing bar (last bar is today)
+        mock_resp_b = MagicMock()
+        mock_resp_b.status_code = 200
+        mock_resp_b.json.return_value = {
+            "high": [226.20, 227.50, 230.00],
+            "low": [224.00, 223.69, 227.00],
+            "close": [225.00, 227.50, 229.50],
+            "timestamp": [prev2_ts, yesterday_ts, today_ts]
+        }
+
+        with patch("requests.post", return_value=mock_resp_b):
+            res_b = dhan.fetch_daily_levels("ONGC")
+            self.assertIsNotNone(res_b)
+            # Must take index -2 (yesterday: 227.50), skipping today's live bar at index -1
+            self.assertEqual(res_b["high"], 227.50)
+            self.assertEqual(res_b["low"], 223.69)
+            self.assertEqual(res_b["close"], 227.50)
+
 
 # ════════════════════════════════════════════════════════════════════
 # TEST 5: BINANCE FEED PARSER
