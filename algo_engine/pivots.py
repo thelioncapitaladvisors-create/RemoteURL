@@ -88,6 +88,7 @@ class VirginCPRZone:
     pivot: float
     width: float
     is_active: bool = True
+    is_touching: bool = False
     position: str = "BELOW"       # 'BELOW' (Price > Top -> Support) or 'ABOVE' (Price < Bottom -> Resistance)
     distance_pts: float = 0.0
     distance_pct: float = 0.0
@@ -402,20 +403,26 @@ def detect_virgin_cpr_zones(
 
             # If still untouched, check current_price if provided
             if not touched_later:
+                is_currently_touching = False
                 if current_price is not None and (bottom <= current_price <= top):
-                    # Current price is inside the CPR, currently testing/touching
-                    continue
+                    is_currently_touching = True
 
                 pos = "BELOW"
                 dist_pts = 0.0
                 dist_pct = 0.0
                 if current_price is not None and current_price > 0:
-                    if current_price > top:
+                    if is_currently_touching:
+                        pos = "TESTING"
+                        dist_pts = 0.0
+                        dist_pct = 0.0
+                    elif current_price > top:
                         pos = "BELOW"  # VCPR is below current price (Support)
+                        dist_pts = round(abs(current_price - top), 2)
+                        dist_pct = round((dist_pts / current_price) * 100.0, 2)
                     else:
                         pos = "ABOVE"  # VCPR is above current price (Resistance)
-                    dist_pts = round(abs(current_price - p), 2)
-                    dist_pct = round((dist_pts / current_price) * 100.0, 2)
+                        dist_pts = round(abs(current_price - bottom), 2)
+                        dist_pct = round((dist_pts / current_price) * 100.0, 2)
 
                 date_str = cur.get('date') or cur.get('timestamp') or f"Day-{i}"
                 if isinstance(date_str, str) and 'T' in date_str:
@@ -428,6 +435,7 @@ def detect_virgin_cpr_zones(
                     pivot=round(p, 2),
                     width=round(width, 2),
                     is_active=True,
+                    is_touching=is_currently_touching,
                     position=pos,
                     distance_pts=dist_pts,
                     distance_pct=dist_pct
@@ -532,6 +540,8 @@ def detect_virgin_cpr_touches(
 
                     touches.append({
                         'zone': zone_obj,
+                        'zone_date': str(date_str),
+                        'is_support': is_long,
                         'direction': direction,
                         'entry_price': round(entry, 2),
                         'touch_price': round(touch_val, 2),

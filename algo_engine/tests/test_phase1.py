@@ -1468,6 +1468,8 @@ class TestVirginCPR(unittest.TestCase):
         self.assertGreaterEqual(len(touches_long), 1)
         self.assertEqual(touches_long[0]['direction'], 'LONG')
         self.assertEqual(touches_long[0]['entry_price'], 95.0)
+        self.assertEqual(touches_long[0]['zone_date'], '2026-10-21')
+        self.assertTrue(touches_long[0]['is_support'])
 
         # Zone at 115.0 untouched on Day 1 & 2
         bars_short = [
@@ -1482,6 +1484,8 @@ class TestVirginCPR(unittest.TestCase):
         self.assertGreaterEqual(len(touches_short), 1)
         self.assertEqual(touches_short[0]['direction'], 'SHORT')
         self.assertEqual(touches_short[0]['entry_price'], 115.0)
+        self.assertEqual(touches_short[0]['zone_date'], '2026-10-21')
+        self.assertFalse(touches_short[0]['is_support'])
 
     def test_strategy_engine_vcpr_signals(self):
         """StrategyEngine produces LONG VIRGIN CPR and SHORT VIRGIN CPR signals."""

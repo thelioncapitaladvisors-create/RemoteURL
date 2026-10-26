@@ -20,7 +20,7 @@ from .pivots import (
     compute_atr, compute_pivot_trend_emas, compute_value_area_from_bars,
     compute_opening_bias, compute_dmi, compute_m0_m10,
     compute_institutional_bias_c1, compute_day_type_mx,
-    detect_virgin_cpr_zones
+    detect_virgin_cpr_zones, detect_virgin_cpr_touches
 )
 from .day_types import DayTypeClassifier
 from .strategies import StrategyEngine, StrategySignal, MarketContext
@@ -346,6 +346,42 @@ class NSE100Scanner:
             )
 
             strat_sigs = self.strategy_engine.evaluate(ctx)
+
+            # Detect direct Virgin CPR touch on the bar
+            vcpr_touches = detect_virgin_cpr_touches(
+                history_bars,
+                current_price=cur_bar.close,
+                high_price=cur_bar.high,
+                low_price=cur_bar.low,
+                prev_close=prev_b.close,
+                max_lookback_days=30
+            )
+            for touch in vcpr_touches:
+                is_long = touch['is_support']
+                sig_name = 'LONG VIRGIN CPR' if is_long else 'SHORT VIRGIN CPR'
+                if not any(s.name == sig_name for s in strat_sigs):
+                    entry_p = touch['entry_price']
+                    atr_v = atr_vals[i] if i < len(atr_vals) else 1.0
+                    sl_p = entry_p - 0.75 * atr_v if is_long else entry_p + 0.75 * atr_v
+                    tp1_p = entry_p + 2.5 * atr_v if is_long else entry_p - 2.5 * atr_v
+                    tp2_p = entry_p + 4.0 * atr_v if is_long else entry_p - 4.0 * atr_v
+                    tp3_p = entry_p + 6.5 * atr_v if is_long else entry_p - 6.5 * atr_v
+                    tp4_p = entry_p + 8.0 * atr_v if is_long else entry_p - 8.0 * atr_v
+
+                    touch_sig = StrategySignal(
+                        name=sig_name,
+                        direction='LONG' if is_long else 'SHORT',
+                        entry_price=entry_p,
+                        stop_loss=sl_p,
+                        tp1=tp1_p, tp2=tp2_p, tp3=tp3_p, tp4=tp4_p,
+                        bar_index=i,
+                        timestamp=cur_bar.timestamp,
+                        zone='LONG ZONE' if is_long else 'SHORT ZONE',
+                        opening_bias=opening_bias,
+                        day_type=primary_day_type
+                    )
+                    strat_sigs.append(touch_sig)
+
             for sig in strat_sigs:
                 if sig.name not in CANONICAL_EXECUTION_TRIGGERS:
                     continue
@@ -397,12 +433,15 @@ class NSE100Scanner:
                         'cpr_pivot': round(float(levels.pivot), 2),
                         'cpr_tc': round(float(levels.tc), 2),
                         'cpr_bc': round(float(levels.bc), 2),
-                        'is_vcpr': is_vcpr,
+                        'is_vcpr': is_vcpr or len(vcpr_touches) > 0,
+                        'is_vcpr_touch': bool(sig.name in ('LONG VIRGIN CPR', 'SHORT VIRGIN CPR') or len(vcpr_touches) > 0),
+                        'vcpr_touch_date': (vcpr_touches[0]['zone_date'] if vcpr_touches else (nearest_vcpr.date if nearest_vcpr else None)),
+                        'vcpr_touch_price': (vcpr_touches[0]['touch_price'] if vcpr_touches else round(float(cur_bar.close), 2)),
                         'vcpr_count': len(vcpr_zones),
-                        'vcpr_direction': ('BULLISH' if nearest_vcpr and current_close > nearest_vcpr.top else 'BEARISH') if is_vcpr else None,
-                        'vcpr_top': nearest_vcpr.top if nearest_vcpr else None,
-                        'vcpr_bottom': nearest_vcpr.bottom if nearest_vcpr else None,
-                        'vcpr_pivot': nearest_vcpr.pivot if nearest_vcpr else None,
+                        'vcpr_direction': ('BULLISH' if (vcpr_touches and vcpr_touches[0]['is_support']) else (('BULLISH' if nearest_vcpr and current_close > nearest_vcpr.top else 'BEARISH') if is_vcpr else None)),
+                        'vcpr_top': (vcpr_touches[0]['top'] if vcpr_touches else (nearest_vcpr.top if nearest_vcpr else None)),
+                        'vcpr_bottom': (vcpr_touches[0]['bottom'] if vcpr_touches else (nearest_vcpr.bottom if nearest_vcpr else None)),
+                        'vcpr_pivot': (vcpr_touches[0]['pivot'] if vcpr_touches else (nearest_vcpr.pivot if nearest_vcpr else None)),
                         'vcpr_distance_pts': nearest_vcpr.distance_pts if nearest_vcpr else 0.0,
                         'vcpr_distance_pct': nearest_vcpr.distance_pct if nearest_vcpr else 0.0,
                         'vcpr_zones': [

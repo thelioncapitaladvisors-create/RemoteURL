@@ -17,6 +17,7 @@ showHud          = input.bool(true, 'Show On-Chart Signal HUD Card', group = GEN
 hudPos           = input.string(position.top_right, 'HUD Position', options = [position.top_right, position.bottom_right, position.top_left, position.bottom_left], group = GEN)
 enableAlerts     = input.bool(true, 'Trigger Pop-up Dialog Alerts', group = GEN, tooltip = 'Triggers TradingView native popup notifications and audio chimes when a virgin level is touched')
 alertFrequency   = input.string('Once Per Bar', 'Alert Frequency', options = ['Once Per Bar', 'Once Per Bar Close'], group = GEN)
+alertFormatMode  = input.string('Text Alert', 'Alert Format Mode', options = ['Text Alert', 'JSON Webhook'], group = GEN, tooltip = 'Choose between human-readable text alert or automated JSON Webhook for TLCS Webhook integration')
 
 GD = 'Daily'
 dLines = input.bool(false, 'Show Daily CPR lines', group = GD)
@@ -204,15 +205,23 @@ bool anyTouch     = anyBullTouch or anyBearTouch
 
 
 // ============================================================
-//  REAL-TIME POP-UP DIALOG ALERTS (ZERO COMPILATION WARNINGS)
+//  REAL-TIME POP-UP DIALOG ALERTS & WEBHOOK PAYLOADS
 // ============================================================
+f_buildAlertMsg(string title, string sig, string zone, float top, float bot, int zTime, bool isBull, string tfTag, string dtFmt, string mode) =>
+    if mode == 'JSON Webhook'
+        string actionStr = isBull ? 'LONG VIRGIN CPR' : 'SHORT VIRGIN CPR'
+        string dateVal = not na(zTime) ? str.format_time(zTime, dtFmt, syminfo.timezone) : ''
+        '{"ticker": "' + syminfo.ticker + '", "action": "' + actionStr + '", "price": ' + str.tostring(close, '#.##') + ', "type": "' + actionStr + '", "trigger": "' + actionStr + '", "metadata": {"is_vcpr": true, "is_vcpr_touch": true, "vcpr_touch_date": "' + dateVal + '", "vcpr_touch_price": ' + str.tostring(close, '#.##') + ', "vcpr_top": ' + str.tostring(top, '#.##') + ', "vcpr_bottom": ' + str.tostring(bot, '#.##') + ', "vcpr_timeframe": "' + tfTag + '", "vcpr_direction": "' + (isBull ? 'BULLISH' : 'BEARISH') + '"}}'
+    else
+        '🚨 [' + title + '] ' + sig + '\nZone: [' + zone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
+
 if enableAlerts
     if dBull or dBear
         string dDate = not na(dTime) ? ' (VCPR Dated ' + str.format_time(dTime, vcprDateFormat, syminfo.timezone) + ')' : ' (Daily VCPR)'
         string dTitle = syminfo.ticker + dDate
         string dSig = dBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
         string dZone = str.tostring(dBot, '#.##') + ' - ' + str.tostring(dTop, '#.##')
-        string dMsg = '🚨 [' + dTitle + '] ' + dSig + '\nZone: [' + dZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
+        string dMsg = f_buildAlertMsg(dTitle, dSig, dZone, dTop, dBot, dTime, dBull, 'D', vcprDateFormat, alertFormatMode)
         if alertFrequency == 'Once Per Bar'
             alert(dMsg, alert.freq_once_per_bar)
         else
@@ -223,7 +232,7 @@ if enableAlerts
         string wTitle = syminfo.ticker + wDate
         string wSig = wBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
         string wZone = str.tostring(wBot, '#.##') + ' - ' + str.tostring(wTop, '#.##')
-        string wMsg = '🚨 [' + wTitle + '] ' + wSig + '\nZone: [' + wZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
+        string wMsg = f_buildAlertMsg(wTitle, wSig, wZone, wTop, wBot, wTime, wBull, 'W', vcprDateFormat, alertFormatMode)
         if alertFrequency == 'Once Per Bar'
             alert(wMsg, alert.freq_once_per_bar)
         else
@@ -234,7 +243,7 @@ if enableAlerts
         string mTitle = syminfo.ticker + mDate
         string mSig = mBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
         string mZone = str.tostring(mBot, '#.##') + ' - ' + str.tostring(mTop, '#.##')
-        string mMsg = '🚨 [' + mTitle + '] ' + mSig + '\nZone: [' + mZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
+        string mMsg = f_buildAlertMsg(mTitle, mSig, mZone, mTop, mBot, mTime, mBull, 'M', vcprDateFormat, alertFormatMode)
         if alertFrequency == 'Once Per Bar'
             alert(mMsg, alert.freq_once_per_bar)
         else
@@ -245,7 +254,7 @@ if enableAlerts
         string yTitle = syminfo.ticker + yDate
         string ySig = yBull ? 'BULLISH SUPPORT TEST (Bounce)' : 'BEARISH RESISTANCE TEST (Rejection)'
         string yZone = str.tostring(yBot, '#.##') + ' - ' + str.tostring(yTop, '#.##')
-        string yMsg = '🚨 [' + yTitle + '] ' + ySig + '\nZone: [' + yZone + ']\nTouch Price: ' + str.tostring(close, '#.##') + '\nBar H/L: ' + str.tostring(high, '#.##') + ' / ' + str.tostring(low, '#.##')
+        string yMsg = f_buildAlertMsg(yTitle, ySig, yZone, yTop, yBot, yTime, yBull, 'Y', vcprDateFormat, alertFormatMode)
         if alertFrequency == 'Once Per Bar'
             alert(yMsg, alert.freq_once_per_bar)
         else
