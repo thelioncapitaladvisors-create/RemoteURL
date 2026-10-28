@@ -8,6 +8,7 @@ indicator('TLCS PivotBoss Indicator', overlay = true, max_lines_count = 500, max
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
 enable_alerts = input.bool(false, 'Enable Automated Webhook Alerts')
+enable_confluence_filter = input.bool(false, 'Enable Divergence Confluence Filter (Institutional Mode)')
 
 //======================
     
@@ -3223,12 +3224,18 @@ bool lightningBypassDayFilter = HiddenDivBuy or HiddenDivSell
 bool ExtremeReversalBuy  = Elongsignal and longAllowed and dayAllowed
 bool ExtremeReversalSell = Eshortsignal and shortAllowed and dayAllowed
 
-// 5. Filter out individual trades so they don't fire when Lightning, Extreme Reversal, or Divergences fire
-bool JustMissileBuy  = CanBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
-bool JustMissileSell = CanSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
+// Confluence Gating (Orthogonal Trend + Divergence Window)
+bool hasBullDivWindow = (regBullDiv or regBullDiv[1] or regBullDiv[2] or hiddenBullishConfirmed or hiddenBullishConfirmed[1] or hiddenBullishConfirmed[2])
+bool hasBearDivWindow = (regBearDiv or regBearDiv[1] or regBearDiv[2] or hiddenBearishConfirmed or hiddenBearishConfirmed[1] or hiddenBearishConfirmed[2])
+bool confluenceLongAllowed = not enable_confluence_filter or hasBullDivWindow
+bool confluenceShortAllowed = not enable_confluence_filter or hasBearDivWindow
 
-bool JustScalpBuy    = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
-bool JustScalpSell   = ScalpSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
+// 5. Filter out individual trades so they don't fire when Lightning, Extreme Reversal, or Divergences fire
+bool JustMissileBuy  = CanBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed and confluenceLongAllowed
+bool JustMissileSell = CanSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed and confluenceShortAllowed
+
+bool JustScalpBuy    = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed and confluenceLongAllowed
+bool JustScalpSell   = ScalpSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed and confluenceShortAllowed
 
 
 // ====================================================================

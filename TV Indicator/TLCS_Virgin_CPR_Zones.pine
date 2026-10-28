@@ -10,7 +10,7 @@ indicator('Virgin CPR Zones — D / W / M / Y', overlay = true, max_boxes_count 
 GEN = 'General'
 showTags         = input.bool(true, 'Label zones (D / W / M / Y)', group = GEN)
 showSignalLabels = input.bool(true, 'Show On-Chart Pop-Up Labels', group = GEN, tooltip = 'Draws prominent on-chart pop-up badges directly above/below the candle where price touches a virgin level')
-labelFormat      = input.string('Compact (Date Only)', 'Pop-Up Label Display', options = ['Compact (Date Only)', 'Full (Date + Zone + Price)'], group = GEN, tooltip = 'Choose whether the on-chart pop-up label displays "VCPR Dated <Date>" cleanly or includes Zone and Price lines')
+labelFormat      = input.string('Compact (VCPR Only)', 'Pop-Up Label Display', options = ['Compact (VCPR Only)', 'VCPR Dated <Date>', 'Full (Date + Zone + Price)'], group = GEN, tooltip = 'Choose whether the on-chart pop-up label displays "VCPR" cleanly, "VCPR Dated <Date>", or includes Zone and Price lines')
 vcprDateFormat   = input.string('dd-MMM-yyyy', 'Pop-Up Date Format', options = ['dd-MMM-yyyy', 'dd-MM-yyyy', 'yyyy-MM-dd', 'dd MMM yyyy'], group = GEN, tooltip = 'Format for the VCPR creation date')
 showShapes       = input.bool(true, 'Show On-Chart Triangles', group = GEN, tooltip = 'Plots directional signal arrows at the touch point')
 showHud          = input.bool(true, 'Show On-Chart Signal HUD Card', group = GEN, tooltip = 'Displays a real-time HUD pop-up table on the chart with touch telemetry')
@@ -170,10 +170,10 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, 
                     // ── ON-CHART SIGNAL POP-UP LABEL ──
                     if showLabels
                         string dateStr = not na(zT) ? str.format_time(zT, dtFmt, syminfo.timezone) : ''
-                        string tfPrefix = tag == 'D' ? 'VCPR Dated ' : (tag == 'W' ? 'Weekly VCPR Dated ' : (tag == 'M' ? 'Monthly VCPR Dated ' : 'Yearly VCPR Dated '))
-                        string signalTitle = tfPrefix + dateStr
+                        string tfLabel = tag == 'D' ? 'VCPR' : (tag == 'W' ? 'Weekly VCPR' : (tag == 'M' ? 'Monthly VCPR' : 'Yearly VCPR'))
+                        string fullTitle = (tag == 'D' ? 'VCPR Dated ' : (tag == 'W' ? 'Weekly VCPR Dated ' : (tag == 'M' ? 'Monthly VCPR Dated ' : 'Yearly VCPR Dated '))) + dateStr
                         string zoneStr = str.tostring(bt, '#.##') + ' - ' + str.tostring(t, '#.##')
-                        string labelText = signalTitle + (lblFmt == 'Full (Date + Zone + Price)' ? '\nZone: [' + zoneStr + ']\nPrice: ' + str.tostring(close, '#.##') : '')
+                        string labelText = lblFmt == 'Compact (VCPR Only)' ? tfLabel : (lblFmt == 'VCPR Dated <Date>' ? fullTitle : (fullTitle + '\nZone: [' + zoneStr + ']\nPrice: ' + str.tostring(close, '#.##')))
 
                         color bgCol = isSupport ? color.new(#10b981, 10) : color.new(#ef4444, 10)
 
@@ -185,7 +185,7 @@ f_virginCPR(string tf, bool drawLines, bool drawZones, int maxZones, color col, 
                              color = bgCol,
                              textcolor = color.white,
                              size = size.normal,
-                             tooltip = signalTitle + '\nZone: [' + zoneStr + ']\nTouch Price: ' + str.tostring(close, '#.##')
+                             tooltip = fullTitle + '\nZone: [' + zoneStr + ']\nTouch Price: ' + str.tostring(close, '#.##')
                         )
 
     [tfOk and drawLines ? curHi : na, tfOk and drawLines ? curP : na, tfOk and drawLines ? curLo : na, touchedBull, touchedBear, touchedTop, touchedBot, touchedTime]

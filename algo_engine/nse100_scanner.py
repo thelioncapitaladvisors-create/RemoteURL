@@ -16,7 +16,7 @@ from datetime import datetime, timezone, timedelta
 from .data.nse_top100_master import get_all_nse100_symbols, clean_symbol
 from .feeds.dhan_feed import DhanFeed
 from .pivots import (
-    OHLC, compute_daily_levels, compute_emas_from_bars,
+    OHLC, ValueArea, compute_daily_levels, compute_emas_from_bars,
     compute_atr, compute_pivot_trend_emas, compute_value_area_from_bars,
     compute_opening_bias, compute_dmi, compute_m0_m10,
     compute_institutional_bias_c1, compute_day_type_mx,
@@ -235,7 +235,15 @@ class NSE100Scanner:
         emas = compute_emas_from_bars(bars)
         trend_emas = compute_pivot_trend_emas(bars)
         atr_vals = compute_atr(bars)
-        va = compute_value_area_from_bars(bars)
+
+        # Prior completed day's Value Area (Frank Ochoa STP 2.0 / Pine Script vah_value[1])
+        y_range = max(daily['high'] - daily['low'], 0.01)
+        y_poc = (daily['high'] + daily['low'] + daily['close']) / 3.0
+        va = ValueArea(
+            vah=round(min(daily['high'], y_poc + (y_range * 0.68 / 2.0)), 2),
+            val=round(max(daily['low'], y_poc - (y_range * 0.68 / 2.0)), 2),
+            poc=round(y_poc, 2)
+        )
         opening_bias = compute_opening_bias(bars[0].open, daily['high'], daily['low'], va.vah, va.val)
         plus_di, minus_di = compute_dmi(bars)
         m0_series, m10_series = compute_m0_m10(bars)
@@ -405,6 +413,8 @@ class NSE100Scanner:
                         'opening_bias': opening_bias,
                         'market_category': market_category,
                         'source_feed': 'DhanHQ',
+                        'is_confluence': sig.is_confluence,
+                        'confluence_type': sig.confluence_tag,
                         'prev_high': round(float(daily['high']), 2),
                         'prev_low': round(float(daily['low']), 2),
                         'prev_range': round(float(max(daily['high'] - daily['low'], 0.01)), 2),

@@ -57,6 +57,8 @@ class StrategySignal:
     zone: str = ""           # z1: LONG ZONE / SHORT ZONE / WAITING
     opening_bias: str = ""   # dX: Opening bias string
     day_type: str = ""       # mX: Market type / day type string
+    is_confluence: bool = False   # VectorBT Validated Confluence (Trend + Structural Divergence)
+    confluence_tag: str = ""      # e.g., 'MISSILE_DIV', 'SCALP_DIV', 'LIGHTNING_TRIPLE'
 
 
 @dataclass
@@ -612,6 +614,33 @@ class StrategyEngine:
             elif name == "SHORT VIRGIN CPR" and matching_sell_z:
                 sig_entry = matching_sell_z.bottom
 
+            # Confluence Qualification (Orthogonal Trend + Structural Divergence Confluence)
+            is_confluence = False
+            confluence_tag = ""
+            has_bull_div_conf = recent_bull_div or recent_hidden_bull
+            has_bear_div_conf = recent_bear_div or recent_hidden_bear
+
+            if is_long and has_bull_div_conf:
+                if "MISSILE" in name:
+                    is_confluence = True
+                    confluence_tag = "MISSILE_DIV"
+                elif "SCALP" in name:
+                    is_confluence = True
+                    confluence_tag = "SCALP_DIV"
+                elif "LIGHTNING" in name:
+                    is_confluence = True
+                    confluence_tag = "LIGHTNING_TRIPLE"
+            elif not is_long and has_bear_div_conf:
+                if "MISSILE" in name:
+                    is_confluence = True
+                    confluence_tag = "MISSILE_DIV"
+                elif "SCALP" in name:
+                    is_confluence = True
+                    confluence_tag = "SCALP_DIV"
+                elif "LIGHTNING" in name:
+                    is_confluence = True
+                    confluence_tag = "LIGHTNING_TRIPLE"
+
             signal = self._build_signal(
                 name=name,
                 is_long=is_long,
@@ -622,6 +651,8 @@ class StrategyEngine:
                 zone=self._compute_zone(bar, ctx),
                 opening_bias=ctx.opening_bias,
                 day_type=ctx.day_type_label,
+                is_confluence=is_confluence,
+                confluence_tag=confluence_tag,
             )
             signals.append(signal)
 
@@ -629,7 +660,9 @@ class StrategyEngine:
 
     def _build_signal(self, name: str, is_long: bool, entry_price: float,
                       atr_val: float, bar_index: int, timestamp: Optional[str],
-                      zone: str, opening_bias: str, day_type: str) -> StrategySignal:
+                      zone: str, opening_bias: str, day_type: str,
+                      is_confluence: bool = False,
+                      confluence_tag: str = "") -> StrategySignal:
         """
         Build a StrategySignal with computed SL/TP levels.
         
@@ -667,6 +700,8 @@ class StrategyEngine:
             zone=zone,
             opening_bias=opening_bias,
             day_type=day_type,
+            is_confluence=is_confluence,
+            confluence_tag=confluence_tag,
         )
 
     def _compute_zone(self, bar: OHLC, ctx: MarketContext) -> str:
