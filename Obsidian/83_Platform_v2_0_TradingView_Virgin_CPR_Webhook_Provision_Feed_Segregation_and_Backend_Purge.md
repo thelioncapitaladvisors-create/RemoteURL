@@ -110,7 +110,22 @@ To prevent legacy localStorage trades from skewing user paper portfolio simulati
 
 ## 5. Deployment & Release Management
 
-- **`Tv-Alert-Mobile`**: Committed, tagged `v2.0` at `c676423`, pushed to `origin/main` and `alt/main`.
-- **`TLCS_Website_Deploy`**: Rebased, committed, tagged `v2.0` at `48254dd6`, pushed to `origin/main`.
-- **Root Repository (`Project`)**: Submodules synchronized, tagged `v2.0`, pushed to `origin/main`.
+- **`Tv-Alert-Mobile`**: Committed, tagged `v2.0` at `8faf2a5`, pushed to `origin/main` and `alt/main`.
+- **`TLCS_Website_Deploy`**: Rebased, committed, tagged `v2.0` at `cb406c05`, pushed to `origin/main`.
+- **Root Repository (`Project`)**: Submodules synchronized, tagged `v2.0` at `c76e64c`, pushed to `origin/main`.
 - **Obsidian Vault & Backups**: Synchronized to `/Users/vishant/Documents/Obsidian Vault/`, local project mirrors (`Project Backup`), and compressed backup archives (`Backups`).
+
+---
+
+## 6. Active November 2026 F&O Futures & Option Chain Optimization
+
+### 6.1 Monthly Contract Transition
+Following the October 29 monthly expiry, all 30 liquid F&O equities were audited against DhanHQ's official Scrip Master CSV (`api-scrip-master.csv`) and updated to their active November 2026 `FUTSTK` security IDs (`RELIANCE: 61697`, `HDFCBANK: 61582`, `ICICIBANK: 61595`, `INFY: 61608`, `TCS: 61724`, etc.).
+
+### 6.2 Option Chain Scrip Candidate Ordering
+- **Natural Gas**: Pinned `574319` (Nov 20 FUT, 96 strikes) as the primary candidate.
+- **Silver**: Pinned `495214` and `574825` as primary candidates.
+- **Nifty 50**: Verified weekly `2026-11-03` expiry with 235 active strikes.
+
+### 6.3 Off-Hours Snapshot Auto-Population
+When the market is closed and no pre-existing EOD snapshot is cached in Supabase, the backend dynamically generates the verified EOD snapshot directly from DhanHQ's latest settled session marketfeed quotes in < 250ms and saves it to `public.fno_eod_snapshots` and `public.system_config`.
