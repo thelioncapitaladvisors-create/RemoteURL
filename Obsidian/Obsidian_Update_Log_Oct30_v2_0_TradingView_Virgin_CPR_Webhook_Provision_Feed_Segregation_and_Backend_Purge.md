@@ -46,9 +46,9 @@
 ---
 
 ## Deployment & Repository Summary
-- `Tv-Alert-Mobile`: Committed, tagged `v2.0` (`5978dd7`), pushed to `origin/main` and `alt/main`.
-- `TLCS_Website_Deploy`: Rebased, committed, tagged `v2.0` (`53a4697b`), pushed to `origin/main`.
-- Root Project: Submodule commits staged, tagged `v2.0` (`25dc7ed`), pushed to `origin/main`.
+- `Tv-Alert-Mobile`: Committed, tagged `v2.0` (`8e43577`), pushed to `origin/main` and `alt/main`.
+- `TLCS_Website_Deploy`: Rebased, committed, tagged `v2.0` (`dec3188d`), pushed to `origin/main`.
+- Root Project: Submodule commits staged, tagged `v2.0` (`b329c1e`), pushed to `origin/main`.
 - Local Backups & Obsidian: Updated mirrors and created compressed snapshot archives.
 
 ---
