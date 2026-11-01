@@ -1228,3 +1228,108 @@ def compute_day_type_mx(
     else:
         return "DEBUG"
 
+
+# ════════════════════════════════════════════════════════════════════
+# 14. RSI & MOMENTUM DIVERGENCE COMPUTATIONS
+# ════════════════════════════════════════════════════════════════════
+
+def compute_rsi(bars: List[OHLC], period: int = 14) -> List[float]:
+    """
+    Computes 14-period Wilder/Standard RSI for a series of OHLC bars.
+    """
+    n = len(bars)
+    if n == 0:
+        return []
+    if n == 1:
+        return [50.0]
+
+    rsi = [50.0] * n
+    gains = [0.0] * n
+    losses = [0.0] * n
+
+    for i in range(1, n):
+        diff = bars[i].close - bars[i - 1].close
+        if diff > 0:
+            gains[i] = diff
+        else:
+            losses[i] = -diff
+
+    if n <= period:
+        return rsi
+
+    # First simple average
+    avg_gain = sum(gains[1:period + 1]) / period
+    avg_loss = sum(losses[1:period + 1]) / period
+
+    if avg_loss == 0:
+        rsi[period] = 100.0
+    else:
+        rs = avg_gain / avg_loss
+        rsi[period] = 100.0 - (100.0 / (1.0 + rs))
+
+    # Wilder smoothing for subsequent bars
+    for i in range(period + 1, n):
+        avg_gain = (avg_gain * (period - 1) + gains[i]) / period
+        avg_loss = (avg_loss * (period - 1) + losses[i]) / period
+        if avg_loss == 0:
+            rsi[i] = 100.0
+        else:
+            rs = avg_gain / avg_loss
+            rsi[i] = 100.0 - (100.0 / (1.0 + rs))
+
+    return rsi
+
+
+def compute_divergences(
+    bars: List[OHLC],
+    rsi_series: Optional[List[float]] = None,
+    lookback: int = 10
+) -> Tuple[List[bool], List[bool], List[bool], List[bool]]:
+    """
+    Computes regular and hidden momentum divergences on 14-period RSI across bars.
+    Returns:
+        (reg_bull, reg_bear, hidden_bull, hidden_bear)
+    """
+    n = len(bars)
+    if rsi_series is None or len(rsi_series) != n:
+        rsi_series = compute_rsi(bars, period=14)
+
+    reg_bull = [False] * n
+    reg_bear = [False] * n
+    hidden_bull = [False] * n
+    hidden_bear = [False] * n
+
+    for i in range(1, n):
+        cur = bars[i]
+        window_start = max(0, i - lookback)
+        prior_bars = bars[window_start:i]
+        prior_rsi = rsi_series[window_start:i]
+        if not prior_bars:
+            continue
+
+        min_low = min(b.low for b in prior_bars)
+        max_high = max(b.high for b in prior_bars)
+        min_rsi = min(prior_rsi)
+        max_rsi = max(prior_rsi)
+
+        cur_rsi = rsi_series[i]
+
+        # Regular Bullish Divergence: Lower/Equal Low in Price with Higher Low in RSI (RSI < 45, Green candle)
+        if cur.low <= min_low and cur_rsi > min_rsi and cur_rsi < 45.0 and cur.is_green:
+            reg_bull[i] = True
+
+        # Regular Bearish Divergence: Higher/Equal High in Price with Lower High in RSI (RSI > 55, Red candle)
+        if cur.high >= max_high and cur_rsi < max_rsi and cur_rsi > 55.0 and cur.is_red:
+            reg_bear[i] = True
+
+        # Hidden Bullish Divergence: Higher Low in Price with Lower/Equal RSI (RSI < 50)
+        if cur.low > min_low and cur_rsi <= min_rsi and cur_rsi < 50.0:
+            hidden_bull[i] = True
+
+        # Hidden Bearish Divergence: Lower High in Price with Higher/Equal RSI (RSI > 50)
+        if cur.high < max_high and cur_rsi >= max_rsi and cur_rsi > 50.0:
+            hidden_bear[i] = True
+
+    return reg_bull, reg_bear, hidden_bull, hidden_bear
+
+

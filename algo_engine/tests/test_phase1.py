@@ -1551,6 +1551,43 @@ class TestVirginCPR(unittest.TestCase):
         self.assertEqual(vcpr_short_sig.direction, 'SHORT')
         self.assertEqual(vcpr_short_sig.entry_price, 100.0)
 
+    def test_divergence_confluence_qualification(self):
+        """Verify that an orthogonal trend setup occurring within the 6-bar divergence window is tagged as confluence."""
+        engine = StrategyEngine()
+
+        # Bar 1: Regular Bullish Divergence on bar[1]
+        b1 = OHLC(open=100.0, high=102.0, low=95.0, close=99.0)
+        ctx1 = MarketContext(
+            bar=b1, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            short_ema=101.0, med_ema=99.0,
+            pivot_trend_fast=102.0, pivot_trend_slow=100.0,
+            bull_regular_div=True,
+            plus=25.0, minus=10.0, m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=102.0, session_lowest=95.0, atr=2.0
+        )
+        engine.evaluate(ctx1)
+
+        # Bar 2: Missile Buy fires while divergence buffer still active (<6 bars)
+        b2 = OHLC(open=100.0, high=105.0, low=98.0, close=104.0)
+        ctx2 = MarketContext(
+            bar=b2, bar_index=2,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            short_ema=102.0, med_ema=99.0,
+            pivot_trend_fast=103.0, pivot_trend_slow=100.0,
+            plus=28.0, minus=8.0, m0=12.0, m10=4.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=95.0, atr=2.0
+        )
+        sigs2 = engine.evaluate(ctx2)
+        missile_sigs = [s for s in sigs2 if "MISSILE" in s.name]
+        self.assertGreater(len(missile_sigs), 0, "Missile buy should trigger")
+        self.assertTrue(missile_sigs[0].is_confluence, "Missile signal must have is_confluence=True within divergence window")
+        self.assertEqual(missile_sigs[0].confluence_tag, "MISSILE_DIV", "Confluence tag must be MISSILE_DIV")
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

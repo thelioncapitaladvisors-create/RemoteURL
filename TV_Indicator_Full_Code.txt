@@ -8,6 +8,7 @@ indicator('TLCS PivotBoss Indicator', overlay = true, max_lines_count = 500, max
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
 enable_alerts = input.bool(false, 'Enable Automated Webhook Alerts')
+enable_confluence_filter = input.bool(false, 'Enable Divergence Confluence Filter (Institutional Mode)')
 
 //======================
     
@@ -2577,16 +2578,17 @@ calculateProfit(Settings settings, TradeLogic trade, float entry, float exit, fl
 // ====================================================================
 // UPDATED ALERT & FINALIZE FUNCTIONS
 // ====================================================================
-sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
+sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message, bool is_conf = false, string conf_type = "") =>
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
     string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
+    string isConfStr    = is_conf ? "true" : "false"
     
     // AST OPTIMIZATION: Concatenate outer braces to avoid Pine Script str.format escape bugs!
     string _ePay = '{' + str.format(
-         '"trigger":"TradeOpen","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
+         '"trigger":"TradeOpen","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}","is_confluence":{14},"confluence_type":"{15}"',
          webhook_secret, syminfo.ticker, trade.tradeDirection, 'OPEN', 
          str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
-         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
+         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr, isConfStr, conf_type
          ) + '}'
     alert(_ePay, alert.freq_once_per_bar_close)
 
@@ -2992,8 +2994,8 @@ checkAnyBounceDown(r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r
 // --- ARRAY HELPER FUNCTIONS TO REDUCE MAIN SCRIPT SIZE ---
 // ====================================================================
 
-// 1. Definition (11 parameters)
-initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message) =>
+// 1. Definition (13 parameters)
+initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool is_conf = false, string conf_type = "") =>
     // ── H4/L4 HARD GATE ──
     bool _buy  = buyCond  and low < H4
     bool _sell = sellCond and high > L4
@@ -3005,7 +3007,7 @@ initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string lo
     if (_buy or _sell) and not alreadyOpenedThisBar
         TradeLogic newTrade = initializeTradeSession(settings, _buy ? longName : shortName)
         TradeVisuals newVis = TradeVisuals.new()
-        sendAlert(settings, newTrade, z1, dX, mX, d1_message)
+        sendAlert(settings, newTrade, z1, dX, mX, d1_message, is_conf, conf_type)
         if settings.showTPSL
             generateTradeVisuals(settings, newTrade, newVis)
         array.push(sessionsArr, newTrade)
@@ -3223,12 +3225,18 @@ bool lightningBypassDayFilter = HiddenDivBuy or HiddenDivSell
 bool ExtremeReversalBuy  = Elongsignal and longAllowed and dayAllowed
 bool ExtremeReversalSell = Eshortsignal and shortAllowed and dayAllowed
 
-// 5. Filter out individual trades so they don't fire when Lightning, Extreme Reversal, or Divergences fire
-bool JustMissileBuy  = CanBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
-bool JustMissileSell = CanSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
+// Confluence Gating (Orthogonal Trend + Divergence Window - 6 Bars)
+bool hasBullDivWindow = (regBullDiv or regBullDiv[1] or regBullDiv[2] or regBullDiv[3] or regBullDiv[4] or regBullDiv[5] or hiddenBullishConfirmed or hiddenBullishConfirmed[1] or hiddenBullishConfirmed[2] or hiddenBullishConfirmed[3] or hiddenBullishConfirmed[4] or hiddenBullishConfirmed[5])
+bool hasBearDivWindow = (regBearDiv or regBearDiv[1] or regBearDiv[2] or regBearDiv[3] or regBearDiv[4] or regBearDiv[5] or hiddenBearishConfirmed or hiddenBearishConfirmed[1] or hiddenBearishConfirmed[2] or hiddenBearishConfirmed[3] or hiddenBearishConfirmed[4] or hiddenBearishConfirmed[5])
+bool confluenceLongAllowed = not enable_confluence_filter or hasBullDivWindow
+bool confluenceShortAllowed = not enable_confluence_filter or hasBearDivWindow
 
-bool JustScalpBuy    = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed
-bool JustScalpSell   = ScalpSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed
+// 5. Filter out individual trades so they don't fire when Lightning, Extreme Reversal, or Divergences fire
+bool JustMissileBuy  = CanBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed and confluenceLongAllowed
+bool JustMissileSell = CanSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed and confluenceShortAllowed
+
+bool JustScalpBuy    = ScalpBuy and not LightningBuy and not ExtremeReversalBuy and not DivergenceBuy and not HiddenDivBuy and longAllowed and dayAllowed and confluenceLongAllowed
+bool JustScalpSell   = ScalpSell and not LightningSell and not ExtremeReversalSell and not DivergenceSell and not HiddenDivSell and shortAllowed and dayAllowed and confluenceShortAllowed
 
 
 // ====================================================================
@@ -3253,12 +3261,12 @@ var array<TradeLogic>   extremeRevSessions   = array.new<TradeLogic>()
 var array<TradeVisuals> extremeRevVisualsArr = array.new<TradeVisuals>()
 
 // ── Initialize & Push Trades for All Decoupled Signal Categories ───
-initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message)
-initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message)
-initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message)
-initializeAndPushTrade(settings, DivergenceBuy, DivergenceSell, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message)
-initializeAndPushTrade(settings, HiddenDivBuy, HiddenDivSell, 'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE', hiddenDivSessions, hiddenDivVisualsArr, z1, dX, mX, d1_message)
-initializeAndPushTrade(settings, ExtremeReversalBuy, ExtremeReversalSell, 'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL', extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message)
+initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message, JustMissileBuy ? hasBullDivWindow : hasBearDivWindow, 'MISSILE_DIV')
+initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message, JustScalpBuy ? hasBullDivWindow : hasBearDivWindow, 'SCALP_DIV')
+initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message, LightningBuy ? hasBullDivWindow : hasBearDivWindow, 'LIGHTNING_TRIPLE')
+initializeAndPushTrade(settings, DivergenceBuy, DivergenceSell, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, false, 'REGULAR_DIV')
+initializeAndPushTrade(settings, HiddenDivBuy, HiddenDivSell, 'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE', hiddenDivSessions, hiddenDivVisualsArr, z1, dX, mX, d1_message, false, 'HIDDEN_DIV')
+initializeAndPushTrade(settings, ExtremeReversalBuy, ExtremeReversalSell, 'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL', extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message, false, 'EXTREME_REVERSAL')
 
 
 // ====================================================================

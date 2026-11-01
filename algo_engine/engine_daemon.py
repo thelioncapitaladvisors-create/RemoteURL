@@ -24,7 +24,8 @@ from typing import Dict, List, Optional
 from .pivots import (
     OHLC, compute_daily_levels, compute_emas_from_bars,
     compute_atr, compute_pivot_trend_emas, compute_dmi, compute_m0_m10,
-    compute_institutional_bias_c1, compute_day_type_mx
+    compute_institutional_bias_c1, compute_day_type_mx,
+    compute_rsi, compute_divergences
 )
 from .day_types import DayTypeClassifier, DayTypeResult
 from .strategies import StrategyEngine, StrategySignal, MarketContext
@@ -243,7 +244,19 @@ class EngineDaemon:
             dbc=daily_levels.cpr.bc
         )
 
-        # 4. Assemble MarketContext
+        # 4. Divergences on completed bars (Pine Script ext_bullishDiv[1] == 1)
+        b_reg_div = False
+        s_reg_div = False
+        b_hid_div = False
+        s_hid_div = False
+        if len(bars_15m) >= 2:
+            reg_bull, reg_bear, hidden_bull, hidden_bear = compute_divergences(bars_15m)
+            b_reg_div = reg_bull[-2]
+            s_reg_div = reg_bear[-2]
+            b_hid_div = hidden_bull[-2]
+            s_hid_div = hidden_bear[-2]
+
+        # 5. Assemble MarketContext
         ctx = MarketContext(
             bar=bar,
             bar_index=len(bars_15m),
@@ -264,6 +277,15 @@ class EngineDaemon:
             day_type_label=mx_day_type,
             session_highest=max((b.high for b in bars_15m[-10:]), default=bar.high),
             session_lowest=min((b.low for b in bars_15m[-10:]), default=bar.low),
+            prev_bar=bars_15m[-2] if len(bars_15m) >= 2 else None,
+            prev_close=bars_15m[-2].close if len(bars_15m) >= 2 else bar.close,
+            prev_open=bars_15m[-2].open if len(bars_15m) >= 2 else bar.open,
+            prev_cpr_top=max(daily_levels.cpr.tc, daily_levels.cpr.bc),
+            prev_cpr_bottom=min(daily_levels.cpr.tc, daily_levels.cpr.bc),
+            bull_regular_div=b_reg_div,
+            bear_regular_div=s_reg_div,
+            bull_hidden_div=b_hid_div,
+            bear_hidden_div=s_hid_div,
             plus=plus_val,
             minus=minus_val,
             m0=m0_val,

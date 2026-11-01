@@ -20,7 +20,8 @@ from .pivots import (
     compute_atr, compute_pivot_trend_emas, compute_value_area_from_bars,
     compute_opening_bias, compute_dmi, compute_m0_m10,
     compute_institutional_bias_c1, compute_day_type_mx,
-    detect_virgin_cpr_zones, detect_virgin_cpr_touches
+    detect_virgin_cpr_zones, detect_virgin_cpr_touches,
+    compute_rsi, compute_divergences
 )
 from .day_types import DayTypeClassifier
 from .strategies import StrategyEngine, StrategySignal, MarketContext
@@ -247,6 +248,8 @@ class NSE100Scanner:
         opening_bias = compute_opening_bias(bars[0].open, daily['high'], daily['low'], va.vah, va.val)
         plus_di, minus_di = compute_dmi(bars)
         m0_series, m10_series = compute_m0_m10(bars)
+        rsi_series = compute_rsi(bars, period=14)
+        reg_bull, reg_bear, hidden_bull, hidden_bear = compute_divergences(bars, rsi_series=rsi_series, lookback=10)
 
         # 4. Classify Day Type using daily aggregated bar
         daily_bar = OHLC(
@@ -322,6 +325,14 @@ class NSE100Scanner:
                 dbc=levels.bc
             )
 
+            # Prior bar divergence signals (Pine Script ext_bullishDiv[1] == 1)
+            b_reg_div = reg_bull[i - 1] if i > 0 else False
+            s_reg_div = reg_bear[i - 1] if i > 0 else False
+            b_hid_div = hidden_bull[i - 1] if i > 0 else False
+            s_hid_div = hidden_bear[i - 1] if i > 0 else False
+            cpr_top_prev = max(levels.tc, levels.bc)
+            cpr_bot_prev = min(levels.tc, levels.bc)
+
             ctx = MarketContext(
                 bar=cur_bar,
                 bar_index=i,
@@ -346,6 +357,14 @@ class NSE100Scanner:
                 session_highest=max(b.high for b in bars[:i + 1]),
                 session_lowest=min(b.low for b in bars[:i + 1]),
                 prev_bar=prev_b,
+                prev_close=prev_b.close,
+                prev_open=prev_b.open,
+                prev_cpr_top=cpr_top_prev,
+                prev_cpr_bottom=cpr_bot_prev,
+                bull_regular_div=b_reg_div,
+                bear_regular_div=s_reg_div,
+                bull_hidden_div=b_hid_div,
+                bear_hidden_div=s_hid_div,
                 plus=plus_di[i] if i < len(plus_di) else 0.0,
                 minus=minus_di[i] if i < len(minus_di) else 0.0,
                 m0=m0_series[i] if i < len(m0_series) else 0.0,
