@@ -92,3 +92,27 @@ Over the preceding 2 days, zero confluence signals were recorded. Comprehensive 
 - `TLCS_Applications_v2.0_20261101.zip`
 - `TLCS_v2.0_Complete_Backup_20261101.zip`
 - `Backups/TLCS_v2.0_Complete_Backup_20261101/`
+
+
+---
+
+## 6. Live Divergence Signals HUB Tab Filter & Special Mention Badges (v2.0 Extension)
+
+### 6.1 Requirements
+- User mandate to display all live Regular and Hidden Divergence signals on the **Live Signals** section of the **HUB tab** on the mobile application with special mention as **`Live Divergence Signal`**.
+- Provide a dedicated tab filter button for Live Signals to isolate divergence opportunities with a single tap.
+
+### 6.2 Architectural Implementation
+1. **Live Signals Switcher Bar (`🚨 LIVE SIGNALS`)**:
+   - Added `hubLiveTab` state (`'ALL' | 'DIVERGENCE'`).
+   - Integrated tab filter switcher with `[🌐 ALL SIGNALS]` and `[⚡ LIVE DIVERGENCE SIGNALS]` (with active count badge e.g. `[2]`, glowing purple/emerald accents).
+   - In `DIVERGENCE` mode, filters parameter matrix to strictly display `Regular Divergence` and `Hidden Divergence` categories.
+   - Graceful fallback when 0 active divergence signals: informative scan status for MCX/NYMEX (NG, CL, GC, SI) + GIFT NIFTY.
+2. **Category Matrix Special Mention Badges**:
+   - In both `DIVERGENCE` and `HIDDEN_DIVERGENCE` rows, the label cell displays a high-contrast `⚡ LIVE DIVERGENCE SIGNAL` badge.
+   - Constituent symbols are highlighted with purple glowing ring accents and a mini `DIV` tag.
+3. **Trade Filters Pill Bar (`TRADE FILTERS`)**:
+   - Added `[⚡ LIVE DIVERGENCES]` pill to `dashboardFilterOptions` on the HUB tab, computing `liveDivCountDash`.
+   - In `activeAlertLogs` useMemo, added `dashboardFilter === 'LIVE_DIVERGENCE'` filtering.
+4. **Trade Cards Feed Special Mention**:
+   - Added `⚡ LIVE DIVERGENCE SIGNAL (REGULAR)` / `⚡ LIVE DIVERGENCE SIGNAL (HIDDEN)` (or `🎯 DIVERGENCE SIGNAL` when closed) badge in the top badge strip of individual trade cards.
