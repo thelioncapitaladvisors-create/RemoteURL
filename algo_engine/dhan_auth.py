@@ -58,6 +58,34 @@ def generate_totp(secret: str = DHAN_TOTP_SECRET) -> str:
     return f"{code % 1000000:06d}"
 
 
+def verify_dhan_token(token: str) -> bool:
+    """Actively probe DhanHQ API with a candidate token to verify genuine authorization."""
+    if not token:
+        return False
+    try:
+        url = "https://api.dhan.co/v2/profile"
+        headers = {
+            "client-id": DHAN_CLIENT_ID,
+            "access-token": token,
+            "Content-Type": "application/json"
+        }
+        res = requests.get(url, headers=headers, timeout=5)
+        return res.status_code == 200
+    except Exception:
+        return False
+
+
+def invalidate_dhan_token():
+    """Invalidate current token across memory and Supabase caches."""
+    global _cached_token, _token_expires_at
+    _cached_token = ""
+    _token_expires_at = 0.0
+    try:
+        save_token_to_supabase("", 0.0)
+    except Exception:
+        pass
+
+
 _last_totp_attempt = 0.0
 _last_failed_renewal = 0.0
 
@@ -66,8 +94,8 @@ def fetch_fresh_token() -> str:
     """Call DhanHQ Auth Server to generate fresh 24-hour token via Client ID, PIN, and dynamic TOTP."""
     global _cached_token, _token_expires_at, _last_totp_attempt, _last_failed_renewal
     now = time.time()
-    if now - _last_failed_renewal < 600.0:
-        logger.warning(f"[DhanAuth] Renewal circuit breaker active ({int(600.0 - (now - _last_failed_renewal))}s remaining). Using cached token.")
+    if now - _last_failed_renewal < 150.0 and _cached_token and _token_expires_at > now:
+        logger.warning(f"[DhanAuth] Renewal circuit breaker active ({int(150.0 - (now - _last_failed_renewal))}s remaining). Using cached token.")
         return _cached_token
 
     if now - _last_totp_attempt < 125.0 and _cached_token and _token_expires_at > now:
@@ -111,11 +139,17 @@ def fetch_fresh_token() -> str:
                     }, f)
             except Exception:
                 pass
+
+            try:
+                save_token_to_supabase(_cached_token, _token_expires_at)
+            except Exception:
+                pass
+
             return _cached_token
         else:
             _last_failed_renewal = now
             err_msg = data.get("message", f"HTTP {res.status_code}")
-            logger.warning(f"[DhanAuth] Dhan auth returned error: {err_msg} - circuit breaker engaged for 10m. Using cached token.")
+            logger.warning(f"[DhanAuth] Dhan auth returned error: {err_msg} - circuit breaker engaged for 2.5m. Using cached token.")
             return _cached_token
     except Exception as e:
         _last_failed_renewal = now
@@ -149,7 +183,7 @@ def get_token_from_supabase() -> tuple[str, float] | None:
 
 
 def save_token_to_supabase(token: str, exp_sec: float):
-    """Save token to Supabase shared cache."""
+    """Save token to Supabase shared cache (both dhan_token and system_config)."""
     try:
         headers = {
             "apikey": SUPABASE_KEY,
@@ -164,6 +198,17 @@ def save_token_to_supabase(token: str, exp_sec: float):
             "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
         }
         requests.post(f"{SUPABASE_URL}/rest/v1/dhan_token", headers=headers, json=payload, timeout=4)
+
+        # Mirror to system_config
+        config_payload = {
+            "key": "dhan_access_token",
+            "value": {
+                "token": token,
+                "expires_at": int(exp_sec * 1000)
+            },
+            "updated_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        }
+        requests.post(f"{SUPABASE_URL}/rest/v1/system_config", headers=headers, json=config_payload, timeout=4)
     except Exception as e:
         logger.debug(f"[DhanAuth] Failed to save token to Supabase: {e}")
 
@@ -177,7 +222,7 @@ def get_valid_dhan_token(force_refresh: bool = False) -> str:
     if not force_refresh and _cached_token and (_token_expires_at - now > safety_buffer):
         return _cached_token
 
-    # 1. Check Supabase shared cache first
+    # 1. Check Supabase shared cache first (only if not force_refresh)
     if not force_refresh:
         sb_res = get_token_from_supabase()
         if sb_res:

@@ -1,14 +1,16 @@
-name: Supabase 24/7 Keep-Alive Sentinel
+name: Supabase 24/7 Keep-Alive & DhanHQ Autonomous Token Sentinel
 
 on:
   schedule:
     # Runs every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) every day
     - cron: '0 */6 * * *'
+    # Dedicated Pre-Market Token Renewal at 03:00 UTC (08:30 IST) Monday to Friday
+    - cron: '0 3 * * 1-5'
   workflow_dispatch:
 
 jobs:
   supabase-keep-alive:
-    name: Ping Supabase Database
+    name: Ping Supabase & DhanHQ Autonomous Token Sentinel
     runs-on: ubuntu-latest
     steps:
       - name: Ping Supabase REST API (Active Project dwepduvhzuhzeehbeaaz)
@@ -40,14 +42,28 @@ jobs:
             echo "⚠️ Unexpected response: ${HTTP_CODE}"
           fi
 
-      - name: Ping Netlify Keep-Alive & DhanHQ Autonomous Sentinel
+      - name: DhanHQ Autonomous Token Renewal & Health Verification
         run: |
-          echo "⏰ Pinging Netlify 24/7 Keep-Alive Sentinel & Option Chain Pre-warm..."
-          NETLIFY_RES=$(curl -s -w "\n%{http_code}" -X GET "https://thelioncapitalsolutions.com/.netlify/functions/cron-keep-alive")
-          NETLIFY_CODE=$(echo "$NETLIFY_RES" | tail -n1)
-          echo "Netlify Keep-Alive HTTP Status: ${NETLIFY_CODE}"
-          if [ "$NETLIFY_CODE" -ge 200 ] && [ "$NETLIFY_CODE" -lt 500 ]; then
-            echo "✅ Netlify Sentinel successfully invoked!"
+          echo "========================================================"
+          echo "⏰ Verifying & Auto-Renewing DhanHQ Access Token..."
+          echo "========================================================"
+          
+          TOKEN_RES=$(curl -s -w "\n%{http_code}" -X GET "https://thelioncapitalsolutions.com/api/cron/renew-dhan-token")
+          TOKEN_CODE=$(echo "$TOKEN_RES" | tail -n1)
+          TOKEN_BODY=$(echo "$TOKEN_RES" | sed '$d')
+          
+          echo "HTTP Status Code: ${TOKEN_CODE}"
+          echo "Response: ${TOKEN_BODY}"
+          
+          if [ "$TOKEN_CODE" -eq 200 ]; then
+            echo "✅ DhanHQ token verified active and healthy!"
           else
-            echo "⚠️ Netlify Sentinel returned ${NETLIFY_CODE}"
+            echo "⚠️ DhanHQ token renewal endpoint returned ${TOKEN_CODE}"
           fi
+
+      - name: Pre-warm VCPR & Option Chain Snapshots
+        run: |
+          echo "⏰ Pre-warming Autonomous VCPR Screener & Market Feeds..."
+          VCPR_RES=$(curl -s -w "\n%{http_code}" -X GET "https://thelioncapitalsolutions.com/api/vcpr")
+          VCPR_CODE=$(echo "$VCPR_RES" | tail -n1)
+          echo "VCPR Screener HTTP Status: ${VCPR_CODE}"
