@@ -143,7 +143,7 @@ class TelegramDispatcher:
             f"<b>Target 1:</b> <code>{tp1}</code>"
             f"{tp2_str}"
             f"{bias_str}{day_str}\n"
-            f"<b>Firezone:</b> <code>{fire_zone}</code> (Neutral / Outside Green & Red)\n\n"
+            f"<b>Firezone:</b> <code>{fire_zone}</code>\n\n"
             f"<i>High-probability confluence alert generated inside Firezone.</i>"
         )
 

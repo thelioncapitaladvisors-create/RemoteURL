@@ -2582,7 +2582,8 @@ sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
     string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
     string isConfStr    = is_conf ? "true" : "false"
-    bool isInFireZone   = not (Greenzone or Redzone)
+    bool isLongTrade    = str.contains(str.upper(trade.tradeDirection), 'LONG')
+    bool isInFireZone   = isLongTrade ? not Redzone : not Greenzone
     string sigFireZone  = isInFireZone ? "FIREZONE" : "ZONE"
     
     // AST OPTIMIZATION: Concatenate outer braces to avoid Pine Script str.format escape bugs!
@@ -3362,14 +3363,15 @@ Redzcol   = ((minus > plus) and (fShortEMA < fMedEMA) and (fPivotPDEMAF < fPivot
 Greenzcol = ((plus > minus) and (fShortEMA > fMedEMA) and (fPivotPDEMAF > fPivotPDEMAS))
 Anysignal = JustMissileBuy or JustMissileSell or JustScalpBuy or JustScalpSell or DivergenceBuy or DivergenceSell or HiddenDivBuy or HiddenDivSell or LightningBuy or LightningSell or ExtremeReversalBuy or ExtremeReversalSell or BounceUp or BounceDown
 
-Fire_Alert = Anysignal and not (Greenzone or Redzone)
-
 bool isFireLong = JustMissileBuy or JustScalpBuy or LightningBuy or DivergenceBuy or HiddenDivBuy or ExtremeReversalBuy or BounceUp
+bool isInFireZone = isFireLong ? not Redzone : not Greenzone
+
+Fire_Alert = Anysignal and isInFireZone
 
 plotshape(Fire_Alert, title = 'Fire Alert Confluence', style = shape.circle, location = location.top, color = isFireLong ? color.green : color.red, size = size.tiny)
 
 string fireActiveSignal = JustMissileBuy ? 'LONG MISSILE' : JustMissileSell ? 'SHORT MISSILE' : JustScalpBuy ? 'LONG SCALP' : JustScalpSell ? 'SHORT SCALP' : LightningBuy ? 'LONG LIGHTNING' : LightningSell ? 'SHORT LIGHTNING' : DivergenceBuy ? 'LONG DIVERGENCE' : DivergenceSell ? 'SHORT DIVERGENCE' : HiddenDivBuy ? 'LONG HIDDEN DIVERGENCE' : HiddenDivSell ? 'SHORT HIDDEN DIVERGENCE' : ExtremeReversalBuy ? 'LONG EXTREME REVERSAL' : ExtremeReversalSell ? 'SHORT EXTREME REVERSAL' : BounceUp ? 'LONG BOUNCE' : BounceDown ? 'SHORT BOUNCE' : 'SIGNAL'
-string fireZone = not (Greenzone or Redzone) ? 'FIREZONE' : 'ZONE'
+string fireZone = isInFireZone ? 'FIREZONE' : 'ZONE'
 
 if Fire_Alert and enable_alerts
     string _firePay = '{' + str.format(

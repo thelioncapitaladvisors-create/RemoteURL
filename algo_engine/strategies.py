@@ -66,6 +66,14 @@ class StrategySignal:
     def is_fire_alert(self) -> bool:
         return self.fire_alert
 
+    @property
+    def is_long(self) -> bool:
+        return self.direction.upper() == "LONG"
+
+    @property
+    def is_short(self) -> bool:
+        return self.direction.upper() == "SHORT"
+
 
 @dataclass
 class StrategyConfig:
@@ -599,7 +607,8 @@ class StrategyEngine:
             extreme_rev_buy or extreme_rev_sell or
             bounce_up or bounce_down
         )
-        is_in_fire_zone = (not greenzone) and (not redzone)
+        # Directional firezone baseline: either not greenzone or not redzone
+        is_in_fire_zone = (not greenzone) or (not redzone)
         fire_zone = "FIREZONE" if is_in_fire_zone else "ZONE"
         fire_alert = any_signal and is_in_fire_zone
 
@@ -671,7 +680,12 @@ class StrategyEngine:
                     is_confluence = True
                     confluence_tag = "LIGHTNING_TRIPLE"
 
-            sig_fire_alert = fire_alert if name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR") else False
+            # Directional Firezone Gate (either not greenzone or not redzone based on direction):
+            # Long signals qualify if not redzone (Greenzone or Neutral)
+            # Short signals qualify if not greenzone (Redzone or Neutral)
+            sig_in_fire_zone = (not redzone) if is_long else (not greenzone)
+            sig_fire_zone = "FIREZONE" if sig_in_fire_zone else "ZONE"
+            sig_fire_alert = (any_signal and sig_in_fire_zone) if name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR") else False
 
             signal = self._build_signal(
                 name=name,
@@ -686,7 +700,7 @@ class StrategyEngine:
                 is_confluence=is_confluence,
                 confluence_tag=confluence_tag,
                 fire_alert=sig_fire_alert,
-                fire_zone=fire_zone,
+                fire_zone=sig_fire_zone,
             )
             signals.append(signal)
 

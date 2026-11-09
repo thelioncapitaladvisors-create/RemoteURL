@@ -1588,8 +1588,8 @@ class TestVirginCPR(unittest.TestCase):
         self.assertTrue(missile_sigs[0].is_confluence, "Missile signal must have is_confluence=True within divergence window")
         self.assertEqual(missile_sigs[0].confluence_tag, "MISSILE_DIV", "Confluence tag must be MISSILE_DIV")
 
-    def test_fire_alert_greenzone_suppressed(self):
-        """Verify Fire_Alert is False when in GREENZONE (since condition is NOT in green/red)."""
+    def test_fire_alert_long_in_greenzone_triggers(self):
+        """Verify LONG Fire_Alert is True when in GREENZONE (since Long requires NOT in Redzone)."""
         engine = StrategyEngine()
         b = OHLC(open=100.0, high=105.0, low=98.0, close=104.0)
         # Greenzone: plus > minus, short_ema > med_ema, pivot_trend_fast > pivot_trend_slow
@@ -1607,11 +1607,12 @@ class TestVirginCPR(unittest.TestCase):
         sigs = engine.evaluate(ctx)
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
-            self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in GREENZONE")
-            self.assertEqual(s.fire_zone, "ZONE")
+            if s.is_long and s.name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR"):
+                self.assertTrue(s.fire_alert, f"Long Signal {s.name} must have fire_alert=True in GREENZONE (not redzone)")
+                self.assertEqual(s.fire_zone, "FIREZONE")
 
-    def test_fire_alert_redzone_suppressed(self):
-        """Verify Fire_Alert is False when in REDZONE (since condition is NOT in green/red)."""
+    def test_fire_alert_short_in_redzone_triggers(self):
+        """Verify SHORT Fire_Alert is True when in REDZONE (since Short requires NOT in Greenzone)."""
         engine = StrategyEngine()
         b = OHLC(open=100.0, high=101.0, low=94.0, close=95.0)
         # Redzone: minus > plus, short_ema < med_ema, pivot_trend_fast < pivot_trend_slow
@@ -1629,8 +1630,9 @@ class TestVirginCPR(unittest.TestCase):
         sigs = engine.evaluate(ctx)
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
-            self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in REDZONE")
-            self.assertEqual(s.fire_zone, "ZONE")
+            if not s.is_long and s.name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR"):
+                self.assertTrue(s.fire_alert, f"Short Signal {s.name} must have fire_alert=True in REDZONE (not greenzone)")
+                self.assertEqual(s.fire_zone, "FIREZONE")
 
     def test_fire_alert_neutral_zone_triggered(self):
         """Verify Fire_Alert triggers when Anysignal fires in NEUTRAL zone (both greenzone and redzone false)."""
@@ -1657,16 +1659,19 @@ class TestVirginCPR(unittest.TestCase):
                 self.assertEqual(s.fire_zone, "FIREZONE")
 
     def test_fire_zone_logic(self):
-        """Verify fire_zone requires both greenzone and redzone to be false at the same time."""
-        eval_fire_zone = lambda gz, rz: "FIREZONE" if (not gz and not rz) else "ZONE"
-        # 1. Both false -> Valid FIREZONE
-        self.assertEqual(eval_fire_zone(False, False), "FIREZONE")
-        # 2. Greenzone true -> ZONE (not valid)
-        self.assertEqual(eval_fire_zone(True, False), "ZONE")
-        # 3. Redzone true -> ZONE (not valid)
-        self.assertEqual(eval_fire_zone(False, True), "ZONE")
-        # 4. Both true -> ZONE (not valid)
-        self.assertEqual(eval_fire_zone(True, True), "ZONE")
+        """Verify fire_zone requires either not greenzone (for short) or not redzone (for long)."""
+        eval_fire_zone = lambda is_long, gz, rz: "FIREZONE" if (is_long and not rz) or (not is_long and not gz) else "ZONE"
+        # 1. Long in Greenzone (not Redzone) -> Valid FIREZONE
+        self.assertEqual(eval_fire_zone(True, True, False), "FIREZONE")
+        # 2. Long in Redzone -> ZONE (suppressed)
+        self.assertEqual(eval_fire_zone(True, False, True), "ZONE")
+        # 3. Short in Redzone (not Greenzone) -> Valid FIREZONE
+        self.assertEqual(eval_fire_zone(False, False, True), "FIREZONE")
+        # 4. Short in Greenzone -> ZONE (suppressed)
+        self.assertEqual(eval_fire_zone(False, True, False), "ZONE")
+        # 5. Neutral (both false) -> Both valid FIREZONE
+        self.assertEqual(eval_fire_zone(True, False, False), "FIREZONE")
+        self.assertEqual(eval_fire_zone(False, False, False), "FIREZONE")
 
     def test_shadow_pipeline_records_fire_zone_metadata(self):
         """Verify shadow pipeline records canonical signals as usual with accurate fire_zone metadata."""
