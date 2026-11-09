@@ -1588,6 +1588,84 @@ class TestVirginCPR(unittest.TestCase):
         self.assertTrue(missile_sigs[0].is_confluence, "Missile signal must have is_confluence=True within divergence window")
         self.assertEqual(missile_sigs[0].confluence_tag, "MISSILE_DIV", "Confluence tag must be MISSILE_DIV")
 
+    def test_fire_alert_greenzone_confluence(self):
+        """Verify Fire_Alert triggers when Anysignal coincides with GREENZONE."""
+        engine = StrategyEngine()
+        b = OHLC(open=100.0, high=105.0, low=98.0, close=104.0)
+        # Greenzone: plus > minus, short_ema > med_ema, pivot_trend_fast > pivot_trend_slow
+        ctx = MarketContext(
+            bar=b, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            short_ema=103.0, med_ema=99.0,
+            pivot_trend_fast=104.0, pivot_trend_slow=100.0,
+            plus=30.0, minus=10.0, m0=12.0, m10=4.0,
+            extreme_long_signal=True,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=95.0, atr=2.0
+        )
+        sigs = engine.evaluate(ctx)
+        self.assertGreater(len(sigs), 0, "Signal should trigger")
+        for s in sigs:
+            if s.name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR"):
+                self.assertTrue(s.fire_alert, f"Signal {s.name} must have fire_alert=True in GREENZONE")
+                self.assertTrue(s.is_fire_alert, f"Signal {s.name} must have is_fire_alert=True in GREENZONE")
+                self.assertEqual(s.fire_zone, "GREENZONE")
+
+    def test_fire_alert_redzone_confluence(self):
+        """Verify Fire_Alert triggers when Anysignal coincides with REDZONE."""
+        engine = StrategyEngine()
+        b = OHLC(open=100.0, high=101.0, low=94.0, close=95.0)
+        # Redzone: minus > plus, short_ema < med_ema, pivot_trend_fast < pivot_trend_slow
+        ctx = MarketContext(
+            bar=b, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            short_ema=97.0, med_ema=101.0,
+            pivot_trend_fast=96.0, pivot_trend_slow=100.0,
+            plus=10.0, minus=30.0, m0=4.0, m10=12.0,
+            extreme_short_signal=True,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=94.0, atr=2.0
+        )
+        sigs = engine.evaluate(ctx)
+        self.assertGreater(len(sigs), 0, "Signal should trigger")
+        for s in sigs:
+            if s.name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR"):
+                self.assertTrue(s.fire_alert, f"Signal {s.name} must have fire_alert=True in REDZONE")
+                self.assertEqual(s.fire_zone, "REDZONE")
+
+    def test_fire_alert_neutral_zone(self):
+        """Verify Fire_Alert is False when in neutral zone (mixed indicators)."""
+        engine = StrategyEngine()
+        b = OHLC(open=100.0, high=105.0, low=98.0, close=104.0)
+        # Neutral zone: plus > minus, but short_ema < med_ema
+        ctx = MarketContext(
+            bar=b, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            short_ema=98.0, med_ema=100.0,
+            pivot_trend_fast=102.0, pivot_trend_slow=100.0,
+            plus=30.0, minus=10.0, m0=12.0, m10=4.0,
+            extreme_long_signal=True,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=95.0, atr=2.0
+        )
+        sigs = engine.evaluate(ctx)
+        self.assertGreater(len(sigs), 0, "Signal should trigger")
+        for s in sigs:
+            self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in NEUTRAL zone")
+            self.assertEqual(s.fire_zone, "NEUTRAL")
+
+    def test_canonical_triggers_contain_bounce(self):
+        """Verify CANONICAL_EXECUTION_TRIGGERS includes LONG BOUNCE and SHORT BOUNCE."""
+        from algo_engine.shadow_pipeline import CANONICAL_EXECUTION_TRIGGERS as SP_TRIGGERS
+        from algo_engine.nse100_scanner import CANONICAL_EXECUTION_TRIGGERS as SC_TRIGGERS
+        self.assertIn("LONG BOUNCE", SP_TRIGGERS)
+        self.assertIn("SHORT BOUNCE", SP_TRIGGERS)
+        self.assertIn("LONG BOUNCE", SC_TRIGGERS)
+        self.assertIn("SHORT BOUNCE", SC_TRIGGERS)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

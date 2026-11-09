@@ -22,7 +22,7 @@ from .feeds import normalize_symbol, get_market_category
 
 logger = logging.getLogger(__name__)
 
-# 14 Canonical Strategy Triggers (Zero Speculation STP 2.0 Execution Rule)
+# 16 Canonical Strategy Triggers (Zero Speculation STP 2.0 Execution Rule)
 CANONICAL_EXECUTION_TRIGGERS = {
     'LONG MISSILE', 'SHORT MISSILE',
     'LONG SCALP', 'SHORT SCALP',
@@ -30,6 +30,7 @@ CANONICAL_EXECUTION_TRIGGERS = {
     'LONG DIVERGENCE', 'SHORT DIVERGENCE',
     'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE',
     'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL',
+    'LONG BOUNCE', 'SHORT BOUNCE',
     'LONG VIRGIN CPR', 'SHORT VIRGIN CPR'
 }
 
@@ -150,6 +151,10 @@ class ShadowPipeline:
                 "zone": signal.zone,
                 "opening_bias": signal.opening_bias,
                 "day_type": signal.day_type,
+                "is_confluence": signal.is_confluence,
+                "confluence_type": signal.confluence_tag,
+                "fire_alert": signal.fire_alert,
+                "fire_zone": signal.fire_zone,
                 "engine_version": "4.0.0",
             }
         }
@@ -212,6 +217,8 @@ class ShadowPipeline:
                 "entry_date": entry_date_str,
                 "entryDate": entry_datetime_str,
                 "entry_time": sig.get("created_at", now_iso),
+                "fire_alert": sig.get("fire_alert", False),
+                "fire_zone": sig.get("fire_zone", ""),
                 **(sig.get("metadata") or {}),
                 "engine_version": "4.0.0"
             }

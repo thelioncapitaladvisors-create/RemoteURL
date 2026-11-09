@@ -59,6 +59,12 @@ class StrategySignal:
     day_type: str = ""       # mX: Market type / day type string
     is_confluence: bool = False   # VectorBT Validated Confluence (Trend + Structural Divergence)
     confluence_tag: str = ""      # e.g., 'MISSILE_DIV', 'SCALP_DIV', 'LIGHTNING_TRIPLE'
+    fire_alert: bool = False      # Confluence: AnySignal and (Greenzone or Redzone)
+    fire_zone: str = ""           # "GREENZONE", "REDZONE", or "NEUTRAL"
+
+    @property
+    def is_fire_alert(self) -> bool:
+        return self.fire_alert
 
 
 @dataclass
@@ -573,6 +579,30 @@ class StrategyEngine:
         )
         vcpr_sell = (matching_sell_z is not None) and short_allowed and day_allowed
 
+        # 8. Bounce (PivotBoss STP 2.0, lines 3030-3040 / 3273)
+        long_bounce = bounce_up and not lightning_buy and long_allowed
+        short_bounce = bounce_down and not lightning_sell and short_allowed
+
+        # ═══════════════════════════════════════════════════════
+        # FIRE_ALERT CONFLUENCE (Pine Script lines 3360-3388)
+        # Redzcol = ((minus > plus) and (fShortEMA < fMedEMA) and (fPivotPDEMAF < fPivotPDEMAS))
+        # Greenzcol = ((plus > minus) and (fShortEMA > fMedEMA) and (fPivotPDEMAF > fPivotPDEMAS))
+        # Anysignal = JustMissileBuy or JustMissileSell or JustScalpBuy or JustScalpSell or DivergenceBuy or DivergenceSell or HiddenDivBuy or HiddenDivSell or LightningBuy or LightningSell or ExtremeReversalBuy or ExtremeReversalSell or BounceUp or BounceDown
+        # Fire_Alert = Anysignal and (Greenzone or Redzone)
+        # ═══════════════════════════════════════════════════════
+        any_signal = (
+            just_missile_buy or just_missile_sell or
+            just_scalp_buy or just_scalp_sell or
+            lightning_buy or lightning_sell or
+            divergence_buy or divergence_sell or
+            hidden_div_buy or hidden_div_sell or
+            extreme_rev_buy or extreme_rev_sell or
+            bounce_up or bounce_down
+        )
+        is_in_fire_zone = greenzone or redzone
+        fire_alert = any_signal and is_in_fire_zone
+        fire_zone = "GREENZONE" if greenzone else ("REDZONE" if redzone else "NEUTRAL")
+
         # ═══════════════════════════════════════════════════════
         # COMPUTE ENTRY / SL / TP LEVELS (lines 2865-2893)
         # ═══════════════════════════════════════════════════════
@@ -594,6 +624,8 @@ class StrategyEngine:
             (hidden_div_sell,   "SHORT HIDDEN DIVERGENCE"),
             (extreme_rev_buy,   "LONG EXTREME REVERSAL"),
             (extreme_rev_sell,  "SHORT EXTREME REVERSAL"),
+            (long_bounce,       "LONG BOUNCE"),
+            (short_bounce,      "SHORT BOUNCE"),
             (vcpr_buy,          "LONG VIRGIN CPR"),
             (vcpr_sell,         "SHORT VIRGIN CPR"),
         ]
@@ -641,6 +673,8 @@ class StrategyEngine:
                     is_confluence = True
                     confluence_tag = "LIGHTNING_TRIPLE"
 
+            sig_fire_alert = fire_alert if name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR") else False
+
             signal = self._build_signal(
                 name=name,
                 is_long=is_long,
@@ -653,6 +687,8 @@ class StrategyEngine:
                 day_type=ctx.day_type_label,
                 is_confluence=is_confluence,
                 confluence_tag=confluence_tag,
+                fire_alert=sig_fire_alert,
+                fire_zone=fire_zone,
             )
             signals.append(signal)
 
@@ -662,7 +698,9 @@ class StrategyEngine:
                       atr_val: float, bar_index: int, timestamp: Optional[str],
                       zone: str, opening_bias: str, day_type: str,
                       is_confluence: bool = False,
-                      confluence_tag: str = "") -> StrategySignal:
+                      confluence_tag: str = "",
+                      fire_alert: bool = False,
+                      fire_zone: str = "") -> StrategySignal:
         """
         Build a StrategySignal with computed SL/TP levels.
         
@@ -702,6 +740,8 @@ class StrategyEngine:
             day_type=day_type,
             is_confluence=is_confluence,
             confluence_tag=confluence_tag,
+            fire_alert=fire_alert,
+            fire_zone=fire_zone,
         )
 
     def _compute_zone(self, bar: OHLC, ctx: MarketContext) -> str:

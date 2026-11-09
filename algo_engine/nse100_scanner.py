@@ -39,7 +39,7 @@ MCX_COMMODITIES: List[str] = [
     'CRUDEOILM', 'GOLDM', 'SILVERM', 'NATURALGASM', 'ZINCM', 'ALUMINI'
 ]
 
-# 14 Canonical Strategy Triggers (Zero Speculation STP 2.0 Execution Rule)
+# 16 Canonical Strategy Triggers (Zero Speculation STP 2.0 Execution Rule)
 CANONICAL_EXECUTION_TRIGGERS = {
     'LONG MISSILE', 'SHORT MISSILE',
     'LONG SCALP', 'SHORT SCALP',
@@ -47,6 +47,7 @@ CANONICAL_EXECUTION_TRIGGERS = {
     'LONG DIVERGENCE', 'SHORT DIVERGENCE',
     'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE',
     'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL',
+    'LONG BOUNCE', 'SHORT BOUNCE',
     'LONG VIRGIN CPR', 'SHORT VIRGIN CPR'
 }
 
@@ -425,6 +426,8 @@ class NSE100Scanner:
                     'tp4': round(float(sig.tp4), 2),
                     'status': 'ACTIVE',
                     'source': 'blackbox_dhan',
+                    'fire_alert': sig.fire_alert,
+                    'fire_zone': sig.fire_zone,
                     'created_at': datetime.now(timezone.utc).isoformat(),
                     'metadata': {
                         'timeframe': '15m',
@@ -434,6 +437,8 @@ class NSE100Scanner:
                         'source_feed': 'DhanHQ',
                         'is_confluence': sig.is_confluence,
                         'confluence_type': sig.confluence_tag,
+                        'fire_alert': sig.fire_alert,
+                        'fire_zone': sig.fire_zone,
                         'prev_high': round(float(daily['high']), 2),
                         'prev_low': round(float(daily['low']), 2),
                         'prev_range': round(float(max(daily['high'] - daily['low'], 0.01)), 2),

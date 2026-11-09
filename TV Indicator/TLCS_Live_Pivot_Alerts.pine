@@ -3260,6 +3260,9 @@ var array<TradeVisuals> hiddenDivVisualsArr  = array.new<TradeVisuals>()
 var array<TradeLogic>   extremeRevSessions   = array.new<TradeLogic>()
 var array<TradeVisuals> extremeRevVisualsArr = array.new<TradeVisuals>()
 
+var array<TradeLogic>   bounceSessions       = array.new<TradeLogic>()
+var array<TradeVisuals> bounceVisualsArr     = array.new<TradeVisuals>()
+
 // ── Initialize & Push Trades for All Decoupled Signal Categories ───
 initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message, JustMissileBuy ? hasBullDivWindow : hasBearDivWindow, 'MISSILE_DIV')
 initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message, JustScalpBuy ? hasBullDivWindow : hasBearDivWindow, 'SCALP_DIV')
@@ -3267,6 +3270,8 @@ initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 
 initializeAndPushTrade(settings, DivergenceBuy, DivergenceSell, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, false, 'REGULAR_DIV')
 initializeAndPushTrade(settings, HiddenDivBuy, HiddenDivSell, 'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE', hiddenDivSessions, hiddenDivVisualsArr, z1, dX, mX, d1_message, false, 'HIDDEN_DIV')
 initializeAndPushTrade(settings, ExtremeReversalBuy, ExtremeReversalSell, 'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL', extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message, false, 'EXTREME_REVERSAL')
+initializeAndPushTrade(settings, BounceUp and not LightningBuy, BounceDown and not LightningSell, 'LONG BOUNCE', 'SHORT BOUNCE', bounceSessions, bounceVisualsArr, z1, dX, mX, d1_message, false, 'BOUNCE')
+
 
 
 // ====================================================================
@@ -3317,6 +3322,7 @@ processTradeArray(settings, currentSessions,    currentVisualsArr,    z1, dX, mX
 processTradeArray(settings, divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, hiddenDivSessions,  hiddenDivVisualsArr,  z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
+processTradeArray(settings, bounceSessions,     bounceVisualsArr,     z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 
 // ====================================================================
 // 9. ON-CHART PLOTTINGS & VISUAL MARKERS
@@ -3351,6 +3357,36 @@ plotshape(JustScalpSell and dayAllowed and shortAllowed, title = "Short Scalp", 
 // 🏹 7. BOUNCE PLOTS (Call & Put Arrows)
 plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup,   location = location.belowbar, color = color.green, size = size.large)
 plotshape(BounceDown and not LightningSell, title = 'Long Put',   style = shape.arrowdown, location = location.abovebar, color = color.red,   size = size.large)
+
+// ====================================================================
+// 10. FIRE_ALERT CONFLUENCE & DEDICATED WEBHOOK DISPATCHER
+// ====================================================================
+Redzcol   = ((minus > plus) and (fShortEMA < fMedEMA) and (fPivotPDEMAF < fPivotPDEMAS))
+Greenzcol = ((plus > minus) and (fShortEMA > fMedEMA) and (fPivotPDEMAF > fPivotPDEMAS))
+Anysignal = JustMissileBuy or JustMissileSell or JustScalpBuy or JustScalpSell or DivergenceBuy or DivergenceSell or HiddenDivBuy or HiddenDivSell or LightningBuy or LightningSell or ExtremeReversalBuy or ExtremeReversalSell or BounceUp or BounceDown
+
+Fire_Alert = Anysignal and (Greenzone or Redzone)
+
+plotshape(Fire_Alert, title = 'Fire Alert Confluence', style = shape.circle, location = location.top, color = Greenzone ? color.green : color.red, size = size.tiny)
+
+string fireActiveSignal = JustMissileBuy ? 'LONG MISSILE' : JustMissileSell ? 'SHORT MISSILE' : JustScalpBuy ? 'LONG SCALP' : JustScalpSell ? 'SHORT SCALP' : LightningBuy ? 'LONG LIGHTNING' : LightningSell ? 'SHORT LIGHTNING' : DivergenceBuy ? 'LONG DIVERGENCE' : DivergenceSell ? 'SHORT DIVERGENCE' : HiddenDivBuy ? 'LONG HIDDEN DIVERGENCE' : HiddenDivSell ? 'SHORT HIDDEN DIVERGENCE' : ExtremeReversalBuy ? 'LONG EXTREME REVERSAL' : ExtremeReversalSell ? 'SHORT EXTREME REVERSAL' : BounceUp ? 'LONG BOUNCE' : BounceDown ? 'SHORT BOUNCE' : 'SIGNAL'
+string fireZone = Greenzone ? 'GREENZONE' : Redzone ? 'REDZONE' : 'NEUTRAL'
+bool isFireLong = str.contains(fireActiveSignal, 'LONG')
+
+if Fire_Alert and enable_alerts
+    string _firePay = '{' + str.format(
+         '"trigger":"FireAlert","secret":"{0}","symbol":"{1}","type":"{2}","status":"OPEN","entryPrice":"{3}","slLevel":"{4}","tpLevel":"{5}","zone":"{6}","opening_bias":"{7}","day_type":"{8}","dayType":"{7}","marketType":"{8}","tradeMessage":"{9}","entryTime":"{10}"',
+         webhook_secret, syminfo.ticker, fireActiveSignal, 
+         str.tostring(trendLine, format.mintick), 
+         str.tostring(isFireLong ? trendLine - slAtrMultInput * atrValue : trendLine + slAtrMultInput * atrValue, format.mintick), 
+         str.tostring(isFireLong ? trendLine + tp1AtrMultInput * atrValue : trendLine - tp1AtrMultInput * atrValue, format.mintick), 
+         fireZone, dX, mX, 'Fire_Alert: ' + fireActiveSignal + ' in ' + fireZone, 
+         str.tostring(time)
+         ) + '}'
+    alert(_firePay, alert.freq_once_per_bar_close)
+
+alertcondition(Fire_Alert, title = 'TLCS Fire Alert (Any Signal + Zone)', message = '{"trigger":"FireAlert","symbol":"{{ticker}}","price":"{{close}}"}')
+
 
 
 
