@@ -311,9 +311,12 @@ class EngineDaemon:
             # Create stateful trade in TradeManager
             trade = self.trade_manager.create_trade(sig, symbol=symbol)
 
-            # Sync limit placement to Supabase shadow table
+            # Sync limit placement to Supabase shadow table (Mobile Alert Firezone Gate)
             if self.shadow_pipeline:
-                self.shadow_pipeline.record_signal(sig, symbol=symbol)
+                if sig.fire_zone != "ZONE":
+                    self.shadow_pipeline.record_signal(sig, symbol=symbol)
+                else:
+                    logger.info(f"[EngineDaemon] Mobile alert suppressed for {sig.name} on {symbol}: Generated outside firezone (fire_zone=ZONE)")
 
     # ── Daemon Lifecycle Controls ────────────────────────────────
 

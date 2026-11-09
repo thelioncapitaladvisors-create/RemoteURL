@@ -123,6 +123,11 @@ class ShadowPipeline:
             logger.warning(f"[ShadowPipeline] Rejected non-canonical signal type: {signal.name} for {clean_sym}")
             return None
 
+        # Mobile Alert Firezone Gate: All canonical signals must generate within firezone to consider for alerts on mobile application
+        if signal.fire_zone == "ZONE":
+            logger.info(f"[ShadowPipeline] Suppressed mobile alert for {signal.name} on {clean_sym}: Generated outside firezone (fire_zone=ZONE)")
+            return None
+
         mkt = get_market_category(clean_sym)
         now_iso = datetime.now(timezone.utc).isoformat()
         trade_id = f"{clean_sym}_{int(time.time() * 1000)}_{signal.name}"
@@ -172,6 +177,11 @@ class ShadowPipeline:
         # Zero Speculation Mandate: reject any blueprint/sequence or non-canonical trigger
         if sig_type not in CANONICAL_EXECUTION_TRIGGERS or "BLUEPRINT" in sig_type.upper() or "SEQUENCE" in sig_type.upper():
             logger.warning(f"[ShadowPipeline] Rejected non-canonical signal type: {sig_type} for {sym}")
+            return
+
+        # Mobile Alert Firezone Gate: All canonical signals must generate within firezone to consider for alerts on mobile application
+        if sig.get("fire_zone") == "ZONE":
+            logger.info(f"[ShadowPipeline] Suppressed mobile alert for {sig_type} on {sym}: Generated outside firezone (fire_zone=ZONE)")
             return
 
         # Deduplication check: skip if identical symbol and type exists within last 30 mins

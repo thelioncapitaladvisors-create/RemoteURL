@@ -599,9 +599,9 @@ class StrategyEngine:
             extreme_rev_buy or extreme_rev_sell or
             bounce_up or bounce_down
         )
-        is_in_fire_zone = not (greenzone or redzone)
+        is_in_fire_zone = (not greenzone) and (not redzone)
+        fire_zone = "FIREZONE" if is_in_fire_zone else "ZONE"
         fire_alert = any_signal and is_in_fire_zone
-        fire_zone = "FIREZONE" if not greenzone else ("FIREZONE" if not redzone else "ZONE")
 
         # ═══════════════════════════════════════════════════════
         # COMPUTE ENTRY / SL / TP LEVELS (lines 2865-2893)

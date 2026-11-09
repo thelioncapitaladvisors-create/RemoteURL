@@ -1608,7 +1608,7 @@ class TestVirginCPR(unittest.TestCase):
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
             self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in GREENZONE")
-            self.assertEqual(s.fire_zone, "FIREZONE")
+            self.assertEqual(s.fire_zone, "ZONE")
 
     def test_fire_alert_redzone_suppressed(self):
         """Verify Fire_Alert is False when in REDZONE (since condition is NOT in green/red)."""
@@ -1630,10 +1630,10 @@ class TestVirginCPR(unittest.TestCase):
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
             self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in REDZONE")
-            self.assertEqual(s.fire_zone, "FIREZONE")
+            self.assertEqual(s.fire_zone, "ZONE")
 
     def test_fire_alert_neutral_zone_triggered(self):
-        """Verify Fire_Alert triggers when Anysignal fires in NEUTRAL zone (not in green/red)."""
+        """Verify Fire_Alert triggers when Anysignal fires in NEUTRAL zone (both greenzone and redzone false)."""
         engine = StrategyEngine()
         b = OHLC(open=100.0, high=105.0, low=98.0, close=104.0)
         # Neutral zone: plus > minus, but short_ema < med_ema
@@ -1656,17 +1656,34 @@ class TestVirginCPR(unittest.TestCase):
                 self.assertTrue(s.is_fire_alert, f"Signal {s.name} must have is_fire_alert=True in NEUTRAL zone")
                 self.assertEqual(s.fire_zone, "FIREZONE")
 
-    def test_fire_zone_ternary_logic(self):
-        """Verify fire_zone = not Greenzone ? 'FIREZONE' : not Redzone ? 'FIREZONE' : 'ZONE'."""
-        eval_fire_zone = lambda gz, rz: "FIREZONE" if not gz else ("FIREZONE" if not rz else "ZONE")
-        # 1. Not greenzone (gz=False, rz=False -> NEUTRAL)
+    def test_fire_zone_logic(self):
+        """Verify fire_zone requires both greenzone and redzone to be false at the same time."""
+        eval_fire_zone = lambda gz, rz: "FIREZONE" if (not gz and not rz) else "ZONE"
+        # 1. Both false -> Valid FIREZONE
         self.assertEqual(eval_fire_zone(False, False), "FIREZONE")
-        # 2. Not greenzone (gz=False, rz=True -> REDZONE)
-        self.assertEqual(eval_fire_zone(False, True), "FIREZONE")
-        # 3. Greenzone true, not redzone (gz=True, rz=False -> GREENZONE)
-        self.assertEqual(eval_fire_zone(True, False), "FIREZONE")
-        # 4. Both true (gz=True, rz=True)
+        # 2. Greenzone true -> ZONE (not valid)
+        self.assertEqual(eval_fire_zone(True, False), "ZONE")
+        # 3. Redzone true -> ZONE (not valid)
+        self.assertEqual(eval_fire_zone(False, True), "ZONE")
+        # 4. Both true -> ZONE (not valid)
         self.assertEqual(eval_fire_zone(True, True), "ZONE")
+
+    def test_shadow_pipeline_suppresses_outside_firezone(self):
+        """Verify shadow pipeline suppresses mobile alert registration when fire_zone is 'ZONE'."""
+        from algo_engine.shadow_pipeline import ShadowPipeline
+        pipeline = ShadowPipeline(disable_supabase=True)
+        sig_outside = StrategySignal(
+            name="LONG LIGHTNING",
+            direction="LONG",
+            entry_price=2850.0,
+            stop_loss=2835.0,
+            tp1=2880.0, tp2=2900.0, tp3=2925.0, tp4=2950.0,
+            bar_index=1,
+            fire_zone="ZONE",
+            fire_alert=False
+        )
+        trade_id = pipeline.record_signal(sig_outside, "RELIANCE")
+        self.assertIsNone(trade_id, "Signal with fire_zone='ZONE' must be suppressed from mobile alerts")
 
     def test_canonical_triggers_contain_canonical_14(self):
         """Verify CANONICAL_EXECUTION_TRIGGERS contains the canonical 14 triggers."""
