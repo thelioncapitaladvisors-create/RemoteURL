@@ -1668,11 +1668,11 @@ class TestVirginCPR(unittest.TestCase):
         # 4. Both true -> ZONE (not valid)
         self.assertEqual(eval_fire_zone(True, True), "ZONE")
 
-    def test_shadow_pipeline_suppresses_outside_firezone(self):
-        """Verify shadow pipeline suppresses mobile alert registration when fire_zone is 'ZONE'."""
+    def test_shadow_pipeline_records_fire_zone_metadata(self):
+        """Verify shadow pipeline records canonical signals as usual with accurate fire_zone metadata."""
         from algo_engine.shadow_pipeline import ShadowPipeline
         pipeline = ShadowPipeline(disable_supabase=True)
-        sig_outside = StrategySignal(
+        sig = StrategySignal(
             name="LONG LIGHTNING",
             direction="LONG",
             entry_price=2850.0,
@@ -1682,8 +1682,11 @@ class TestVirginCPR(unittest.TestCase):
             fire_zone="ZONE",
             fire_alert=False
         )
-        trade_id = pipeline.record_signal(sig_outside, "RELIANCE")
-        self.assertIsNone(trade_id, "Signal with fire_zone='ZONE' must be suppressed from mobile alerts")
+        trade_id = pipeline.record_signal(sig, "RELIANCE")
+        self.assertIsNotNone(trade_id, "Canonical signal must be recorded as usual")
+        records = pipeline.get_recent_signals(limit=1)
+        self.assertEqual(records[0]["metadata"]["fire_zone"], "ZONE")
+        self.assertFalse(records[0]["metadata"]["fire_alert"])
 
     def test_canonical_triggers_contain_canonical_14(self):
         """Verify CANONICAL_EXECUTION_TRIGGERS contains the canonical 14 triggers."""

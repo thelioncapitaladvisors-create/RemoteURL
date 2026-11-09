@@ -412,9 +412,6 @@ class NSE100Scanner:
             for sig in strat_sigs:
                 if sig.name not in CANONICAL_EXECUTION_TRIGGERS:
                     continue
-                # Mobile Alert Firezone Gate: All canonical signals must generate within firezone to consider for alerts on mobile application
-                if sig.fire_zone == "ZONE":
-                    continue
                 signals.append({
                     'symbol': clean,
                     'type': sig.name,
