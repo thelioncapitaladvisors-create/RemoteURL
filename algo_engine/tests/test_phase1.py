@@ -1683,10 +1683,41 @@ class TestVirginCPR(unittest.TestCase):
             fire_alert=False
         )
         trade_id = pipeline.record_signal(sig, "RELIANCE")
-        self.assertIsNotNone(trade_id, "Canonical signal must be recorded as usual")
+        self.assertIsNotNone(trade_id, "Canonical signal must be recorded as usual irrespective of firezone")
         records = pipeline.get_recent_signals(limit=1)
         self.assertEqual(records[0]["metadata"]["fire_zone"], "ZONE")
         self.assertFalse(records[0]["metadata"]["fire_alert"])
+
+    def test_mobile_alert_firezone_gate_suppresses_explicit_fire_alert_in_zone(self):
+        """Verify Mobile Alert Firezone Gate suppresses explicit FIRE_ALERT when generated outside firezone (fire_zone='ZONE')."""
+        from algo_engine.shadow_pipeline import ShadowPipeline
+        pipeline = ShadowPipeline(disable_supabase=True)
+        sig_fire_outside = StrategySignal(
+            name="FIRE_ALERT",
+            direction="LONG",
+            entry_price=2850.0,
+            stop_loss=2835.0,
+            tp1=2880.0, tp2=2900.0, tp3=2925.0, tp4=2950.0,
+            bar_index=1,
+            fire_zone="ZONE",
+            fire_alert=False
+        )
+        trade_id = pipeline.record_signal(sig_fire_outside, "RELIANCE")
+        self.assertIsNone(trade_id, "Explicit FIRE_ALERT with fire_zone='ZONE' must be suppressed by Mobile Alert Firezone Gate")
+
+        # But explicit FIRE_ALERT with fire_zone='FIREZONE' must be recorded
+        sig_fire_inside = StrategySignal(
+            name="FIRE_ALERT",
+            direction="LONG",
+            entry_price=2850.0,
+            stop_loss=2835.0,
+            tp1=2880.0, tp2=2900.0, tp3=2925.0, tp4=2950.0,
+            bar_index=1,
+            fire_zone="FIREZONE",
+            fire_alert=True
+        )
+        trade_id_valid = pipeline.record_signal(sig_fire_inside, "RELIANCE")
+        self.assertIsNotNone(trade_id_valid, "Explicit FIRE_ALERT with fire_zone='FIREZONE' must be recorded")
 
     def test_canonical_triggers_contain_canonical_14(self):
         """Verify CANONICAL_EXECUTION_TRIGGERS contains the canonical 14 triggers."""

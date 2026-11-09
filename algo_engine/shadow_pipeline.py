@@ -119,8 +119,15 @@ class ShadowPipeline:
             Generated trade_id
         """
         clean_sym = normalize_symbol(symbol)
-        if signal.name not in CANONICAL_EXECUTION_TRIGGERS:
+        if signal.name not in CANONICAL_EXECUTION_TRIGGERS and signal.name not in ("FIRE_ALERT", "FIREALERT"):
             logger.warning(f"[ShadowPipeline] Rejected non-canonical signal type: {signal.name} for {clean_sym}")
+            return None
+
+        # Mobile Alert Firezone Gate (Only for fire_alert signals):
+        # All canonical signals must generate within firezone to consider for fire_alerts on mobile application.
+        # Canonical alert signals generate as usual independently irrespective of firezone.
+        if signal.name in ("FIRE_ALERT", "FIREALERT") and signal.fire_zone == "ZONE":
+            logger.info(f"[ShadowPipeline] Suppressed mobile fire_alert for {clean_sym}: Generated outside firezone (fire_zone=ZONE)")
             return None
 
         mkt = get_market_category(clean_sym)
@@ -170,8 +177,15 @@ class ShadowPipeline:
         sig_type = sig.get("type", "ACTIVE")
 
         # Zero Speculation Mandate: reject any blueprint/sequence or non-canonical trigger
-        if sig_type not in CANONICAL_EXECUTION_TRIGGERS or "BLUEPRINT" in sig_type.upper() or "SEQUENCE" in sig_type.upper():
+        if (sig_type not in CANONICAL_EXECUTION_TRIGGERS and sig_type not in ("FIRE_ALERT", "FIREALERT")) or "BLUEPRINT" in sig_type.upper() or "SEQUENCE" in sig_type.upper():
             logger.warning(f"[ShadowPipeline] Rejected non-canonical signal type: {sig_type} for {sym}")
+            return
+
+        # Mobile Alert Firezone Gate (Only for fire_alert signals):
+        # All canonical signals must generate within firezone to consider for fire_alerts on mobile application.
+        # Canonical alert signals generate as usual independently irrespective of firezone.
+        if sig_type in ("FIRE_ALERT", "FIREALERT") and sig.get("fire_zone") == "ZONE":
+            logger.info(f"[ShadowPipeline] Suppressed mobile fire_alert for {sym}: Generated outside firezone (fire_zone=ZONE)")
             return
 
         # Deduplication check: skip if identical symbol and type exists within last 30 mins

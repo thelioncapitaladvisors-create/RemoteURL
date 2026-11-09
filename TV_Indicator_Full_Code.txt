@@ -3373,13 +3373,13 @@ string fireZone = not (Greenzone or Redzone) ? 'FIREZONE' : 'ZONE'
 
 if Fire_Alert and enable_alerts
     string _firePay = '{' + str.format(
-         '"trigger":"FireAlert","secret":"{0}","symbol":"{1}","type":"{2}","status":"OPEN","entryPrice":"{3}","slLevel":"{4}","tpLevel":"{5}","zone":"{6}","opening_bias":"{7}","day_type":"{8}","dayType":"{7}","marketType":"{8}","tradeMessage":"{9}","entryTime":"{10}"',
+         '"trigger":"FireAlert","secret":"{0}","symbol":"{1}","type":"{2}","status":"OPEN","entryPrice":"{3}","slLevel":"{4}","tpLevel":"{5}","zone":"{6}","opening_bias":"{7}","day_type":"{8}","dayType":"{7}","marketType":"{8}","tradeMessage":"{9}","entryTime":"{10}","fire_zone":"{11}"',
          webhook_secret, syminfo.ticker, fireActiveSignal, 
          str.tostring(trendLine, format.mintick), 
          str.tostring(isFireLong ? trendLine - slAtrMultInput * atrValue : trendLine + slAtrMultInput * atrValue, format.mintick), 
          str.tostring(isFireLong ? trendLine + tp1AtrMultInput * atrValue : trendLine - tp1AtrMultInput * atrValue, format.mintick), 
          fireZone, dX, mX, 'Fire_Alert: ' + fireActiveSignal + ' in ' + fireZone, 
-         str.tostring(time)
+         str.tostring(time), fireZone
          ) + '}'
     alert(_firePay, alert.freq_once_per_bar_close)
 
