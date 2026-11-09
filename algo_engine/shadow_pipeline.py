@@ -22,7 +22,7 @@ from .feeds import normalize_symbol, get_market_category
 
 logger = logging.getLogger(__name__)
 
-# 16 Canonical Strategy Triggers (Zero Speculation STP 2.0 Execution Rule)
+# 14 Canonical Strategy Triggers (Zero Speculation STP 2.0 Execution Rule)
 CANONICAL_EXECUTION_TRIGGERS = {
     'LONG MISSILE', 'SHORT MISSILE',
     'LONG SCALP', 'SHORT SCALP',
@@ -30,7 +30,6 @@ CANONICAL_EXECUTION_TRIGGERS = {
     'LONG DIVERGENCE', 'SHORT DIVERGENCE',
     'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE',
     'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL',
-    'LONG BOUNCE', 'SHORT BOUNCE',
     'LONG VIRGIN CPR', 'SHORT VIRGIN CPR'
 }
 

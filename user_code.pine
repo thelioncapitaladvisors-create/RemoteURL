@@ -8,7 +8,7 @@ indicator('TLCS PivotBoss Indicator', overlay = true, max_lines_count = 500, max
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
 enable_alerts = input.bool(false, 'Enable Automated Webhook Alerts')
-enable_confluence_filter = input.bool(false, 'Enable Divergence Confluence Filter (Institutional Mode)')
+enable_confluence_filter = input.bool(true, 'Enable Divergence Confluence Filter (Institutional Mode)')
 
 //======================
     
@@ -3260,9 +3260,6 @@ var array<TradeVisuals> hiddenDivVisualsArr  = array.new<TradeVisuals>()
 var array<TradeLogic>   extremeRevSessions   = array.new<TradeLogic>()
 var array<TradeVisuals> extremeRevVisualsArr = array.new<TradeVisuals>()
 
-var array<TradeLogic>   bounceSessions       = array.new<TradeLogic>()
-var array<TradeVisuals> bounceVisualsArr     = array.new<TradeVisuals>()
-
 // ── Initialize & Push Trades for All Decoupled Signal Categories ───
 initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message, JustMissileBuy ? hasBullDivWindow : hasBearDivWindow, 'MISSILE_DIV')
 initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message, JustScalpBuy ? hasBullDivWindow : hasBearDivWindow, 'SCALP_DIV')
@@ -3270,7 +3267,6 @@ initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 
 initializeAndPushTrade(settings, DivergenceBuy, DivergenceSell, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, false, 'REGULAR_DIV')
 initializeAndPushTrade(settings, HiddenDivBuy, HiddenDivSell, 'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE', hiddenDivSessions, hiddenDivVisualsArr, z1, dX, mX, d1_message, false, 'HIDDEN_DIV')
 initializeAndPushTrade(settings, ExtremeReversalBuy, ExtremeReversalSell, 'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL', extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message, false, 'EXTREME_REVERSAL')
-initializeAndPushTrade(settings, BounceUp and not LightningBuy, BounceDown and not LightningSell, 'LONG BOUNCE', 'SHORT BOUNCE', bounceSessions, bounceVisualsArr, z1, dX, mX, d1_message, false, 'BOUNCE')
 
 
 
@@ -3322,7 +3318,6 @@ processTradeArray(settings, currentSessions,    currentVisualsArr,    z1, dX, mX
 processTradeArray(settings, divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, hiddenDivSessions,  hiddenDivVisualsArr,  z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
-processTradeArray(settings, bounceSessions,     bounceVisualsArr,     z1, dX, mX, d1_message, triggerTrailingSL, rangeTrailingSL)
 
 // ====================================================================
 // 9. ON-CHART PLOTTINGS & VISUAL MARKERS

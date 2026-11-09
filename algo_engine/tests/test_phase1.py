@@ -1657,14 +1657,15 @@ class TestVirginCPR(unittest.TestCase):
             self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in NEUTRAL zone")
             self.assertEqual(s.fire_zone, "NEUTRAL")
 
-    def test_canonical_triggers_contain_bounce(self):
-        """Verify CANONICAL_EXECUTION_TRIGGERS includes LONG BOUNCE and SHORT BOUNCE."""
+    def test_canonical_triggers_contain_canonical_14(self):
+        """Verify CANONICAL_EXECUTION_TRIGGERS contains the canonical 14 triggers."""
         from algo_engine.shadow_pipeline import CANONICAL_EXECUTION_TRIGGERS as SP_TRIGGERS
         from algo_engine.nse100_scanner import CANONICAL_EXECUTION_TRIGGERS as SC_TRIGGERS
-        self.assertIn("LONG BOUNCE", SP_TRIGGERS)
-        self.assertIn("SHORT BOUNCE", SP_TRIGGERS)
-        self.assertIn("LONG BOUNCE", SC_TRIGGERS)
-        self.assertIn("SHORT BOUNCE", SC_TRIGGERS)
+        self.assertEqual(len(SP_TRIGGERS), 14)
+        self.assertEqual(len(SC_TRIGGERS), 14)
+        self.assertIn("LONG MISSILE", SP_TRIGGERS)
+        self.assertIn("SHORT MISSILE", SP_TRIGGERS)
+        self.assertIn("LONG VIRGIN CPR", SP_TRIGGERS)
 
 
 if __name__ == '__main__':

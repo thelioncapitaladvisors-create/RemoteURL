@@ -624,8 +624,6 @@ class StrategyEngine:
             (hidden_div_sell,   "SHORT HIDDEN DIVERGENCE"),
             (extreme_rev_buy,   "LONG EXTREME REVERSAL"),
             (extreme_rev_sell,  "SHORT EXTREME REVERSAL"),
-            (long_bounce,       "LONG BOUNCE"),
-            (short_bounce,      "SHORT BOUNCE"),
             (vcpr_buy,          "LONG VIRGIN CPR"),
             (vcpr_sell,         "SHORT VIRGIN CPR"),
         ]
