@@ -497,24 +497,12 @@ class StrategyEngine:
         # ═══════════════════════════════════════════════════════
         # HIDDEN DIVERGENCE CONFIRMATION (lines 3082-3093 / 3130-3141)
         # ═══════════════════════════════════════════════════════
-        # Check if bar[1]'s hidden divergence was inside previous CPR
-        h_bull_inside_cpr = False
-        h_bear_inside_cpr = False
-
-        if ctx.prev_bar is not None:
-            pb = ctx.prev_bar
-            inside_cpr_body = (
-                (min(pb.open, pb.close) <= ctx.prev_cpr_top and
-                 max(pb.open, pb.close) >= ctx.prev_cpr_bottom) or
-                (pb.close >= ctx.prev_cpr_bottom and pb.close <= ctx.prev_cpr_top))
-
-            h_bull_inside_cpr = ctx.bull_hidden_div and inside_cpr_body
-            h_bear_inside_cpr = ctx.bear_hidden_div and inside_cpr_body
-
-        hidden_bull_confirmed = (h_bull_inside_cpr and bar.is_green and
-                                  bar.close > ctx.prev_close)
-        hidden_bear_confirmed = (h_bear_inside_cpr and bar.is_red and
-                                  bar.close < ctx.prev_close)
+        # Hidden Divergence Confirmation (exempt from CPR containment restriction,
+        # functions anywhere on chart with waiting for subsequent candle confirmation)
+        hidden_bull_confirmed = bool(ctx.bull_hidden_div and bar.is_green and
+                                     bar.close > ctx.prev_close)
+        hidden_bear_confirmed = bool(ctx.bear_hidden_div and bar.is_red and
+                                     bar.close < ctx.prev_close)
 
         # Update sliding 6-bar history buffers for divergences (matching Pine Script lines 3152-3157)
         self._bull_div_history.append(bool(ctx.bull_regular_div))
@@ -546,9 +534,9 @@ class StrategyEngine:
         lightning_buy = standard_lightning_buy
         lightning_sell = standard_lightning_sell
 
-        # 2. Hidden Divergence (Standalone Strategy - Exempt from day types and NCPR, lines 3155-3157)
-        hidden_div_buy = recent_hidden_bull and grs and long_allowed
-        hidden_div_sell = recent_hidden_bear and res and short_allowed
+        # 2. Hidden Divergence (Standalone Strategy - Exempt from CPR containment, day types and NCPR)
+        hidden_div_buy = (hidden_bull_confirmed or (recent_hidden_bull and grs)) and long_allowed
+        hidden_div_sell = (hidden_bear_confirmed or (recent_hidden_bear and res)) and short_allowed
 
         # 3. Regular Divergence (Standalone Strategy - Exempt from day types and NCPR, lines 3152-3153)
         divergence_buy = recent_bull_div and grs and long_allowed

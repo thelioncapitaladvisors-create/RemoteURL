@@ -3187,19 +3187,10 @@ string z1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or 
 // ── LIGHTNING, DIVERGENCE & EXTREME REVERSAL SIGNALS ──────────────────
 // ====================================================================
 
-// ── CPR BOUNDARIES FOR HIDDEN DIVERGENCE (Signal Bar [1]) ────────────
-float cprTop_1    = math.max(daily_tc[1], daily_bc[1])
-float cprBottom_1 = math.min(daily_tc[1], daily_bc[1])
-
-// Check if candle [1] (where H was detected) was within Top and Bottom CPR lines
-// (covers candle close within CPR or candle body overlapping the CPR zone)
-
-bool hBullInsideCPR = (ext_bullishHiddenDiv[1] == 1) and ((close[1] >= cprBottom_1 and close[1] <= cprTop_1) or (math.min(open[1], close[1]) <= cprTop_1 and math.max(open[1], close[1]) >= cprBottom_1))
-bool hBearInsideCPR = (ext_bearishHiddenDiv[1] == 1) and ((close[1] >= cprBottom_1 and close[1] <= cprTop_1) or (math.min(open[1], close[1]) <= cprTop_1 and math.max(open[1], close[1]) >= cprBottom_1))
-
-// 👉 Hidden Divergence Confirmation Flags (H inside CPR + direction confirmation on current candle)
-bool hiddenBullishConfirmed = hBullInsideCPR and (close > open) and (close > close[1])
-bool hiddenBearishConfirmed = hBearInsideCPR and (close < open) and (close < close[1])
+// ── HIDDEN DIVERGENCE CONFIRMATION (Signal Bar [1] with Subsequent Candle Confirmation) ──
+// Exempt from CPR containment restriction so Hidden Divergence functions anywhere on the chart (like regular divergence)
+bool hiddenBullishConfirmed = (ext_bullishHiddenDiv[1] == 1) and (close > open) and (close > close[1])
+bool hiddenBearishConfirmed = (ext_bearishHiddenDiv[1] == 1) and (close < open) and (close < close[1])
 
 // Regular Divergence (Standard rules)
 bool regBullDiv = (ext_bullishDiv[1] == 1)
@@ -3213,9 +3204,9 @@ bool standardLightningSell = (CanSell and ScalpSell) and shortAllowed and dayAll
 bool DivergenceBuy  = ((regBullDiv or regBullDiv[1] or regBullDiv[2] or regBullDiv[3] or regBullDiv[4] or regBullDiv[5]) and GrS) and longAllowed
 bool DivergenceSell = ((regBearDiv  or regBearDiv[1] or regBearDiv[2] or regBearDiv[3] or regBearDiv[4] or regBearDiv[5]) and ReS) and shortAllowed
 
-// 3. Hidden Divergence Signals (Standalone Strategy - Exempt from day types and NCPR)
-bool HiddenDivBuy   = ((hiddenBullishConfirmed or hiddenBullishConfirmed[1] or hiddenBullishConfirmed[2] or hiddenBullishConfirmed[3] or hiddenBullishConfirmed[4] or hiddenBullishConfirmed[5]) and GrS) and longAllowed
-bool HiddenDivSell  = ((hiddenBearishConfirmed or hiddenBearishConfirmed[1] or hiddenBearishConfirmed[2] or hiddenBearishConfirmed[3] or hiddenBearishConfirmed[4] or hiddenBearishConfirmed[5]) and ReS) and shortAllowed
+// 3. Hidden Divergence Signals (Standalone Strategy - Exempt from CPR containment, day types and NCPR)
+bool HiddenDivBuy   = (hiddenBullishConfirmed or ((hiddenBullishConfirmed or hiddenBullishConfirmed[1] or hiddenBullishConfirmed[2] or hiddenBullishConfirmed[3] or hiddenBullishConfirmed[4] or hiddenBullishConfirmed[5]) and GrS)) and longAllowed
+bool HiddenDivSell  = (hiddenBearishConfirmed or ((hiddenBearishConfirmed or hiddenBearishConfirmed[1] or hiddenBearishConfirmed[2] or hiddenBearishConfirmed[3] or hiddenBearishConfirmed[4] or hiddenBearishConfirmed[5]) and ReS)) and shortAllowed
 
 // Combined Lightning Buy / Sell
 bool LightningBuy   = standardLightningBuy
@@ -3330,9 +3321,9 @@ processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX
 plotshape(DivergenceBuy,  title = "Bullish Regular Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
 plotshape(DivergenceSell, title = "Bearish Regular Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
 
-// 🔵 / 🟠 2. HIDDEN DIVERGENCE (CPR CONFLUENCE) PLOTS
-plotshape(HiddenDivBuy,  title = "Bullish Hidden Divergence (CPR)", style = shape.labelup,   location = location.belowbar, color = color.new(color.teal, 0),   text = "H", textcolor = color.white, size = size.small)
-plotshape(HiddenDivSell, title = "Bearish Hidden Divergence (CPR)", style = shape.labeldown, location = location.abovebar, color = color.new(color.orange, 0), text = "H", textcolor = color.black, size = size.small)
+// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS
+plotshape(HiddenDivBuy,  title = "Bullish Hidden Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.teal, 0),   text = "H", textcolor = color.white, size = size.small)
+plotshape(HiddenDivSell, title = "Bearish Hidden Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.orange, 0), text = "H", textcolor = color.black, size = size.small)
 
 // ⚡ 3. LIGHTNING PLOTS
 plotchar(LightningBuy  and dayAllowed and longAllowed,  title = "Lightning Buy (Star)",  char = '★', location = location.belowbar, color = color.teal,   size = size.normal)

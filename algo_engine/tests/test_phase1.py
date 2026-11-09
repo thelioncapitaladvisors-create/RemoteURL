@@ -1734,6 +1734,33 @@ class TestVirginCPR(unittest.TestCase):
         self.assertIn("SHORT MISSILE", SP_TRIGGERS)
         self.assertIn("LONG VIRGIN CPR", SP_TRIGGERS)
 
+    def test_hidden_divergence_anywhere_with_confirmation(self):
+        """Verify Hidden Divergence triggers anywhere on chart (CPR restriction removed) with subsequent candle confirmation."""
+        engine = StrategyEngine()
+
+        # Subsequent candle confirms with green candle and close > prev_close
+        b = OHLC(open=100.0, high=105.0, low=99.0, close=104.0)
+        # CPR is at 150-160 (far away from price 100-104)
+        ctx = MarketContext(
+            bar=b, bar_index=2,
+            prev_bar=OHLC(open=102.0, high=103.0, low=98.0, close=99.0), # red signal bar
+            prev_close=99.0,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=155.0, cpr_tc=160.0, cpr_bc=150.0, is_ncpr=False,
+            short_ema=101.0, med_ema=99.0,
+            pivot_trend_fast=102.0, pivot_trend_slow=100.0,
+            bull_hidden_div=True, # Raw divergence on bar[1]
+            plus=25.0, minus=10.0, m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=98.0, atr=2.0
+        )
+        sigs = engine.evaluate(ctx)
+        hid_sigs = [s for s in sigs if "HIDDEN DIVERGENCE" in s.name]
+        self.assertGreater(len(hid_sigs), 0, "LONG HIDDEN DIVERGENCE must trigger anywhere on chart upon subsequent candle confirmation")
+        self.assertEqual(hid_sigs[0].direction, "LONG")
+        self.assertTrue(hid_sigs[0].fire_alert, "Hidden divergence in firezone must have fire_alert=True")
+        self.assertEqual(hid_sigs[0].fire_zone, "FIREZONE")
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
