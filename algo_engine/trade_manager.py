@@ -144,6 +144,11 @@ class Trade:
     # ── Position (for partial TP) ──
     position_remaining: float = 100.0  # % of position still open
 
+    # ── Fire Alert Confluence State ──
+    fire_alert: bool = False
+    fire_zone: str = ""
+
+
     @property
     def is_long(self) -> bool:
         return self.direction == "LONG"
@@ -261,6 +266,8 @@ class TradeManager:
             status=TradeStatus.ACTIVE_LIMIT,
             signal_bar_index=signal.bar_index,
             signal_timestamp=signal.timestamp,
+            fire_alert=getattr(signal, 'fire_alert', False),
+            fire_zone=getattr(signal, 'fire_zone', ""),
         )
 
         self._active_trades.append(trade)

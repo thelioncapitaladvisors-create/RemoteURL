@@ -315,6 +315,10 @@ class EngineDaemon:
             if self.shadow_pipeline:
                 self.shadow_pipeline.record_signal(sig, symbol=symbol)
 
+            # Dispatch dedicated Telegram Fire Alert if signal qualifies for Fire Alert
+            if sig.fire_alert and self.telegram:
+                self.telegram.on_fire_alert(sig, symbol=symbol)
+
     # ── Daemon Lifecycle Controls ────────────────────────────────
 
     def start(self) -> None:

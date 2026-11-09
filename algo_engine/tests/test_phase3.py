@@ -236,6 +236,71 @@ class TestTelegramDispatcher(unittest.TestCase):
         self.assertIn("+3.08%", text_close)
         self.assertIn("((Exit - Entry) / Entry) * 100", text_close)
 
+    def test_fire_alert_telegram_dispatch(self):
+        """Verify on_fire_alert dispatches dedicated 🔥 TLCS FIRE ALERT to market and fire channels."""
+        raw_sent = []
+        self.dispatcher.send_raw_message = lambda cid, text: raw_sent.append((cid, text)) or True
+        self.dispatcher.fire_chat_id = "-100999999"
+
+        from algo_engine.strategies import StrategySignal
+        sig = StrategySignal(
+            name="LONG LIGHTNING",
+            direction="LONG",
+            entry_price=2500.0,
+            stop_loss=2480.0,
+            tp1=2540.0,
+            tp2=2580.0,
+            tp3=2620.0,
+            tp4=2660.0,
+            bar_index=10,
+            fire_alert=True,
+            fire_zone="FIREZONE",
+            opening_bias="BULLISH EXPANSION",
+            day_type="TREND DAY",
+        )
+
+        self.dispatcher.on_fire_alert(sig, symbol="RELIANCE")
+        # Should send to market channel (-100111111) and dedicated fire channel (-100999999)
+        self.assertEqual(len(raw_sent), 2)
+        cids = [r[0] for r in raw_sent]
+        self.assertIn("-100111111", cids)
+        self.assertIn("-100999999", cids)
+        for _, text in raw_sent:
+            self.assertIn("🔥 TLCS FIRE ALERT (NIFTY)", text)
+            self.assertIn("LONG LIGHTNING", text)
+            self.assertIn("FIREZONE", text)
+            self.assertIn("2500.0", text)
+
+    def test_trade_manager_fire_alert_state(self):
+        """Verify TradeManager.create_trade copies fire_alert & fire_zone to Trade object."""
+        from algo_engine.strategies import StrategySignal
+        from algo_engine.trade_manager import TradeManager
+        tm = TradeManager()
+        sig = StrategySignal(
+            name="SHORT SCALP",
+            direction="SHORT",
+            entry_price=100.0,
+            stop_loss=102.0,
+            tp1=96.0,
+            tp2=94.0,
+            tp3=92.0,
+            tp4=90.0,
+            bar_index=5,
+            fire_alert=True,
+            fire_zone="FIREZONE",
+        )
+        trade = tm.create_trade(sig, symbol="TATAMOTORS")
+        self.assertTrue(trade.fire_alert)
+        self.assertEqual(trade.fire_zone, "FIREZONE")
+
+        # Verify on_trade_fill includes fire badge
+        sent_messages = []
+        self.dispatcher.send_message = lambda sym, text: sent_messages.append((sym, text)) or True
+        self.dispatcher.on_trade_fill(trade)
+        self.assertEqual(len(sent_messages), 1)
+        self.assertIn("🔥 <b>FIRE ALERT</b>", sent_messages[0][1])
+
+
 
 class TestEngineDaemon(unittest.TestCase):
 
