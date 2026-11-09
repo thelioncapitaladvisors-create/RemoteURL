@@ -3362,11 +3362,12 @@ Anysignal = JustMissileBuy or JustMissileSell or JustScalpBuy or JustScalpSell o
 
 Fire_Alert = Anysignal and not (Greenzone or Redzone)
 
-plotshape(Fire_Alert, title = 'Fire Alert Confluence', style = shape.circle, location = location.top, color = Greenzone ? color.green : Redzone ? color.red : color.orange, size = size.tiny)
+bool isFireLong = JustMissileBuy or JustScalpBuy or LightningBuy or DivergenceBuy or HiddenDivBuy or ExtremeReversalBuy or BounceUp
+
+plotshape(Fire_Alert, title = 'Fire Alert Confluence', style = shape.circle, location = location.top, color = isFireLong ? color.green : color.red, size = size.tiny)
 
 string fireActiveSignal = JustMissileBuy ? 'LONG MISSILE' : JustMissileSell ? 'SHORT MISSILE' : JustScalpBuy ? 'LONG SCALP' : JustScalpSell ? 'SHORT SCALP' : LightningBuy ? 'LONG LIGHTNING' : LightningSell ? 'SHORT LIGHTNING' : DivergenceBuy ? 'LONG DIVERGENCE' : DivergenceSell ? 'SHORT DIVERGENCE' : HiddenDivBuy ? 'LONG HIDDEN DIVERGENCE' : HiddenDivSell ? 'SHORT HIDDEN DIVERGENCE' : ExtremeReversalBuy ? 'LONG EXTREME REVERSAL' : ExtremeReversalSell ? 'SHORT EXTREME REVERSAL' : BounceUp ? 'LONG BOUNCE' : BounceDown ? 'SHORT BOUNCE' : 'SIGNAL'
 string fireZone = Greenzone ? 'GREENZONE' : Redzone ? 'REDZONE' : 'NEUTRAL'
-bool isFireLong = str.contains(fireActiveSignal, 'LONG')
 
 if Fire_Alert and enable_alerts
     string _firePay = '{' + str.format(
