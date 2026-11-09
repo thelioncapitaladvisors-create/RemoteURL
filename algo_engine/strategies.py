@@ -60,7 +60,7 @@ class StrategySignal:
     is_confluence: bool = False   # VectorBT Validated Confluence (Trend + Structural Divergence)
     confluence_tag: str = ""      # e.g., 'MISSILE_DIV', 'SCALP_DIV', 'LIGHTNING_TRIPLE'
     fire_alert: bool = False      # Confluence: AnySignal and (Greenzone or Redzone)
-    fire_zone: str = ""           # "GREENZONE", "REDZONE", or "NEUTRAL"
+    fire_zone: str = ""           # "FIREZONE" or "ZONE"
 
     @property
     def is_fire_alert(self) -> bool:
@@ -601,7 +601,7 @@ class StrategyEngine:
         )
         is_in_fire_zone = not (greenzone or redzone)
         fire_alert = any_signal and is_in_fire_zone
-        fire_zone = "GREENZONE" if greenzone else ("REDZONE" if redzone else "NEUTRAL")
+        fire_zone = "FIREZONE" if not greenzone else ("FIREZONE" if not redzone else "ZONE")
 
         # ═══════════════════════════════════════════════════════
         # COMPUTE ENTRY / SL / TP LEVELS (lines 2865-2893)

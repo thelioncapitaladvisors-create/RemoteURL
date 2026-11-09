@@ -1608,7 +1608,7 @@ class TestVirginCPR(unittest.TestCase):
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
             self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in GREENZONE")
-            self.assertEqual(s.fire_zone, "GREENZONE")
+            self.assertEqual(s.fire_zone, "FIREZONE")
 
     def test_fire_alert_redzone_suppressed(self):
         """Verify Fire_Alert is False when in REDZONE (since condition is NOT in green/red)."""
@@ -1630,7 +1630,7 @@ class TestVirginCPR(unittest.TestCase):
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
             self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in REDZONE")
-            self.assertEqual(s.fire_zone, "REDZONE")
+            self.assertEqual(s.fire_zone, "FIREZONE")
 
     def test_fire_alert_neutral_zone_triggered(self):
         """Verify Fire_Alert triggers when Anysignal fires in NEUTRAL zone (not in green/red)."""
@@ -1654,7 +1654,19 @@ class TestVirginCPR(unittest.TestCase):
             if s.name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR"):
                 self.assertTrue(s.fire_alert, f"Signal {s.name} must have fire_alert=True in NEUTRAL zone")
                 self.assertTrue(s.is_fire_alert, f"Signal {s.name} must have is_fire_alert=True in NEUTRAL zone")
-                self.assertEqual(s.fire_zone, "NEUTRAL")
+                self.assertEqual(s.fire_zone, "FIREZONE")
+
+    def test_fire_zone_ternary_logic(self):
+        """Verify fire_zone = not Greenzone ? 'FIREZONE' : not Redzone ? 'FIREZONE' : 'ZONE'."""
+        eval_fire_zone = lambda gz, rz: "FIREZONE" if not gz else ("FIREZONE" if not rz else "ZONE")
+        # 1. Not greenzone (gz=False, rz=False -> NEUTRAL)
+        self.assertEqual(eval_fire_zone(False, False), "FIREZONE")
+        # 2. Not greenzone (gz=False, rz=True -> REDZONE)
+        self.assertEqual(eval_fire_zone(False, True), "FIREZONE")
+        # 3. Greenzone true, not redzone (gz=True, rz=False -> GREENZONE)
+        self.assertEqual(eval_fire_zone(True, False), "FIREZONE")
+        # 4. Both true (gz=True, rz=True)
+        self.assertEqual(eval_fire_zone(True, True), "ZONE")
 
     def test_canonical_triggers_contain_canonical_14(self):
         """Verify CANONICAL_EXECUTION_TRIGGERS contains the canonical 14 triggers."""
