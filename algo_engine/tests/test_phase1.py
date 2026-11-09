@@ -1588,8 +1588,8 @@ class TestVirginCPR(unittest.TestCase):
         self.assertTrue(missile_sigs[0].is_confluence, "Missile signal must have is_confluence=True within divergence window")
         self.assertEqual(missile_sigs[0].confluence_tag, "MISSILE_DIV", "Confluence tag must be MISSILE_DIV")
 
-    def test_fire_alert_greenzone_confluence(self):
-        """Verify Fire_Alert triggers when Anysignal coincides with GREENZONE."""
+    def test_fire_alert_greenzone_suppressed(self):
+        """Verify Fire_Alert is False when in GREENZONE (since condition is NOT in green/red)."""
         engine = StrategyEngine()
         b = OHLC(open=100.0, high=105.0, low=98.0, close=104.0)
         # Greenzone: plus > minus, short_ema > med_ema, pivot_trend_fast > pivot_trend_slow
@@ -1607,13 +1607,11 @@ class TestVirginCPR(unittest.TestCase):
         sigs = engine.evaluate(ctx)
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
-            if s.name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR"):
-                self.assertTrue(s.fire_alert, f"Signal {s.name} must have fire_alert=True in GREENZONE")
-                self.assertTrue(s.is_fire_alert, f"Signal {s.name} must have is_fire_alert=True in GREENZONE")
-                self.assertEqual(s.fire_zone, "GREENZONE")
+            self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in GREENZONE")
+            self.assertEqual(s.fire_zone, "GREENZONE")
 
-    def test_fire_alert_redzone_confluence(self):
-        """Verify Fire_Alert triggers when Anysignal coincides with REDZONE."""
+    def test_fire_alert_redzone_suppressed(self):
+        """Verify Fire_Alert is False when in REDZONE (since condition is NOT in green/red)."""
         engine = StrategyEngine()
         b = OHLC(open=100.0, high=101.0, low=94.0, close=95.0)
         # Redzone: minus > plus, short_ema < med_ema, pivot_trend_fast < pivot_trend_slow
@@ -1631,12 +1629,11 @@ class TestVirginCPR(unittest.TestCase):
         sigs = engine.evaluate(ctx)
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
-            if s.name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR"):
-                self.assertTrue(s.fire_alert, f"Signal {s.name} must have fire_alert=True in REDZONE")
-                self.assertEqual(s.fire_zone, "REDZONE")
+            self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in REDZONE")
+            self.assertEqual(s.fire_zone, "REDZONE")
 
-    def test_fire_alert_neutral_zone(self):
-        """Verify Fire_Alert is False when in neutral zone (mixed indicators)."""
+    def test_fire_alert_neutral_zone_triggered(self):
+        """Verify Fire_Alert triggers when Anysignal fires in NEUTRAL zone (not in green/red)."""
         engine = StrategyEngine()
         b = OHLC(open=100.0, high=105.0, low=98.0, close=104.0)
         # Neutral zone: plus > minus, but short_ema < med_ema
@@ -1654,8 +1651,10 @@ class TestVirginCPR(unittest.TestCase):
         sigs = engine.evaluate(ctx)
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
-            self.assertFalse(s.fire_alert, f"Signal {s.name} must have fire_alert=False in NEUTRAL zone")
-            self.assertEqual(s.fire_zone, "NEUTRAL")
+            if s.name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR"):
+                self.assertTrue(s.fire_alert, f"Signal {s.name} must have fire_alert=True in NEUTRAL zone")
+                self.assertTrue(s.is_fire_alert, f"Signal {s.name} must have is_fire_alert=True in NEUTRAL zone")
+                self.assertEqual(s.fire_zone, "NEUTRAL")
 
     def test_canonical_triggers_contain_canonical_14(self):
         """Verify CANONICAL_EXECUTION_TRIGGERS contains the canonical 14 triggers."""

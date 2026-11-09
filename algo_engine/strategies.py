@@ -588,7 +588,7 @@ class StrategyEngine:
         # Redzcol = ((minus > plus) and (fShortEMA < fMedEMA) and (fPivotPDEMAF < fPivotPDEMAS))
         # Greenzcol = ((plus > minus) and (fShortEMA > fMedEMA) and (fPivotPDEMAF > fPivotPDEMAS))
         # Anysignal = JustMissileBuy or JustMissileSell or JustScalpBuy or JustScalpSell or DivergenceBuy or DivergenceSell or HiddenDivBuy or HiddenDivSell or LightningBuy or LightningSell or ExtremeReversalBuy or ExtremeReversalSell or BounceUp or BounceDown
-        # Fire_Alert = Anysignal and (Greenzone or Redzone)
+        # Fire_Alert = Anysignal and not (Greenzone or Redzone)
         # ═══════════════════════════════════════════════════════
         any_signal = (
             just_missile_buy or just_missile_sell or
@@ -599,7 +599,7 @@ class StrategyEngine:
             extreme_rev_buy or extreme_rev_sell or
             bounce_up or bounce_down
         )
-        is_in_fire_zone = greenzone or redzone
+        is_in_fire_zone = not (greenzone or redzone)
         fire_alert = any_signal and is_in_fire_zone
         fire_zone = "GREENZONE" if greenzone else ("REDZONE" if redzone else "NEUTRAL")
 

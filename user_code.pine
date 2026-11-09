@@ -3360,9 +3360,9 @@ Redzcol   = ((minus > plus) and (fShortEMA < fMedEMA) and (fPivotPDEMAF < fPivot
 Greenzcol = ((plus > minus) and (fShortEMA > fMedEMA) and (fPivotPDEMAF > fPivotPDEMAS))
 Anysignal = JustMissileBuy or JustMissileSell or JustScalpBuy or JustScalpSell or DivergenceBuy or DivergenceSell or HiddenDivBuy or HiddenDivSell or LightningBuy or LightningSell or ExtremeReversalBuy or ExtremeReversalSell or BounceUp or BounceDown
 
-Fire_Alert = Anysignal and (Greenzone or Redzone)
+Fire_Alert = Anysignal and not (Greenzone or Redzone)
 
-plotshape(Fire_Alert, title = 'Fire Alert Confluence', style = shape.circle, location = location.top, color = Greenzone ? color.green : color.red, size = size.tiny)
+plotshape(Fire_Alert, title = 'Fire Alert Confluence', style = shape.circle, location = location.top, color = Greenzone ? color.green : Redzone ? color.red : color.orange, size = size.tiny)
 
 string fireActiveSignal = JustMissileBuy ? 'LONG MISSILE' : JustMissileSell ? 'SHORT MISSILE' : JustScalpBuy ? 'LONG SCALP' : JustScalpSell ? 'SHORT SCALP' : LightningBuy ? 'LONG LIGHTNING' : LightningSell ? 'SHORT LIGHTNING' : DivergenceBuy ? 'LONG DIVERGENCE' : DivergenceSell ? 'SHORT DIVERGENCE' : HiddenDivBuy ? 'LONG HIDDEN DIVERGENCE' : HiddenDivSell ? 'SHORT HIDDEN DIVERGENCE' : ExtremeReversalBuy ? 'LONG EXTREME REVERSAL' : ExtremeReversalSell ? 'SHORT EXTREME REVERSAL' : BounceUp ? 'LONG BOUNCE' : BounceDown ? 'SHORT BOUNCE' : 'SIGNAL'
 string fireZone = Greenzone ? 'GREENZONE' : Redzone ? 'REDZONE' : 'NEUTRAL'
