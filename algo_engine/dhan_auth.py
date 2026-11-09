@@ -75,6 +75,51 @@ def verify_dhan_token(token: str) -> bool:
         return False
 
 
+def renew_active_dhan_token(token: str) -> str | None:
+    """Seamlessly extend an active DhanHQ token via GET /v2/RenewToken."""
+    global _cached_token, _token_expires_at, _last_failed_renewal
+    if not token:
+        return None
+    try:
+        url = "https://api.dhan.co/v2/RenewToken"
+        headers = {
+            "access-token": token,
+            "dhanClientId": DHAN_CLIENT_ID,
+            "Content-Type": "application/json"
+        }
+        res = requests.get(url, headers=headers, timeout=6)
+        if res.status_code == 200:
+            data = res.json()
+            if data and data.get("accessToken"):
+                fresh = data["accessToken"]
+                _cached_token = fresh
+                _last_failed_renewal = 0.0
+                try:
+                    import json
+                    payload_part = fresh.split(".")[1]
+                    payload_part += "=" * (-len(payload_part) % 4)
+                    payload = json.loads(base64.urlsafe_b64decode(payload_part).decode("utf-8"))
+                    _token_expires_at = float(payload.get("exp", time.time() + 86400))
+                except Exception:
+                    _token_expires_at = time.time() + 86400
+
+                logger.info(f"[DhanAuth] Successfully renewed active token via /v2/RenewToken! Valid until {_token_expires_at}")
+                try:
+                    import json
+                    with open(TOKEN_CACHE_FILE, "w") as f:
+                        json.dump({"token": _cached_token, "expires_at": int(_token_expires_at * 1000)}, f)
+                except Exception:
+                    pass
+                try:
+                    save_token_to_supabase(_cached_token, _token_expires_at)
+                except Exception:
+                    pass
+                return fresh
+    except Exception as e:
+        logger.warning(f"[DhanAuth] /v2/RenewToken failed: {e}")
+    return None
+
+
 def invalidate_dhan_token():
     """Invalidate current token across memory and Supabase caches."""
     global _cached_token, _token_expires_at
@@ -88,17 +133,21 @@ def invalidate_dhan_token():
 
 _last_totp_attempt = 0.0
 _last_failed_renewal = 0.0
+RENEWAL_COOLDOWN = 900.0  # Mandatory 15-minute quiet period on Dhan lockout/error
 
 
 def fetch_fresh_token() -> str:
     """Call DhanHQ Auth Server to generate fresh 24-hour token via Client ID, PIN, and dynamic TOTP."""
     global _cached_token, _token_expires_at, _last_totp_attempt, _last_failed_renewal
     now = time.time()
-    if now - _last_failed_renewal < 150.0 and _cached_token and _token_expires_at > now:
-        logger.warning(f"[DhanAuth] Renewal circuit breaker active ({int(150.0 - (now - _last_failed_renewal))}s remaining). Using cached token.")
+
+    # Enforce mandatory 15-minute quiet period after failed attempt or lockout
+    if now - _last_failed_renewal < RENEWAL_COOLDOWN:
+        remaining = int(RENEWAL_COOLDOWN - (now - _last_failed_renewal))
+        logger.warning(f"[DhanAuth] Renewal circuit breaker active ({remaining}s remaining). Suppressing auth request to prevent Dhan lockout.")
         return _cached_token
 
-    if now - _last_totp_attempt < 125.0 and _cached_token and _token_expires_at > now:
+    if now - _last_totp_attempt < 125.0:
         logger.info("[DhanAuth] Enforcing 2-minute cooldown between TOTP requests. Using cached token.")
         return _cached_token
 
@@ -149,7 +198,7 @@ def fetch_fresh_token() -> str:
         else:
             _last_failed_renewal = now
             err_msg = data.get("message", f"HTTP {res.status_code}")
-            logger.warning(f"[DhanAuth] Dhan auth returned error: {err_msg} - circuit breaker engaged for 2.5m. Using cached token.")
+            logger.warning(f"[DhanAuth] Dhan auth returned error: {err_msg} - circuit breaker engaged for 15m. Using cached token.")
             return _cached_token
     except Exception as e:
         _last_failed_renewal = now
@@ -218,8 +267,11 @@ def get_valid_dhan_token(force_refresh: bool = False) -> str:
     global _cached_token, _token_expires_at
     now = time.time()
     safety_buffer = 300  # 5 minutes
+    renew_threshold = 4 * 3600  # 4 hours before expiry -> auto-renew via /v2/RenewToken
 
     if not force_refresh and _cached_token and (_token_expires_at - now > safety_buffer):
+        if _token_expires_at - now < renew_threshold:
+            renew_active_dhan_token(_cached_token)
         return _cached_token
 
     # 1. Check Supabase shared cache first (only if not force_refresh)
@@ -231,6 +283,8 @@ def get_valid_dhan_token(force_refresh: bool = False) -> str:
                 _cached_token = sb_token
                 _token_expires_at = sb_exp
                 logger.info(f"[DhanAuth] Loaded valid token from Supabase shared cache. Valid until {sb_exp}")
+                if sb_exp - now < renew_threshold:
+                    renew_active_dhan_token(sb_token)
                 return _cached_token
 
     # 2. Check disk cache before making network request
@@ -243,9 +297,23 @@ def get_valid_dhan_token(force_refresh: bool = False) -> str:
                 if file_data.get("token") and (exp_sec - now > safety_buffer):
                     _cached_token = file_data["token"]
                     _token_expires_at = exp_sec
+                    if exp_sec - now < renew_threshold:
+                        renew_active_dhan_token(_cached_token)
                     return _cached_token
         except Exception:
             pass
+
+    # 3. If we have any existing token that might still be active on Dhan, try /v2/RenewToken first
+    candidate = _cached_token
+    if not candidate:
+        sb_res = get_token_from_supabase()
+        if sb_res:
+            candidate = sb_res[0]
+
+    if candidate:
+        renewed = renew_active_dhan_token(candidate)
+        if renewed:
+            return renewed
 
     fresh = fetch_fresh_token()
     if fresh and _token_expires_at > now:
