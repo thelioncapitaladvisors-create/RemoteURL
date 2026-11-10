@@ -10,7 +10,21 @@
 ## Version 3.0: Master Production Release & Revamped Trade Logics Mandate (Effective November 10, 2026)
 - **Canonical Master Indicator Version 3.0 Standard**:
   - All Pine Script indicator engines (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0`.
-  - All three source files MUST maintain 100% byte-for-byte SHA256 checksum parity (`06bdeb6ba1468126cff17e708df591c71cc5c610ae2d1b3c833e7c87189ac9d4`).
+  - All three source files MUST maintain 100% byte-for-byte SHA256 checksum parity (`fadedf4b4376a84b0dd143b53b33f6165c3685aa43f93cebd4032e57085ee258`).
+- **Confirmed Divergence Execution Gating & Confirmation Candle Close Mandate**:
+  - Divergence setups (`D` and `H`) are strictly unconfirmed on Bar 0; zero trades, limit orders, or webhooks may fire on Bar 0.
+  - Execution is strictly gated to the subsequent confirmation candle close (Bars 1 to 5):
+    - Long trades require bullish confirmation close: `(close > open) and (close > close[1])`.
+    - Short trades require bearish confirmation close: `(close < open) and (close < close[1])`.
+    - Regular Divergence (`D`) strictly maintains `GrS` (Long) / `ReS` (Short) Power Candle bounce requirement.
+  - Trade entry snaps directly to confirmation candle close (`trade.entryLevel := isDivTrade ? close : trendLine`, `trade.hasHitEntry := isDivTrade ? true : false`).
+  - Invalidation: If price closes beyond the divergence candle extreme before confirmation (`close < low[bar_index - lastDivBar]` for Long, `close > high[bar_index - lastDivBar]` for Short), the pending setup is immediately invalidated.
+  - Single-fire execution guarantee ensures a confirmed divergence fires at most once per divergence window (`lastFiredBar < lastDivBar`).
+  - Python BlackBox (`algo_engine/strategies.py`, `algo_engine/tests/test_phase1.py`) and Pine Script indicator engines maintain 100% mathematical parity.
+- **Collapsible Live Signals UI & Active Filter Toggle Mandate**:
+  - On the mobile terminal `HUB` tab (`Tv-Alert-Mobile/src/app/page.tsx`), the active signals header is designated `LIVE SIGNALS ⚡`.
+  - Signal filter category buttons (`[ALL]`, `[⚡ CANONICAL]`, `[🔥 FIRE ALERT]`, `[⚡ LIGHTNING]`, `[🎯 DIVERGENCE]`) are housed in a collapsible container with interactive `COLLAPSE` / `EXPAND` toggle defaulting to expanded (`isHubLiveButtonsExpanded = true`).
+  - Category buttons support single-tap toggling: clicking an active category filter immediately toggles back to `'ALL'`.
 - **Symmetrical Neutral Zone Fire_Alert Confluence Gate**:
   - In both the indicator engines and Python BlackBox (`strategies.py`), `Fire_Alert` is strictly gated to the **Neutral Zone** (`Fire_Alert = Anysignal and not (Greenzcol or Redzcol)`).
   - Long trades and short trades are **BOTH PROHIBITED** inside Greenzone and Redzone for `Fire_Alert`.
