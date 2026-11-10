@@ -3007,9 +3007,9 @@ float highestHigh = ta.highest(high, ta.barssince(w) + 1)
 float lowestLow = ta.lowest(low, ta.barssince(w) + 1)
 
 float priceRange = highestHigh - lowestLow
-bool highTrendLimitLevel = bool(bullpower) 
+bool highTrendLimitLevel = bool(bearpower) 
 float trendLine = (highestHigh - lowestLow ) / 2 + lowestLow 
-bool lowTrendLimitLevel =  bool(bearpower)
+bool lowTrendLimitLevel =  bool(bullpower)
 
 // ====================================================================
 // 1. CONSTRUCT SETTINGS OBJECT
@@ -3850,16 +3850,16 @@ plotshape(BounceDown and not LightningSell, title = 'Long Put',   style = shape.
 // ====================================================================
 Redzcol   = ((minus > plus) and (fShortEMA < fMedEMA) and (fPivotPDEMAF < fPivotPDEMAS))
 Greenzcol = ((plus > minus) and (fShortEMA > fMedEMA) and (fPivotPDEMAF > fPivotPDEMAS))
-Anysignal = JustMissileBuy or JustMissileSell or JustScalpBuy or JustScalpSell or DivergenceBuy or DivergenceSell or HiddenDivBuy or HiddenDivSell or LightningBuy or LightningSell or ExtremeReversalBuy or ExtremeReversalSell or BounceUp or BounceDown or highTrendLimitLevel or lowTrendLimitLevel
-
-bool isFireLong = JustMissileBuy or JustScalpBuy or LightningBuy or DivergenceBuy or HiddenDivBuy or ExtremeReversalBuy or BounceUp or lowTrendLimitLevel
+bool isFireLong  = JustMissileBuy or JustScalpBuy or LightningBuy or DivergenceBuy or HiddenDivBuy or ExtremeReversalBuy or BounceUp or lowTrendLimitLevel
+bool isFireShort = JustMissileSell or JustScalpSell or LightningSell or DivergenceSell or HiddenDivSell or ExtremeReversalSell or BounceDown or highTrendLimitLevel
+Anysignal = isFireLong or isFireShort
 bool isInFireZone = not (Greenzcol or Redzcol)
 
 Fire_Alert = Anysignal and isInFireZone
 
 plotshape(Fire_Alert, title = 'Fire Alert Confluence', style = shape.circle, location = location.top, color = isFireLong ? color.green : color.red, size = size.tiny)
 
-string fireActiveSignal = JustMissileBuy ? 'LONG MISSILE' : JustMissileSell ? 'SHORT MISSILE' : JustScalpBuy ? 'LONG SCALP' : JustScalpSell ? 'SHORT SCALP' : LightningBuy ? 'LONG LIGHTNING' : LightningSell ? 'SHORT LIGHTNING' : DivergenceBuy ? 'LONG DIVERGENCE' : DivergenceSell ? 'SHORT DIVERGENCE' : HiddenDivBuy ? 'LONG HIDDEN DIVERGENCE' : HiddenDivSell ? 'SHORT HIDDEN DIVERGENCE' : ExtremeReversalBuy ? 'LONG EXTREME REVERSAL' : ExtremeReversalSell ? 'SHORT EXTREME REVERSAL' : BounceUp ? 'LONG BOUNCE' : BounceDown ? 'SHORT BOUNCE' : highTrendLimitLevel ? 'SHORT TOP' : lowTrendLimitLevel ? 'LONG BOTTOM' : 'SIGNAL'
+string fireActiveSignal = JustMissileBuy ? 'LONG MISSILE' : JustMissileSell ? 'SHORT MISSILE' : JustScalpBuy ? 'LONG SCALP' : JustScalpSell ? 'SHORT SCALP' : LightningBuy ? 'LONG LIGHTNING' : LightningSell ? 'SHORT LIGHTNING' : DivergenceBuy ? 'LONG DIVERGENCE' : DivergenceSell ? 'SHORT DIVERGENCE' : HiddenDivBuy ? 'LONG HIDDEN DIVERGENCE' : HiddenDivSell ? 'SHORT HIDDEN DIVERGENCE' : ExtremeReversalBuy ? 'LONG EXTREME REVERSAL' : ExtremeReversalSell ? 'SHORT EXTREME REVERSAL' : BounceUp ? 'LONG BOUNCE' : BounceDown ? 'SHORT BOUNCE' : lowTrendLimitLevel ? 'LONG BOTTOM' : highTrendLimitLevel ? 'SHORT TOP' : 'SIGNAL'
 string fireZone = isInFireZone ? 'FIREZONE' : 'ZONE'
 
 if Fire_Alert and enable_alerts
