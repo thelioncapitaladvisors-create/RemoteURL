@@ -1813,6 +1813,93 @@ class TestVirginCPR(unittest.TestCase):
         div_sigs4 = [s for s in sigs4 if s.name == "LONG DIVERGENCE"]
         self.assertGreater(len(div_sigs4), 0, "LONG DIVERGENCE must trigger without H4 gating")
 
+    def test_unconfirmed_divergence_prevention_and_confirmation_close(self):
+        """
+        Verify that:
+        1. Divergence on Bar 0 does NOT fire prematurely.
+        2. Unconfirmed candle (e.g. green candle following bearish divergence) prevents trade entry.
+        3. Confirmed candle (close < open and close < prev_close) fires trade strictly on bar close.
+        4. Single-fire guarantee prevents duplicate fires on subsequent candles.
+        5. Setup invalidation if price breaks beyond divergence bar extreme.
+        """
+        engine = StrategyEngine()
+
+        # Bar 1: Bearish hidden divergence forms inside CPR
+        b1 = OHLC(open=100.0, high=105.0, low=99.0, close=104.0)
+        ctx1 = MarketContext(
+            bar=b1, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            bear_hidden_div=True, # Raw divergence detected
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        # Bar 1 is the divergence detection bar itself (Bar 0 - Unconfirmed)
+        # Even if evaluated with bear_hidden_div=True, it cannot fire on an unconfirmed bar without confirmation candle
+        b1_unconfirmed = OHLC(open=100.0, high=105.0, low=99.0, close=104.0) # Green candle!
+        ctx1.bar = b1_unconfirmed
+        sigs1 = engine.evaluate(ctx1)
+        short_divs1 = [s for s in sigs1 if "HIDDEN DIVERGENCE" in s.name]
+        self.assertEqual(len(short_divs1), 0, "Divergence must NEVER fire on unconfirmed candle")
+
+        # Bar 2: Counter-trend bullish expansion candle (like DOGEUSDT scenario)
+        b2 = OHLC(open=104.0, high=107.0, low=103.5, close=106.5) # Green candle breaking higher!
+        ctx2 = MarketContext(
+            bar=b2, bar_index=2,
+            prev_bar=b1, prev_close=104.0,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=107.0, session_lowest=99.0, atr=2.0
+        )
+        sigs2 = engine.evaluate(ctx2)
+        short_divs2 = [s for s in sigs2 if "HIDDEN DIVERGENCE" in s.name]
+        self.assertEqual(len(short_divs2), 0, "Counter-trend bullish expansion must NEVER trigger short divergence (DOGEUSDT guard)")
+        self.assertIsNone(engine._last_hidden_bear_div_bar, "Setup must be invalidated after breaking above divergence high")
+
+        # Now test successful confirmation sequence:
+        engine_success = StrategyEngine()
+        # Bar 1: Divergence detected
+        b_div = OHLC(open=100.0, high=105.0, low=99.0, close=102.0)
+        ctx_div = MarketContext(
+            bar=b_div, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            bear_hidden_div=True,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        engine_success.evaluate(ctx_div)
+
+        # Bar 2: Bearish confirmation candle (close < open and close < prev_close)
+        b_confirm = OHLC(open=102.0, high=102.5, low=100.0, close=100.5) # Red candle below prior close!
+        ctx_confirm = MarketContext(
+            bar=b_confirm, bar_index=2,
+            prev_bar=b_div, prev_close=102.0,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        sigs_confirm = engine_success.evaluate(ctx_confirm)
+        short_divs_confirm = [s for s in sigs_confirm if s.name == "SHORT HIDDEN DIVERGENCE"]
+        self.assertEqual(len(short_divs_confirm), 1, "SHORT HIDDEN DIVERGENCE must fire on confirmation candle close")
+
+        # Bar 3: Subsequent red candle must NOT duplicate the trade (Single-fire guarantee)
+        b_next = OHLC(open=100.5, high=101.0, low=99.0, close=99.2)
+        ctx_next = MarketContext(
+            bar=b_next, bar_index=3,
+            prev_bar=b_confirm, prev_close=100.5,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        sigs_next = engine_success.evaluate(ctx_next)
+        short_divs_next = [s for s in sigs_next if s.name == "SHORT HIDDEN DIVERGENCE"]
+        self.assertEqual(len(short_divs_next), 0, "Divergence signal must NOT duplicate on subsequent candles")
+
+
 
 # ====================================================================
 # TEST: VERSION 3.0 BLACKBOX & MASTER INDICATOR PARITY

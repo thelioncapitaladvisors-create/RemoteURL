@@ -218,6 +218,22 @@ class StrategyEngine:
         self._hidden_bull_history: List[bool] = []
         self._hidden_bear_history: List[bool] = []
 
+        # Confirmed Divergence Engine: Detection bar and extreme tracking
+        self._last_reg_bull_div_bar: Optional[int] = None
+        self._last_reg_bear_div_bar: Optional[int] = None
+        self._last_hidden_bull_div_bar: Optional[int] = None
+        self._last_hidden_bear_div_bar: Optional[int] = None
+        self._last_reg_bull_div_low: Optional[float] = None
+        self._last_reg_bear_div_high: Optional[float] = None
+        self._last_hidden_bull_div_low: Optional[float] = None
+        self._last_hidden_bear_div_high: Optional[float] = None
+
+        # Confirmed Divergence Engine: Single-fire per divergence event
+        self._last_fired_reg_bull_bar: Optional[int] = None
+        self._last_fired_reg_bear_bar: Optional[int] = None
+        self._last_fired_hidden_bull_bar: Optional[int] = None
+        self._last_fired_hidden_bear_bar: Optional[int] = None
+
         # Track which bars have already generated signals (tick-spam protection)
         self._last_signal_bar: Dict[str, int] = {}
 
@@ -497,6 +513,8 @@ class StrategyEngine:
         # ═══════════════════════════════════════════════════════
         # HIDDEN DIVERGENCE CONFIRMATION (lines 3082-3093 / 3130-3141)
         # ═══════════════════════════════════════════════════════
+        # CONFIRMED DIVERGENCE ENGINE (Confirmation Candle Close Gating)
+        # ═══════════════════════════════════════════════════════
         # Hidden Divergence: Must be formed with CPR or within VAH and VAL levels
         cpr_top = max(dtc, dbc)
         cpr_bottom = min(dtc, dbc)
@@ -515,10 +533,71 @@ class StrategyEngine:
         )
         hidden_div_allowed = formed_with_cpr or formed_within_vah_val
 
-        hidden_bull_confirmed = bool(ctx.bull_hidden_div and hidden_div_allowed and bar.is_green and
-                                     bar.close > ctx.prev_close)
-        hidden_bear_confirmed = bool(ctx.bear_hidden_div and hidden_div_allowed and bar.is_red and
-                                     bar.close < ctx.prev_close)
+        bar_idx = ctx.bar_index
+        div_bar_idx = bar_idx - 1
+
+        # Record fresh divergence occurrences (Bar 0 - Unconfirmed)
+        if ctx.bull_regular_div:
+            self._last_reg_bull_div_bar = div_bar_idx
+            self._last_reg_bull_div_low = ctx.prev_bar.low if ctx.prev_bar is not None else bar.low
+        if ctx.bear_regular_div:
+            self._last_reg_bear_div_bar = div_bar_idx
+            self._last_reg_bear_div_high = ctx.prev_bar.high if ctx.prev_bar is not None else bar.high
+        if ctx.bull_hidden_div and hidden_div_allowed:
+            self._last_hidden_bull_div_bar = div_bar_idx
+            self._last_hidden_bull_div_low = ctx.prev_bar.low if ctx.prev_bar is not None else bar.low
+        if ctx.bear_hidden_div and hidden_div_allowed:
+            self._last_hidden_bear_div_bar = div_bar_idx
+            self._last_hidden_bear_div_high = ctx.prev_bar.high if ctx.prev_bar is not None else bar.high
+
+        # Directional confirmation candle definitions:
+        is_bull_confirm = bar.is_green and (ctx.prev_close is not None and bar.close > ctx.prev_close)
+        is_bear_confirm = bar.is_red and (ctx.prev_close is not None and bar.close < ctx.prev_close)
+
+        # Invalidation checks: if price breaks beyond the divergence bar's extreme, invalidate setup
+        if self._last_reg_bull_div_bar is not None and self._last_reg_bull_div_low is not None and bar.close < self._last_reg_bull_div_low:
+            self._last_reg_bull_div_bar = None
+        if self._last_reg_bear_div_bar is not None and self._last_reg_bear_div_high is not None and bar.close > self._last_reg_bear_div_high:
+            self._last_reg_bear_div_bar = None
+        if self._last_hidden_bull_div_bar is not None and self._last_hidden_bull_div_low is not None and bar.close < self._last_hidden_bull_div_low:
+            self._last_hidden_bull_div_bar = None
+        if self._last_hidden_bear_div_bar is not None and self._last_hidden_bear_div_high is not None and bar.close > self._last_hidden_bear_div_high:
+            self._last_hidden_bear_div_bar = None
+
+        # Expiry checks (> 5 bars)
+        if self._last_reg_bull_div_bar is not None and (bar_idx - self._last_reg_bull_div_bar > 5):
+            self._last_reg_bull_div_bar = None
+        if self._last_reg_bear_div_bar is not None and (bar_idx - self._last_reg_bear_div_bar > 5):
+            self._last_reg_bear_div_bar = None
+        if self._last_hidden_bull_div_bar is not None and (bar_idx - self._last_hidden_bull_div_bar > 5):
+            self._last_hidden_bull_div_bar = None
+        if self._last_hidden_bear_div_bar is not None and (bar_idx - self._last_hidden_bear_div_bar > 5):
+            self._last_hidden_bear_div_bar = None
+
+        # Window checks: confirmation candle must occur between 1 and 5 bars AFTER divergence (Bars 1 to 5)
+        in_win_reg_bull = self._last_reg_bull_div_bar is not None and 1 <= (bar_idx - self._last_reg_bull_div_bar) <= 5
+        in_win_reg_bear = self._last_reg_bear_div_bar is not None and 1 <= (bar_idx - self._last_reg_bear_div_bar) <= 5
+        in_win_hidden_bull = self._last_hidden_bull_div_bar is not None and 1 <= (bar_idx - self._last_hidden_bull_div_bar) <= 5
+        in_win_hidden_bear = self._last_hidden_bear_div_bar is not None and 1 <= (bar_idx - self._last_hidden_bear_div_bar) <= 5
+
+        # Confirmed triggers on CLOSE of confirmation candle:
+        # Regular Divergence strictly requires GrS / ReS bounce within divergence window
+        confirmed_reg_bull = in_win_reg_bull and grs and (self._last_fired_reg_bull_bar is None or self._last_fired_reg_bull_bar < self._last_reg_bull_div_bar)
+        confirmed_reg_bear = in_win_reg_bear and res and (self._last_fired_reg_bear_bar is None or self._last_fired_reg_bear_bar < self._last_reg_bear_div_bar)
+
+        # Hidden Divergence requires directional confirmation candle close OR GrS/ReS
+        confirmed_hidden_bull = in_win_hidden_bull and (is_bull_confirm or grs) and (self._last_fired_hidden_bull_bar is None or self._last_fired_hidden_bull_bar < self._last_hidden_bull_div_bar)
+        confirmed_hidden_bear = in_win_hidden_bear and (is_bear_confirm or res) and (self._last_fired_hidden_bear_bar is None or self._last_fired_hidden_bear_bar < self._last_hidden_bear_div_bar)
+
+        # Single-fire updates
+        if confirmed_reg_bull:
+            self._last_fired_reg_bull_bar = self._last_reg_bull_div_bar
+        if confirmed_reg_bear:
+            self._last_fired_reg_bear_bar = self._last_reg_bear_div_bar
+        if confirmed_hidden_bull:
+            self._last_fired_hidden_bull_bar = self._last_hidden_bull_div_bar
+        if confirmed_hidden_bear:
+            self._last_fired_hidden_bear_bar = self._last_hidden_bear_div_bar
 
         # Update sliding 6-bar history buffers for divergences (matching Pine Script lines 3152-3157)
         self._bull_div_history.append(bool(ctx.bull_regular_div))
@@ -528,8 +607,8 @@ class StrategyEngine:
         if len(self._bear_div_history) > self.config.div_lookback:
             self._bear_div_history.pop(0)
 
-        self._hidden_bull_history.append(bool(hidden_bull_confirmed))
-        self._hidden_bear_history.append(bool(hidden_bear_confirmed))
+        self._hidden_bull_history.append(bool(confirmed_hidden_bull))
+        self._hidden_bear_history.append(bool(confirmed_hidden_bear))
         if len(self._hidden_bull_history) > self.config.div_lookback:
             self._hidden_bull_history.pop(0)
         if len(self._hidden_bear_history) > self.config.div_lookback:
@@ -550,13 +629,13 @@ class StrategyEngine:
         lightning_buy = standard_lightning_buy
         lightning_sell = standard_lightning_sell
 
-        # 2. Hidden Divergence (Standalone Strategy - Exempt from day types, NCPR, and H4/L4 gating; formed with CPR or VAH/VAL)
-        hidden_div_buy = (hidden_bull_confirmed or (recent_hidden_bull and grs))
-        hidden_div_sell = (hidden_bear_confirmed or (recent_hidden_bear and res))
+        # 2. Hidden Divergence (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR, and H4/L4 gating)
+        hidden_div_buy = confirmed_hidden_bull
+        hidden_div_sell = confirmed_hidden_bear
 
-        # 3. Regular Divergence (Standalone Strategy - Exempt from day types, NCPR, and H4/L4 gating, lines 3152-3153)
-        divergence_buy = recent_bull_div and grs
-        divergence_sell = recent_bear_div and res
+        # 3. Regular Divergence (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR, and H4/L4 gating)
+        divergence_buy = confirmed_reg_bull
+        divergence_sell = confirmed_reg_bear
 
         # 4. Extreme Reversal (Independent signal, standard dayAllowed gate, lines 3166-3168)
         extreme_rev_buy = ctx.extreme_long_signal and long_allowed and day_allowed

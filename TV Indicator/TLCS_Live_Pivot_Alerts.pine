@@ -3452,10 +3452,11 @@ initializeTradeSession(Settings settings, string tradeDirection) =>
     trade.profit -= entryFeesRatio
     settings.totalExchangeFees += entryFeesRatio * settings.initialCapital / 100
     trade.tradeDirection    := tradeDirection
-    trade.entryLevel        := trendLine
+    bool isDivTrade         = str.contains(tradeDirection, 'DIVERGENCE')
+    trade.entryLevel        := isDivTrade ? close : trendLine
 
-    // ✅ Stays false so ghost lines remain hidden until the limit fills!
-    trade.hasHitEntry       := false
+    // For divergence trades, entry is immediate on confirmation candle close!
+    trade.hasHitEntry       := isDivTrade ? true : false
     bool isLong = str.contains(str.upper(tradeDirection), 'LONG')
 
     // 🔥 Dynamic ATR TP/SL Levels
@@ -3691,26 +3692,96 @@ string z1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or 
 // ── LIGHTNING, DIVERGENCE & EXTREME REVERSAL SIGNALS ──────────────────
 // ====================================================================
 
-// ── HIDDEN DIVERGENCE CONFIRMATION (Signal Bar [1] with Subsequent Candle Confirmation) ──
-// Exempt from CPR containment restriction so Hidden Divergence functions anywhere on the chart (like regular divergence)
-bool hiddenBullishConfirmed = (ext_bullishHiddenDiv[1] == 1) and (close > open) and (close > close[1])
-bool hiddenBearishConfirmed = (ext_bearishHiddenDiv[1] == 1) and (close < open) and (close < close[1])
+// ── CONFIRMED DIVERGENCE ENGINE (Confirmation Candle Close Gating) ──
+// Track detection bars for each divergence type
+var int lastRegBullDivBar    = na
+var int lastRegBearDivBar    = na
+var int lastHiddenBullDivBar = na
+var int lastHiddenBearDivBar = na
 
-// Regular Divergence (Standard rules)
-bool regBullDiv = (ext_bullishDiv[1] == 1)
-bool regBearDiv = (ext_bearishDiv[1] == 1)
+// Track last fired bar index to guarantee single-fire per divergence
+var int lastFiredRegBullBar    = na
+var int lastFiredRegBearBar    = na
+var int lastFiredHiddenBullBar = na
+var int lastFiredHiddenBearBar = na
+
+// Record fresh divergence occurrences (Bar 0 - Unconfirmed; cannot fire trade on Bar 0)
+if ext_bullishDiv == 1.0
+    lastRegBullDivBar := bar_index
+if ext_bearishDiv == 1.0
+    lastRegBearDivBar := bar_index
+if ext_bullishHiddenDiv == 1.0
+    lastHiddenBullDivBar := bar_index
+if ext_bearishHiddenDiv == 1.0
+    lastHiddenBearDivBar := bar_index
+
+// Directional confirmation candle definitions:
+// Longs require a bullish close (green candle closing above prior close)
+// Shorts require a bearish close (red candle closing below prior close)
+bool isBullishConfirmCandle = (close > open) and (close > close[1])
+bool isBearishConfirmCandle = (close < open) and (close < close[1])
+
+// Invalidation checks: if price breaks beyond the divergence bar's extreme, invalidate setup
+if not na(lastRegBullDivBar) and (close < low[bar_index - lastRegBullDivBar])
+    lastRegBullDivBar := na
+if not na(lastRegBearDivBar) and (close > high[bar_index - lastRegBearDivBar])
+    lastRegBearDivBar := na
+if not na(lastHiddenBullDivBar) and (close < low[bar_index - lastHiddenBullDivBar])
+    lastHiddenBullDivBar := na
+if not na(lastHiddenBearDivBar) and (close > high[bar_index - lastHiddenBearDivBar])
+    lastHiddenBearDivBar := na
+
+// Window checks: confirmation candle must occur between 1 and 5 bars AFTER divergence (Bars 1 to 5)
+int barsSinceRegBull    = not na(lastRegBullDivBar)    ? (bar_index - lastRegBullDivBar)    : na
+int barsSinceRegBear    = not na(lastRegBearDivBar)    ? (bar_index - lastRegBearDivBar)    : na
+int barsSinceHiddenBull = not na(lastHiddenBullDivBar) ? (bar_index - lastHiddenBullDivBar) : na
+int barsSinceHiddenBear = not na(lastHiddenBearDivBar) ? (bar_index - lastHiddenBearDivBar) : na
+
+// Age expiry: clear tracking if divergence is older than 5 bars
+if not na(barsSinceRegBull) and barsSinceRegBull > 5
+    lastRegBullDivBar := na
+if not na(barsSinceRegBear) and barsSinceRegBear > 5
+    lastRegBearDivBar := na
+if not na(barsSinceHiddenBull) and barsSinceHiddenBull > 5
+    lastHiddenBullDivBar := na
+if not na(barsSinceHiddenBear) and barsSinceHiddenBear > 5
+    lastHiddenBearDivBar := na
+
+bool inWindowRegBull    = not na(barsSinceRegBull)    and barsSinceRegBull >= 1    and barsSinceRegBull <= 5
+bool inWindowRegBear    = not na(barsSinceRegBear)    and barsSinceRegBear >= 1    and barsSinceRegBear <= 5
+bool inWindowHiddenBull = not na(barsSinceHiddenBull) and barsSinceHiddenBull >= 1 and barsSinceHiddenBull <= 5
+bool inWindowHiddenBear = not na(barsSinceHiddenBear) and barsSinceHiddenBear >= 1 and barsSinceHiddenBear <= 5
+
+// Confirmation triggers on the CLOSE of the confirmation candle:
+// Regular Divergence strictly requires GrS / ReS bounce within divergence window
+bool confirmedRegBull = inWindowRegBull and GrS and (na(lastFiredRegBullBar) or lastFiredRegBullBar < lastRegBullDivBar)
+bool confirmedRegBear = inWindowRegBear and ReS and (na(lastFiredRegBearBar) or lastFiredRegBearBar < lastRegBearDivBar)
+
+// Hidden Divergence requires directional confirmation candle close OR GrS/ReS
+bool confirmedHiddenBull = inWindowHiddenBull and (isBullishConfirmCandle or GrS) and (na(lastFiredHiddenBullBar) or lastFiredHiddenBullBar < lastHiddenBullDivBar)
+bool confirmedHiddenBear = inWindowHiddenBear and (isBearishConfirmCandle or ReS) and (na(lastFiredHiddenBearBar) or lastFiredHiddenBearBar < lastHiddenBearDivBar)
+
+// Record fired bar to prevent duplicate entries for the same divergence
+if confirmedRegBull
+    lastFiredRegBullBar := lastRegBullDivBar
+if confirmedRegBear
+    lastFiredRegBearBar := lastRegBearDivBar
+if confirmedHiddenBull
+    lastFiredHiddenBullBar := lastHiddenBullDivBar
+if confirmedHiddenBear
+    lastFiredHiddenBearBar := lastHiddenBearDivBar
 
 // 1. Standard Lightning (Pure Native Missile + Scalp Confluence)
 bool standardLightningBuy  = (CanBuy and ScalpBuy) and longAllowed and dayAllowed
 bool standardLightningSell = (CanSell and ScalpSell) and shortAllowed and dayAllowed
 
-// 2. Regular Divergence Signals (Standalone Strategy - Exempt from day types, NCPR and H4/L4 gating)
-bool DivergenceBuy  = ((regBullDiv or regBullDiv[1] or regBullDiv[2] or regBullDiv[3] or regBullDiv[4] or regBullDiv[5]) and GrS)
-bool DivergenceSell = ((regBearDiv  or regBearDiv[1] or regBearDiv[2] or regBearDiv[3] or regBearDiv[4] or regBearDiv[5]) and ReS)
+// 2. Regular Divergence Signals (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR and H4/L4 gating)
+bool DivergenceBuy  = confirmedRegBull
+bool DivergenceSell = confirmedRegBear
 
-// 3. Hidden Divergence Signals (Standalone Strategy - Exempt from day types, NCPR and H4/L4 gating; H formed with CPR or VAH/VAL)
-bool HiddenDivBuy   = (hiddenBullishConfirmed or ((hiddenBullishConfirmed or hiddenBullishConfirmed[1] or hiddenBullishConfirmed[2] or hiddenBullishConfirmed[3] or hiddenBullishConfirmed[4] or hiddenBullishConfirmed[5]) and GrS))
-bool HiddenDivSell  = (hiddenBearishConfirmed or ((hiddenBearishConfirmed or hiddenBearishConfirmed[1] or hiddenBearishConfirmed[2] or hiddenBearishConfirmed[3] or hiddenBearishConfirmed[4] or hiddenBearishConfirmed[5]) and ReS))
+// 3. Hidden Divergence Signals (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR and H4/L4 gating)
+bool HiddenDivBuy   = confirmedHiddenBull
+bool HiddenDivSell  = confirmedHiddenBear
 
 // Combined Lightning Buy / Sell
 bool LightningBuy   = standardLightningBuy
@@ -3724,8 +3795,8 @@ bool ExtremeReversalBuy  = Elongsignal and longAllowed and dayAllowed
 bool ExtremeReversalSell = Eshortsignal and shortAllowed and dayAllowed
 
 // Confluence Gating (Orthogonal Trend + Divergence Window - 6 Bars)
-bool hasBullDivWindow = (regBullDiv or regBullDiv[1] or regBullDiv[2] or regBullDiv[3] or regBullDiv[4] or regBullDiv[5] or hiddenBullishConfirmed or hiddenBullishConfirmed[1] or hiddenBullishConfirmed[2] or hiddenBullishConfirmed[3] or hiddenBullishConfirmed[4] or hiddenBullishConfirmed[5])
-bool hasBearDivWindow = (regBearDiv or regBearDiv[1] or regBearDiv[2] or regBearDiv[3] or regBearDiv[4] or regBearDiv[5] or hiddenBearishConfirmed or hiddenBearishConfirmed[1] or hiddenBearishConfirmed[2] or hiddenBearishConfirmed[3] or hiddenBearishConfirmed[4] or hiddenBearishConfirmed[5])
+bool hasBullDivWindow = (inWindowRegBull or inWindowHiddenBull or confirmedRegBull or confirmedHiddenBull)
+bool hasBearDivWindow = (inWindowRegBear or inWindowHiddenBear or confirmedRegBear or confirmedHiddenBear)
 bool confluenceLongAllowed = not enable_confluence_filter or hasBullDivWindow
 bool confluenceShortAllowed = not enable_confluence_filter or hasBearDivWindow
 
