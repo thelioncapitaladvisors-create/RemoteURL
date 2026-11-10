@@ -2890,10 +2890,10 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         propLabel = labelPropertiesMap.get(divergenceType)
 
                         pLine = line.new(lastPricePoint.time, lastPricePoint.price, pricePoint.time, pricePoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=1, force_overlay=true)
-                        oLine = line.new(llastOscillatorPoint.time, llastOscillatorPoint.price, oscillatorPoint.time, oscillatorPoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=1, force_overlay=false)
+                        line oLine = na
 
                         pLabel = label.new(pricePoint.time, pricePoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=true)
-                        oLabel = label.new(oscillatorPoint.time, oscillatorPoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=false)
+                        label oLabel = na
                         
                         if allowedDivergenceTypes.get(divergenceType)
                             alert('Alert : ' + priceTooltipText, alert.freq_once_per_bar_close)

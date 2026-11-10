@@ -1,5 +1,5 @@
 # ==============================================================================
-# TLCS Black Box Signal Engine Daemon v2.0 - Production Dockerfile
+# TLCS Black Box Signal Engine Daemon v3.0 - Production Dockerfile
 # ==============================================================================
 FROM python:3.11-slim AS runtime
 

@@ -7,6 +7,28 @@
   - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
   - Gating must NEVER rely on `close` for limit entry qualification.
 
+## Version 3.0: Master Production Release & Revamped Trade Logics Mandate (Effective November 10, 2026)
+- **Canonical Master Indicator Version 3.0 Standard**:
+  - All Pine Script indicator engines (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0`.
+  - All three source files MUST maintain 100% byte-for-byte SHA256 checksum parity (`06bdeb6ba1468126cff17e708df591c71cc5c610ae2d1b3c833e7c87189ac9d4`).
+- **Symmetrical Neutral Zone Fire_Alert Confluence Gate**:
+  - In both the indicator engines and Python BlackBox (`strategies.py`), `Fire_Alert` is strictly gated to the **Neutral Zone** (`Fire_Alert = Anysignal and not (Greenzcol or Redzcol)`).
+  - Long trades and short trades are **BOTH PROHIBITED** inside Greenzone and Redzone for `Fire_Alert`.
+  - Confluence dots render exclusively in the Neutral zone with dynamic directional coloring: `isFireLong ? color.green : color.red`.
+- **Complete Elimination of Engulfing Trend Limit Candles**:
+  - Bearish Engulfing at Top (`highTrendLimitLevel = bool(bearpower)`) and Bullish Engulfing at Bottom (`lowTrendLimitLevel = bool(bullpower)`) are completely removed from indicator plots and trade signals (`bool highTrendLimitLevel = false`, `bool lowTrendLimitLevel = false`).
+  - They are permanently excised from `Fire_Alert` candidate lists (`isFireLong`, `isFireShort`, `Anysignal`).
+- **Standalone Divergences (Regular D & Hidden H) Parity**:
+  - Regular Divergence (`D`): Ternary directional condition (`isBullCandle ? bullCond : ...`) is permanently removed. Evaluated with sliding 6-bar history on `GrS` / `ReS` Power Candle bounces. Fully exempt from CPR and H4/L4 gating.
+  - Hidden Divergence (`H`): Exempt from H4/L4 limit gating and Narrow CPR restrictions; gated to formation within CPR boundaries (`cpr_top` / `cpr_bottom`) or Value Area (`VAH` / `VAL`).
+- **Standalone DhanHQ BlackBox Autonomous Execution Parity**:
+  - Standalone DhanHQ Python BlackBox engine (`algo_engine/`) runs autonomously for approved Indian markets:
+    - **NIFTY**: Top 100 NSE Equities (`RELIANCE`, `HDFCBANK`, `INFY`, `TCS`, `ICICIBANK`, `SBIN`, etc.).
+    - **MCX**: MCX front-month commodity futures (`CRUDEOIL`, `CRUDEOILM`, `NATURALGAS`, `NATURALGASM`, `GOLD`, `GOLDM`, `SILVER`, `SILVERM`, `COPPER`, `ZINC`, `ALUMINIUM`).
+  - Directly ingests DhanHQ WebSocket quotes, aggregates 15m and Daily bars, computes CPR, Camarilla, ATR, and Value Area math, and evaluates Version 3.0 strategy triggers without relying on TradingView webhooks.
+  - Directly writes autonomous trades to Supabase `public.shadow_signals` (`source = 'blackbox_dhan'`, `meta.source_feed = 'DhanHQ'`), which powers the DhanHQ Screener (`DHAN_SCREENER`) and DhanHQ Paper Portfolio (`DHAN_PAPER`) on mobile.
+  - Dispatches live alerts directly to Telegram channels via `TelegramDispatcher` on trade fill (`⚡ TRADE ACTIVE`), trailing stop update (`🎯 TRAILING STOP UPDATE`), and trade settlement (`🛑 TRADE CLOSED` with exact percentage return).
+
 ## Version 1.0: System Architecture & Single Source of Truth Rules
 - As of Version 1.0, we have globally deprecated all `r_multiple` and TradingView-provided `outcome_pct` parsing.
 - **NEVER** attempt to extract, parse, or rely on `r_multiple` or `profit_pct` coming from the webhook body payload for performance metrics. 

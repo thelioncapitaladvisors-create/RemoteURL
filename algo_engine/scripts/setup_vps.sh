@@ -17,7 +17,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}================================================================${NC}"
-echo -e "${BLUE}      TLCS BLACK BOX SIGNAL ENGINE DAEMON - VPS SETUP (v2.0)     ${NC}"
+echo -e "${BLUE}      TLCS BLACK BOX SIGNAL ENGINE DAEMON - VPS SETUP (v3.0)     ${NC}"
 echo -e "${BLUE}================================================================${NC}"
 
 # Check for root/sudo

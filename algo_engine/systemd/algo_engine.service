@@ -10,7 +10,7 @@
 # ==============================================================================
 
 [Unit]
-Description=TLCS Black Box Signal Engine Daemon v2.0
+Description=TLCS Black Box Signal Engine Daemon v3.0
 Documentation=https://thelioncapitalsolutions.com
 After=network.target network-online.target
 Wants=network-online.target

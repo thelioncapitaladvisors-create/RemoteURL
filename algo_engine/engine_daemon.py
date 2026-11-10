@@ -323,7 +323,7 @@ class EngineDaemon:
 
     def start(self) -> None:
         """Start daemon and data feeds."""
-        logger.info(f"=== TLCS Black Box Signal Engine Daemon v2.0 ===")
+        logger.info(f"=== TLCS Black Box Signal Engine Daemon v3.0 ===")
         logger.info(f"Mode: {'MOCK SIMULATION' if self.mock_mode else 'LIVE PRODUCTION'}")
         logger.info(f"Subscribed Markets: {self.active_markets}")
 

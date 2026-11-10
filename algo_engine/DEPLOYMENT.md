@@ -1,6 +1,6 @@
 # TLCS Black Box Signal Engine Daemon — Production VPS Cloud Deployment Guide
 
-This guide provides end-to-end instructions for deploying the **TLCS Black Box Signal Engine Daemon v2.0** on a 24/7 cloud Virtual Private Server (VPS). 
+This guide provides end-to-end instructions for deploying the **TLCS Black Box Signal Engine Daemon v3.0** on a 24/7 cloud Virtual Private Server (VPS). 
 
 ---
 

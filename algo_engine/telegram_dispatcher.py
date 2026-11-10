@@ -101,7 +101,7 @@ class TelegramDispatcher:
             f"<b>Target 2:</b> <code>{trade.tp2}</code>\n"
             f"<b>Target 3:</b> <code>{trade.tp3}</code>\n"
             f"<b>Target 4:</b> <code>{trade.tp4}</code>\n\n"
-            f"<i>Engine: TLCS Black Box v2.0 (Shadow Mode)</i>"
+            f"<i>Engine: TLCS Black Box v3.0 (Autonomous Execution)</i>"
         )
 
         return self.send_message(sym, msg)
