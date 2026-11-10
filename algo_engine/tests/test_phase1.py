@@ -1608,11 +1608,11 @@ class TestVirginCPR(unittest.TestCase):
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
             if s.is_long and s.name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR"):
-                self.assertTrue(s.fire_alert, f"Long Signal {s.name} must have fire_alert=True in GREENZONE (not redzone)")
-                self.assertEqual(s.fire_zone, "FIREZONE")
+                self.assertFalse(s.fire_alert, f"Long Signal {s.name} must have fire_alert=False in GREENZONE (blocked)")
+                self.assertEqual(s.fire_zone, "ZONE")
 
-    def test_fire_alert_short_in_redzone_triggers(self):
-        """Verify SHORT Fire_Alert is True when in REDZONE (since Short requires NOT in Greenzone)."""
+    def test_fire_alert_short_in_redzone_blocked(self):
+        """Verify SHORT Fire_Alert is False when in REDZONE (both Longs and Shorts blocked in Redzone)."""
         engine = StrategyEngine()
         b = OHLC(open=100.0, high=101.0, low=94.0, close=95.0)
         # Redzone: minus > plus, short_ema < med_ema, pivot_trend_fast < pivot_trend_slow
@@ -1631,8 +1631,8 @@ class TestVirginCPR(unittest.TestCase):
         self.assertGreater(len(sigs), 0, "Signal should trigger")
         for s in sigs:
             if not s.is_long and s.name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR"):
-                self.assertTrue(s.fire_alert, f"Short Signal {s.name} must have fire_alert=True in REDZONE (not greenzone)")
-                self.assertEqual(s.fire_zone, "FIREZONE")
+                self.assertFalse(s.fire_alert, f"Short Signal {s.name} must have fire_alert=False in REDZONE (blocked)")
+                self.assertEqual(s.fire_zone, "ZONE")
 
     def test_fire_alert_neutral_zone_triggered(self):
         """Verify Fire_Alert triggers when Anysignal fires in NEUTRAL zone (both greenzone and redzone false)."""
@@ -1659,19 +1659,14 @@ class TestVirginCPR(unittest.TestCase):
                 self.assertEqual(s.fire_zone, "FIREZONE")
 
     def test_fire_zone_logic(self):
-        """Verify fire_zone requires either not greenzone (for short) or not redzone (for long)."""
-        eval_fire_zone = lambda is_long, gz, rz: "FIREZONE" if (is_long and not rz) or (not is_long and not gz) else "ZONE"
-        # 1. Long in Greenzone (not Redzone) -> Valid FIREZONE
-        self.assertEqual(eval_fire_zone(True, True, False), "FIREZONE")
-        # 2. Long in Redzone -> ZONE (suppressed)
-        self.assertEqual(eval_fire_zone(True, False, True), "ZONE")
-        # 3. Short in Redzone (not Greenzone) -> Valid FIREZONE
-        self.assertEqual(eval_fire_zone(False, False, True), "FIREZONE")
-        # 4. Short in Greenzone -> ZONE (suppressed)
-        self.assertEqual(eval_fire_zone(False, True, False), "ZONE")
-        # 5. Neutral (both false) -> Both valid FIREZONE
-        self.assertEqual(eval_fire_zone(True, False, False), "FIREZONE")
-        self.assertEqual(eval_fire_zone(False, False, False), "FIREZONE")
+        """Verify fire_zone requires strictly neutral zone (both greenzone and redzone false)."""
+        eval_fire_zone = lambda gz, rz: "FIREZONE" if not (gz or rz) else "ZONE"
+        # 1. Greenzone -> ZONE (suppressed)
+        self.assertEqual(eval_fire_zone(True, False), "ZONE")
+        # 2. Redzone -> ZONE (suppressed)
+        self.assertEqual(eval_fire_zone(False, True), "ZONE")
+        # 3. Neutral (both false) -> FIREZONE (allowed)
+        self.assertEqual(eval_fire_zone(False, False), "FIREZONE")
 
     def test_shadow_pipeline_records_fire_zone_metadata(self):
         """Verify shadow pipeline records canonical signals as usual with accurate fire_zone metadata."""
@@ -1747,7 +1742,7 @@ class TestVirginCPR(unittest.TestCase):
             prev_close=99.0,
             H4=110.0, L4=90.0, H3=105.0, L3=95.0,
             cpr_pivot=155.0, cpr_tc=160.0, cpr_bc=150.0, is_ncpr=False,
-            short_ema=101.0, med_ema=99.0,
+            short_ema=98.0, med_ema=100.0,
             pivot_trend_fast=102.0, pivot_trend_slow=100.0,
             bull_hidden_div=True, # Raw divergence on bar[1]
             plus=25.0, minus=10.0, m0=10.0, m10=5.0,

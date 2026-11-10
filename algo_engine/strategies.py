@@ -595,8 +595,9 @@ class StrategyEngine:
             extreme_rev_buy or extreme_rev_sell or
             bounce_up or bounce_down
         )
-        # Directional firezone baseline: either not greenzone or not redzone
-        is_in_fire_zone = (not greenzone) or (not redzone)
+        # Neutral firezone gate: Both Longs and Shorts blocked in Greenzone and Redzone
+        # Only valid in Neutral zone (neither greenzone nor redzone)
+        is_in_fire_zone = not (greenzone or redzone)
         fire_zone = "FIREZONE" if is_in_fire_zone else "ZONE"
         fire_alert = any_signal and is_in_fire_zone
 
@@ -668,10 +669,9 @@ class StrategyEngine:
                     is_confluence = True
                     confluence_tag = "LIGHTNING_TRIPLE"
 
-            # Directional Firezone Gate (either not greenzone or not redzone based on direction):
-            # Long signals qualify if not redzone (Greenzone or Neutral)
-            # Short signals qualify if not greenzone (Redzone or Neutral)
-            sig_in_fire_zone = (not redzone) if is_long else (not greenzone)
+            # Firezone Gate: Both Longs and Shorts blocked in Greenzone and Redzone
+            # Only valid in Neutral zone (neither greenzone nor redzone)
+            sig_in_fire_zone = not (greenzone or redzone)
             sig_fire_zone = "FIREZONE" if sig_in_fire_zone else "ZONE"
             sig_fire_alert = (any_signal and sig_in_fire_zone) if name not in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR") else False
 
