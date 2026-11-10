@@ -1729,19 +1729,20 @@ class TestVirginCPR(unittest.TestCase):
         self.assertIn("SHORT MISSILE", SP_TRIGGERS)
         self.assertIn("LONG VIRGIN CPR", SP_TRIGGERS)
 
-    def test_hidden_divergence_anywhere_with_confirmation(self):
-        """Verify Hidden Divergence triggers anywhere on chart (CPR restriction removed) with subsequent candle confirmation."""
+    def test_hidden_divergence_formed_with_cpr_or_vah_val_no_h4_l4_gating(self):
+        """Verify Hidden Divergence triggers when formed with CPR or within VAH/VAL, and has no H4/L4 gating."""
         engine = StrategyEngine()
 
-        # Subsequent candle confirms with green candle and close > prev_close
-        b = OHLC(open=100.0, high=105.0, low=99.0, close=104.0)
-        # CPR is at 150-160 (far away from price 100-104)
-        ctx = MarketContext(
-            bar=b, bar_index=2,
-            prev_bar=OHLC(open=102.0, high=103.0, low=98.0, close=99.0), # red signal bar
+        # Case 1: Formed with CPR (cpr_bc=95, cpr_tc=105; bar low=99, high=105 is inside CPR)
+        # Even with bar.low (99.0) >= H4 (98.0) - i.e. H4 gating would fail if applied - divergence triggers!
+        b1 = OHLC(open=100.0, high=105.0, low=99.0, close=104.0)
+        ctx1 = MarketContext(
+            bar=b1, bar_index=2,
+            prev_bar=OHLC(open=102.0, high=103.0, low=98.0, close=99.0),
             prev_close=99.0,
-            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
-            cpr_pivot=155.0, cpr_tc=160.0, cpr_bc=150.0, is_ncpr=False,
+            H4=98.0, L4=90.0, H3=105.0, L3=95.0, # low 99.0 is NOT < H4 (98.0)!
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            vah=120.0, val=115.0,
             short_ema=98.0, med_ema=100.0,
             pivot_trend_fast=102.0, pivot_trend_slow=100.0,
             bull_hidden_div=True, # Raw divergence on bar[1]
@@ -1749,12 +1750,68 @@ class TestVirginCPR(unittest.TestCase):
             day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
             session_highest=105.0, session_lowest=98.0, atr=2.0
         )
-        sigs = engine.evaluate(ctx)
-        hid_sigs = [s for s in sigs if "HIDDEN DIVERGENCE" in s.name]
-        self.assertGreater(len(hid_sigs), 0, "LONG HIDDEN DIVERGENCE must trigger anywhere on chart upon subsequent candle confirmation")
-        self.assertEqual(hid_sigs[0].direction, "LONG")
-        self.assertTrue(hid_sigs[0].fire_alert, "Hidden divergence in firezone must have fire_alert=True")
-        self.assertEqual(hid_sigs[0].fire_zone, "FIREZONE")
+        sigs1 = engine.evaluate(ctx1)
+        hid_sigs1 = [s for s in sigs1 if "HIDDEN DIVERGENCE" in s.name]
+        self.assertGreater(len(hid_sigs1), 0, "LONG HIDDEN DIVERGENCE formed within CPR must trigger without H4 gating")
+        self.assertEqual(hid_sigs1[0].direction, "LONG")
+
+        # Case 2: Formed within VAH/VAL (val=98, vah=108; bar low=99, high=105 is inside VAH/VAL)
+        # CPR is far away (150-160), low (99.0) >= H4 (98.0)
+        engine2 = StrategyEngine()
+        ctx2 = MarketContext(
+            bar=b1, bar_index=2,
+            prev_bar=OHLC(open=102.0, high=103.0, low=98.0, close=99.0),
+            prev_close=99.0,
+            H4=98.0, L4=90.0, H3=105.0, L3=95.0, # low 99.0 is NOT < H4 (98.0)!
+            cpr_pivot=155.0, cpr_tc=160.0, cpr_bc=150.0, is_ncpr=False, # CPR far away
+            vah=108.0, val=98.0, # Inside VAH/VAL!
+            short_ema=98.0, med_ema=100.0,
+            pivot_trend_fast=102.0, pivot_trend_slow=100.0,
+            bull_hidden_div=True,
+            plus=25.0, minus=10.0, m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=98.0, atr=2.0
+        )
+        sigs2 = engine2.evaluate(ctx2)
+        hid_sigs2 = [s for s in sigs2 if "HIDDEN DIVERGENCE" in s.name]
+        self.assertGreater(len(hid_sigs2), 0, "LONG HIDDEN DIVERGENCE formed within VAH/VAL must trigger without H4 gating")
+
+        # Case 3: Outside CPR AND Outside VAH/VAL: Must NOT trigger!
+        engine3 = StrategyEngine()
+        ctx3 = MarketContext(
+            bar=b1, bar_index=2,
+            prev_bar=OHLC(open=102.0, high=103.0, low=98.0, close=99.0),
+            prev_close=99.0,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=155.0, cpr_tc=160.0, cpr_bc=150.0, is_ncpr=False, # CPR far away (150-160)
+            vah=80.0, val=70.0, # VAH/VAL far away (70-80)
+            short_ema=98.0, med_ema=100.0,
+            pivot_trend_fast=102.0, pivot_trend_slow=100.0,
+            bull_hidden_div=True,
+            plus=25.0, minus=10.0, m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=98.0, atr=2.0
+        )
+        sigs3 = engine3.evaluate(ctx3)
+        hid_sigs3 = [s for s in sigs3 if "HIDDEN DIVERGENCE" in s.name]
+        self.assertEqual(len(hid_sigs3), 0, "LONG HIDDEN DIVERGENCE outside CPR and outside VAH/VAL must NOT trigger")
+
+        # Case 4: Regular Divergence: triggers without H4 gating
+        engine4 = StrategyEngine()
+        # Bar with GrS bounce from CPR pivot, but low >= H4
+        b4 = OHLC(open=101.0, high=106.0, low=99.5, close=105.0)
+        ctx4 = MarketContext(
+            bar=b4, bar_index=1,
+            H4=98.0, L4=80.0, H3=110.0, L3=90.0, # low 99.5 is NOT < H4 (98.0)!
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            plus=20.0, minus=10.0, m0=10.0, m10=5.0,
+            bull_regular_div=True,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=106.0, session_lowest=98.0, atr=5.0
+        )
+        sigs4 = engine4.evaluate(ctx4)
+        div_sigs4 = [s for s in sigs4 if s.name == "LONG DIVERGENCE"]
+        self.assertGreater(len(div_sigs4), 0, "LONG DIVERGENCE must trigger without H4 gating")
 
 
 if __name__ == '__main__':

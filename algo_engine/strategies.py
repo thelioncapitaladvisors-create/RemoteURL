@@ -497,11 +497,27 @@ class StrategyEngine:
         # ═══════════════════════════════════════════════════════
         # HIDDEN DIVERGENCE CONFIRMATION (lines 3082-3093 / 3130-3141)
         # ═══════════════════════════════════════════════════════
-        # Hidden Divergence Confirmation (exempt from CPR containment restriction,
-        # functions anywhere on chart with waiting for subsequent candle confirmation)
-        hidden_bull_confirmed = bool(ctx.bull_hidden_div and bar.is_green and
+        # Hidden Divergence: Must be formed with CPR or within VAH and VAL levels
+        cpr_top = max(dtc, dbc)
+        cpr_bottom = min(dtc, dbc)
+        vah_level = max(ctx.vah, ctx.val)
+        val_level = min(ctx.vah, ctx.val)
+
+        formed_with_cpr = (
+            (bar.high >= cpr_bottom and bar.low <= cpr_top) or
+            (ctx.prev_bar is not None and ctx.prev_bar.high >= ybc and ctx.prev_bar.low <= ytc)
+        )
+        formed_within_vah_val = (
+            (vah_level > 0 and val_level > 0) and (
+                (bar.high >= val_level and bar.low <= vah_level) or
+                (ctx.prev_bar is not None and ctx.prev_bar.high >= val_level and ctx.prev_bar.low <= vah_level)
+            )
+        )
+        hidden_div_allowed = formed_with_cpr or formed_within_vah_val
+
+        hidden_bull_confirmed = bool(ctx.bull_hidden_div and hidden_div_allowed and bar.is_green and
                                      bar.close > ctx.prev_close)
-        hidden_bear_confirmed = bool(ctx.bear_hidden_div and bar.is_red and
+        hidden_bear_confirmed = bool(ctx.bear_hidden_div and hidden_div_allowed and bar.is_red and
                                      bar.close < ctx.prev_close)
 
         # Update sliding 6-bar history buffers for divergences (matching Pine Script lines 3152-3157)
@@ -534,13 +550,13 @@ class StrategyEngine:
         lightning_buy = standard_lightning_buy
         lightning_sell = standard_lightning_sell
 
-        # 2. Hidden Divergence (Standalone Strategy - Exempt from CPR containment, day types and NCPR)
-        hidden_div_buy = (hidden_bull_confirmed or (recent_hidden_bull and grs)) and long_allowed
-        hidden_div_sell = (hidden_bear_confirmed or (recent_hidden_bear and res)) and short_allowed
+        # 2. Hidden Divergence (Standalone Strategy - Exempt from day types, NCPR, and H4/L4 gating; formed with CPR or VAH/VAL)
+        hidden_div_buy = (hidden_bull_confirmed or (recent_hidden_bull and grs))
+        hidden_div_sell = (hidden_bear_confirmed or (recent_hidden_bear and res))
 
-        # 3. Regular Divergence (Standalone Strategy - Exempt from day types and NCPR, lines 3152-3153)
-        divergence_buy = recent_bull_div and grs and long_allowed
-        divergence_sell = recent_bear_div and res and short_allowed
+        # 3. Regular Divergence (Standalone Strategy - Exempt from day types, NCPR, and H4/L4 gating, lines 3152-3153)
+        divergence_buy = recent_bull_div and grs
+        divergence_sell = recent_bear_div and res
 
         # 4. Extreme Reversal (Independent signal, standard dayAllowed gate, lines 3166-3168)
         extreme_rev_buy = ctx.extreme_long_signal and long_allowed and day_allowed
