@@ -1,9 +1,13 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // © TheLionCapitalsolutions.com and market-store.online
+// ====================================================================
+// TLCS PivotBoss Indicator — Version 3.0 (Master Release)
+// Canonical Production Indicator & Standalone DhanHQ BlackBox Parity
+// ====================================================================
 
 //@version=6
 
-indicator('TLCS PivotBoss Indicator', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
+indicator('TLCS PivotBoss Indicator v3.0', shorttitle = 'TLCS v3.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
 // ──── INPUTS ────────────────────────────────────────────────────────
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')

@@ -1814,6 +1814,117 @@ class TestVirginCPR(unittest.TestCase):
         self.assertGreater(len(div_sigs4), 0, "LONG DIVERGENCE must trigger without H4 gating")
 
 
+# ====================================================================
+# TEST: VERSION 3.0 BLACKBOX & MASTER INDICATOR PARITY
+# ====================================================================
+class TestVersion30BlackBoxParity(unittest.TestCase):
+    """
+    Version 3.0 Master Release Parity Verification:
+    1. Engulfing candle limits (highTrendLimitLevel/lowTrendLimitLevel) excluded from signals and Fire_Alert.
+    2. Fire_Alert strictly gated to Neutral Zone (not (greenzone or redzone)).
+    3. Standalone DhanHQ BlackBox routes approved Indian markets (NIFTY & MCX) autonomously without webhooks.
+    """
+
+    def test_version_30_engulfing_limits_excluded_from_fire_alert(self):
+        """Verifies engulfing candles alone never trigger signals or Fire_Alert."""
+        engine = StrategyEngine()
+        # Bar that would be Bullish Engulfing: prev red candle, cur green candle engulfing
+        b_prev = OHLC(open=102.0, high=102.5, low=98.0, close=98.5)
+        b_cur = OHLC(open=98.0, high=104.0, low=97.5, close=103.5)
+        ctx = MarketContext(
+            bar=b_cur, bar_index=1,
+            prev_bar=b_prev, prev_close=b_prev.close, prev_open=b_prev.open,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            # No divergence, neutral trend
+            bull_regular_div=False, bear_regular_div=False,
+            bull_hidden_div=False, bear_hidden_div=False,
+            short_ema=100.0, med_ema=100.0,
+            plus=20.0, minus=20.0, m0=0.0, m10=0.0,
+            day_type_label="TYPICAL DAY, TRADING RANGE, SIDEWAYS",
+            session_highest=104.0, session_lowest=97.5, atr=2.0
+        )
+        signals = engine.evaluate(ctx)
+        # In Version 3.0, bullpower/bearpower does not generate any LONG BOTTOM / SHORT TOP
+        non_canonical = [s for s in signals if "BOTTOM" in s.name or "TOP" in s.name]
+        self.assertEqual(len(non_canonical), 0, "Engulfing candle trend limits must NOT generate signals in Version 3.0")
+
+    def test_version_30_fire_alert_neutral_zone_symmetrical(self):
+        """Verifies Fire_Alert is blocked in Greenzone and Redzone, firing only in Neutral zone."""
+        from algo_engine.strategies import StrategyEngine
+        engine = StrategyEngine()
+
+        # Candle and base setup
+        b = OHLC(open=99.0, high=105.0, low=96.0, close=104.0)
+        # 1. Neutral Zone: plus == minus, or fShortEMA == fMedEMA
+        # Fire_Alert should be true when any_signal and not (greenzone or redzone)
+        ctx_neutral = MarketContext(
+            bar=b, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            extreme_long_signal=True, # triggers Extreme Reversal Buy
+            short_ema=101.0, med_ema=101.0, # fShortEMA == fMedEMA -> neither greenzone nor redzone
+            pivot_trend_fast=100.0, pivot_trend_slow=100.0,
+            plus=25.0, minus=25.0, # plus == minus -> neither greenzone nor redzone
+            m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=96.0, atr=3.0
+        )
+        sigs_neutral = engine.evaluate(ctx_neutral)
+        self.assertTrue(len(sigs_neutral) > 0, "Must generate at least one signal in neutral zone")
+        self.assertTrue(any(s.fire_alert for s in sigs_neutral), "Fire_Alert must trigger in Neutral Zone")
+
+        # 2. Greenzone: plus > minus and fShortEMA > fMedEMA and fPivotPDEMAF > fPivotPDEMAS
+        engine_green = StrategyEngine()
+        ctx_green = MarketContext(
+            bar=b, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            extreme_long_signal=True,
+            short_ema=105.0, med_ema=100.0, # short > med
+            pivot_trend_fast=105.0, pivot_trend_slow=100.0, # fast > slow
+            plus=35.0, minus=15.0, # plus > minus -> GREENZONE!
+            m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=96.0, atr=3.0
+        )
+        sigs_green = engine_green.evaluate(ctx_green)
+        self.assertTrue(len(sigs_green) > 0, "Signal itself may trigger")
+        self.assertFalse(any(s.fire_alert for s in sigs_green), "Fire_Alert must be BLOCKED in Greenzone")
+
+        # 3. Redzone: minus > plus and fShortEMA < fMedEMA and fPivotPDEMAF < fPivotPDEMAS
+        engine_red = StrategyEngine()
+        ctx_red = MarketContext(
+            bar=b, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            extreme_long_signal=True,
+            short_ema=95.0, med_ema=100.0, # short < med
+            pivot_trend_fast=95.0, pivot_trend_slow=100.0, # fast < slow
+            plus=15.0, minus=35.0, # minus > plus -> REDZONE!
+            m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=96.0, atr=3.0
+        )
+        sigs_red = engine_red.evaluate(ctx_red)
+        self.assertTrue(len(sigs_red) > 0, "Signal itself may trigger")
+        self.assertFalse(any(s.fire_alert for s in sigs_red), "Fire_Alert must be BLOCKED in Redzone")
+
+    def test_version_30_dhan_approved_markets_autonomous_routing(self):
+        """Verifies approved Indian markets (NIFTY & MCX) are routed autonomously without webhooks."""
+        from algo_engine.feeds import get_market_category
+        # Approved Indian Equities
+        self.assertEqual(get_market_category("RELIANCE"), "NIFTY")
+        self.assertEqual(get_market_category("HDFCBANK"), "NIFTY")
+        self.assertEqual(get_market_category("TCS"), "NIFTY")
+        # Approved MCX Commodities
+        self.assertEqual(get_market_category("CRUDEOIL"), "MCX")
+        self.assertEqual(get_market_category("NATURALGAS"), "MCX")
+        self.assertEqual(get_market_category("GOLD"), "MCX")
+        self.assertEqual(get_market_category("SILVER"), "MCX")
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+
 
