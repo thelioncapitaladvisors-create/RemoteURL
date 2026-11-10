@@ -3815,13 +3815,14 @@ processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX
 // 9. ON-CHART PLOTTINGS & VISUAL MARKERS
 // ====================================================================
 
-// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS
-plotshape(DivergenceBuy,  title = "Bullish Regular Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
-plotshape(DivergenceSell, title = "Bearish Regular Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
+// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS (Legacy plotshapes disabled to prevent duplicate/phantom labels; rendered natively by Zigzag Divergence Screener label.new at line 2890)
+// plotshape(DivergenceBuy,  title = "Bullish Regular Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
+// plotshape(DivergenceSell, title = "Bearish Regular Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
 
-// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS
-plotshape(HiddenDivBuy,  title = "Bullish Hidden Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.teal, 0),   text = "H", textcolor = color.white, size = size.small)
-plotshape(HiddenDivSell, title = "Bearish Hidden Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.orange, 0), text = "H", textcolor = color.black, size = size.small)
+// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS (Legacy plotshapes disabled to prevent duplicate/phantom labels; rendered natively by Zigzag Divergence Screener label.new at line 2890)
+// plotshape(HiddenDivBuy,  title = "Bullish Hidden Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.teal, 0),   text = "H", textcolor = color.white, size = size.small)
+// plotshape(HiddenDivSell, title = "Bearish Hidden Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.orange, 0), text = "H", textcolor = color.black, size = size.small)
+
 
 // ⚡ 3. LIGHTNING PLOTS
 plotchar(LightningBuy  and dayAllowed and longAllowed,  title = "Lightning Buy (Star)",  char = '★', location = location.belowbar, color = color.teal,   size = size.normal)
