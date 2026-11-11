@@ -526,16 +526,16 @@ minus = fixnan(100 * ta.rma(minusDM, len) / trur)
 sum = plus + minus
 
 spanColor = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.green : color.red
-spanColor1A = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10)? color.green : color.red
-spanColor2A = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m0) ? color.maroon : color.teal
+spanColor1A = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.green : color.red
+spanColor2A = (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.maroon : color.teal
 
 col1 = m0 > m10 and m10 < -60 and plus > minus and fShortEMA > fMedEMA and close > fMedEMA ? color.teal : m0 > m10 and m10 < -50 and minus > plus and fShortEMA > fMedEMA and close > fMedEMA ? color.teal : m0 > m10 and m10 < -50 and minus > plus and fShortEMA > fMedEMA ? color.green : m0 > m10 and m10 > -70 and plus > minus ? color.teal : m0 < m10 and m10 > -40 and minus > plus and fShortEMA < fMedEMA ? color.maroon : m0 > m10 and m10 > -50 and minus < plus and fShortEMA < fMedEMA and close < fMedEMA ? color.red : m0 < m10 and m10 > -40 and plus > minus and fShortEMA < fMedEMA and close < fMedEMA ? color.maroon : m0 < m10 and m10 < -30 and minus > plus and fShortEMA < fMedEMA ? color.maroon : color.blue
 
-AdxCol = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.green : (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.red : color.new(color.white, 0)
-AdxCol1 = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.teal : (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.maroon : color.new(color.white, 0)
+AdxCol = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.green : (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.red : (fShortEMA >= fMedEMA ? color.green : color.red)
+AdxCol1 = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.teal : (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.maroon : (fShortEMA >= fMedEMA ? color.teal : color.maroon)
 
 twilight= (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.new(AdxCol,0) : color.new(AdxCol,0)
-twilight1= (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.new(AdxCol,0) : color.new(AdxCol,0)
+twilight1= (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.new(AdxCol1,0) : color.new(AdxCol1,0)
 
 twilightr= (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? 0 : 0
 twilightr1= (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? 0 : 0
@@ -543,10 +543,10 @@ twilightr1= (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ?
 twilightr2= (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? 25 : 25
 twilightr3= (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? 25 : 25
 
-AdxCol2 = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.rgb(25, 139, 84) : (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.rgb(160, 47, 180) : color.new(#887c12, 0)
+AdxCol2 = (plus >= minus) and (fPivotPDEMAF >= fPivotPDEMAS) and (m0 >= m10) ? color.rgb(25, 139, 84) : (minus >= plus) and (fPivotPDEMAF <= fPivotPDEMAS) and (m0 <= m10) ? color.maroon : (fShortEMA >= fMedEMA ? color.rgb(25, 139, 84) : color.maroon)
 
-plot(fMedEMA, title = 'PEMAMed', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
-plot(fShortEMA, title = 'PEMASlow', style = plot.style_line, color = color.new(AdxCol2, twilightr2), linewidth = 1)
+plot(fMedEMA, title = 'PEMAMed', style = plot.style_line, color = color.new(AdxCol1, twilightr2), linewidth = 1)
+plot(fShortEMA, title = 'PEMASlow', style = plot.style_line, color = color.new(AdxCol, twilightr2), linewidth = 1)
 
 
 //====================================
@@ -3699,6 +3699,16 @@ var int lastRegBearDivBar    = na
 var int lastHiddenBullDivBar = na
 var int lastHiddenBearDivBar = na
 
+// Track divergence bar extremes for structural invalidation
+var float lastRegBullDivLow     = na
+var float lastRegBullDivHigh    = na
+var float lastRegBearDivHigh    = na
+var float lastRegBearDivLow     = na
+var float lastHiddenBullDivLow  = na
+var float lastHiddenBullDivHigh = na
+var float lastHiddenBearDivHigh = na
+var float lastHiddenBearDivLow  = na
+
 // Track last fired bar index to guarantee single-fire per divergence
 var int lastFiredRegBullBar    = na
 var int lastFiredRegBearBar    = na
@@ -3707,29 +3717,45 @@ var int lastFiredHiddenBearBar = na
 
 // Record fresh divergence occurrences (Bar 0 - Unconfirmed; cannot fire trade on Bar 0)
 if ext_bullishDiv == 1.0
-    lastRegBullDivBar := bar_index
+    lastRegBullDivBar  := bar_index
+    lastRegBullDivLow  := low
+    lastRegBullDivHigh := high
 if ext_bearishDiv == 1.0
-    lastRegBearDivBar := bar_index
+    lastRegBearDivBar  := bar_index
+    lastRegBearDivHigh := high
+    lastRegBearDivLow  := low
 if ext_bullishHiddenDiv == 1.0
-    lastHiddenBullDivBar := bar_index
+    lastHiddenBullDivBar  := bar_index
+    lastHiddenBullDivLow  := low
+    lastHiddenBullDivHigh := high
 if ext_bearishHiddenDiv == 1.0
-    lastHiddenBearDivBar := bar_index
+    lastHiddenBearDivBar  := bar_index
+    lastHiddenBearDivHigh := high
+    lastHiddenBearDivLow  := low
 
 // Directional confirmation candle definitions:
-// Longs require a bullish close (green candle closing above prior close)
-// Shorts require a bearish close (red candle closing below prior close)
+// Longs strictly require a bullish confirmation close: green candle closing above prior close
+// Shorts strictly require a bearish confirmation close: red candle closing below prior close
 bool isBullishConfirmCandle = (close > open) and (close > close[1])
 bool isBearishConfirmCandle = (close < open) and (close < close[1])
 
-// Invalidation checks: if price breaks beyond the divergence bar's extreme, invalidate setup
-if not na(lastRegBullDivBar) and (close < low[bar_index - lastRegBullDivBar])
-    lastRegBullDivBar := na
-if not na(lastRegBearDivBar) and (close > high[bar_index - lastRegBearDivBar])
-    lastRegBearDivBar := na
-if not na(lastHiddenBullDivBar) and (close < low[bar_index - lastHiddenBullDivBar])
-    lastHiddenBullDivBar := na
-if not na(lastHiddenBearDivBar) and (close > high[bar_index - lastHiddenBearDivBar])
-    lastHiddenBearDivBar := na
+// Invalidation checks: if price breaks beyond the divergence bar's extreme during subsequent bars, invalidate setup
+if not na(lastRegBullDivBar) and (low < lastRegBullDivLow or close < lastRegBullDivLow)
+    lastRegBullDivBar  := na
+    lastRegBullDivLow  := na
+    lastRegBullDivHigh := na
+if not na(lastRegBearDivBar) and (high > lastRegBearDivHigh or close > lastRegBearDivHigh)
+    lastRegBearDivBar  := na
+    lastRegBearDivHigh := na
+    lastRegBearDivLow  := na
+if not na(lastHiddenBullDivBar) and (low < lastHiddenBullDivLow or close < lastHiddenBullDivLow)
+    lastHiddenBullDivBar  := na
+    lastHiddenBullDivLow  := na
+    lastHiddenBullDivHigh := na
+if not na(lastHiddenBearDivBar) and (high > lastHiddenBearDivHigh or close > lastHiddenBearDivHigh)
+    lastHiddenBearDivBar  := na
+    lastHiddenBearDivHigh := na
+    lastHiddenBearDivLow  := na
 
 // Window checks: confirmation candle must occur between 1 and 5 bars AFTER divergence (Bars 1 to 5)
 int barsSinceRegBull    = not na(lastRegBullDivBar)    ? (bar_index - lastRegBullDivBar)    : na
@@ -3739,13 +3765,21 @@ int barsSinceHiddenBear = not na(lastHiddenBearDivBar) ? (bar_index - lastHidden
 
 // Age expiry: clear tracking if divergence is older than 5 bars
 if not na(barsSinceRegBull) and barsSinceRegBull > 5
-    lastRegBullDivBar := na
+    lastRegBullDivBar  := na
+    lastRegBullDivLow  := na
+    lastRegBullDivHigh := na
 if not na(barsSinceRegBear) and barsSinceRegBear > 5
-    lastRegBearDivBar := na
+    lastRegBearDivBar  := na
+    lastRegBearDivHigh := na
+    lastRegBearDivLow  := na
 if not na(barsSinceHiddenBull) and barsSinceHiddenBull > 5
-    lastHiddenBullDivBar := na
+    lastHiddenBullDivBar  := na
+    lastHiddenBullDivLow  := na
+    lastHiddenBullDivHigh := na
 if not na(barsSinceHiddenBear) and barsSinceHiddenBear > 5
-    lastHiddenBearDivBar := na
+    lastHiddenBearDivBar  := na
+    lastHiddenBearDivHigh := na
+    lastHiddenBearDivLow  := na
 
 bool inWindowRegBull    = not na(barsSinceRegBull)    and barsSinceRegBull >= 1    and barsSinceRegBull <= 5
 bool inWindowRegBear    = not na(barsSinceRegBear)    and barsSinceRegBear >= 1    and barsSinceRegBear <= 5
@@ -3753,13 +3787,13 @@ bool inWindowHiddenBull = not na(barsSinceHiddenBull) and barsSinceHiddenBull >=
 bool inWindowHiddenBear = not na(barsSinceHiddenBear) and barsSinceHiddenBear >= 1 and barsSinceHiddenBear <= 5
 
 // Confirmation triggers on the CLOSE of the confirmation candle:
-// Regular Divergence strictly requires GrS / ReS bounce within divergence window
-bool confirmedRegBull = inWindowRegBull and GrS and (na(lastFiredRegBullBar) or lastFiredRegBullBar < lastRegBullDivBar)
-bool confirmedRegBear = inWindowRegBear and ReS and (na(lastFiredRegBearBar) or lastFiredRegBearBar < lastRegBearDivBar)
+// Regular Divergence strictly requires subsequent confirmation candle close AND GrS / ReS bounce
+bool confirmedRegBull = inWindowRegBull and isBullishConfirmCandle and GrS and (na(lastFiredRegBullBar) or lastFiredRegBullBar < lastRegBullDivBar)
+bool confirmedRegBear = inWindowRegBear and isBearishConfirmCandle and ReS and (na(lastFiredRegBearBar) or lastFiredRegBearBar < lastRegBearDivBar)
 
-// Hidden Divergence requires directional confirmation candle close OR GrS/ReS
-bool confirmedHiddenBull = inWindowHiddenBull and (isBullishConfirmCandle or GrS) and (na(lastFiredHiddenBullBar) or lastFiredHiddenBullBar < lastHiddenBullDivBar)
-bool confirmedHiddenBear = inWindowHiddenBear and (isBearishConfirmCandle or ReS) and (na(lastFiredHiddenBearBar) or lastFiredHiddenBearBar < lastHiddenBearDivBar)
+// Hidden Divergence strictly requires subsequent directional confirmation candle close (zero unconfirmed entries)
+bool confirmedHiddenBull = inWindowHiddenBull and isBullishConfirmCandle and (na(lastFiredHiddenBullBar) or lastFiredHiddenBullBar < lastHiddenBullDivBar)
+bool confirmedHiddenBear = inWindowHiddenBear and isBearishConfirmCandle and (na(lastFiredHiddenBearBar) or lastFiredHiddenBearBar < lastHiddenBearDivBar)
 
 // Record fired bar to prevent duplicate entries for the same divergence
 if confirmedRegBull

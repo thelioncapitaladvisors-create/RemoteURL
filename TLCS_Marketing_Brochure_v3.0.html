@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The Lion Capital Solutions (TLCS) — Enterprise Marketing Brochure v3.0</title>
+<style>
+    @page {
+        size: A4 portrait;
+        margin: 10mm 10mm 12mm 10mm;
+    }
+    
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        color: #0f172a;
+        background-color: #ffffff;
+        font-size: 8.5pt;
+        line-height: 1.4;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .page {
+        page-break-after: always;
+        position: relative;
+        min-height: 275mm;
+        padding: 4mm;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    
+    .page:last-child {
+        page-break-after: avoid;
+    }
+    
+    /* Top Header Bar */
+    .brochure-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #0f172a;
+        padding-bottom: 3mm;
+        margin-bottom: 3mm;
+    }
+    
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .logo-badge {
+        background: #0a192f;
+        color: #f59e0b;
+        font-weight: 900;
+        font-size: 11pt;
+        padding: 3px 8px;
+        border-radius: 6px;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .brand-title {
+        font-size: 11pt;
+        font-weight: 900;
+        color: #0a192f;
+        letter-spacing: -0.3px;
+        line-height: 1.1;
+    }
+    
+    .brand-subtitle {
+        font-size: 7pt;
+        font-weight: 700;
+        color: #0284c7;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .brochure-tag {
+        font-size: 7.5pt;
+        font-family: monospace;
+        font-weight: 800;
+        color: #64748b;
+        text-align: right;
+    }
+    
+    /* Bottom Footer Bar */
+    .brochure-footer {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 2.5mm;
+        margin-top: 3mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 7pt;
+        color: #64748b;
+        font-family: monospace;
+    }
+    
+    .footer-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    /* Hero Elements */
+    .hero-banner {
+        background: linear-gradient(135deg, #0a192f 0%, #0f172a 60%, #1e293b 100%);
+        color: #ffffff;
+        border-radius: 10px;
+        padding: 7mm 6mm;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 3.5mm;
+    }
+    
+    .hero-banner::after {
+        content: "";
+        position: absolute;
+        top: -30%;
+        right: -10%;
+        width: 260px;
+        height: 260px;
+        background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0) 70%);
+        pointer-events: none;
+    }
+    
+    .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.4);
+        color: #f59e0b;
+        font-size: 7.5pt;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        padding: 2.5px 8px;
+        border-radius: 20px;
+        margin-bottom: 2.5mm;
+    }
+    
+    .hero-h1 {
+        font-size: 21pt;
+        font-weight: 900;
+        line-height: 1.1;
+        letter-spacing: -0.5px;
+        color: #ffffff;
+        margin-bottom: 2mm;
+    }
+    
+    .hero-h1 span {
+        color: #f59e0b;
+    }
+    
+    .hero-sub {
+        font-size: 9pt;
+        color: #cbd5e1;
+        max-width: 90%;
+        line-height: 1.4;
+        margin-bottom: 3.5mm;
+    }
+    
+    .hero-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 3mm;
+        margin-top: 2mm;
+    }
+    
+    .stat-pill {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 6px;
+        padding: 2mm 2.5mm;
+        text-align: center;
+    }
+    
+    .stat-val {
+        font-size: 13pt;
+        font-weight: 900;
+        color: #38bdf8;
+        font-family: monospace;
+        line-height: 1;
+        margin-bottom: 1mm;
+    }
+    
+    .stat-lbl {
+        font-size: 6.5pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #94a3b8;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Section Headers */
+    .section-title {
+        font-size: 11pt;
+        font-weight: 900;
+        color: #0a192f;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-bottom: 1.5px solid #0284c7;
+        padding-bottom: 1.5mm;
+        margin-bottom: 2.5mm;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    
+    /* Grid Layouts */
+    .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3.5mm;
+        margin-bottom: 3.5mm;
+    }
+    
+    .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3mm;
+        margin-bottom: 3.5mm;
+    }
+    
+    .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 2.5mm;
+        margin-bottom: 3.5mm;
+    }
+    
+    /* Card Styles */
+    .card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 7px;
+        padding: 3mm;
+    }
+    
+    .card-accent-blue {
+        border-top: 3px solid #0284c7;
+    }
+    
+    .card-accent-gold {
+        border-top: 3px solid #d97706;
+    }
+    
+    .card-accent-green {
+        border-top: 3px solid #16a34a;
+    }
+    
+    .card-accent-purple {
+        border-top: 3px solid #7c3aed;
+    }
+    
+    .card-accent-rose {
+        border-top: 3px solid #e11d48;
+    }
+    
+    .card-h {
+        font-size: 8.5pt;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 1mm;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .card-p {
+        font-size: 7.5pt;
+        color: #475569;
+        line-height: 1.35;
+    }
+    
+    /* Feature Badge */
+    .feature-badge {
+        display: inline-block;
+        padding: 1.5px 5px;
+        border-radius: 4px;
+        font-size: 6.5pt;
+        font-weight: 800;
+        font-family: monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    
+    .fb-blue { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .fb-gold { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .fb-green { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .fb-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+    .fb-rose { background: #ffe4e6; color: #9f1239; border: 1px solid #fecdd3; }
+    
+    /* Tables */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 7.5pt;
+        margin-bottom: 3mm;
+    }
+    
+    th {
+        background: #0f172a;
+        color: #ffffff;
+        font-weight: 800;
+        text-align: left;
+        padding: 1.8mm 2.2mm;
+        font-size: 7pt;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    
+    td {
+        padding: 1.8mm 2.2mm;
+        border-bottom: 1px solid #e2e8f0;
+        color: #1e293b;
+        vertical-align: middle;
+    }
+    
+    tr:nth-child(even) td {
+        background: #f8fafc;
+    }
+    
+    /* Callout & Highlights */
+    .highlight-box {
+        background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+        border: 1px solid #bbf7d0;
+        border-radius: 7px;
+        padding: 3mm;
+        margin-bottom: 3.5mm;
+    }
+    
+    .cta-banner {
+        background: #0a192f;
+        color: #ffffff;
+        border-radius: 8px;
+        padding: 4mm 5mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #f59e0b;
+    }
+    
+    .cta-left h3 {
+        font-size: 11pt;
+        font-weight: 900;
+        color: #f59e0b;
+        margin-bottom: 0.5mm;
+    }
+    
+    .cta-left p {
+        font-size: 7.5pt;
+        color: #cbd5e1;
+    }
+    
+    .cta-button {
+        background: #f59e0b;
+        color: #0a192f;
+        font-weight: 900;
+        font-size: 8pt;
+        padding: 2.5mm 5mm;
+        border-radius: 5px;
+        text-decoration: none;
+        display: inline-block;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
+</style>
+</head>
+<body>
+
+<!-- ==========================================
+     PAGE 1: HERO, MISSION & PLATFORM OVERVIEW
+     ========================================== -->
+<div class="page">
+    <div>
+        <div class="brochure-header">
+            <div class="logo-container">
+                <div class="logo-badge">🦁 TLCS</div>
+                <div>
+                    <div class="brand-title">THE LION CAPITAL SOLUTIONS</div>
+                    <div class="brand-subtitle">Enterprise Quantitative Trading Ecosystem • Version 3.0</div>
+                </div>
+            </div>
+            <div class="brochure-tag">
+                INSTITUTIONAL BROCHURE<br>
+                MARKET INTELLIGENCE PLATFORM
+            </div>
+        </div>
+
+        <div class="hero-banner">
+            <div class="hero-eyebrow">⚡ MASTER PRODUCTION RELEASE v3.0 • ADVANCED QUANTITATIVE EDGE</div>
+            <div class="hero-h1">Trade with <span>Mathematical Certainty</span> & Institutional Conviction.</div>
+            <div class="hero-sub">
+                The Lion Capital Solutions (TLCS) is an institutional-grade, multi-market algorithmic trading suite bridging advanced Frank Ochoa Swing Trade Pro 2.0 auction theory, deterministic Python BlackBox execution, and real-time mobile intelligence.
+            </div>
+            
+            <div class="hero-stats-grid">
+                <div class="stat-pill">
+                    <div class="stat-val">6</div>
+                    <div class="stat-lbl">Global Markets</div>
+                </div>
+                <div class="stat-pill">
+                    <div class="stat-val">100%</div>
+                    <div class="stat-lbl">Zero Repainting</div>
+                </div>
+                <div class="stat-pill">
+                    <div class="stat-val">&lt; 15ms</div>
+                    <div class="stat-lbl">Signal Latency</div>
+                </div>
+                <div class="stat-pill">
+                    <div class="stat-val">129/129</div>
+                    <div class="stat-lbl">Verified Unit Tests</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">🏛️ The Four Pillars of the TLCS Platform Suite</div>
+
+        <div class="grid-2">
+            <div class="card card-accent-blue">
+                <div class="card-h">
+                    <span class="feature-badge fb-blue">PWA APP</span>
+                    TLCS Mobile Terminal (`market-store.online`)
+                </div>
+                <div class="card-p">
+                    Progressive Web App built in Next.js 14 & Tailwind. Features 6 institutional tabs: <strong>HUB</strong> (Live Signals & Collapsible Filters), <strong>LOGS</strong> (Real-time telemetry), <strong>SCREENER</strong> (7-day matrix), <strong>INSIGHTS</strong> (Stocks with Action), <strong>MARKETS</strong> (Multi-asset curves), and <strong>ANALYTICS</strong> (22 risk tearsheet metrics).
+                </div>
+            </div>
+
+            <div class="card card-accent-gold">
+                <div class="card-h">
+                    <span class="feature-badge fb-gold">AUTONOMOUS</span>
+                    DhanHQ Python BlackBox Engine (`algo_engine/`)
+                </div>
+                <div class="card-p">
+                    Fully standalone quantitative execution daemon connected to live DhanHQ WebSockets. Ingests NSE Top 100 Equities & MCX front-month commodities, aggregates 15m/1D candles, computes CPR & Camarilla math, and auto-executes without TradingView dependency.
+                </div>
+            </div>
+
+            <div class="card card-accent-green">
+                <div class="card-h">
+                    <span class="feature-badge fb-green">ALGO ENGINE</span>
+                    TradingView Pine Script v6 Indicator (`TLCS v3.0`)
+                </div>
+                <div class="card-p">
+                    Canonical master indicator deployed across 3,567 lines of mathematical logic. Implements Central Pivot Range (CPR), Camarilla H4/L4 Touch-Point Gating (wick entries), Symmetrical Neutral Zone Scalp Alerts, and confirmed regular & hidden divergence detectors.
+                </div>
+            </div>
+
+            <div class="card card-accent-purple">
+                <div class="card-h">
+                    <span class="feature-badge fb-purple">WEB PORTAL</span>
+                    TLCS Web Dashboard (`thelioncapitalsolutions.com`)
+                </div>
+                <div class="card-p">
+                    Institutional desktop terminal featuring dynamic 7-day day type blueprint matrix, multi-asset virtual paper portfolio, Razorpay subscription checkout, real-time audio chime triggers, and Netlify edge serverless webhook workers.
+                </div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <div style="font-weight: 800; font-size: 8pt; color: #166534; margin-bottom: 1mm; text-transform: uppercase;">
+                ⭐ The TLCS Ground-Truth Standard: Zero Guesswork, Exact Math Only
+            </div>
+            <div style="font-size: 7.5pt; color: #334155; line-height: 1.35;">
+                Unlike commercial black-box indicators that repaint past bars or cherry-pick fictitious win rates, TLCS enforces an absolute <strong>Exact Percentage Return standard</strong>: <code>((Exit - Entry) / Entry) * 100</code> verified by PostgreSQL triggers on every closed trade. Breakeven trades are always accounted for in the win rate denominator.
+            </div>
+        </div>
+    </div>
+
+    <div class="brochure-footer">
+        <div class="footer-left">
+            <span>THE LION CAPITAL SOLUTIONS</span>
+            <span>•</span>
+            <span>OFFICIAL PRODUCT BROCHURE</span>
+        </div>
+        <div>WWW.THELIONCAPITALSOLUTIONS.COM • PAGE 1 OF 3</div>
+    </div>
+</div>
+
+<!-- ==========================================
+     PAGE 2: STRATEGIES, DAY TYPES & SCREENERS
+     ========================================== -->
+<div class="page">
+    <div>
+        <div class="brochure-header">
+            <div class="logo-container">
+                <div class="logo-badge">🦁 TLCS</div>
+                <div>
+                    <div class="brand-title">QUANTITATIVE STRATEGIES & SCREENERS</div>
+                    <div class="brand-subtitle">Swing Trade Pro 2.0 • Symmetrical Confluences • Breakouts</div>
+                </div>
+            </div>
+            <div class="brochure-tag">
+                STRATEGY SPECIFICATION<br>
+                AUCTION PROFILES
+            </div>
+        </div>
+
+        <div class="section-title">🎯 Master Signal Families & High-Conviction Triggers</div>
+
+        <div class="grid-3">
+            <div class="card card-accent-rose">
+                <div class="card-h">
+                    <span class="feature-badge fb-rose">🔥 SCALP ALERT</span>
+                </div>
+                <div style="font-weight: 800; font-size: 8pt; margin-bottom: 1mm; color: #9f1239;">Neutral Zone Confluence</div>
+                <div class="card-p">
+                    Fires strictly outside Greenzone and Redzone boundaries in the authentic Neutral Zone. Ensures highest-conviction momentum expansion with zero adverse structural resistance overhead.
+                </div>
+            </div>
+
+            <div class="card card-accent-purple">
+                <div class="card-h">
+                    <span class="feature-badge fb-purple">📐 BREAKOUTS</span>
+                </div>
+                <div style="font-weight: 800; font-size: 8pt; margin-bottom: 1mm; color: #6b21a8;">Normalized Narrow CPR</div>
+                <div class="card-p">
+                    Identifies extreme intraday price coiling where Central Pivot Range width is &lt; 5.0% of the previous day's range (<code>NCPR &lt; 5.0%</code>), forecasting explosive volatility breakouts.
+                </div>
+            </div>
+
+            <div class="card card-accent-blue">
+                <div class="card-h">
+                    <span class="feature-badge fb-blue">⚡ LIGHTNING</span>
+                </div>
+                <div style="font-weight: 800; font-size: 8pt; margin-bottom: 1mm; color: #0369a1;">Dual Flow Confluence</div>
+                <div class="card-p">
+                    Combines institutional Missile breakout order flow with Scalp liquidity capture for rapid trend expansion during Opening Range Breakouts and volatile momentum bursts.
+                </div>
+            </div>
+
+            <div class="card card-accent-gold">
+                <div class="card-h">
+                    <span class="feature-badge fb-gold">〰️ DIVERGENCES</span>
+                </div>
+                <div style="font-weight: 800; font-size: 8pt; margin-bottom: 1mm; color: #92400e;">Regular & Hidden</div>
+                <div class="card-p">
+                    Unconfirmed on Bar 0 to prevent whipsaws. Trade entry strictly gates to subsequent candle confirmation close with 6-bar sliding memory and extreme level invalidation.
+                </div>
+            </div>
+
+            <div class="card card-accent-green">
+                <div class="card-h">
+                    <span class="feature-badge fb-green">🛡️ REJECTIONS</span>
+                </div>
+                <div style="font-weight: 800; font-size: 8pt; margin-bottom: 1mm; color: #166534;">CPR Boundary Reaction</div>
+                <div class="card-p">
+                    Detects sharp rejection reactions at CPR Top (DTc) and CPR Bottom (DBc). Validates responsive institutional auction behavior with tight structural invalidation stops.
+                </div>
+            </div>
+
+            <div class="card card-accent-blue">
+                <div class="card-h">
+                    <span class="feature-badge fb-blue">🚀 CONTINUATIONS</span>
+                </div>
+                <div style="font-weight: 800; font-size: 8pt; margin-bottom: 1mm; color: #0284c7;">Out of Value Expansion</div>
+                <div class="card-p">
+                    Identifies directional auction drive beyond initial balance and previous day's Value Area High/Low. Engineered for sustained intraday trend trailing.
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">📊 Frank Ochoa Swing Trade Pro 2.0 Screener Matrix</div>
+        <p style="font-size: 7.5pt; color: #475569; margin-bottom: 2mm;">
+            Built directly on Frank Ochoa's institutional auction profile methodology, the TLCS Screener Matrix tracks 7 continuous sessions across 5 core Day Type Blueprints and 4 Trade Sequences:
+        </p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Blueprint / Sequence</th>
+                    <th style="width: 45%;">Market Auction Characteristic</th>
+                    <th style="width: 30%;">Institutional Edge</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Rejection Day Blueprint</strong></td>
+                    <td>Price tests boundary extremes outside prior range, fails to find buyers/sellers, and violently reverses.</td>
+                    <td>High-probability mean reversion targeting opposing Value Area High / Low boundaries.</td>
+                </tr>
+                <tr>
+                    <td><strong>Absorption Day Blueprint</strong></td>
+                    <td>Institutional accumulation or distribution holding price within narrow high-volume absorption zone.</td>
+                    <td>Forewarns of impending explosive breakout once absorption inventory clears.</td>
+                </tr>
+                <tr>
+                    <td><strong>Failed New High/Low (FNH/FNL)</strong></td>
+                    <td>Price attempts expansion past prior swing extreme but instantly closes back inside range.</td>
+                    <td>Trap rejection play capturing liquidity from trapped breakout traders.</td>
+                </tr>
+                <tr>
+                    <td><strong>Outside Day Blueprint</strong></td>
+                    <td>Day's high exceeds prior high AND day's low exceeds prior low with wide candle expansion.</td>
+                    <td>Signals extreme volatility expansion and two-way institutional re-pricing.</td>
+                </tr>
+                <tr>
+                    <td><strong>Stop Run Day & Sequence</strong></td>
+                    <td>Engineered push past key swing pivots to trigger retail stop clusters before rapid reversal.</td>
+                    <td>Institutional spring/upthrust entry with superior Risk-to-Reward ratio (1:3+).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-h">⚡ Expanded Default Screener Views</div>
+                <div class="card-p">
+                    In Version 3.0, both the <strong>TLCS Screener Matrix</strong> and the <strong>DhanHQ Screener Matrix</strong> initialize in the <strong>EXPAND</strong> state by default, delivering immediate market blueprint visibility upon launch with instant collapse toggles.
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-h">🔍 Out of Range / Out of Value Bias</div>
+                <div class="card-p">
+                    Section 4 of the DhanHQ Screener scans Indian market equities and commodities opening entirely outside the prior day's range, classifying directional expansion vs breakdown bias from the opening bell.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="brochure-footer">
+        <div class="footer-left">
+            <span>THE LION CAPITAL SOLUTIONS</span>
+            <span>•</span>
+            <span>STRATEGIES & SCREENERS</span>
+        </div>
+        <div>WWW.THELIONCAPITALSOLUTIONS.COM • PAGE 2 OF 3</div>
+    </div>
+</div>
+
+<!-- ==========================================
+     PAGE 3: RISK MANAGEMENT, MARKETS & ACCESS
+     ========================================== -->
+<div class="page">
+    <div>
+        <div class="brochure-header">
+            <div class="logo-container">
+                <div class="logo-badge">🦁 TLCS</div>
+                <div>
+                    <div class="brand-title">RISK MANAGEMENT & MEMBERSHIP ACCESS</div>
+                    <div class="brand-subtitle">Step-Level Trailing • Multi-Market Coverage • Subscription Tiers</div>
+                </div>
+            </div>
+            <div class="brochure-tag">
+                RISK FRAMEWORK<br>
+                JOIN THE VIP NETWORK
+            </div>
+        </div>
+
+        <div class="section-title">🛡️ Deterministic Risk Management & Trailing SL Machine</div>
+        <p style="font-size: 7.5pt; color: #475569; margin-bottom: 2.5mm;">
+            Capital preservation is the cornerstone of the TLCS quantitative ethos. The platform replaces ambiguous floating stops with an automated 5-stage deterministic trailing machine:
+        </p>
+
+        <div class="grid-4">
+            <div class="card card-accent-rose">
+                <div class="card-h">1. Initial SL Bound</div>
+                <div class="card-p">Strictly anchored to Camarilla pivot / EMA barrier with absolute loss sanity guards.</div>
+            </div>
+            <div class="card card-accent-gold">
+                <div class="card-h">2. Midpoint Breakeven</div>
+                <div class="card-p">50% distance to TP1 <code>(Entry+TP1)/2</code> automatically advances SL to Entry (B/E).</div>
+            </div>
+            <div class="card card-accent-blue">
+                <div class="card-h">3. TP1 Locked</div>
+                <div class="card-p">Upon TP1 target hit, SL is permanently locked to Entry; zero round-trip losses permitted.</div>
+            </div>
+            <div class="card card-accent-green">
+                <div class="card-h">4. Step Trailing</div>
+                <div class="card-p">TP2 hit trails SL to TP1; TP3 trails SL to TP2; runners transition to dynamic EMA trailing.</div>
+            </div>
+        </div>
+
+        <div class="section-title">🌐 Multi-Market Universe Coverage</div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">Market Segment</th>
+                    <th style="width: 45%;">Representative Instruments Covered</th>
+                    <th style="width: 30%;">Execution Feed</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>NSE 50 & Top 100 Equities</strong></td>
+                    <td>RELIANCE, HDFCBANK, INFY, TCS, ICICIBANK, SBIN, LT, BHARTIARTL, TATAMOTORS...</td>
+                    <td>DhanHQ WebSocket & TradingView</td>
+                </tr>
+                <tr>
+                    <td><strong>MCX Commodities</strong></td>
+                    <td>CRUDEOIL, CRUDEOILM, NATURALGAS, NATURALGASM, GOLD, SILVER, COPPER, ZINC...</td>
+                    <td>DhanHQ WebSocket & TradingView</td>
+                </tr>
+                <tr>
+                    <td><strong>NYMEX & US Commodities</strong></td>
+                    <td>WTI Light Sweet Crude Oil (CL), COMEX Gold (GC), Silver (SI), Brent, Natural Gas (NG)...</td>
+                    <td>Real-Time Webhook Feed</td>
+                </tr>
+                <tr>
+                    <td><strong>Cryptocurrency Derivatives</strong></td>
+                    <td>BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, DOGEUSDT, XRPUSDT, AVAXUSDT (Top 25)...</td>
+                    <td>Binance WebSocket & Webhooks</td>
+                </tr>
+                <tr>
+                    <td><strong>Global Forex & Indices</strong></td>
+                    <td>EURUSD, GBPUSD, USDJPY, AUDUSD, USDINR | US30, NAS100, SPX500, DAX40, NIKKEI...</td>
+                    <td>Institutional Multi-Feed</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-title">💎 Membership Access & VIP Telegram Channels</div>
+
+        <div class="grid-3">
+            <div class="card card-accent-blue">
+                <div class="card-h">Essential Suite</div>
+                <div style="font-size: 11pt; font-weight: 900; color: #0284c7; margin-bottom: 1.5mm;">₹2,999 <span style="font-size: 7.5pt; font-weight: normal; color: #64748b;">/ month</span></div>
+                <div class="card-p">
+                    • Access to Mobile Terminal PWA<br>
+                    • Live Signals on HUB & LOGS<br>
+                    • 7-Day Screener Matrix<br>
+                    • Virtual Paper Trading Portfolio<br>
+                    • NSE Top 100 Stocks Coverage
+                </div>
+            </div>
+
+            <div class="card card-accent-gold" style="background: #fffbeb;">
+                <div class="card-h">
+                    <span class="feature-badge fb-gold">MOST POPULAR</span>
+                    Pro Institutional
+                </div>
+                <div style="font-size: 11pt; font-weight: 900; color: #d97706; margin-bottom: 1.5mm;">₹5,999 <span style="font-size: 7.5pt; font-weight: normal; color: #64748b;">/ month</span></div>
+                <div class="card-p">
+                    • Everything in Essential Suite<br>
+                    • Full MCX Commodity Futures Coverage<br>
+                    • VIP Telegram Instant Trade Alerts<br>
+                    • Breakouts & Scalp Alert Filters<br>
+                    • 22 KPI Quantitative Tearsheet
+                </div>
+            </div>
+
+            <div class="card card-accent-purple">
+                <div class="card-h">Master Enterprise</div>
+                <div style="font-size: 11pt; font-weight: 900; color: #7c3aed; margin-bottom: 1.5mm;">₹11,999 <span style="font-size: 7.5pt; font-weight: normal; color: #64748b;">/ month</span></div>
+                <div class="card-p">
+                    • Everything in Pro Institutional<br>
+                    • Global Markets (NYMEX, Crypto, FX)<br>
+                    • Autonomous BlackBox Strategy Feeds<br>
+                    • TradingView Indicator Source Access<br>
+                    • Direct Priority Developer Support
+                </div>
+            </div>
+        </div>
+
+        <div class="cta-banner">
+            <div class="cta-left">
+                <h3>Ready to Upgrade to Institutional Algorithmic Trading?</h3>
+                <p>Deploy the TLCS platform today on mobile, desktop, or automated Telegram feeds.</p>
+                <div style="font-size: 7pt; color: #94a3b8; margin-top: 1mm; font-family: monospace;">
+                    Contact: connect@thelioncapitalsolutions.com | Founder: Vishant Vyankat Meshram
+                </div>
+            </div>
+            <div>
+                <a href="https://thelioncapitalsolutions.com" class="cta-button">Access Platform &rarr;</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="brochure-footer">
+        <div class="footer-left">
+            <span>THE LION CAPITAL SOLUTIONS</span>
+            <span>•</span>
+            <span>MEMBERSHIP & SUBSCRIPTION TIERS</span>
+        </div>
+        <div>WWW.THELIONCAPITALSOLUTIONS.COM • PAGE 3 OF 3</div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -39,8 +39,8 @@ DEFAULT_SYMBOL_MAP: Dict[str, Tuple[int, str]] = {
     "ITC": (EXCHANGE_NSE, "1660"),
     "KOTAKBANK": (EXCHANGE_NSE, "1922"),
     "LT": (EXCHANGE_NSE, "11483"),
-    "CRUDEOIL": (EXCHANGE_MCX, "569900"),
-    "CRUDEOILM": (EXCHANGE_MCX, "569901"),
+    "CRUDEOIL": (EXCHANGE_MCX, "573422"),
+    "CRUDEOILM": (EXCHANGE_MCX, "573423"),
     "GOLD": (EXCHANGE_MCX, "495213"),
     "GOLDM": (EXCHANGE_MCX, "571445"),
     "SILVER": (EXCHANGE_MCX, "495214"),
@@ -97,6 +97,16 @@ class DhanFeed(BaseFeed):
         self._thread: Optional[threading.Thread] = None
         self._stop_event = threading.Event()
         self._ws = None
+        self._daily_levels_cache: Dict[str, dict] = {}
+
+    def _refresh_token(self) -> None:
+        """Force refresh Dhan access token upon 401 Unauthorized."""
+        try:
+            from ..dhan_auth import get_valid_dhan_token
+            self.access_token = get_valid_dhan_token(force_refresh=True)
+            logger.info("[DhanFeed] Refreshed Dhan access token successfully.")
+        except Exception as e:
+            logger.error(f"[DhanFeed] Failed to refresh Dhan token: {e}")
 
     def register_symbol(self, symbol: str, exchange_segment: int, security_id: str) -> None:
         """Register a custom symbol mapping."""
@@ -332,6 +342,12 @@ class DhanFeed(BaseFeed):
                 }
                 resp = requests.post(url, json=payload, headers=headers, timeout=5)
                 time.sleep(0.15)  # Throttle to avoid rate limits
+                if resp.status_code == 401:
+                    logger.warning(f"[DhanFeed] 401 Unauthorized for {symbol}. Refreshing token and retrying...")
+                    self._refresh_token()
+                    headers["access-token"] = self.access_token
+                    resp = requests.post(url, json=payload, headers=headers, timeout=5)
+                    time.sleep(0.15)
                 if resp.status_code == 200:
                     raw = resp.json()
                     data = raw.get("data") if isinstance(raw.get("data"), dict) and "open" in raw.get("data") else raw
@@ -370,11 +386,17 @@ class DhanFeed(BaseFeed):
         if not sec_info:
             return None
 
+        from datetime import date
+        today_str = date.today().strftime("%Y-%m-%d")
+        cache_key = f"{clean}:{today_str}"
+        if cache_key in self._daily_levels_cache:
+            return self._daily_levels_cache[cache_key]
+
         exch_seg, sec_id = sec_info
         if self.client_id and self.access_token and not self.mock_mode:
             try:
                 import requests
-                from datetime import date, timedelta
+                from datetime import timedelta
                 today = date.today()
                 from_date = (today - timedelta(days=7)).strftime("%Y-%m-%d")
                 to_date = today.strftime("%Y-%m-%d")
@@ -394,6 +416,12 @@ class DhanFeed(BaseFeed):
                 }
                 resp = requests.post(url, json=payload, headers=headers, timeout=5)
                 time.sleep(0.15)  # Throttle to avoid rate limits
+                if resp.status_code == 401:
+                    logger.warning(f"[DhanFeed] 401 Unauthorized for {symbol} daily levels. Refreshing token and retrying...")
+                    self._refresh_token()
+                    headers["access-token"] = self.access_token
+                    resp = requests.post(url, json=payload, headers=headers, timeout=5)
+                    time.sleep(0.15)
                 if resp.status_code == 200:
                     raw = resp.json()
                     data = raw.get("data") if isinstance(raw.get("data"), dict) and "high" in raw.get("data") else raw
@@ -447,7 +475,7 @@ class DhanFeed(BaseFeed):
                             ytc = max(top1, bottom1)
                             ybc = min(top1, bottom1)
 
-                        return {
+                        res_dict = {
                             "high": y_h,
                             "low": y_l,
                             "close": y_c,
@@ -466,6 +494,8 @@ class DhanFeed(BaseFeed):
                                 for k in range(len(highs))
                             ]
                         }
+                        self._daily_levels_cache[cache_key] = res_dict
+                        return res_dict
             except Exception as e:
                 logger.debug(f"[DhanFeed] Historical daily fetch error for {symbol}: {e}")
 

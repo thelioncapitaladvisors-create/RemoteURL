@@ -224,9 +224,13 @@ class StrategyEngine:
         self._last_hidden_bull_div_bar: Optional[int] = None
         self._last_hidden_bear_div_bar: Optional[int] = None
         self._last_reg_bull_div_low: Optional[float] = None
+        self._last_reg_bull_div_high: Optional[float] = None
         self._last_reg_bear_div_high: Optional[float] = None
+        self._last_reg_bear_div_low: Optional[float] = None
         self._last_hidden_bull_div_low: Optional[float] = None
+        self._last_hidden_bull_div_high: Optional[float] = None
         self._last_hidden_bear_div_high: Optional[float] = None
+        self._last_hidden_bear_div_low: Optional[float] = None
 
         # Confirmed Divergence Engine: Single-fire per divergence event
         self._last_fired_reg_bull_bar: Optional[int] = None
@@ -540,39 +544,61 @@ class StrategyEngine:
         if ctx.bull_regular_div:
             self._last_reg_bull_div_bar = div_bar_idx
             self._last_reg_bull_div_low = ctx.prev_bar.low if ctx.prev_bar is not None else bar.low
+            self._last_reg_bull_div_high = ctx.prev_bar.high if ctx.prev_bar is not None else bar.high
         if ctx.bear_regular_div:
             self._last_reg_bear_div_bar = div_bar_idx
             self._last_reg_bear_div_high = ctx.prev_bar.high if ctx.prev_bar is not None else bar.high
+            self._last_reg_bear_div_low = ctx.prev_bar.low if ctx.prev_bar is not None else bar.low
         if ctx.bull_hidden_div and hidden_div_allowed:
             self._last_hidden_bull_div_bar = div_bar_idx
             self._last_hidden_bull_div_low = ctx.prev_bar.low if ctx.prev_bar is not None else bar.low
+            self._last_hidden_bull_div_high = ctx.prev_bar.high if ctx.prev_bar is not None else bar.high
         if ctx.bear_hidden_div and hidden_div_allowed:
             self._last_hidden_bear_div_bar = div_bar_idx
             self._last_hidden_bear_div_high = ctx.prev_bar.high if ctx.prev_bar is not None else bar.high
+            self._last_hidden_bear_div_low = ctx.prev_bar.low if ctx.prev_bar is not None else bar.low
 
         # Directional confirmation candle definitions:
+        # Longs strictly require bullish confirmation close: close > open and close > prev_close
+        # Shorts strictly require bearish confirmation close: close < open and close < prev_close
         is_bull_confirm = bar.is_green and (ctx.prev_close is not None and bar.close > ctx.prev_close)
         is_bear_confirm = bar.is_red and (ctx.prev_close is not None and bar.close < ctx.prev_close)
 
-        # Invalidation checks: if price breaks beyond the divergence bar's extreme, invalidate setup
-        if self._last_reg_bull_div_bar is not None and self._last_reg_bull_div_low is not None and bar.close < self._last_reg_bull_div_low:
+        # Invalidation checks: if price breaks beyond the divergence bar's extreme (low < div_low for Long, high > div_high for Short), invalidate setup
+        if self._last_reg_bull_div_bar is not None and self._last_reg_bull_div_low is not None and (bar.low < self._last_reg_bull_div_low or bar.close < self._last_reg_bull_div_low):
             self._last_reg_bull_div_bar = None
-        if self._last_reg_bear_div_bar is not None and self._last_reg_bear_div_high is not None and bar.close > self._last_reg_bear_div_high:
+            self._last_reg_bull_div_low = None
+            self._last_reg_bull_div_high = None
+        if self._last_reg_bear_div_bar is not None and self._last_reg_bear_div_high is not None and (bar.high > self._last_reg_bear_div_high or bar.close > self._last_reg_bear_div_high):
             self._last_reg_bear_div_bar = None
-        if self._last_hidden_bull_div_bar is not None and self._last_hidden_bull_div_low is not None and bar.close < self._last_hidden_bull_div_low:
+            self._last_reg_bear_div_high = None
+            self._last_reg_bear_div_low = None
+        if self._last_hidden_bull_div_bar is not None and self._last_hidden_bull_div_low is not None and (bar.low < self._last_hidden_bull_div_low or bar.close < self._last_hidden_bull_div_low):
             self._last_hidden_bull_div_bar = None
-        if self._last_hidden_bear_div_bar is not None and self._last_hidden_bear_div_high is not None and bar.close > self._last_hidden_bear_div_high:
+            self._last_hidden_bull_div_low = None
+            self._last_hidden_bull_div_high = None
+        if self._last_hidden_bear_div_bar is not None and self._last_hidden_bear_div_high is not None and (bar.high > self._last_hidden_bear_div_high or bar.close > self._last_hidden_bear_div_high):
             self._last_hidden_bear_div_bar = None
+            self._last_hidden_bear_div_high = None
+            self._last_hidden_bear_div_low = None
 
         # Expiry checks (> 5 bars)
         if self._last_reg_bull_div_bar is not None and (bar_idx - self._last_reg_bull_div_bar > 5):
             self._last_reg_bull_div_bar = None
+            self._last_reg_bull_div_low = None
+            self._last_reg_bull_div_high = None
         if self._last_reg_bear_div_bar is not None and (bar_idx - self._last_reg_bear_div_bar > 5):
             self._last_reg_bear_div_bar = None
+            self._last_reg_bear_div_high = None
+            self._last_reg_bear_div_low = None
         if self._last_hidden_bull_div_bar is not None and (bar_idx - self._last_hidden_bull_div_bar > 5):
             self._last_hidden_bull_div_bar = None
+            self._last_hidden_bull_div_low = None
+            self._last_hidden_bull_div_high = None
         if self._last_hidden_bear_div_bar is not None and (bar_idx - self._last_hidden_bear_div_bar > 5):
             self._last_hidden_bear_div_bar = None
+            self._last_hidden_bear_div_high = None
+            self._last_hidden_bear_div_low = None
 
         # Window checks: confirmation candle must occur between 1 and 5 bars AFTER divergence (Bars 1 to 5)
         in_win_reg_bull = self._last_reg_bull_div_bar is not None and 1 <= (bar_idx - self._last_reg_bull_div_bar) <= 5
@@ -581,13 +607,13 @@ class StrategyEngine:
         in_win_hidden_bear = self._last_hidden_bear_div_bar is not None and 1 <= (bar_idx - self._last_hidden_bear_div_bar) <= 5
 
         # Confirmed triggers on CLOSE of confirmation candle:
-        # Regular Divergence strictly requires GrS / ReS bounce within divergence window
-        confirmed_reg_bull = in_win_reg_bull and grs and (self._last_fired_reg_bull_bar is None or self._last_fired_reg_bull_bar < self._last_reg_bull_div_bar)
-        confirmed_reg_bear = in_win_reg_bear and res and (self._last_fired_reg_bear_bar is None or self._last_fired_reg_bear_bar < self._last_reg_bear_div_bar)
+        # Regular Divergence strictly requires subsequent confirmation candle close AND GrS / ReS bounce
+        confirmed_reg_bull = in_win_reg_bull and is_bull_confirm and grs and (self._last_fired_reg_bull_bar is None or self._last_fired_reg_bull_bar < self._last_reg_bull_div_bar)
+        confirmed_reg_bear = in_win_reg_bear and is_bear_confirm and res and (self._last_fired_reg_bear_bar is None or self._last_fired_reg_bear_bar < self._last_reg_bear_div_bar)
 
-        # Hidden Divergence requires directional confirmation candle close OR GrS/ReS
-        confirmed_hidden_bull = in_win_hidden_bull and (is_bull_confirm or grs) and (self._last_fired_hidden_bull_bar is None or self._last_fired_hidden_bull_bar < self._last_hidden_bull_div_bar)
-        confirmed_hidden_bear = in_win_hidden_bear and (is_bear_confirm or res) and (self._last_fired_hidden_bear_bar is None or self._last_fired_hidden_bear_bar < self._last_hidden_bear_div_bar)
+        # Hidden Divergence strictly requires subsequent directional confirmation candle close (zero unconfirmed entries)
+        confirmed_hidden_bull = in_win_hidden_bull and is_bull_confirm and (self._last_fired_hidden_bull_bar is None or self._last_fired_hidden_bull_bar < self._last_hidden_bull_div_bar)
+        confirmed_hidden_bear = in_win_hidden_bear and is_bear_confirm and (self._last_fired_hidden_bear_bar is None or self._last_fired_hidden_bear_bar < self._last_hidden_bear_div_bar)
 
         # Single-fire updates
         if confirmed_reg_bull:

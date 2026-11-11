@@ -269,10 +269,6 @@ class NSE100Scanner:
 
         primary_day_type = active_blueprints[0] if active_blueprints else 'TYPICAL DAY'
 
-        # Check if trade entry allowed for this symbol right now
-        if not self.mock_mode and not is_trade_entry_allowed_for_bar(clean):
-            return []
-
         market_name = 'mcx' if is_mcx_symbol(clean) else 'nifty'
         market_category = 'MCX' if market_name == 'mcx' else 'NIFTY'
         signals: List[dict] = []
@@ -284,16 +280,12 @@ class NSE100Scanner:
         is_vcpr = len(vcpr_zones) > 0
         nearest_vcpr = vcpr_zones[0] if is_vcpr else None
 
-        # 5. Evaluate strategy engine across completed bars of the session
-        # Check latest bars for active trading signals
+        # 5. Evaluate strategy engine sequentially across all completed bars of the session
+        # Maintaining complete divergence memory and lookback state from session open
+        strategy_engine = StrategyEngine()
         eval_window = min(len(bars), 10)
-        for i in range(len(bars) - eval_window, len(bars)):
+        for i in range(len(bars)):
             cur_bar = bars[i]
-
-            # Rule: Don't generate new trades from bars completed after cutoff
-            if not self.mock_mode and not is_trade_entry_allowed_for_bar(clean, cur_bar.timestamp):
-                continue
-
             prev_b = bars[i - 1] if i > 0 else cur_bar
 
             # Compute institutional bias c1 and day type mX
@@ -371,7 +363,7 @@ class NSE100Scanner:
                 virgin_cpr_zones=vcpr_zones,
             )
 
-            strat_sigs = self.strategy_engine.evaluate(ctx)
+            strat_sigs = strategy_engine.evaluate(ctx)
 
             # Detect direct Virgin CPR touch on the bar
             vcpr_touches = detect_virgin_cpr_touches(
@@ -407,6 +399,12 @@ class NSE100Scanner:
                         day_type=primary_day_type
                     )
                     strat_sigs.append(touch_sig)
+
+            # Only collect active signals from recent completed bars that meet entry cutoff hours
+            if i < len(bars) - eval_window:
+                continue
+            if not self.mock_mode and not is_trade_entry_allowed_for_bar(clean, cur_bar.timestamp):
+                continue
 
             for sig in strat_sigs:
                 if sig.name not in CANONICAL_EXECUTION_TRIGGERS:

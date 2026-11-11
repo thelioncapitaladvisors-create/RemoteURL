@@ -10,7 +10,7 @@
 ## Version 3.0: Master Production Release & Revamped Trade Logics Mandate (Effective November 10, 2026)
 - **Canonical Master Indicator Version 3.0 Standard**:
   - All Pine Script indicator engines (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0`.
-  - All three source files MUST maintain 100% byte-for-byte SHA256 checksum parity (`fadedf4b4376a84b0dd143b53b33f6165c3685aa43f93cebd4032e57085ee258`).
+  - All three source files MUST maintain 100% byte-for-byte SHA256 checksum parity (`6f4878d217b4b0cfae70c7da6ee75eeb43bc45e03a58efc71580e1ac22dbddb5`).
 - **Confirmed Divergence Execution Gating & Confirmation Candle Close Mandate**:
   - Divergence setups (`D` and `H`) are strictly unconfirmed on Bar 0; zero trades, limit orders, or webhooks may fire on Bar 0.
   - Execution is strictly gated to the subsequent confirmation candle close (Bars 1 to 5):
@@ -21,6 +21,16 @@
   - Invalidation: If price closes beyond the divergence candle extreme before confirmation (`close < low[bar_index - lastDivBar]` for Long, `close > high[bar_index - lastDivBar]` for Short), the pending setup is immediately invalidated.
   - Single-fire execution guarantee ensures a confirmed divergence fires at most once per divergence window (`lastFiredBar < lastDivBar`).
   - Python BlackBox (`algo_engine/strategies.py`, `algo_engine/tests/test_phase1.py`) and Pine Script indicator engines maintain 100% mathematical parity.
+- **Version 3.0 EMA Post-Crossing Dual-Tone Palette Mandate (Effective November 11, 2026)**:
+  - Fast EMA (`fShortEMA` / `PEMASlow`) and Medium EMA (`fMedEMA` / `PEMAMed`) render in dual-tone palettes post crossing:
+    - **Bullish**: Fast EMA = Green (`AdxCol`), Medium EMA = Teal (`AdxCol1`).
+    - **Bearish**: Fast EMA = Red (`AdxCol`), Medium EMA = Maroon (`AdxCol1`).
+  - Persistent post-crossing color locking (`fShortEMA >= fMedEMA ? color.green/teal : color.red/maroon`) prevents dropping to default olive `#887c12`, purple, or invisible white on light backgrounds.
+- **Version 3.0 DhanHQ BlackBox Self-Healing Token & Isolated Engine Mandate (Effective November 11, 2026)**:
+  - `DhanFeed` incorporates auto-recovery on `401 Unauthorized` with dynamic TOTP renewal.
+  - `fetch_daily_levels` caches previous day H/L/C per symbol for the calendar day, reducing redundant HTTP requests by 50%.
+  - `DEFAULT_SYMBOL_MAP` maps active MCX front-month contracts (`CRUDEOIL` -> `573422`).
+  - `NSE100Scanner.scan_symbol` removes wall-clock system time check at entry, isolating a fresh `StrategyEngine()` per symbol running full session bars with candle timestamp entry gating.
 - **Collapsible Live Signals UI & Active Filter Toggle Mandate**:
   - On the mobile terminal `HUB` tab (`Tv-Alert-Mobile/src/app/page.tsx`), the active signals header is designated `LIVE SIGNALS ⚡`.
   - Signal filter category buttons (`[ALL]`, `[⚡ CANONICAL]`, `[🔥 FIRE ALERT]`, `[⚡ LIGHTNING]`, `[🎯 DIVERGENCE]`) are housed in a collapsible container with interactive `COLLAPSE` / `EXPAND` toggle defaulting to expanded (`isHubLiveButtonsExpanded = true`).
