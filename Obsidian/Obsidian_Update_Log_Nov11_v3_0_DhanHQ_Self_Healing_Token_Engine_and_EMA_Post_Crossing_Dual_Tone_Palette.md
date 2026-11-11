@@ -24,3 +24,8 @@
 4. **Repository Parity & UI Standardization**:
    - SHA256 parity: `6f4878d217b4b0cfae70c7da6ee75eeb43bc45e03a58efc71580e1ac22dbddb5`.
    - Mobile Header: Renamed to `Markets Today` in `Tv-Alert-Mobile/src/app/page.tsx`.
+
+5. **Live Signals 0-Count Filter Gating Mandate**:
+   - Filter buttons with zero active signals ([🔥 SCALP ALERTS], [⚡ DIVERGENCE], [🛡️ REJECTED], [🎯 INSIDE DAY], [🚀 CONTINUATION], [📐 BREAKOUTS]) are hidden until a valid signal fires.
+   - [🌐 ALL SIGNALS] anchors the view and dynamically expands to full width when sub-categories are empty.
+   - Added `effectiveHubLiveTab` fallback to prevent UI sticking to an empty category.
