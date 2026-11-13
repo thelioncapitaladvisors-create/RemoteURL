@@ -31,8 +31,11 @@
     - `paintc = CONFIRMEDBULLISH and (close > DTc) ? color.green : CONFIRMEDBULLISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close > DTc) ? color.teal :  REJECTEDBULLISH and (close < DBc)? color.red : REJECTEDBULLISH and (close > DTc) ? color.teal : REJECTEDBEARISH and (close > DTc)? color.teal : REJECTEDBEARISH and (close < DBc) ? color.red : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? color.fuchsia : color.red`
     - `c1_message := str.tostring(c1)` for all confirmed and rejection conditions.
   - The AI assistant is strictly forbidden from changing, re-ordering, or refactoring these lines without explicit user instructions.
-- **Autonomous DhanHQ Netlify Infrastructure Mandate**:
+- **Autonomous DhanHQ Netlify Infrastructure & Zero-Touch Execution Mandate**:
   - Autonomous Indian market scanning is anchored to Netlify background functions (`dhan-scanner-background.js` running `*/15 3-18 * * 1-5`) and dynamic TOTP renewal (`dhan-auth.js` with `DHAN_PIN = '871346'`, `DHAN_TOTP_SECRET = 'N5ZUIALJCBGJ63YS2DUB3BLW7EEPBJU2'`), persisting directly to Supabase `public.shadow_signals` without reliance on local workstation processes.
+  - Active front-month MCX commodity futures scrips must maintain 100% synchronization across `dhan_feed.py`, `dhan-scanner-symbols.json`, and `dhan_executor.py` (`CRUDEOIL: 573422`, `CRUDEOILM: 573423`, `NATURALGAS: 574319`, `GOLD: 495213`, `SILVER: 495214`, `COPPER: 574829`, `ZINC: 574834`, `ALUMINIUM: 574828`, `ALUMINI: 574827`).
+  - Active tokens auto-renew via `/v2/RenewToken` when remaining lifetime is under 4 hours.
+  - Continuous tick-by-tick WebSocket streaming and Telegram trade alert dispatching are designated for 24/7 persistent cloud deployment (`algo_engine/DEPLOYMENT.md`).
 
 ## Version 3.0: Master Production Release & Revamped Trade Logics Mandate (Effective November 10, 2026)
 - **Canonical Master Indicator Version 3.0 Standard**:

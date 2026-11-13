@@ -38,12 +38,12 @@ except Exception as e:
 # MCX Security ID Mapping (Example Mapping - Need actual IDs from Dhan's Security List)
 # Users must update these with the correct current contract IDs
 MCX_SYMBOLS = {
-    "CRUDEOIL": {"security_id": "569900", "lot_size": 100},
-    "GOLD": {"security_id": "483079", "lot_size": 1},
+    "CRUDEOIL": {"security_id": "573422", "lot_size": 100},
+    "GOLD": {"security_id": "495213", "lot_size": 1},
     "SILVER": {"security_id": "495214", "lot_size": 30},
-    "NATURALGAS": {"security_id": "570750", "lot_size": 1250},
-    "COPPER": {"security_id": "571298", "lot_size": 2500},
-    "ZINC": {"security_id": "571303", "lot_size": 5000}
+    "NATURALGAS": {"security_id": "574319", "lot_size": 1250},
+    "COPPER": {"security_id": "574829", "lot_size": 2500},
+    "ZINC": {"security_id": "574834", "lot_size": 5000}
 }
 
 def clean_symbol(tv_symbol):
