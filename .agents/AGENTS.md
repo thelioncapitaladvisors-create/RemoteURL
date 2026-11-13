@@ -39,6 +39,10 @@
 - **Automated Dynamic DhanHQ MCX Scrip Resolver & Rollover Mandate**:
   - The dynamic scrip resolver (`algo_engine/scrip_resolver.py`) queries DhanHQ's daily security master CSV (`https://images.dhan.co/api-data/api-scrip-master.csv`), dynamically identifies the active front-month contract for all 11 MCX commodities, and updates in-memory symbol maps, disk cache (`/tmp/dhan_mcx_contracts.json`), and Supabase `public.system_config` (`key = 'mcx_front_month_symbols'`).
   - Netlify background scanner (`dhan-scanner-background.js`) dynamically syncs from Supabase `system_config` before every batch scan, guaranteeing zero-touch automated monthly commodity contract rollovers.
+- **Zero Local Workstation Dependency Mandate (Mac Reserved Strictly for Research & Optimization)**:
+  - **Zero Local Execution Rule**: The AI assistant MUST NEVER assume, prescribe, or require that production trading daemons, market feeds, background scanners, or live listeners run locally on the user's macOS workstation.
+  - **Workstation Role Boundary**: The local macOS machine is strictly and exclusively dedicated to offline research, codebase development, strategy backtesting, and quantitative parameter optimization (VectorBT).
+  - **Cloud-Native Autonomous Execution**: All live market scanning (NSE Top 100 Equities + MCX Commodities), dynamic TOTP authentication, contract rollovers, signal persistence, and Telegram trade alert dispatching execute 100% autonomously within the existing Netlify cloud infrastructure and Supabase backend.
 
 ## Version 3.0: Master Production Release & Revamped Trade Logics Mandate (Effective November 10, 2026)
 - **Canonical Master Indicator Version 3.0 Standard**:
