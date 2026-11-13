@@ -36,6 +36,9 @@
   - Active front-month MCX commodity futures scrips must maintain 100% synchronization across `dhan_feed.py`, `dhan-scanner-symbols.json`, and `dhan_executor.py` (`CRUDEOIL: 573422`, `CRUDEOILM: 573423`, `NATURALGAS: 574319`, `GOLD: 495213`, `SILVER: 495214`, `COPPER: 574829`, `ZINC: 574834`, `ALUMINIUM: 574828`, `ALUMINI: 574827`).
   - Active tokens auto-renew via `/v2/RenewToken` when remaining lifetime is under 4 hours.
   - Continuous tick-by-tick WebSocket streaming and Telegram trade alert dispatching are designated for 24/7 persistent cloud deployment (`algo_engine/DEPLOYMENT.md`).
+- **Automated Dynamic DhanHQ MCX Scrip Resolver & Rollover Mandate**:
+  - The dynamic scrip resolver (`algo_engine/scrip_resolver.py`) queries DhanHQ's daily security master CSV (`https://images.dhan.co/api-data/api-scrip-master.csv`), dynamically identifies the active front-month contract for all 11 MCX commodities, and updates in-memory symbol maps, disk cache (`/tmp/dhan_mcx_contracts.json`), and Supabase `public.system_config` (`key = 'mcx_front_month_symbols'`).
+  - Netlify background scanner (`dhan-scanner-background.js`) dynamically syncs from Supabase `system_config` before every batch scan, guaranteeing zero-touch automated monthly commodity contract rollovers.
 
 ## Version 3.0: Master Production Release & Revamped Trade Logics Mandate (Effective November 10, 2026)
 - **Canonical Master Indicator Version 3.0 Standard**:

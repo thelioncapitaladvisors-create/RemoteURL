@@ -89,6 +89,16 @@ class DhanFeed(BaseFeed):
         except Exception as e:
             logger.debug(f"[DhanFeed] Scrip master auto-load notice: {e}")
 
+        # Merge dynamic MCX front-month contracts from scrip_resolver
+        try:
+            from ..scrip_resolver import get_mcx_symbol_map
+            dynamic_mcx = get_mcx_symbol_map()
+            if dynamic_mcx:
+                self.symbol_map.update(dynamic_mcx)
+                DEFAULT_SYMBOL_MAP.update(dynamic_mcx)
+        except Exception as e:
+            logger.debug(f"[DhanFeed] Dynamic MCX scrip load notice: {e}")
+
         # {(exchange_segment, security_id): symbol}
         self.reverse_map: Dict[Tuple[int, str], str] = {
             v: k for k, v in self.symbol_map.items()

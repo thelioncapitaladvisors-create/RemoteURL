@@ -46,6 +46,15 @@ MCX_SYMBOLS = {
     "ZINC": {"security_id": "574834", "lot_size": 5000}
 }
 
+# Auto-merge dynamic front-month contracts from scrip_resolver
+try:
+    from .scrip_resolver import get_mcx_executor_map
+    dyn_mcx = get_mcx_executor_map()
+    if dyn_mcx:
+        MCX_SYMBOLS.update(dyn_mcx)
+except Exception:
+    pass
+
 def clean_symbol(tv_symbol):
     """Normalize TradingView symbol to match our mapping"""
     sym = tv_symbol.upper()
