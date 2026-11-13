@@ -7,6 +7,33 @@
   - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
   - Gating must NEVER rely on `close` for limit entry qualification.
 
+## Version 3.0: Decoupled Divergence Confirmation, Authentic Regime Styling & Code Alteration Lock Mandate (Effective November 13, 2026)
+- **ZERO UNILATERAL CODE MODIFICATION LOCK**:
+  - The AI assistant is strictly, unequivocally forbidden from modifying, refactoring, replacing, or deleting ANY existing Pine Script trading triggers, signal variables, regime blocks, filter defaults, Python BlackBox logic, or mobile frontend algorithms without the user's explicit prior written knowledge and direct line-by-line instruction.
+  - Any unprompted modification, "cleanup", or unapproved logic alteration is strictly prohibited and constitutes an immediate breach of system integrity.
+- **Canonical Master Indicator Version 3.0 Standard**:
+  - All Pine Script indicator engines (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0`.
+  - All three source files MUST maintain 100% byte-for-byte SHA256 checksum parity (`ca63dda575f902c6456019c703e2f2089f554b71783f583814d2ba224a5f6f0b`).
+- **Decoupled Regular Divergence Confirmation Mandate**:
+  - Regular Divergence (`D`) is decoupled from the `GrS` (Long) / `ReS` (Short) Power Candle bounce requirement on the confirmation candle.
+  - Execution strictly gates to subsequent directional confirmation candle close (Bars 1 to 5):
+    - Long trades require bullish confirmation close: `(close > open) and (close > close[1])`.
+    - Short trades require bearish confirmation close: `(close < open) and (close < close[1])`.
+  - Confirmation triggers identically to Hidden Divergence, establishing 100% mathematical symmetry.
+  - Single-fire execution guarantee ensures a confirmed divergence fires at most once per divergence window (`lastFiredBar < lastDivBar`).
+- **Confluence Filter Default Standard**:
+  - `enable_confluence_filter` must default to `false` (`input.bool(false, 'Enable Divergence Confluence Filter (Institutional Mode)')`).
+  - Standalone `MISSILE` and `SCALP` alerts MUST NEVER be gated behind divergence windows by default.
+- **User's Authentic Regime Styling & Classification Blocks**:
+  - The exact regime, paint, and message blocks across lines 801 to 911 are permanently anchored:
+    - `paint = BULLISH ? color.gray : BEARISH ? color.gray : MODERATELYBULLISH ? color.silver : MODERATELYBEARISH ? color.silver : INSIDE ? color.black : UNCHANGED ? color.black : OUTSIDE ? color.black : color.gray`
+    - `c1 = CONFIRMEDBULLISH and (close > DTc) ? "CONFIRMED \n BULLISH" : CONFIRMEDBULLISH and (close < DBc) ? "BULLISH \n REJECTION" : CONFIRMEDBEARISH and (close < DBc) ? "CONFIRMED \n BEARISH" : CONFIRMEDBEARISH and (close > DTc)  ? "BEARISH \n REJECTION" : REJECTEDBULLISH and (close < DBc) ? "BULLISH \n REJECTION" : REJECTEDBULLISH and (BULLISH or MODERATELYBULLISH) and (close > DTc) ? "BULLISH \n CONTINUATION" : REJECTEDBEARISH and (close > DTc)? "BEARISH \n REJECTION" : REJECTEDBEARISH and (BEARISH or MODERATELYBEARISH) and (close < DBc) ? "BEARISH \n CONTINUATION" : OUTSIDE ? "SIDEWAYS" : UNCHANGED ? "SIDEWAYS/ BREAKOUT" : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? "BREAKOUT" : "DEBUG"`
+    - `paintc = CONFIRMEDBULLISH and (close > DTc) ? color.green : CONFIRMEDBULLISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close < DBc) ? color.red : CONFIRMEDBEARISH and (close > DTc) ? color.teal :  REJECTEDBULLISH and (close < DBc)? color.red : REJECTEDBULLISH and (close > DTc) ? color.teal : REJECTEDBEARISH and (close > DTc)? color.teal : REJECTEDBEARISH and (close < DBc) ? color.red : OUTSIDE ? color.orange : UNCHANGED ? color.blue : ((ANYDAY and ((OO_ > h4) or (OO_ < l4))) or INSIDE) ? color.fuchsia : color.red`
+    - `c1_message := str.tostring(c1)` for all confirmed and rejection conditions.
+  - The AI assistant is strictly forbidden from changing, re-ordering, or refactoring these lines without explicit user instructions.
+- **Autonomous DhanHQ Netlify Infrastructure Mandate**:
+  - Autonomous Indian market scanning is anchored to Netlify background functions (`dhan-scanner-background.js` running `*/15 3-18 * * 1-5`) and dynamic TOTP renewal (`dhan-auth.js` with `DHAN_PIN = '871346'`, `DHAN_TOTP_SECRET = 'N5ZUIALJCBGJ63YS2DUB3BLW7EEPBJU2'`), persisting directly to Supabase `public.shadow_signals` without reliance on local workstation processes.
+
 ## Version 3.0: Master Production Release & Revamped Trade Logics Mandate (Effective November 10, 2026)
 - **Canonical Master Indicator Version 3.0 Standard**:
   - All Pine Script indicator engines (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0`.

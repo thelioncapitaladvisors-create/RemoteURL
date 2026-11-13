@@ -1322,8 +1322,8 @@ class TestV7IndicatorParity(unittest.TestCase):
         """DivergenceBuy triggers when regular bull div was detected within last 6 bars and GrS occurs."""
         engine = StrategyEngine()
 
-        # Bar 1: Regular bull div detected, but no GrS
-        b1 = OHLC(open=100, high=105, low=98, close=102)
+        # Bar 1: Regular bull div detected, but red candle (no confirmation)
+        b1 = OHLC(open=102, high=105, low=98, close=100)
         ctx1 = MarketContext(
             bar=b1, bar_index=1, H4=120, L4=80, H3=110, L3=90,
             cpr_pivot=100, cpr_tc=102, cpr_bc=98, is_ncpr=False,
@@ -1332,13 +1332,13 @@ class TestV7IndicatorParity(unittest.TestCase):
             session_highest=105, session_lowest=98, atr=5.0
         )
         sigs1 = engine.evaluate(ctx1)
-        # Should not fire DivergenceBuy because no GrS bounce
+        # Should not fire DivergenceBuy because candle is red (no bullish confirmation close)
         div_sigs1 = [s for s in sigs1 if s.name == "LONG DIVERGENCE"]
         self.assertEqual(len(div_sigs1), 0)
 
-        # Bar 2-4: Neutral bars
+        # Bar 2-4: Neutral/red bars (no bullish confirmation close)
         for i in range(2, 5):
-            bi = OHLC(open=102, high=104, low=101, close=103)
+            bi = OHLC(open=103, high=104, low=101, close=102)
             ctxi = MarketContext(
                 bar=bi, bar_index=i, H4=120, L4=80, H3=110, L3=90,
                 cpr_pivot=100, cpr_tc=102, cpr_bc=98, is_ncpr=False,
@@ -1582,8 +1582,25 @@ class TestVirginCPR(unittest.TestCase):
             day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
             session_highest=105.0, session_lowest=95.0, atr=2.0
         )
+        # Bar 2: Regular Bullish Divergence confirms on Bar 2
         sigs2 = engine.evaluate(ctx2)
-        missile_sigs = [s for s in sigs2 if "MISSILE" in s.name]
+        div_sigs = [s for s in sigs2 if "DIVERGENCE" in s.name]
+        self.assertGreater(len(div_sigs), 0, "Divergence buy should confirm on Bar 2")
+
+        # Bar 3: Missile Buy fires on subsequent bar while divergence buffer still active (<6 bars)
+        b3 = OHLC(open=101.0, high=107.0, low=99.0, close=106.0)
+        ctx3 = MarketContext(
+            bar=b3, bar_index=3,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            short_ema=103.0, med_ema=99.0,
+            pivot_trend_fast=104.0, pivot_trend_slow=100.0,
+            plus=28.0, minus=8.0, m0=12.0, m10=4.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=107.0, session_lowest=95.0, atr=2.0
+        )
+        sigs3 = engine.evaluate(ctx3)
+        missile_sigs = [s for s in sigs3 if "MISSILE" in s.name]
         self.assertGreater(len(missile_sigs), 0, "Missile buy should trigger")
         self.assertTrue(missile_sigs[0].is_confluence, "Missile signal must have is_confluence=True within divergence window")
         self.assertEqual(missile_sigs[0].confluence_tag, "MISSILE_DIV", "Confluence tag must be MISSILE_DIV")

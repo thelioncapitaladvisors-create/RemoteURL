@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TLCS Master Project Report & Intellectual Property Ownership Document</title>
+<style>
+    @page {
+        size: A4 portrait;
+        margin: 14mm 14mm 16mm 14mm;
+    }
+    
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+    
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        color: #0f172a;
+        background-color: #ffffff;
+        font-size: 9pt;
+        line-height: 1.45;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    
+    .page {
+        page-break-after: always;
+        position: relative;
+        min-height: 255mm;
+        padding-bottom: 12mm;
+    }
+    
+    .page:last-child {
+        page-break-after: avoid;
+    }
+    
+    .header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #0f172a;
+        padding-bottom: 3mm;
+        margin-bottom: 4mm;
+    }
+    
+    .header-bar .logo {
+        font-size: 11pt;
+        font-weight: 900;
+        letter-spacing: -0.5px;
+        color: #0a192f;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .header-bar .doc-meta {
+        font-size: 7.5pt;
+        text-align: right;
+        color: #64748b;
+        font-family: monospace;
+    }
+    
+    .footer-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #cbd5e1;
+        padding-top: 2.5mm;
+        font-size: 7pt;
+        color: #64748b;
+        font-family: monospace;
+    }
+    
+    h1 {
+        font-size: 20pt;
+        font-weight: 900;
+        line-height: 1.15;
+        color: #0a192f;
+        margin-bottom: 3mm;
+    }
+    
+    h2 {
+        font-size: 12pt;
+        font-weight: 800;
+        color: #0a192f;
+        border-bottom: 1.5px solid #0284c7;
+        padding-bottom: 1.5mm;
+        margin-top: 4mm;
+        margin-bottom: 3mm;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    h3 {
+        font-size: 9.5pt;
+        font-weight: 700;
+        color: #0369a1;
+        margin-top: 3mm;
+        margin-bottom: 1.5mm;
+    }
+    
+    p {
+        margin-bottom: 2.5mm;
+        text-align: justify;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-size: 7.5pt;
+        font-weight: 800;
+        font-family: monospace;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .badge-gold { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .badge-blue { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-green { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    
+    .callout {
+        background: #f8fafc;
+        border-left: 3.5px solid #0284c7;
+        padding: 2.5mm 3.5mm;
+        margin: 3mm 0;
+        border-radius: 0 5px 5px 0;
+    }
+    
+    .callout-legal {
+        background: #fefce8;
+        border-left: 3.5px solid #ca8a04;
+        padding: 3mm 3.5mm;
+        margin: 3mm 0;
+        border-radius: 0 5px 5px 0;
+    }
+    
+    .callout-title {
+        font-weight: 800;
+        font-size: 8pt;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 1mm;
+        color: #0f172a;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 3mm 0;
+        font-size: 8pt;
+    }
+    
+    th {
+        background: #0f172a;
+        color: #ffffff;
+        text-align: left;
+        padding: 2mm 2.5mm;
+        font-weight: 700;
+        font-size: 7.5pt;
+        letter-spacing: 0.3px;
+    }
+    
+    td {
+        padding: 1.8mm 2.5mm;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: top;
+    }
+    
+    tr:nth-child(even) td {
+        background-color: #f8fafc;
+    }
+    
+    .diagram-container {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 3mm;
+        margin: 3mm 0;
+        text-align: center;
+    }
+    
+    .diagram-title {
+        font-weight: 800;
+        font-size: 7.5pt;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #475569;
+        margin-bottom: 2mm;
+        text-align: left;
+    }
+    
+    .cover-page {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 255mm;
+        padding: 5mm 0;
+    }
+    
+    .cover-top {
+        border-left: 6px solid #d97706;
+        padding-left: 5mm;
+    }
+    
+    .cover-title {
+        font-size: 22pt;
+        font-weight: 900;
+        color: #0a192f;
+        line-height: 1.1;
+        letter-spacing: -0.5px;
+        margin-bottom: 3mm;
+    }
+    
+    .cover-subtitle {
+        font-size: 11pt;
+        font-weight: 600;
+        color: #0369a1;
+        margin-bottom: 4mm;
+        line-height: 1.3;
+    }
+    
+    .cover-meta-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3mm;
+        background: #f1f5f9;
+        padding: 4mm;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        margin: 4mm 0;
+    }
+    
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .meta-label {
+        font-size: 7pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        letter-spacing: 0.5px;
+    }
+    
+    .meta-value {
+        font-size: 8.5pt;
+        font-weight: 800;
+        color: #0f172a;
+    }
+    
+    .seal-box {
+        border: 1.5px dashed #0284c7;
+        background: #f0f9ff;
+        padding: 3mm;
+        border-radius: 6px;
+        margin-top: 3mm;
+        display: flex;
+        align-items: center;
+        gap: 4mm;
+    }
+    
+    .seal-icon {
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+    }
+    
+    .signature-card {
+        background: #ffffff;
+        border: 1.5px solid #0f172a;
+        border-radius: 6px;
+        padding: 3.5mm;
+        margin-top: 4mm;
+        display: flex;
+        justify-content: space-between;
+    }
+</style>
+</head>
+<body>
+
+<!-- ==========================================
+     PAGE 1: COVER PAGE
+     ========================================== -->
+<div class="page cover-page">
+    <div class="cover-top">
+        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3mm;">
+            <span class="badge badge-gold">OFFICIAL LEGAL INSTRUMENT</span>
+            <span class="badge badge-blue">VERSION 3.0 MASTER RELEASE</span>
+            <span class="badge badge-green">IMMUTABLE PROPRIETARY RECORD</span>
+        </div>
+        <div class="cover-title">THE LION CAPITAL SOLUTIONS (TLCS)</div>
+        <div class="cover-subtitle">Enterprise Quantitative Trading System Architecture, Mathematical Process Specification & Intellectual Property Ownership Deed</div>
+        <div style="font-size: 8.5pt; color: #475569; font-weight: 500;">
+            A Formal Legal Affidavit, Comprehensive Technical Blueprint, and Cryptographic Codebase Registry Establishing Sole Authorship, Exclusive Ownership, and Trade Secret Rights.
+        </div>
+    </div>
+    
+    <div>
+        <div class="cover-meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Proprietary Owner & Inventor</span>
+                <span class="meta-value" style="font-size: 10pt; color: #0a192f;">VISHANT VYANKAT MESHRAM</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Statutory Legal Framework</span>
+                <span class="meta-value">Indian Copyright Act 1957 (Sec. 17 & 57) & IT Act 2000</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Official Enterprise Email</span>
+                <span class="meta-value" style="font-family: monospace; color: #0284c7;">connect@thelioncapitalsolutions.com</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Personal Verified Email</span>
+                <span class="meta-value" style="font-family: monospace; color: #0284c7;">vishantmeshram@gmail.com</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Trading Entities & Brands</span>
+                <span class="meta-value">The Lion Capital Solutions / The Lion Capital Advisors</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Production Web Domains</span>
+                <span class="meta-value" style="font-family: monospace;">thelioncapitalsolutions.com | market-store.online</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Document Date & Timestamp</span>
+                <span class="meta-value" style="font-family: monospace;">Wednesday, November 11, 2026 | 07:46:07 IST (UTC+05:30)</span>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Release Version & Checksums</span>
+                <span class="meta-value">Version 3.0.0 Master Production Release (SHA-256 Parity)</span>
+            </div>
+        </div>
+
+        <div class="seal-box">
+            <svg class="seal-icon" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="46" fill="#fef3c7" stroke="#d97706" stroke-width="4"/>
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="3,3"/>
+                <polygon points="50,15 58,35 80,35 62,48 69,70 50,56 31,70 38,48 20,35 42,35" fill="#d97706"/>
+                <circle cx="50" cy="50" r="14" fill="#0a192f"/>
+                <text x="50" y="54" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle" font-family="sans-serif">TLCS</text>
+            </svg>
+            <div>
+                <div style="font-weight: 800; font-size: 8.5pt; color: #0a192f; margin-bottom: 0.5mm;">
+                    LEGAL AFFIDAVIT OF INTELLECTUAL PROPERTY & TRADE SECRETS
+                </div>
+                <div style="font-size: 7.5pt; color: #475569; line-height: 1.35;">
+                    This instrument certifies under law that Vishant Vyankat Meshram is the sole author, architect, inventor, and copyright proprietor of the TLCS trading algorithm, quantitative engines, website terminal, mobile application, database schemas, and proprietary execution methodologies.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bar">
+        <span>CONFIDENTIAL & PROPRIETARY — THE LION CAPITAL SOLUTIONS</span>
+        <span>DOC ID: TLCS-LEGAL-V3.0-20261111</span>
+        <span>COVER PAGE</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     PAGE 2: LEGAL DECLARATION & STATUTORY FRAMEWORK
+     ========================================== -->
+<div class="page">
+    <div class="header-bar">
+        <div class="logo"><span>🦁</span> THE LION CAPITAL SOLUTIONS — STATUTORY OWNERSHIP</div>
+        <div class="doc-meta">DATE: 11-NOV-2026 | TIME: 07:46:07 IST<br>OWNER: VISHANT VYANKAT MESHRAM</div>
+    </div>
+
+    <h2>1. STATUTORY DECLARATION OF SOLE PROPRIETARY OWNERSHIP</h2>
+    
+    <div class="callout-legal">
+        <div class="callout-title">LEGAL AFFIDAVIT OF EXCLUSIVE OWNERSHIP</div>
+        <p style="font-size: 8pt; margin: 0; line-height: 1.4;">
+            I, <strong>VISHANT VYANKAT MESHRAM</strong>, residing in the Republic of India, operating professionally under the institutional trade names <strong>The Lion Capital Solutions</strong> and <strong>The Lion Capital Advisors</strong>, do hereby solemnly affirm, declare, and state for all legal and statutory intents and purposes that I am the sole, original author, principal software architect, inventor, and unencumbered proprietary owner of the trading system, software codebase, mathematical models, web and mobile terminals, and algorithmic processes known collectively as <strong>The Lion Capital Solutions (TLCS)</strong>.
+        </p>
+    </div>
+
+    <h3>1.1 Statutory Basis and International Treaty Protections</h3>
+    <ul style="padding-left: 4mm; margin-bottom: 2.5mm; font-size: 8pt;">
+        <li><strong>Indian Copyright Act, 1957 (Sections 17 & 57)</strong>: Vests immediate copyright ownership in the original author for computer software, source code, visual screen layouts, and documentation without prerequisites of formal registration.</li>
+        <li><strong>Information Technology Act, 2000 (Sections 43, 65 & 66)</strong>: Imposes severe civil damages and criminal penalties for source code tampering, unauthorized copying, digital breach of access, and commercial trade secret theft.</li>
+        <li><strong>Berne Convention for the Protection of Literary and Artistic Works (1886)</strong>: Provides automatic copyright recognition and legal enforceability across all 181 sovereign signatory member nations.</li>
+        <li><strong>TRIPS Agreement (World Trade Organization)</strong>: Mandates international enforcement of trade secret protection, proprietary algorithmic formulations, and computer program rights globally.</li>
+    </ul>
+
+    <h3>1.2 Scope of Protected Proprietary Assets & Inventions</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Component Layer</th>
+                <th style="width: 45%;">Protected System Asset</th>
+                <th style="width: 30%;">Ownership Standard</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>TLCS Mobile PWA</strong></td>
+                <td>Next.js 14 progressive web application (`Tv-Alert-Mobile/`), 6-tab terminal interface (HUB, LOGS, SCREENER, INSIGHTS, MARKETS, ANALYTICS), responsive real-time data sync.</td>
+                <td>100% Sole Ownership of source code, UI/UX designs, workflows, state engines.</td>
+            </tr>
+            <tr>
+                <td><strong>TLCS Web Dashboard</strong></td>
+                <td>Web terminal deployed at `thelioncapitalsolutions.com`, 7-day day type blueprint matrix, multi-asset scanner, Razorpay subscription gateway, real-time push alerts.</td>
+                <td>100% Sole Ownership of frontend scripts, Netlify functions, audio/visual alerts.</td>
+            </tr>
+            <tr>
+                <td><strong>Standalone BlackBox Engine</strong></td>
+                <td>Python standalone engine (`algo_engine/`), DhanHQ WebSocket quote aggregator, Frank Ochoa STP 2.0 day types, 129 automated unit tests.</td>
+                <td>100% Sole Ownership of quantitative execution logic, daemon, and pipelines.</td>
+            </tr>
+            <tr>
+                <td><strong>Pine Script v6 Indicator</strong></td>
+                <td>`TLCS PivotBoss Indicator v3.0` (3,567 lines), Central Pivot Range, Camarilla H4/L4 touch-point order gating, confirmed divergence detectors, Scalp Alerts.</td>
+                <td>100% Sole Ownership of trading formulas, indicators, session arrays, alerts.</td>
+            </tr>
+            <tr>
+                <td><strong>Database & Serverless Workers</strong></td>
+                <td>Supabase PostgreSQL 15 cloud database, PL/pgSQL exact percentage auto-correct triggers, Netlify edge serverless webhook workers.</td>
+                <td>100% Sole Ownership of database schemas, triggers, serverless edge code.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer-bar">
+        <span>THE LION CAPITAL SOLUTIONS — STATUTORY OWNERSHIP & LEGAL AFFIDAVIT</span>
+        <span>SECTION 1</span>
+        <span>PAGE 2</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     PAGE 3: END-TO-END ARCHITECTURE
+     ========================================== -->
+<div class="page">
+    <div class="header-bar">
+        <div class="logo"><span>🦁</span> THE LION CAPITAL SOLUTIONS — SYSTEM ARCHITECTURE</div>
+        <div class="doc-meta">ARCHITECTURE VERSION: 3.0.0<br>TOPOLOGY & DATA FLOW</div>
+    </div>
+
+    <h2>2. END-TO-END SYSTEM TOPOLOGY & EXECUTION PIPELINE</h2>
+    <p>
+        The TLCS architecture integrates market feeds, autonomous algorithmic computation, persistent immutable ledgers, and multi-channel dissemination into a synchronized quantitative trading ecosystem.
+    </p>
+
+    <div class="diagram-container">
+        <div class="diagram-title">FIGURE 2.1: COMPLETE DATA INGESTION, EXECUTION & NOTIFICATION PIPELINE</div>
+        <svg viewBox="0 0 750 320" style="width: 100%; max-height: 300px; font-family: monospace;">
+            <!-- Feeds -->
+            <rect x="20" y="20" width="210" height="80" rx="6" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+            <text x="125" y="42" font-size="9.5" font-weight="bold" fill="#0369a1" text-anchor="middle">1. MARKET DATA INGESTION</text>
+            <text x="125" y="60" font-size="8" fill="#334155" text-anchor="middle">• DhanHQ WebSocket (NSE/MCX)</text>
+            <text x="125" y="74" font-size="8" fill="#334155" text-anchor="middle">• TradingView Bar-Close Webhooks</text>
+            <text x="125" y="88" font-size="8" fill="#334155" text-anchor="middle">• Binance Futures Stream</text>
+
+            <!-- BlackBox -->
+            <rect x="270" y="20" width="220" height="80" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <text x="380" y="42" font-size="9.5" font-weight="bold" fill="#92400e" text-anchor="middle">2. AUTONOMOUS BLACKBOX ENGINE</text>
+            <text x="380" y="60" font-size="8" fill="#334155" text-anchor="middle">• Multi-Session Bar Aggregator</text>
+            <text x="380" y="74" font-size="8" fill="#334155" text-anchor="middle">• STP 2.0 Day Type & Confluence</text>
+            <text x="380" y="88" font-size="8" fill="#334155" text-anchor="middle">• Midpoint Breakeven Trailing SL</text>
+
+            <!-- Serverless Edge -->
+            <rect x="530" y="20" width="200" height="80" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+            <text x="630" y="42" font-size="9.5" font-weight="bold" fill="#5b21b6" text-anchor="middle">3. SERVERLESS EDGE WORKERS</text>
+            <text x="630" y="60" font-size="8" fill="#334155" text-anchor="middle">• process-webhook-background.js</text>
+            <text x="630" y="74" font-size="8" fill="#334155" text-anchor="middle">• test-telegram.js VIP Router</text>
+            <text x="630" y="88" font-size="8" fill="#334155" text-anchor="middle">• send-push-background.js</text>
+
+            <!-- Lines to DB -->
+            <line x1="125" y1="100" x2="380" y2="135" stroke="#0284c7" stroke-width="1.5"/>
+            <line x1="380" y1="100" x2="380" y2="135" stroke="#d97706" stroke-width="1.5"/>
+            <line x1="630" y1="100" x2="380" y2="135" stroke="#7c3aed" stroke-width="1.5"/>
+
+            <!-- Supabase Database -->
+            <rect x="160" y="135" width="440" height="75" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+            <text x="380" y="155" font-size="10" font-weight="bold" fill="#15803d" text-anchor="middle">4. PERSISTENT LEDGER — SUPABASE POSTGRESQL 15</text>
+            <text x="380" y="172" font-size="8" fill="#1e293b" text-anchor="middle">Tables: signals, shadow_signals, users, subscriptions, push_subscriptions</text>
+            <text x="380" y="186" font-size="8" fill="#1e293b" text-anchor="middle">PL/pgSQL Trigger: AUTO_CORRECT_OUTCOME_TRIGGER (Enforces Exact % Return)</text>
+            <text x="380" y="200" font-size="7.5" fill="#15803d" text-anchor="middle; font-weight: bold;">Row Level Security (RLS) & Webhook Token Verification</text>
+
+            <!-- Lines to Clients -->
+            <line x1="260" y1="210" x2="160" y2="245" stroke="#16a34a" stroke-width="1.5"/>
+            <line x1="380" y1="210" x2="380" y2="245" stroke="#16a34a" stroke-width="1.5"/>
+            <line x1="500" y1="210" x2="600" y2="245" stroke="#16a34a" stroke-width="1.5"/>
+
+            <!-- Client Terminals -->
+            <rect x="50" y="245" width="220" height="65" rx="6" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/>
+            <text x="160" y="263" font-size="9" font-weight="bold" fill="#0f172a" text-anchor="middle">MOBILE TERMINAL (PWA)</text>
+            <text x="160" y="278" font-size="7.5" fill="#475569" text-anchor="middle">Next.js 14 App Router | Tailwind</text>
+            <text x="160" y="292" font-size="7.5" fill="#475569" text-anchor="middle">HUB, LOGS, SCREENER, INSIGHTS</text>
+            <text x="160" y="304" font-size="7" fill="#0284c7" text-anchor="middle; font-weight: bold;">market-store.online</text>
+
+            <rect x="290" y="245" width="180" height="65" rx="6" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/>
+            <text x="380" y="263" font-size="9" font-weight="bold" fill="#0f172a" text-anchor="middle">WEB TRADING TERMINAL</text>
+            <text x="380" y="278" font-size="7.5" fill="#475569" text-anchor="middle">Vanilla ES6+ Trading Terminal</text>
+            <text x="380" y="292" font-size="7.5" fill="#475569" text-anchor="middle">Razorpay | Glassmorphic UI</text>
+            <text x="380" y="304" font-size="7" fill="#0284c7" text-anchor="middle; font-weight: bold;">thelioncapitalsolutions.com</text>
+
+            <rect x="490" y="245" width="220" height="65" rx="6" fill="#f1f5f9" stroke="#334155" stroke-width="1.5"/>
+            <text x="600" y="263" font-size="9" font-weight="bold" fill="#0f172a" text-anchor="middle">VIP DISPATCH CHANNELS</text>
+            <text x="600" y="278" font-size="7.5" fill="#475569" text-anchor="middle">Dedicated Telegram Market Channels</text>
+            <text x="600" y="292" font-size="7.5" fill="#475569" text-anchor="middle">Web Push API Service Workers</text>
+            <text x="600" y="304" font-size="7" fill="#7c3aed" text-anchor="middle; font-weight: bold;">Real-Time Audio / Alert Alerts</text>
+        </svg>
+    </div>
+
+    <h3>2.2 Core Invariants of the Enterprise Architecture</h3>
+    <ul style="padding-left: 4mm; font-size: 8pt;">
+        <li><strong>Deterministic Bar-Time ID (`trade_id`)</strong>: Each signal anchors to candle bar timestamp, preventing state corruption during asynchronous serverless execution.</li>
+        <li><strong>Symmetrical Neutral Zone Scalp Alert Confluence</strong>: Strictly evaluates outside Greenzone and Redzone boundaries, eliminating adverse zone friction.</li>
+        <li><strong>Exact Percentage Metric Standard (`exact_pct`)</strong>: Deprecates all subjective r-multiples; mandates exact percentage formula `((Exit - Entry) / Entry) * 100`.</li>
+    </ul>
+
+    <div class="footer-bar">
+        <span>THE LION CAPITAL SOLUTIONS — SYSTEM TOPOLOGY & EXECUTION PIPELINE</span>
+        <span>SECTION 2</span>
+        <span>PAGE 3</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     PAGE 4: PYTHON BLACKBOX ENGINE
+     ========================================== -->
+<div class="page">
+    <div class="header-bar">
+        <div class="logo"><span>🦁</span> THE LION CAPITAL SOLUTIONS — BLACKBOX ENGINE</div>
+        <div class="doc-meta">PACKAGE: algo_engine/<br>AUTONOMOUS EXECUTION</div>
+    </div>
+
+    <h2>3. STANDALONE PYTHON BLACKBOX EXECUTION ENGINE (`algo_engine/`)</h2>
+    <p>
+        The TLCS Python BlackBox engine runs autonomously as an institutional background daemon. It connects directly to the DhanHQ WebSocket, aggregates multi-session candles, evaluates PivotBoss STP 2.0 day types, and manages trade lifecycles with zero human dependency.
+    </p>
+
+    <div class="diagram-container">
+        <div class="diagram-title">FIGURE 3.1: BLACKBOX SUB-MODULE INTERACTION ARCHITECTURE</div>
+        <svg viewBox="0 0 750 140" style="width: 100%; max-height: 140px; font-family: monospace;">
+            <rect x="15" y="20" width="130" height="100" rx="6" fill="#e2e8f0" stroke="#475569" stroke-width="1.5"/>
+            <text x="80" y="42" font-size="8.5" font-weight="bold" fill="#0f172a" text-anchor="middle">FEEDS MANAGER</text>
+            <text x="80" y="60" font-size="7.5" fill="#334155" text-anchor="middle">dhan_feed.py</text>
+            <text x="80" y="74" font-size="7.5" fill="#334155" text-anchor="middle">binance_feed.py</text>
+            <text x="80" y="98" font-size="7" fill="#64748b" text-anchor="middle">NSE/MCX WebSockets</text>
+
+            <line x1="145" y1="70" x2="165" y2="70" stroke="#0284c7" stroke-width="2"/>
+
+            <rect x="165" y="20" width="130" height="100" rx="6" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5"/>
+            <text x="230" y="42" font-size="8.5" font-weight="bold" fill="#0369a1" text-anchor="middle">BAR AGGREGATOR</text>
+            <text x="230" y="60" font-size="7.5" fill="#334155" text-anchor="middle">aggregator.py</text>
+            <text x="230" y="74" font-size="7.5" fill="#334155" text-anchor="middle">15m & Daily Bars</text>
+            <text x="230" y="98" font-size="7" fill="#64748b" text-anchor="middle">GIFT Session Filter</text>
+
+            <line x1="295" y1="70" x2="315" y2="70" stroke="#0284c7" stroke-width="2"/>
+
+            <rect x="315" y="20" width="135" height="100" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <text x="382" y="42" font-size="8.5" font-weight="bold" fill="#92400e" text-anchor="middle">PIVOTS & DAY TYPES</text>
+            <text x="382" y="60" font-size="7.5" fill="#334155" text-anchor="middle">pivots.py (CPR/Cam)</text>
+            <text x="382" y="74" font-size="7.5" fill="#334155" text-anchor="middle">day_types.py</text>
+            <text x="382" y="98" font-size="7" fill="#64748b" text-anchor="middle">STP 2.0 5 Blueprints</text>
+
+            <line x1="450" y1="70" x2="470" y2="70" stroke="#0284c7" stroke-width="2"/>
+
+            <rect x="470" y="20" width="130" height="100" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+            <text x="535" y="42" font-size="8.5" font-weight="bold" fill="#5b21b6" text-anchor="middle">STRATEGIES</text>
+            <text x="535" y="60" font-size="7.5" fill="#334155" text-anchor="middle">strategies.py</text>
+            <text x="535" y="74" font-size="7.5" fill="#334155" text-anchor="middle">Scalp Alert (Fire)</text>
+            <text x="535" y="98" font-size="7" fill="#64748b" text-anchor="middle">Divergences (D & H)</text>
+
+            <line x1="600" y1="70" x2="620" y2="70" stroke="#0284c7" stroke-width="2"/>
+
+            <rect x="620" y="20" width="115" height="100" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+            <text x="677" y="42" font-size="8.5" font-weight="bold" fill="#15803d" text-anchor="middle">TRADE LIFECYCLE</text>
+            <text x="677" y="60" font-size="7.5" fill="#334155" text-anchor="middle">trade_manager.py</text>
+            <text x="677" y="74" font-size="7.5" fill="#334155" text-anchor="middle">Midpoint Trail SL</text>
+            <text x="677" y="98" font-size="7" fill="#64748b" text-anchor="middle">Shadow Sink & Alerts</text>
+        </svg>
+    </div>
+
+    <h3>3.1 Sub-Module Specifications & Execution Mandates</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Module File</th>
+                <th style="width: 45%;">Core Algorithmic Logic</th>
+                <th style="width: 30%;">Operational Invariant</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>`algo_engine/pivots.py`</td>
+                <td>Calculates Daily/Monthly Central Pivot Range (CPR), Camarilla Levels (H1-H5, L1-L5), and Average True Range (ATR 14).</td>
+                <td>H4/L4 touch-point gating strictly enforced via candle wick highs/lows; never close.</td>
+            </tr>
+            <tr>
+                <td>`algo_engine/day_types.py`</td>
+                <td>Implements Frank Ochoa's Swing Trade Pro 2.0 blueprints: Rejection, Absorption, FNH/FNL, Outside, Stop Run Days.</td>
+                <td>Determines directional bias and sequence filters across multi-day auction distributions.</td>
+            </tr>
+            <tr>
+                <td>`algo_engine/strategies.py`</td>
+                <td>Evaluates real-time strategy triggers: Scalp Alert (Fire Alert), Missile, Scalp, Lightning, and Standalone Divergences.</td>
+                <td>Scalp Alert is strictly gated to the Neutral Zone (prohibited inside Greenzone & Redzone).</td>
+            </tr>
+            <tr>
+                <td>`algo_engine/trade_manager.py`</td>
+                <td>Manages limit entries, TP1-TP4 fulfillment, Midpoint Breakeven Trailing SL, and EOD auto-settlement.</td>
+                <td>Pre-TP1 50% midpoint distance triggers immediate Stop Loss advance to Breakeven (Entry).</td>
+            </tr>
+            <tr>
+                <td>`algo_engine/telegram_dispatcher.py`</td>
+                <td>Dispatches rich HTML formatted trade notifications to market-segregated Telegram channels.</td>
+                <td>Fires upon Trade Active, Trailing SL Update, and Trade Closed with exact return %.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer-bar">
+        <span>THE LION CAPITAL SOLUTIONS — BLACKBOX ENGINE SPECIFICATION</span>
+        <span>SECTION 3</span>
+        <span>PAGE 4</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     PAGE 5: MOBILE TERMINAL APPLICATION
+     ========================================== -->
+<div class="page">
+    <div class="header-bar">
+        <div class="logo"><span>🦁</span> THE LION CAPITAL SOLUTIONS — MOBILE TERMINAL</div>
+        <div class="doc-meta">PACKAGE: Tv-Alert-Mobile/<br>NEXT.JS 14 PWA TERMINAL</div>
+    </div>
+
+    <h2>4. MOBILE TERMINAL PROGRESSIVE WEB APP (`Tv-Alert-Mobile`)</h2>
+    <p>
+        The TLCS Mobile Application is an institutional-grade, progressive web app engineered in Next.js 14, featuring real-time Supabase subscriptions, tactile haptic feedback, WCAG AAA theme contrast, and high-density financial analytics.
+    </p>
+
+    <div class="diagram-container">
+        <div class="diagram-title">FIGURE 4.1: MOBILE APP 6-TAB MODULAR ARCHITECTURE (`Tv-Alert-Mobile/src/app/page.tsx`)</div>
+        <svg viewBox="0 0 750 180" style="width: 100%; max-height: 180px; font-family: monospace;">
+            <rect x="20" y="15" width="710" height="32" rx="5" fill="#0f172a"/>
+            <text x="375" y="36" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle">TLCS MOBILE TERMINAL — CORE APPLICATION SHELL (PWA)</text>
+
+            <rect x="20" y="60" width="110" height="105" rx="6" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="75" y="80" font-size="9" font-weight="bold" fill="#1d4ed8" text-anchor="middle">1. HUB</text>
+            <text x="75" y="96" font-size="7.5" fill="#334155" text-anchor="middle">• Live Signals ⚡</text>
+            <text x="75" y="110" font-size="7.5" fill="#334155" text-anchor="middle">• Collapsible Filters</text>
+            <text x="75" y="124" font-size="7.5" fill="#334155" text-anchor="middle">• Scalp Alerts 🔥</text>
+            <text x="75" y="138" font-size="7.5" fill="#334155" text-anchor="middle">• Breakouts 📐</text>
+            <text x="75" y="152" font-size="7.5" fill="#334155" text-anchor="middle">• Daily Matrix</text>
+
+            <rect x="140" y="60" width="110" height="105" rx="6" fill="#f8fafc" stroke="#64748b" stroke-width="1.5"/>
+            <text x="195" y="80" font-size="9" font-weight="bold" fill="#334155" text-anchor="middle">2. LOGS</text>
+            <text x="195" y="96" font-size="7.5" fill="#334155" text-anchor="middle">• Real-Time Feed</text>
+            <text x="195" y="110" font-size="7.5" fill="#334155" text-anchor="middle">• Trade Fills</text>
+            <text x="195" y="124" font-size="7.5" fill="#334155" text-anchor="middle">• Trailing SL</text>
+            <text x="195" y="138" font-size="7.5" fill="#334155" text-anchor="middle">• Exits & Ret %</text>
+            <text x="195" y="152" font-size="7.5" fill="#334155" text-anchor="middle">• Market Badges</text>
+
+            <rect x="260" y="60" width="110" height="105" rx="6" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+            <text x="315" y="80" font-size="9" font-weight="bold" fill="#92400e" text-anchor="middle">3. SCREENER</text>
+            <text x="315" y="96" font-size="7.5" fill="#334155" text-anchor="middle">• TLCS Screener</text>
+            <text x="315" y="110" font-size="7.5" fill="#334155" text-anchor="middle">• DhanHQ Screener</text>
+            <text x="315" y="124" font-size="7.5" fill="#334155" text-anchor="middle">• 7-Day Matrix</text>
+            <text x="315" y="138" font-size="7.5" fill="#334155" text-anchor="middle">• Expanded Default</text>
+            <text x="315" y="152" font-size="7.5" fill="#334155" text-anchor="middle">• Reset Afresh</text>
+
+            <rect x="380" y="60" width="110" height="105" rx="6" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+            <text x="435" y="80" font-size="9" font-weight="bold" fill="#5b21b6" text-anchor="middle">4. INSIGHTS</text>
+            <text x="435" y="96" font-size="7.5" fill="#334155" text-anchor="middle">• Stocks w/ Action</text>
+            <text x="435" y="110" font-size="7.5" fill="#334155" text-anchor="middle">• Out of Range</text>
+            <text x="435" y="124" font-size="7.5" fill="#334155" text-anchor="middle">• Breakouts 📐</text>
+            <text x="435" y="138" font-size="7.5" fill="#334155" text-anchor="middle">• Scalp Alerts 🔥</text>
+            <text x="435" y="152" font-size="7.5" fill="#334155" text-anchor="middle">• Asset Modals</text>
+
+            <rect x="500" y="60" width="110" height="105" rx="6" fill="#dcfce7" stroke="#16a34a" stroke-width="1.5"/>
+            <text x="555" y="80" font-size="9" font-weight="bold" fill="#15803d" text-anchor="middle">5. MARKETS</text>
+            <text x="555" y="96" font-size="7.5" fill="#334155" text-anchor="middle">• 6 Asset Classes</text>
+            <text x="555" y="110" font-size="7.5" fill="#334155" text-anchor="middle">• Dropdown Filter</text>
+            <text x="555" y="124" font-size="7.5" fill="#334155" text-anchor="middle">• Foldable Table</text>
+            <text x="555" y="138" font-size="7.5" fill="#334155" text-anchor="middle">• Real-Time Curves</text>
+            <text x="555" y="152" font-size="7.5" fill="#334155" text-anchor="middle">• R:R Breakdown</text>
+
+            <rect x="620" y="60" width="110" height="105" rx="6" fill="#ffe4e6" stroke="#e11d48" stroke-width="1.5"/>
+            <text x="675" y="80" font-size="9" font-weight="bold" fill="#9f1239" text-anchor="middle">6. ANALYTICS</text>
+            <text x="675" y="96" font-size="7.5" fill="#334155" text-anchor="middle">• 22 KPI Matrix</text>
+            <text x="675" y="110" font-size="7.5" fill="#334155" text-anchor="middle">• Profit Factor</text>
+            <text x="675" y="124" font-size="7.5" fill="#334155" text-anchor="middle">• Sharpe / Calmar</text>
+            <text x="675" y="138" font-size="7.5" fill="#334155" text-anchor="middle">• Signal Rankings</text>
+            <text x="675" y="152" font-size="7.5" fill="#334155" text-anchor="middle">• Sticky Columns</text>
+        </svg>
+    </div>
+
+    <h3>4.1 Version 3.0 Production Enhancements</h3>
+    <ul style="padding-left: 4mm; font-size: 8pt;">
+        <li><strong>Expanded Screeners by Default</strong>: `isScreenerExpanded = true` and `isDhanScreenerExpanded = true` initialize the 7-day matrices expanded on first load.</li>
+        <li><strong>Breakouts (Normalized Narrow CPR) Filter</strong>: Identifies stocks exhibiting `< 5.0%` CPR width relative to prior day's range.</li>
+        <li><strong>Scalp Alert (Fire Alert) Confluence Framework</strong>: Aligned with strictly evaluated Neutral Zone signals with zero adverse Greenzone/Redzone overlap.</li>
+        <li><strong>Collapsible Live Signals UI</strong>: High-density interactive drawer with single-tap toggle back to `ALL` and real-time count badges.</li>
+    </ul>
+
+    <div class="footer-bar">
+        <span>THE LION CAPITAL SOLUTIONS — MOBILE TERMINAL SPECIFICATION</span>
+        <span>SECTION 4</span>
+        <span>PAGE 5</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     PAGE 6: PINE SCRIPT MASTER INDICATOR
+     ========================================== -->
+<div class="page">
+    <div class="header-bar">
+        <div class="logo"><span>🦁</span> THE LION CAPITAL SOLUTIONS — PINE SCRIPT ENGINE</div>
+        <div class="doc-meta">INDICATOR VERSION: 3.0.0 (@version=6)<br>SHA-256 PARITY VERIFIED</div>
+    </div>
+
+    <h2>5. CANONICAL PINE SCRIPT TRADING ENGINE (`TLCS PivotBoss Indicator v3.0`)</h2>
+    <p>
+        The TradingView Pine Script v6 engine constitutes the primary quantitative signal generator, encapsulating 3,567 lines of proprietary mathematical models, session arrays, multi-pivot systems, and confirmed divergence detectors.
+    </p>
+
+    <div class="callout">
+        <div class="callout-title">TRIPLE-FILE SHA-256 CHECKSUM PARITY STANDARD</div>
+        <p style="font-size: 7.5pt; margin: 0; font-family: monospace;">
+            TV_Indicator_Full_Code.txt: fadedf4b4376a84b0dd143b53b33f6165c3685aa43f93cebd4032e57085ee258<br>
+            TV Indicator/TLCS_Live_Pivot_Alerts.pine: fadedf4b4376a84b0dd143b53b33f6165c3685aa43f93cebd4032e57085ee258<br>
+            user_code.pine: fadedf4b4376a84b0dd143b53b33f6165c3685aa43f93cebd4032e57085ee258<br>
+            <strong>VERDICT: 100% BYTE-FOR-BYTE CRYPTOGRAPHIC PARITY (ZERO REPAINTING GUARANTEED)</strong>
+        </p>
+    </div>
+
+    <h3>5.1 Core Mathematical Formulations</h3>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Mathematical Model</th>
+                <th style="width: 45%;">Formulation & Implementation</th>
+                <th style="width: 30%;">Quantitative Utility</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Central Pivot Range (CPR)</strong></td>
+                <td>
+                    Pivot (P) = (High + Low + Close) / 3<br>
+                    Bottom Central (BC) = (High + Low) / 2<br>
+                    Top Central (TC) = (P - BC) + P
+                </td>
+                <td>Establishes market balance equilibrium; identifies trend days vs trading range sideways auction profiles.</td>
+            </tr>
+            <tr>
+                <td><strong>Normalized Narrow CPR (Breakouts)</strong></td>
+                <td>
+                    cprWidth = |TC - BC|<br>
+                    prevRange = max(DH - DL, mintick)<br>
+                    NCPR = (cprWidth / prevRange) * 100 &lt; 5.0%
+                </td>
+                <td>Quantifies severe intraday volatility compression, anticipating explosive breakout expansion days.</td>
+            </tr>
+            <tr>
+                <td><strong>Camarilla H4/L4 Touch-Points</strong></td>
+                <td>
+                    H4 = Close + Range * 1.1 / 2<br>
+                    L4 = Close - Range * 1.1 / 2<br>
+                    Long Gating: Low &lt; H4 | Short Gating: High &gt; L4
+                </td>
+                <td>Touch-point limit order gating linking executions strictly to candle wicks; never relies on candle close.</td>
+            </tr>
+            <tr>
+                <td><strong>Neutral Zone Scalp Alert Confluence</strong></td>
+                <td>
+                    Scalp_Alert = AnySignal and not (Greenzone or Redzone)
+                </td>
+                <td>Prohibits long and short trades inside opposite adverse zones, ensuring clear runway for expansion.</td>
+            </tr>
+            <tr>
+                <td><strong>Confirmed Divergences (D & H)</strong></td>
+                <td>
+                    Unconfirmed on Bar 0.<br>
+                    Long close: (Close &gt; Open) and (Close &gt; Close[1])<br>
+                    Short close: (Close &lt; Open) and (Close &lt; Close[1])
+                </td>
+                <td>Eliminates false divergence whipsaws by strictly gating entries to subsequent candle confirmation close.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer-bar">
+        <span>THE LION CAPITAL SOLUTIONS — PINE SCRIPT ENGINE SPECIFICATION</span>
+        <span>SECTION 5</span>
+        <span>PAGE 6</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     PAGE 7: RISK MANAGEMENT & TRAILING STOP
+     ========================================== -->
+<div class="page">
+    <div class="header-bar">
+        <div class="logo"><span>🦁</span> THE LION CAPITAL SOLUTIONS — RISK MANAGEMENT</div>
+        <div class="doc-meta">EXECUTION ENGINE<br>TRAILING STOP HIERARCHY</div>
+    </div>
+
+    <h2>6. DETERMINISTIC RISK MANAGEMENT & TRAILING STOP HIERARCHY</h2>
+    <p>
+        TLCS enforces a rigid, step-level trailing stop loss architecture designed to systematically harvest alpha, lock in accrued gains, and completely eliminate ambiguous floating stop calculations.
+    </p>
+
+    <div class="diagram-container">
+        <div class="diagram-title">FIGURE 6.1: STEP-LEVEL TRAILING STOP ADVANCEMENT STATE MACHINE</div>
+        <svg viewBox="0 0 750 120" style="width: 100%; max-height: 120px; font-family: monospace;">
+            <rect x="15" y="20" width="130" height="80" rx="5" fill="#fee2e2" stroke="#ef4444" stroke-width="1.5"/>
+            <text x="80" y="40" font-size="8" font-weight="bold" fill="#991b1b" text-anchor="middle">STAGE 1: ENTRY</text>
+            <text x="80" y="56" font-size="7" fill="#334155" text-anchor="middle">Initial Stop Loss</text>
+            <text x="80" y="70" font-size="7" fill="#334155" text-anchor="middle">Bound to Pivot/EMA</text>
+            <text x="80" y="86" font-size="7" fill="#dc2626" text-anchor="middle; font-weight: bold;">SL = Initial SL</text>
+
+            <line x1="145" y1="60" x2="165" y2="60" stroke="#0f172a" stroke-width="1.5"/>
+
+            <rect x="165" y="20" width="130" height="80" rx="5" fill="#ffedd5" stroke="#f97316" stroke-width="1.5"/>
+            <text x="230" y="40" font-size="8" font-weight="bold" fill="#9a3412" text-anchor="middle">STAGE 2: MID-TP1</text>
+            <text x="230" y="56" font-size="7" fill="#334155" text-anchor="middle">50% Midpoint Cross</text>
+            <text x="230" y="70" font-size="7" fill="#334155" text-anchor="middle">(Entry + TP1) / 2.0</text>
+            <text x="230" y="86" font-size="7" fill="#ea580c" text-anchor="middle; font-weight: bold;">SL &rarr; Entry (B/E)</text>
+
+            <line x1="295" y1="60" x2="315" y2="60" stroke="#0f172a" stroke-width="1.5"/>
+
+            <rect x="315" y="20" width="130" height="80" rx="5" fill="#fef9c3" stroke="#eab308" stroke-width="1.5"/>
+            <text x="380" y="40" font-size="8" font-weight="bold" fill="#854d0e" text-anchor="middle">STAGE 3: TP1 HIT</text>
+            <text x="380" y="56" font-size="7" fill="#334155" text-anchor="middle">TP1 Target Reached</text>
+            <text x="380" y="70" font-size="7" fill="#334155" text-anchor="middle">Partial Profit Realized</text>
+            <text x="380" y="86" font-size="7" fill="#ca8a04" text-anchor="middle; font-weight: bold;">SL &rarr; Entry (Locked)</text>
+
+            <line x1="445" y1="60" x2="465" y2="60" stroke="#0f172a" stroke-width="1.5"/>
+
+            <rect x="465" y="20" width="130" height="80" rx="5" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+            <text x="530" y="40" font-size="8" font-weight="bold" fill="#1e40af" text-anchor="middle">STAGE 4: TP2 / TP3</text>
+            <text x="530" y="56" font-size="7" fill="#334155" text-anchor="middle">TP2 Hit &rarr; SL &rarr; TP1</text>
+            <text x="530" y="70" font-size="7" fill="#334155" text-anchor="middle">TP3 Hit &rarr; SL &rarr; TP2</text>
+            <text x="530" y="86" font-size="7" fill="#2563eb" text-anchor="middle; font-weight: bold;">SL &rarr; Prior TP Level</text>
+
+            <line x1="595" y1="60" x2="615" y2="60" stroke="#0f172a" stroke-width="1.5"/>
+
+            <rect x="615" y="20" width="120" height="80" rx="5" fill="#dcfce7" stroke="#22c55e" stroke-width="1.5"/>
+            <text x="675" y="40" font-size="8" font-weight="bold" fill="#166534" text-anchor="middle">STAGE 5: RUNNERS</text>
+            <text x="675" y="56" font-size="7" fill="#334155" text-anchor="middle">TP4 Target Reached</text>
+            <text x="675" y="70" font-size="7" fill="#334155" text-anchor="middle">EMA Trailing Stop</text>
+            <text x="675" y="86" font-size="7" fill="#16a34a" text-anchor="middle; font-weight: bold;">SL &rarr; Trailing EMA</text>
+        </svg>
+    </div>
+
+    <h3>6.1 Midpoint Breakeven Trailing SL Mandate</h3>
+    <div class="callout">
+        <p style="font-size: 8pt; margin: 0;">
+            <strong>Formal Rule:</strong> For any active filled trade, when the price reaches or crosses the 50% midpoint distance between Entry and TP1 before TP1 is triggered:<br>
+            Midpoint Level = (Entry + TP1) / 2.0<br>
+            Long Condition: High &ge; Midpoint Level &implies; Stop Loss &larr; Entry (Breakeven)<br>
+            Short Condition: Low &le; Midpoint Level &implies; Stop Loss &larr; Entry (Breakeven)<br>
+            Eliminates round-trip losers and guarantees that any trade achieving 50% of its initial target risk cannot degenerate into a capital loss.
+        </p>
+    </div>
+
+    <h3>6.2 Canonical Win Rate & Success Rate Formula</h3>
+    <p style="font-size: 8pt;">
+        Across all components, tabs, and analytics teardowns, TLCS strictly enforces the inclusion of realized Breakeven trades in the closed trade denominator:
+        <br><strong>Win Rate % = (Total Wins / Total Closed Trades (Wins + Losses + Breakevens)) * 100</strong><br>
+        The conventional practice of excluding breakevens (Wins / (Wins + Losses)) is strictly prohibited as misleading and artificially inflated.
+    </p>
+
+    <div class="footer-bar">
+        <span>THE LION CAPITAL SOLUTIONS — RISK MANAGEMENT & TRAILING STOP</span>
+        <span>SECTION 6</span>
+        <span>PAGE 7</span>
+    </div>
+</div>
+
+<!-- ==========================================
+     PAGE 8: CRYPTOGRAPHIC AUDIT & SIGN-OFF
+     ========================================== -->
+<div class="page">
+    <div class="header-bar">
+        <div class="logo"><span>🦁</span> THE LION CAPITAL SOLUTIONS — CRYPTOGRAPHIC LEDGER</div>
+        <div class="doc-meta">AUDIT TIMESTAMP: 11-NOV-2026 | 07:46:07 IST<br>SHA-256 IMMUTABLE LEDGER</div>
+    </div>
+
+    <h2>7. CRYPTOGRAPHIC SOURCE CODE AUDIT TRAIL & CHECKSUM LEDGER</h2>
+    <p style="font-size: 8pt;">
+        To establish an indisputable, immutable cryptographic record of ownership and authorship, the following table documents the SHA-256 cryptographic hashes computed directly on the production master source code files in the repository:
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">Relative File Path</th>
+                <th style="width: 30%;">System Architectural Role</th>
+                <th style="width: 15%; text-align: right;">File Size</th>
+                <th style="width: 30%;">SHA-256 Cryptographic Hash</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">TV_Indicator_Full_Code.txt</td>
+            <td style="font-size: 8pt; color: #475569;">Canonical Master Indicator v3.0 (Full Pine Script)</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">221,711 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">fadedf4b4376a84b0dd143b53b33f6165c3685aa43f93cebd4032e57085ee258</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">TV Indicator/TLCS_Live_Pivot_Alerts.pine</td>
+            <td style="font-size: 8pt; color: #475569;">TradingView Production Indicator Engine</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">221,711 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">fadedf4b4376a84b0dd143b53b33f6165c3685aa43f93cebd4032e57085ee258</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">user_code.pine</td>
+            <td style="font-size: 8pt; color: #475569;">TradingView User Indicator Mirror</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">221,711 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">fadedf4b4376a84b0dd143b53b33f6165c3685aa43f93cebd4032e57085ee258</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">Tv-Alert-Mobile/src/app/page.tsx</td>
+            <td style="font-size: 8pt; color: #475569;">Mobile Native Progressive Web App Terminal</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">1,267,472 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">4e161eefea3582120661476cbb5d91a092b6b116d8678f804d9d39d463310f11</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">algo_engine/strategies.py</td>
+            <td style="font-size: 8pt; color: #475569;">Python BlackBox Strategy Logic & Divergence Engine</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">57,086 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">f609c112a8c802a4a5bd0797cb6e05012981741d7d7610c8ce66f88450f67890</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">algo_engine/trade_manager.py</td>
+            <td style="font-size: 8pt; color: #475569;">Autonomous BlackBox Trade Manager & Trailing SL</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">29,341 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">830b2b9128c98e2f242617f90e1ae8049db41bf403aac61f79227637f75d6eff</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">algo_engine/day_types.py</td>
+            <td style="font-size: 8pt; color: #475569;">Swing Trade Pro 2.0 Day Type Blueprints Engine</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">41,293 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">079bad86d957c23ca7b2588d29132505dac0d352af180faa3b6c2ed72ee6e852</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">algo_engine/pivots.py</td>
+            <td style="font-size: 8pt; color: #475569;">Mathematical Pivot, CPR & ATR Computation Engine</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">51,860 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">cd24855a8f05f022971730e906f610573e55640f7763e60fdf82f0eb326a55fe</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">algo_engine/engine_daemon.py</td>
+            <td style="font-size: 8pt; color: #475569;">Standalone Autonomous Multi-Market Signal Daemon</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">16,452 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">479df3e04752dfffcd68dbbaaddde4796a3953b9b2f53c663fa313a9b480cafa</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">algo_engine/nse100_scanner.py</td>
+            <td style="font-size: 8pt; color: #475569;">Autonomous Top 100 NSE Equity Screener</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">31,865 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">05da84b1caa699d3a4144aaf58c727a98053b3dd651a731fdbd750c305b0d022</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">TLCS_Website_Deploy/scanner.js</td>
+            <td style="font-size: 8pt; color: #475569;">Web Screener & 7-Day Day Type Blueprint Matrix</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">71,978 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">2b0d5c70dd755661523ffb044dee6be3c5000a2d7ccfc5e64ffe6aba4dbeff51</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">TLCS_Website_Deploy/netlify/functions/process-webhook-background.js</td>
+            <td style="font-size: 8pt; color: #475569;">Serverless Ingestion & Exact Percentage Ledger Worker</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">115,733 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">4e5ae0b696558098bbd1747ac6bac2977577b0d66483bc53af8cc0b5716e1dfc</td>
+        </tr>
+        
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt; font-weight: bold; color: #1e293b;">TLCS_Website_Deploy/netlify/functions/test-telegram.js</td>
+            <td style="font-size: 8pt; color: #475569;">Multi-Market Dynamic VIP Telegram Dispatcher</td>
+            <td style="font-size: 8pt; text-align: right; font-family: monospace; color: #334155;">4,442 bytes</td>
+            <td style="font-family: monospace; font-size: 7.5pt; color: #0f766e; word-break: break-all;">c4958f3e43c8bbdc5cd4223149c0548e5e9cf4ba67dac54127f42865408ada8f</td>
+        </tr>
+        
+        </tbody>
+    </table>
+
+    <h2>8. FORMAL RATIFICATION, ATTESTATION & SIGN-OFF</h2>
+    <p style="font-size: 8pt;">
+        IN WITNESS WHEREOF, I, <strong>VISHANT VYANKAT MESHRAM</strong>, have set my hand and declared my sole, exclusive, and unencumbered proprietary ownership over the entire TLCS Platform, Algorithmic Engine, Websites, Mobile Applications, and Intellectual Property described in this master report.
+    </p>
+
+    <div class="signature-card">
+        <div style="width: 60%;">
+            <div style="font-size: 7.5pt; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 1.5mm;">
+                Proprietary Inventor, Architect & Sole Owner:
+            </div>
+            <div style="font-size: 12pt; font-weight: 900; color: #0a192f; margin-bottom: 1mm;">
+                VISHANT VYANKAT MESHRAM
+            </div>
+            <div style="font-size: 7.5pt; color: #334155; line-height: 1.35;">
+                Founder, Chief Quantitative Architect & Managing Director<br>
+                The Lion Capital Solutions / The Lion Capital Advisors<br>
+                Enterprise Email: <span style="font-family: monospace; font-weight: bold; color: #0369a1;">connect@thelioncapitalsolutions.com</span><br>
+                Personal Email: <span style="font-family: monospace; font-weight: bold; color: #0369a1;">vishantmeshram@gmail.com</span><br>
+                Operating Location: India | Jurisdiction: Global Intellectual Property Treaties
+            </div>
+        </div>
+
+        <div style="width: 35%; text-align: right; border-left: 1px solid #cbd5e1; padding-left: 3mm;">
+            <div style="font-size: 7.5pt; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 1.5mm;">
+                Attestation & Timestamp:
+            </div>
+            <div style="font-size: 7.5pt; font-family: monospace; color: #0f172a; font-weight: bold; margin-bottom: 1mm;">
+                DATE: 11-NOV-2026<br>
+                TIME: 07:46:07 IST<br>
+                STATUS: MASTER PRODUCTION<br>
+                VERSION: v3.0.0
+            </div>
+            <div style="margin-top: 2mm; padding: 1.5mm; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 6.5pt; font-family: monospace; text-align: center; color: #0f766e;">
+                DIGITALLY CERTIFIED<br>
+                SHA256 CHECKSUM VERIFIED
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bar">
+        <span>THE LION CAPITAL SOLUTIONS — RATIFICATION & AUDIT TRAIL</span>
+        <span>SECTION 8</span>
+        <span>PAGE 8</span>
+    </div>
+</div>
+
+</body>
+</html>

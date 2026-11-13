@@ -607,9 +607,9 @@ class StrategyEngine:
         in_win_hidden_bear = self._last_hidden_bear_div_bar is not None and 1 <= (bar_idx - self._last_hidden_bear_div_bar) <= 5
 
         # Confirmed triggers on CLOSE of confirmation candle:
-        # Regular Divergence strictly requires subsequent confirmation candle close AND GrS / ReS bounce
-        confirmed_reg_bull = in_win_reg_bull and is_bull_confirm and grs and (self._last_fired_reg_bull_bar is None or self._last_fired_reg_bull_bar < self._last_reg_bull_div_bar)
-        confirmed_reg_bear = in_win_reg_bear and is_bear_confirm and res and (self._last_fired_reg_bear_bar is None or self._last_fired_reg_bear_bar < self._last_reg_bear_div_bar)
+        # Regular Divergence strictly requires subsequent directional confirmation candle close (zero unconfirmed entries)
+        confirmed_reg_bull = in_win_reg_bull and is_bull_confirm and (self._last_fired_reg_bull_bar is None or self._last_fired_reg_bull_bar < self._last_reg_bull_div_bar)
+        confirmed_reg_bear = in_win_reg_bear and is_bear_confirm and (self._last_fired_reg_bear_bar is None or self._last_fired_reg_bear_bar < self._last_reg_bear_div_bar)
 
         # Hidden Divergence strictly requires subsequent directional confirmation candle close (zero unconfirmed entries)
         confirmed_hidden_bull = in_win_hidden_bull and is_bull_confirm and (self._last_fired_hidden_bull_bar is None or self._last_fired_hidden_bull_bar < self._last_hidden_bull_div_bar)
