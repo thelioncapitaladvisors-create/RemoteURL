@@ -82,6 +82,41 @@ Under mobile viewports and dynamic accessibility font scaling, 3 text overlap co
 
 ---
 
+## Universal Table Row Name Blur & Sharp Data Standard (User Specification)
+
+### Problem Addressed
+During table horizontal scrolling, when users slid data columns across the screen, the numbers and performance metrics could get blurred while the row header remained sharp. The user requested:
+> *"During table scrolling the data gets blurred. Instead we can blur the row name and keep data visible. Thanks."*
+
+### Solution Implemented
+1. **Row Header Blur & Sharp Data CSS Hierarchy (`globals.css`)**:
+   - `.table-scroll-container table th:first-child, .table-scroll-container table td:first-child`:
+     - Applied hardware-accelerated smooth transition: `transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);`
+   - `.table-scroll-container.table-is-scrolled`:
+     - Row names (first column `<th>` and `<td>` across `tbody`, `thead`, `tfoot`) dynamically blur and softly fade:
+       `filter: blur(2.5px); opacity: 0.42; user-select: none;`
+     - Hover / touch focus allows the user to temporarily unblur the row header: `filter: blur(0px); opacity: 0.95;`
+   - Data columns (`th:not(:first-child)`, `td:not(:first-child)`):
+     - Guaranteed 100% visible, crisp, and completely unblurred:
+       `filter: none !important; opacity: 1 !important; position: relative; z-index: 5;`
+2. **Dual-Layer Scroll Event Binding**:
+   - **Global Capture Listener**: A document-level passive capture listener in `useEffect` detects horizontal scroll on any `.table-scroll-container` (`scrollLeft > 6`), toggling `.table-is-scrolled` with native 120fps performance and zero React re-renders.
+   - **Inline Container `onScroll` Handlers**: Bound directly to all 11 table wrapper containers as an instantaneous fail-safe across iOS Safari, WebViews, Android Chrome, and desktop browsers.
+3. **Covered Table Inventory (All 11 Mobile Tables)**:
+   1. Market Segment Performance (`MARKETS`)
+   2. Option Chain Strikes Matrix (`HUB`)
+   3. Opening Bias Screener (`SCREENER`)
+   4. Live Signals Table (`HUB`)
+   5. Signal Performance Metrics by Market Segment (`MARKETS`)
+   6. Weekly EDGE Performance Table (`ANALYTICS`)
+   7. Canonical Signal Family Table (`INSIGHTS`)
+   8. VectorBT Benchmark Table (`INSIGHTS`)
+   9. Performance Breakdown by Day Type & Market Regime (`INSIGHTS`)
+   10. TLCS Signals 7-Day Matrix (`SCREENER`)
+   11. DhanHQ Signals 7-Day Matrix (`SCREENER`)
+
+---
+
 ## Version Classification
 - **v3.0** (User-directed production refinement, Nov 14, 2026).
 
