@@ -27,23 +27,14 @@
   - `globals.css` `.wc-table-thead` class MUST carry `position: sticky; top: 0; z-index: 30` — this automatically applies sticky headers to all 7+ tables that use this class.
   - Any plain `<thead>` element in `page.tsx` that is not styled via `.wc-table-thead` MUST include `className="sticky top-0 z-30"` on the `<thead>` element itself.
   - Z-index stacking hierarchy is strictly: `thead` row (`z-30`) > header first-column `<th>` (`z-20`) > body first-column `<td>` (`z-10`).
-- **Unobstructed Horizontal Scrolling & Row Header Auto-Push Standard**: Across all mobile tables, first-column row headers MUST NOT be statically pinned with `sticky left-0` or `backdrop-blur` during horizontal scroll. Row headers MUST push naturally to the left during left scroll, ensuring that table data columns are 100% visible, crisp, unblurred, and never obscured behind row headers. Top column headers (`<thead>`) retain sticky vertical positioning (`sticky top-0 z-30`).
-- **Covered Table Inventory** (Nov 14, 2026 baseline):
-  - INSIGHTS → Performance Breakdown by Canonical Signal Family (Amber, `wc-table-thead`)
-  - INSIGHTS → VectorBT Confluence Quantitative Benchmark (Amber, `wc-table-thead`)
-  - INSIGHTS → Performance Breakdown by Day Type & Market Regime (Cyan, `wc-table-thead`)
-  - MARKETS → Signal Performance Metrics by Market Segment (Sky, `wc-table-thead`)
-  - ANALYTICS → Weekly EDGE Performance Table (Amber, `wc-table-thead`)
-  - HUB → Signal Distribution Live Signals Header (Rose, `wc-table-thead`)
-  - MARKETS → Market Segment Performance (purple, `sticky top-0 z-30` on `<thead>`)
-  - HUB → Option Chain Strikes Matrix (plain `<thead className="sticky top-0 z-30">`)
-  - SCREENER → Opening Bias Screener Symbol/Bias/Move% Table (plain `<thead>`)
-  - SCREENER → TLCS Signals 7-Day Matrix (plain `<thead>`)
-  - SCREENER → DhanHQ Signals 7-Day Matrix (plain `<thead>`)
-- **Universal Table Row Name Blur & Sharp Data Standard**:
-  - During horizontal scrolling (`scrollLeft > 6`), row names (first column `<th>` and `<td>` across `tbody`, `thead`, and `tfoot`) dynamically blur (`filter: blur(2.5px); opacity: 0.42; user-select: none;`), while data columns (`th:not(:first-child)`, `td:not(:first-child)`) remain 100% visible, sharp, crisp, and unblurred (`filter: none !important; opacity: 1 !important; position: relative; z-index: 5;`).
-  - Active hover or touch focus unblurs the row header (`filter: blur(0px); opacity: 0.95;`).
-  - All 11 tables implement `.table-scroll-container` paired with both inline `onScroll` event toggles and a global capture-phase scroll listener.
+- **Universal Fixed Sticky Row Headers with Hover & Blurred Background Standard**:
+  - Across all mobile terminal tables (with Option Chain preserved via `.option-chain-scroll`), row headers remain **fixed** at `left: 0` (`position: sticky; left: 0;`) so users never lose track of the row name while horizontally exploring data columns.
+  - During horizontal scrolling (`scrollLeft > 6` / `.table-is-scrolled`), the fixed row headers feature a high-end frosted glassmorphism effect:
+    - Frosted blurred backdrop: `backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);` with semi-translucent theme background and subtle elevation shadow.
+    - Soft blur on row name text: `filter: blur(2.5px); opacity: 0.45; user-select: none;` allowing underlying data columns to be visible to the right.
+    - Instant hover / touch focus reveal: Hovering or tapping the row header (via `:hover`, `:active`, or row `:hover`) immediately restores 100% sharpness (`filter: blur(0px); opacity: 0.98; z-index: 25;`).
+    - Data columns (`th:not(:first-child)`, `td:not(:first-child)`) slide smoothly behind the frosted row header and remain 100% visible, sharp, crisp, and unblurred (`filter: none !important; opacity: 1 !important; position: relative; z-index: 5;`).
+  - Top-left header corner (`thead tr th:first-child`) remains firmly pinned in both dimensions (`position: sticky; top: 0; left: 0; z-index: 35;`).
 - **Any new table added to the application MUST follow this standard without exception.**
 
 ## Version 3.0: Decoupled Divergence Confirmation, Authentic Regime Styling & Code Alteration Lock Mandate (Effective November 13, 2026)

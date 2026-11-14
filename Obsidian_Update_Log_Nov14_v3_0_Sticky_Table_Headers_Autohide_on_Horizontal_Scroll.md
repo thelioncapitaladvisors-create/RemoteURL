@@ -82,41 +82,33 @@ Under mobile viewports and dynamic accessibility font scaling, 3 text overlap co
 
 ---
 
-## Universal Table Row Name Blur & Sharp Data Standard (User Specification)
+## Universal Fixed Sticky Row Headers with Hover & Blurred Background Standard (User Specification)
 
-### Problem Addressed
-During table horizontal scrolling, when users slid data columns across the screen, the numbers and performance metrics could get blurred while the row header remained sharp. The user requested:
-> *"During table scrolling the data gets blurred. Instead we can blur the row name and keep data visible. Thanks."*
+### Problem Addressed & Refinement
+Upon inspecting the row header blur effect in production, the user recognized that scrolling row headers off to the left is unnecessary when paired with the hover and blur treatment:
+> *"For this effect no need to scroll the row headers to the left. Instead keep them fixed with this hover and blurred background effects. It will be very professional look. Make changes throught application version v3.0"*
 
-### Solution Implemented
-1. **Row Header Blur & Sharp Data CSS Hierarchy (`globals.css`)**:
-   - `.table-scroll-container table th:first-child, .table-scroll-container table td:first-child`:
-     - Applied hardware-accelerated smooth transition: `transition: filter 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1);`
-   - `.table-scroll-container.table-is-scrolled`:
-     - Row names (first column `<th>` and `<td>` across `tbody`, `thead`, `tfoot`) dynamically blur and softly fade:
-       `filter: blur(2.5px); opacity: 0.42; user-select: none;`
-     - Hover / touch focus allows the user to temporarily unblur the row header: `filter: blur(0px); opacity: 0.95;`
-   - Data columns (`th:not(:first-child)`, `td:not(:first-child)`):
-     - Guaranteed 100% visible, crisp, and completely unblurred:
-       `filter: none !important; opacity: 1 !important; position: relative; z-index: 5;`
-2. **Dual-Layer Scroll Event Binding**:
-   - **Global Capture Listener**: A document-level passive capture listener in `useEffect` detects horizontal scroll on any `.table-scroll-container` (`scrollLeft > 6`), toggling `.table-is-scrolled` with native 120fps performance and zero React re-renders.
-   - **Inline Container `onScroll` Handlers**: Bound directly to all 11 table wrapper containers as an instantaneous fail-safe across iOS Safari, WebViews, Android Chrome, and desktop browsers.
-3. **Covered Table Inventory (All 11 Mobile Tables)**:
-   1. Market Segment Performance (`MARKETS`)
-   2. Option Chain Strikes Matrix (`HUB`)
-   3. Opening Bias Screener (`SCREENER`)
-   4. Live Signals Table (`HUB`)
-   5. Signal Performance Metrics by Market Segment (`MARKETS`)
-   6. Weekly EDGE Performance Table (`ANALYTICS`)
-   7. Canonical Signal Family Table (`INSIGHTS`)
-   8. VectorBT Benchmark Table (`INSIGHTS`)
-   9. Performance Breakdown by Day Type & Market Regime (`INSIGHTS`)
-   10. TLCS Signals 7-Day Matrix (`SCREENER`)
-   11. DhanHQ Signals 7-Day Matrix (`SCREENER`)
+### Architecture & Solution Implemented
+1. **Fixed Sticky Positioning (`position: sticky; left: 0`)**:
+   - Row headers remain permanently pinned at `left: 0` during horizontal scroll across all tables (preserving Option Chain's 2-sided symmetrical strike layout via `.option-chain-scroll`).
+   - Users never lose row context while scrolling deeply through metric columns.
+2. **Frosted Glassmorphism Backdrop Blur & Soft Blur Hierarchy**:
+   - When horizontally scrolled (`.table-is-scrolled`):
+     - `backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);` applies to the sticky cell with theme-tuned translucent backgrounds across all 6 skins (Dark, Light, Slate Gray, The Lion, Golden Gate, Golden Gate Light).
+     - Row names softly blur (`filter: blur(2.5px); opacity: 0.45; user-select: none;`), giving a high-tech frosted aesthetic where metric numbers to the right are 100% visible and unblurred.
+     - Subtle elevation edge shadow (`box-shadow: 4px 0 12px -2px rgba(...)`) crisply delineates the fixed column boundary.
+3. **Instant Hover & Touch Focus Reveal**:
+   - Touching or hovering over any row header cell (or its parent row):
+     `filter: blur(0px); opacity: 0.98; background-color: var(--theme-hover-bg); z-index: 25;`
+     Immediately brings the row title and its status badges into 100% sharp, readable focus.
+4. **Sharp Data Columns Underneath**:
+   - Data columns (`th:not(:first-child)`, `td:not(:first-child)`) slide smoothly behind the frosted row header and remain 100% sharp, crisp, and unblurred (`filter: none !important; opacity: 1 !important;`).
+5. **Top-Left Corner Pinned**:
+   - `thead tr th:first-child` stays pinned in both dimensions (`sticky top-0 left-0 z-35`), ensuring seamless vertical and horizontal scrolling coexistence.
 
 ---
 
 ## Version Classification
 - **v3.0** (User-directed production refinement, Nov 14, 2026).
+
 

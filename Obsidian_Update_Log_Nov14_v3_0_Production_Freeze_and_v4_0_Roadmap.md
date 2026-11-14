@@ -62,11 +62,11 @@ All subsequent updates are officially governed under the **Version 4.0 (`v4.0`)*
 - **Baseline Tags**:
   - `v3.0-final`
   - `TLCS-v3.0-PROD-FREEZE`
-- **Frozen Mobile Commit**: `a951ed7` (Branch: `main`)
-- **Frozen Timestamp**: `2026-11-14T09:40:00+05:30`
+- **Frozen Mobile Commit**: `3ff8dbb` (Branch: `main`)
+- **Frozen Timestamp**: `2026-11-14T09:50:00+05:30`
 - **Verification Status**: PASSED (All automated tests, Next.js production builds, and database connection checks verified).
 - **Finalized v3.0 Standards Included in Freeze**:
-  1. Universal Table Row Name Blur & Sharp Data Standard across all 11 tables (smooth hardware-accelerated blur on row headers during horizontal scroll, 100% visible and crisp data columns).
+  1. Universal Fixed Sticky Row Headers with Hover & Blurred Background Standard across all tables (permanently pinned `sticky left-0`, frosted glassmorphism backdrop blur on horizontal scroll, soft blur on row name text, instant hover/touch unblur to full sharpness, and 100% visible crisp data columns).
   2. Zero Overlapping Text & Responsive Font Sizing Alignment Standard in simulated paper portfolios.
   3. Universal Sticky Table Header Standard (`sticky top-0 z-30` across all 11 tables).
   4. Zero Truncation & Zero Text Collision Standard across F&O buildup cards and metrics pills.
