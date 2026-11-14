@@ -58,5 +58,30 @@ First-column row headers now push naturally and smoothly out of view to the left
 
 ---
 
+---
+
+## Zero Overlapping Text & Responsive Font Sizing Alignment Standard
+
+### Problem Addressed
+Under mobile viewports and dynamic accessibility font scaling, 3 text overlap collisions occurred in the simulated paper portfolio cards:
+1. **Equity Curve Baseline vs Peak Marker**: `BASELINE ₹10L` (anchored at `end` on `x=486`) collided directly with `▲ PEAK` when the peak occurred near the latest trade on the right edge.
+2. **Chart X-Axis Labels vs Trade Feed Header**: Placing the X-axis label `<div>` inside a fixed-height container (`h-36`) caused it to overflow down directly on top of `Recent Simulated Paper Signals (1):` and `1 LOT POSITION SIZING`.
+3. **Simulated Paper Trade Rows**: Six badges and metrics (`[BREAKEVEN]`, `NIFTY1!`, `[🔥 MISSILE + DIV]`, `[65 Qty]`, `Δ 0.00 pts`, `+₹0`) crammed into a single row on mobile screens caused `65 Qty` and `Δ 0.00 pts` to collide directly over each other (`Δ 650.00 pQty`).
+
+### Solution Implemented
+1. **Dynamic SVG Baseline & Peak Separation**:
+   - `BASELINE` label dynamically checks `paperStats.peakPoint.x`. When peak is on the right (`x >= 180`), baseline anchors at `x=18` (`textAnchor="start"`) on the left; when peak is on the left (`x < 180`), baseline anchors at `x=482` (`textAnchor="end"`) on the right.
+   - Constrained `▲ PEAK` and `▼ TROUGH` x-coordinates with `Math.max(35, Math.min(465, ...))` so labels never clip borders or overlap the baseline.
+2. **Decoupled X-Axis Labels from Fixed Canvas Height**:
+   - SVG canvas div given dedicated height (`h-32 sm:h-40`), and the X-axis labels placed in normal layout flow below it with `text-[8.5px] sm:text-[9.5px]` and proper vertical spacing (`pt-1 pb-1.5`).
+   - Feed header styled with `text-[10px] sm:text-xs`, flex-wrap, and a compact `1 Lot Position Sizing` pill badge.
+3. **Two-Tier Mobile / Single-Tier Desktop Trade Item Alignment**:
+   - Mobile (< 640px): Tier 1 displays badges and symbol (`[BREAKEVEN]`, `NIFTY1!`, `[🔥 MISSILE + DIV]`, `[65 Qty]`) with tuned micro-font scaling (`text-[9px]`, `text-[8.5px]`, `text-xs`) and flex-wrap. Tier 2 displays `Δ 0.00 pts` on the left and `+₹0` on the right with full horizontal breathing room.
+   - Desktop (>= 640px): Seamlessly aligns as a single flex row.
+   - Applied symmetrically to both `TLCS_PAPER` and `DHAN_PAPER`.
+
+---
+
 ## Version Classification
 - **v3.0** (User-directed production refinement, Nov 14, 2026).
+
