@@ -6,6 +6,18 @@
   - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
   - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
   - Gating must NEVER rely on `close` for limit entry qualification.
+## Version 3.0: Symmetrical DMI Directional Momentum Gating for Divergences (Regular D & Hidden H) & Confirmed Exit Mandate (Effective November 14, 2026)
+- **SYMMETRICAL DMI DIRECTIONAL MOMENTUM GATING MANDATE**:
+  - Across Master Pine Script indicators (`TLCS v3.0`), Python BlackBox (`StrategyEngine`), and autonomous DhanHQ background scanner (`dhan-scanner-background.js`):
+    1. **Bullish Regular Divergence (`D`) and Bullish Hidden Divergence (`H`)**: Initiating new long trade signals is STRICTLY PROHIBITED when **`minus > plus`** ($DI^- > DI^+$). Long divergence setups during bearish directional momentum dominance are completely suppressed.
+    2. **Bearish Regular Divergence (`D`) and Bearish Hidden Divergence (`H`)**: Initiating new short trade signals is STRICTLY PROHIBITED when **`plus > minus`** ($DI^+ > DI^-$). Short divergence setups during bullish directional momentum dominance are completely suppressed.
+    3. **Gating Parity**: Applied identically on both confirmation candle qualification (`confirmedRegBull`, `confirmedRegBear`, `confirmedHiddenBull`, `confirmedHiddenBear`) and final trigger gating (`DivergenceBuy`, `DivergenceSell`, `HiddenDivBuy`, `HiddenDivSell`).
+- **CONFIRMED-ONLY DIVERGENCE EXIT MANDATE**:
+  - Live trades MUST NEVER exit prematurely on unconfirmed Bar 0 divergences.
+  - Divergence exits (`evaluateTradeProgress` in Pine Script and `TradeManager.update` in Python BlackBox) are strictly gated to confirmed divergences requiring 1-bar prior divergence (`[1]`) AND subsequent directional confirmation candle close (`(close > open and close > close[1])` for bullish, `(close < open and close < close[1])` for bearish).
+- **CANONICAL MASTER INDICATOR VERSION 3.0 CHECKSUM PARITY**:
+  - All three source files (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0` and maintain 100% byte-for-byte SHA256 checksum parity (`e4caa5a28359a6be56b2d1b51e0936b6cb0d1709c5282046801216bfd04253f2`).
+
 ## Version 3.0: Formal Production Freeze & Version 4.0 Mandate (Effective November 14, 2026)
 - **VERSION 3.0 FREEZE DECLARATION**:
   - Application Version v3.0 is officially declared frozen, finalized, and locked as of November 14, 2026.

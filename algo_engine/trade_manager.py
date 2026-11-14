@@ -12,7 +12,7 @@ Trade Lifecycle:
     4. TP PROGRESSION — Step-based trailing stop on TP1→TP2→TP3→TP4
     5. TRAILING STOP — Standard ATR-based trailing after activation
     6. EMA TRAILING — Post-TP4, stop tracks max(TP3, EMA-32)
-    7. DIVERGENCE EXIT — Regular/confirmed divergence exits
+    7. DIVERGENCE EXIT — Confirmed divergence exits (Bar 0 unconfirmed exit eliminated)
     8. EOD EXIT — Force close at end of day for intraday trades
 
 Trailing Stop Progression (lines 2538-2585):
@@ -502,14 +502,10 @@ class TradeManager:
                 return
 
         # ═══════════════════════════════════════════════════════
-        # 7. DIVERGENCE EXIT (Pine Script v7.0 lines 2698-2715)
+        # 7. DIVERGENCE EXIT (Confirmed Divergence Only — Bar 0 Premature Exit Eliminated)
         # ═══════════════════════════════════════════════════════
         if self.config.div_exit_enabled and not trade.is_closed:
-            # Rule 1: Regular divergence fires NOW → immediate exit
-            is_reg_div_exit = ((is_long and bear_regular_div) or
-                               (not is_long and bull_regular_div))
-
-            # Rule 2: Confirmed divergence (1-bar-prior divergence + directional candle confirmation)
+            # Confirmed divergence: (1-bar-prior divergence + directional candle confirmation)
             any_bearish_div_1ago = trade.prev_bear_div or trade.prev_bear_hidden_div
             any_bullish_div_1ago = trade.prev_bull_div or trade.prev_bull_hidden_div
             prev_c = trade.prev_bar_close if trade.prev_bar_close > 0 else bar.open
@@ -525,7 +521,7 @@ class TradeManager:
             trade.prev_bull_hidden_div = bull_hidden_div
             trade.prev_bar_close = bar.close
 
-            if is_reg_div_exit or is_confirmed_div_exit:
+            if is_confirmed_div_exit:
                 trade.is_closed = True
                 trade.div_exit_triggered = True
                 trade.exit_price = bar.close

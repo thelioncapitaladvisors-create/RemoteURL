@@ -1407,6 +1407,46 @@ class TestV7IndicatorParity(unittest.TestCase):
         self.assertEqual(trade.exit_level, "DIV")
         self.assertEqual(trade.status, TradeStatus.CLOSED_DIV)
 
+    def test_regular_divergence_exit_requires_confirmation_bar0_eliminated(self):
+        """TradeManager MUST NOT exit on Bar 0 unconfirmed regular divergence; requires subsequent confirmation close."""
+        tm = TradeManager()
+        sig = StrategySignal(
+            name="SHORT MISSILE", direction="SHORT",
+            entry_price=100.0, stop_loss=105.0,
+            tp1=90.0, tp2=85.0, tp3=80.0, tp4=75.0,
+            bar_index=1
+        )
+        trade = tm.create_trade(sig, symbol="BTCUSDT")
+
+        # Bar 2: Trade fills (high reaches entry)
+        b2 = OHLC(open=99.0, high=100.5, low=98.0, close=98.5)
+        tm.update(trade, b2, bar_index=2)
+        self.assertTrue(trade.has_hit_entry)
+        self.assertFalse(trade.is_closed)
+
+        # Bar 3: Regular bullish divergence occurs on this bar (Bar 0), but candle closes red (unconfirmed)
+        # Identical to the BTCUSDT trade on 14 Nov 19:45 IST
+        b3 = OHLC(open=98.5, high=99.0, low=96.5, close=97.0)
+        tm.update(trade, b3, bar_index=3, bull_regular_div=True)
+        self.assertFalse(trade.is_closed, "Trade MUST NOT exit on Bar 0 unconfirmed regular divergence")
+
+        # Bar 4: Next candle continues downward / closes red (no bullish confirmation)
+        b4 = OHLC(open=97.0, high=97.2, low=96.0, close=96.2)
+        tm.update(trade, b4, bar_index=4)
+        self.assertFalse(trade.is_closed, "Trade MUST NOT exit without bullish price action confirmation close")
+
+        # Bar 5: Bullish divergence occurs again, candle closes red
+        b5 = OHLC(open=96.2, high=96.5, low=95.0, close=95.5)
+        tm.update(trade, b5, bar_index=5, bull_regular_div=True)
+        self.assertFalse(trade.is_closed, "Trade MUST remain active on unconfirmed divergence bar")
+
+        # Bar 6: Confirmation candle close! Green candle closing above prior close (close > open and close > close[1])
+        b6 = OHLC(open=95.5, high=97.5, low=95.2, close=97.0)
+        tm.update(trade, b6, bar_index=6)
+        self.assertTrue(trade.is_closed, "Trade MUST exit once divergence is confirmed by subsequent bullish candle close")
+        self.assertEqual(trade.exit_level, "DIV")
+        self.assertEqual(trade.status, TradeStatus.CLOSED_DIV)
+
 
 # ════════════════════════════════════════════════════════════════════
 # TEST 17: VIRGIN CPR (VCPR) UNTOUCHED ZONES (1-WEEK LOOKBACK)
@@ -2003,6 +2043,95 @@ class TestVirginCPR(unittest.TestCase):
         sigs_allowed_long = engine_long.evaluate(ctx_allowed_long)
         long_hid_allowed = [s for s in sigs_allowed_long if s.name == "LONG HIDDEN DIVERGENCE"]
         self.assertEqual(len(long_hid_allowed), 1, "LONG HIDDEN DIVERGENCE must TRIGGER when plus >= minus")
+
+    def test_regular_divergence_symmetrical_dmi_filter(self):
+        """Version 3.0: Verify that Regular Divergences are blocked when momentum opposes them (Short D blocked when plus > minus, Long D blocked when minus > plus)."""
+        # --- TEST 1: Short Regular Divergence blocked when plus > minus ---
+        engine_short = StrategyEngine()
+        b_div = OHLC(open=100.0, high=105.0, low=99.0, close=102.0)
+        ctx_div = MarketContext(
+            bar=b_div, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            bear_regular_div=True,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        engine_short.evaluate(ctx_div)
+
+        # Bar 2: Bearish confirmation candle close, BUT plus > minus (bullish momentum!)
+        b_confirm = OHLC(open=102.0, high=102.5, low=100.0, close=100.5)
+        ctx_blocked_short = MarketContext(
+            bar=b_confirm, bar_index=2,
+            prev_bar=b_div, prev_close=102.0,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            plus=28.0, minus=14.0, # plus > minus!
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        sigs_blocked_short = engine_short.evaluate(ctx_blocked_short)
+        short_reg_blocked = [s for s in sigs_blocked_short if s.name == "SHORT DIVERGENCE"]
+        self.assertEqual(len(short_reg_blocked), 0, "SHORT DIVERGENCE must be BLOCKED when plus > minus")
+
+        # Bar 3: Next bar in window where momentum aligns (minus >= plus)
+        b_confirm2 = OHLC(open=100.5, high=101.0, low=99.0, close=99.5)
+        ctx_allowed_short = MarketContext(
+            bar=b_confirm2, bar_index=3,
+            prev_bar=b_confirm, prev_close=100.5,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            plus=14.0, minus=28.0, # minus > plus!
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        sigs_allowed_short = engine_short.evaluate(ctx_allowed_short)
+        short_reg_allowed = [s for s in sigs_allowed_short if s.name == "SHORT DIVERGENCE"]
+        self.assertEqual(len(short_reg_allowed), 1, "SHORT DIVERGENCE must TRIGGER when minus >= plus")
+
+        # --- TEST 2: Long Regular Divergence blocked when minus > plus ---
+        engine_long = StrategyEngine()
+        b_long_div = OHLC(open=100.0, high=103.0, low=98.0, close=99.0)
+        ctx_long_div = MarketContext(
+            bar=b_long_div, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            bull_regular_div=True,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=98.0, atr=2.0
+        )
+        engine_long.evaluate(ctx_long_div)
+
+        # Bar 2: Bullish confirmation candle close, BUT minus > plus (bearish momentum!)
+        b_long_confirm = OHLC(open=99.0, high=101.0, low=98.5, close=100.5)
+        ctx_blocked_long = MarketContext(
+            bar=b_long_confirm, bar_index=2,
+            prev_bar=b_long_div, prev_close=99.0,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            plus=12.0, minus=26.0, # minus > plus!
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=98.0, atr=2.0
+        )
+        sigs_blocked_long = engine_long.evaluate(ctx_blocked_long)
+        long_reg_blocked = [s for s in sigs_blocked_long if s.name == "LONG DIVERGENCE"]
+        self.assertEqual(len(long_reg_blocked), 0, "LONG DIVERGENCE must be BLOCKED when minus > plus")
+
+        # Bar 3: Next bar in window where momentum aligns (plus >= minus)
+        b_long_confirm2 = OHLC(open=100.5, high=102.5, low=100.0, close=102.0)
+        ctx_allowed_long = MarketContext(
+            bar=b_long_confirm2, bar_index=3,
+            prev_bar=b_long_confirm, prev_close=100.5,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            plus=30.0, minus=15.0, # plus > minus!
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=98.0, atr=2.0
+        )
+        sigs_allowed_long = engine_long.evaluate(ctx_allowed_long)
+        long_reg_allowed = [s for s in sigs_allowed_long if s.name == "LONG DIVERGENCE"]
+        self.assertEqual(len(long_reg_allowed), 1, "LONG DIVERGENCE must TRIGGER when plus >= minus")
+
 
 
 

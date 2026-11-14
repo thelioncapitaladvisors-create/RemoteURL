@@ -2648,15 +2648,9 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
     // Combined: exit = (Regular Div NOW) OR (Any Div [1] + price confirms)
     // ─────────────────────────────────────────────────────────────────────
 
-      // Divergence Exit
+      // Divergence Exit (Confirmed Divergence Only — Bar 0 Premature Exit Eliminated)
     if divExitActiveInput and not trade.isClosed and trade.hasHitEntry
-
-        // --- Filter 1: REGULAR Divergence fires NOW → immediate exit ---
-        bool regularBearishDivNow = (ext_bearishDiv == 1)
-        bool regularBullishDivNow = (ext_bullishDiv == 1)
-        bool isRegularDivExit = (isLong_ and regularBearishDivNow) or (not isLong_ and regularBullishDivNow)
-
-        // --- Filter 2: ANY divergence (incl. hidden) fired 1 bar ago ---
+        // --- Filter: ANY divergence (regular or hidden) fired 1 bar ago ---
         //     Exit ONLY if the current candle confirms the direction shift
         //     Confirmation = candle closes against the trade AND below/above prior close
         bool anyBearishDiv1Ago = (ext_bearishDiv[1] == 1) or (ext_bearishHiddenDiv[1] == 1)
@@ -2665,7 +2659,7 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
         bool bullishPriceConfirm = anyBullishDiv1Ago and (close > open) and (close > close[1])
         bool isConfirmedDivExit = (isLong_ and bearishPriceConfirm) or (not isLong_ and bullishPriceConfirm)
 
-        if isRegularDivExit or isConfirmedDivExit
+        if isConfirmedDivExit
             trade.isClosed          := true
             trade.divExitTriggered  := true 
             trade.closeLevel        := close
