@@ -27,7 +27,7 @@
   - `globals.css` `.wc-table-thead` class MUST carry `position: sticky; top: 0; z-index: 30` — this automatically applies sticky headers to all 7+ tables that use this class.
   - Any plain `<thead>` element in `page.tsx` that is not styled via `.wc-table-thead` MUST include `className="sticky top-0 z-30"` on the `<thead>` element itself.
   - Z-index stacking hierarchy is strictly: `thead` row (`z-30`) > header first-column `<th>` (`z-20`) > body first-column `<td>` (`z-10`).
-- **First-Column Sticky Parity**: All wide tables MUST retain `sticky left-0` on the first column (`<th>` and `<td>`) with appropriate `z-index` per the hierarchy above, ensuring the row label (Day Type / Regime, Signal Family, Symbol, etc.) is always visible during horizontal scroll.
+- **Unobstructed Horizontal Scrolling & Row Header Auto-Push Standard**: Across all mobile tables, first-column row headers MUST NOT be statically pinned with `sticky left-0` or `backdrop-blur` during horizontal scroll. Row headers MUST push naturally to the left during left scroll, ensuring that table data columns are 100% visible, crisp, unblurred, and never obscured behind row headers. Top column headers (`<thead>`) retain sticky vertical positioning (`sticky top-0 z-30`).
 - **Covered Table Inventory** (Nov 14, 2026 baseline):
   - INSIGHTS → Performance Breakdown by Canonical Signal Family (Amber, `wc-table-thead`)
   - INSIGHTS → VectorBT Confluence Quantitative Benchmark (Amber, `wc-table-thead`)
