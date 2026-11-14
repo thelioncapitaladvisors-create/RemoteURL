@@ -62,16 +62,17 @@ All subsequent updates are officially governed under the **Version 4.0 (`v4.0`)*
 - **Baseline Tags**:
   - `v3.0-final`
   - `TLCS-v3.0-PROD-FREEZE`
-- **Frozen Mobile Commit**: `fc04eab` (Branch: `main`)
-- **Frozen Timestamp**: `2026-11-14T10:16:00+05:30`
+- **Frozen Mobile Commit**: `c8bee3c` (Branch: `main`)
+- **Frozen Timestamp**: `2026-11-14T10:28:00+05:30`
 - **Verification Status**: PASSED (All automated tests, Next.js production builds, and database connection checks verified).
 - **Finalized v3.0 Standards Included in Freeze**:
   1. Universal Fixed Sticky Row Headers with Hover & Blurred Background Standard across all tables (permanently pinned `sticky left-0`, main fixed header and row headers frosted glassmorphism backdrop blur on horizontal scroll, soft blur on title and row name text, instant hover/touch unblur to full sharpness, table top headers pinned and 100% visible, and 100% visible crisp data columns).
-  2. Zero Overlapping Text & Responsive Font Sizing Alignment Standard in simulated paper portfolios.
-  3. Universal Sticky Table Header Standard (`sticky top-0 z-30` across all 11 tables).
-  4. Zero Truncation & Zero Text Collision Standard across F&O buildup cards and metrics pills.
-  5. Decoupled Divergence Confirmation and Symmetrical Neutral Zone Fire_Alert Confluence Gates.
-  6. Autonomous DhanHQ Netlify Infrastructure with Dynamic TOTP Self-Healing and MCX Contract Rollover.
+  2. Quantitative Benchmark vs Actual System Performance Side-by-Side Standard (VectorBT 78k-bar backtest benchmarks paired directly side-by-side with live system PF, WR, Max DD, Edge Return, and trade count across summary cards and matrix columns).
+  3. Zero Overlapping Text & Responsive Font Sizing Alignment Standard in simulated paper portfolios.
+  4. Universal Sticky Table Header Standard (`sticky top-0 z-30` across all 11 tables).
+  5. Zero Truncation & Zero Text Collision Standard across F&O buildup cards and metrics pills.
+  6. Decoupled Divergence Confirmation and Symmetrical Neutral Zone Fire_Alert Confluence Gates.
+  7. Autonomous DhanHQ Netlify Infrastructure with Dynamic TOTP Self-Healing and MCX Contract Rollover.
 - **Formal Lock Declaration**:
   - Version 3.0 (`v3.0`) is hereby 100% locked, frozen, and finalized in production.
   - Zero unilateral changes may be made to v3.0 code, logic, indicator engines, database schemas, or cloud configurations.

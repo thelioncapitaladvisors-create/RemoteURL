@@ -38,6 +38,18 @@
   - Top-left main fixed header corner (`thead tr th:first-child`) remains firmly pinned in both dimensions (`position: sticky; top: 0; left: 0; z-index: 35;`).
 - **Any new table added to the application MUST follow this standard without exception.**
 
+## Version 3.0: Quantitative Benchmark vs Actual System Performance Side-by-Side Standard (Effective November 14, 2026)
+- **SIDE-BY-SIDE BENCHMARK VS SYSTEM COMPARISON MANDATE**: In the Signal Insights view (`activeTab === 'INSIGHTS'` in `Tv-Alert-Mobile/src/app/page.tsx`), empirical VectorBT quantitative backtest benchmarks and our actual live trading performance statistics are strictly presented side-by-side for direct institutional comparison:
+  - **Side-by-Side Summary Cards**: Two responsive comparison cards (`grid grid-cols-1 md:grid-cols-2`) display the empirical VectorBT Benchmark (78,000 bars, 1.31-1.48 PF, 26.1%-38.9% WR, 1.5%-6.2% MDD) directly alongside Our Actual Live System Performance (realized closed trade count, actual PF with benchmark beat indicator, actual win rate, net return %, and trade expectancy).
+  - **Side-by-Side Metric Table Columns**: Within the VectorBT Confluence Benchmark matrix, each key performance metric is structured in direct side-by-side pairs:
+    1. Profit Factor: `VBT Benchmark PF` (Standalone -> Confluence) alongside `Actual System Live PF` (with `▲ BEAT` badge when beating benchmark).
+    2. Win Rate: `VBT Benchmark WR` alongside `Actual System Live WR` (with `▲ BEAT` badge when beating benchmark).
+    3. Max Drawdown: `VBT Benchmark MDD` (Standalone -> Confluence) alongside `Actual System Live MDD`.
+    4. Edge / Return: `VBT Edge Delta` (+23.6%, +45.1%, etc.) alongside `Actual System Net Return %`.
+    5. Live Sample Size: `Actual System Trades (W / L / BE)` with realized expectancy.
+  - **Composite Total Footer**: The table footer provides a side-by-side composite comparison row (`COMPOSITE BENCHMARK VS SYSTEM`) evaluating total portfolio edge against benchmark targets.
+  - **Full Parity with Universal Sticky Table Header Standard**: Preserves fixed sticky first column (`sticky left-0`), frosted blur backdrop on scroll (`scrollLeft > 6`), instant hover/active touch focus unblur, and pinned table top headers (`sticky top-0 z-30`).
+
 ## Version 3.0: Decoupled Divergence Confirmation, Authentic Regime Styling & Code Alteration Lock Mandate (Effective November 13, 2026)
 - **ZERO UNILATERAL CODE MODIFICATION LOCK**:
   - The AI assistant is strictly, unequivocally forbidden from modifying, refactoring, replacing, or deleting ANY existing Pine Script trading triggers, signal variables, regime blocks, filter defaults, Python BlackBox logic, or mobile frontend algorithms without the user's explicit prior written knowledge and direct line-by-line instruction.
