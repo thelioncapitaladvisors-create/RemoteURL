@@ -3792,8 +3792,9 @@ bool confirmedRegBull = inWindowRegBull and isBullishConfirmCandle and (na(lastF
 bool confirmedRegBear = inWindowRegBear and isBearishConfirmCandle and (na(lastFiredRegBearBar) or lastFiredRegBearBar < lastRegBearDivBar)
 
 // Hidden Divergence strictly requires subsequent directional confirmation candle close (zero unconfirmed entries)
-bool confirmedHiddenBull = inWindowHiddenBull and isBullishConfirmCandle and (na(lastFiredHiddenBullBar) or lastFiredHiddenBullBar < lastHiddenBullDivBar)
-bool confirmedHiddenBear = inWindowHiddenBear and isBearishConfirmCandle and (na(lastFiredHiddenBearBar) or lastFiredHiddenBearBar < lastHiddenBearDivBar)
+// Version 4.0: Symmetrical DMI Directional Filter (Avoid Long H when minus > plus, avoid Short H when plus > minus)
+bool confirmedHiddenBull = inWindowHiddenBull and isBullishConfirmCandle and not (minus > plus) and (na(lastFiredHiddenBullBar) or lastFiredHiddenBullBar < lastHiddenBullDivBar)
+bool confirmedHiddenBear = inWindowHiddenBear and isBearishConfirmCandle and not (plus > minus) and (na(lastFiredHiddenBearBar) or lastFiredHiddenBearBar < lastHiddenBearDivBar)
 
 // Record fired bar to prevent duplicate entries for the same divergence
 if confirmedRegBull
@@ -3814,8 +3815,9 @@ bool DivergenceBuy  = confirmedRegBull
 bool DivergenceSell = confirmedRegBear
 
 // 3. Hidden Divergence Signals (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR and H4/L4 gating)
-bool HiddenDivBuy   = confirmedHiddenBull
-bool HiddenDivSell  = confirmedHiddenBear
+// Version 4.0: Symmetrical DMI Directional Filter
+bool HiddenDivBuy   = confirmedHiddenBull and not (minus > plus)
+bool HiddenDivSell  = confirmedHiddenBear and not (plus > minus)
 
 // Combined Lightning Buy / Sell
 bool LightningBuy   = standardLightningBuy

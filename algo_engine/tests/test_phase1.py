@@ -1916,6 +1916,94 @@ class TestVirginCPR(unittest.TestCase):
         short_divs_next = [s for s in sigs_next if s.name == "SHORT HIDDEN DIVERGENCE"]
         self.assertEqual(len(short_divs_next), 0, "Divergence signal must NOT duplicate on subsequent candles")
 
+    def test_hidden_divergence_symmetrical_dmi_filter(self):
+        """Version 4.0: Verify that Hidden Divergences are blocked when momentum opposes them (Short H blocked when plus > minus, Long H blocked when minus > plus)."""
+        # --- TEST 1: Short Hidden Divergence blocked when plus > minus ---
+        engine_short = StrategyEngine()
+        b_div = OHLC(open=100.0, high=105.0, low=99.0, close=102.0)
+        ctx_div = MarketContext(
+            bar=b_div, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            bear_hidden_div=True,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        engine_short.evaluate(ctx_div)
+
+        # Bar 2: Bearish confirmation candle close, BUT plus > minus (bullish momentum!)
+        b_confirm = OHLC(open=102.0, high=102.5, low=100.0, close=100.5)
+        ctx_blocked_short = MarketContext(
+            bar=b_confirm, bar_index=2,
+            prev_bar=b_div, prev_close=102.0,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            plus=28.0, minus=14.0, # plus > minus!
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        sigs_blocked_short = engine_short.evaluate(ctx_blocked_short)
+        short_hid_blocked = [s for s in sigs_blocked_short if s.name == "SHORT HIDDEN DIVERGENCE"]
+        self.assertEqual(len(short_hid_blocked), 0, "SHORT HIDDEN DIVERGENCE must be BLOCKED when plus > minus")
+
+        # Bar 3: Next bar in window where momentum aligns (minus >= plus)
+        b_confirm2 = OHLC(open=100.5, high=101.0, low=99.0, close=99.5)
+        ctx_allowed_short = MarketContext(
+            bar=b_confirm2, bar_index=3,
+            prev_bar=b_confirm, prev_close=100.5,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            plus=14.0, minus=28.0, # minus > plus!
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=99.0, atr=2.0
+        )
+        sigs_allowed_short = engine_short.evaluate(ctx_allowed_short)
+        short_hid_allowed = [s for s in sigs_allowed_short if s.name == "SHORT HIDDEN DIVERGENCE"]
+        self.assertEqual(len(short_hid_allowed), 1, "SHORT HIDDEN DIVERGENCE must TRIGGER when minus >= plus")
+
+        # --- TEST 2: Long Hidden Divergence blocked when minus > plus ---
+        engine_long = StrategyEngine()
+        b_long_div = OHLC(open=100.0, high=103.0, low=98.0, close=99.0)
+        ctx_long_div = MarketContext(
+            bar=b_long_div, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            bull_hidden_div=True,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=98.0, atr=2.0
+        )
+        engine_long.evaluate(ctx_long_div)
+
+        # Bar 2: Bullish confirmation candle close, BUT minus > plus (bearish momentum!)
+        b_long_confirm = OHLC(open=99.0, high=101.0, low=98.5, close=100.5)
+        ctx_blocked_long = MarketContext(
+            bar=b_long_confirm, bar_index=2,
+            prev_bar=b_long_div, prev_close=99.0,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            plus=12.0, minus=26.0, # minus > plus!
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=98.0, atr=2.0
+        )
+        sigs_blocked_long = engine_long.evaluate(ctx_blocked_long)
+        long_hid_blocked = [s for s in sigs_blocked_long if s.name == "LONG HIDDEN DIVERGENCE"]
+        self.assertEqual(len(long_hid_blocked), 0, "LONG HIDDEN DIVERGENCE must be BLOCKED when minus > plus")
+
+        # Bar 3: Next bar in window where momentum aligns (plus >= minus)
+        b_long_confirm2 = OHLC(open=100.5, high=102.5, low=100.0, close=102.0)
+        ctx_allowed_long = MarketContext(
+            bar=b_long_confirm2, bar_index=3,
+            prev_bar=b_long_confirm, prev_close=100.5,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0, is_ncpr=False,
+            plus=30.0, minus=15.0, # plus > minus!
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=98.0, atr=2.0
+        )
+        sigs_allowed_long = engine_long.evaluate(ctx_allowed_long)
+        long_hid_allowed = [s for s in sigs_allowed_long if s.name == "LONG HIDDEN DIVERGENCE"]
+        self.assertEqual(len(long_hid_allowed), 1, "LONG HIDDEN DIVERGENCE must TRIGGER when plus >= minus")
+
 
 
 # ====================================================================

@@ -612,8 +612,9 @@ class StrategyEngine:
         confirmed_reg_bear = in_win_reg_bear and is_bear_confirm and (self._last_fired_reg_bear_bar is None or self._last_fired_reg_bear_bar < self._last_reg_bear_div_bar)
 
         # Hidden Divergence strictly requires subsequent directional confirmation candle close (zero unconfirmed entries)
-        confirmed_hidden_bull = in_win_hidden_bull and is_bull_confirm and (self._last_fired_hidden_bull_bar is None or self._last_fired_hidden_bull_bar < self._last_hidden_bull_div_bar)
-        confirmed_hidden_bear = in_win_hidden_bear and is_bear_confirm and (self._last_fired_hidden_bear_bar is None or self._last_fired_hidden_bear_bar < self._last_hidden_bear_div_bar)
+        # Version 4.0: Symmetrical DMI Directional Filter (Avoid Long H when minus > plus, avoid Short H when plus > minus)
+        confirmed_hidden_bull = in_win_hidden_bull and is_bull_confirm and not (ctx.minus > ctx.plus) and (self._last_fired_hidden_bull_bar is None or self._last_fired_hidden_bull_bar < self._last_hidden_bull_div_bar)
+        confirmed_hidden_bear = in_win_hidden_bear and is_bear_confirm and not (ctx.plus > ctx.minus) and (self._last_fired_hidden_bear_bar is None or self._last_fired_hidden_bear_bar < self._last_hidden_bear_div_bar)
 
         # Single-fire updates
         if confirmed_reg_bull:
@@ -656,8 +657,9 @@ class StrategyEngine:
         lightning_sell = standard_lightning_sell
 
         # 2. Hidden Divergence (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR, and H4/L4 gating)
-        hidden_div_buy = confirmed_hidden_bull
-        hidden_div_sell = confirmed_hidden_bear
+        # Version 4.0: Symmetrical DMI Directional Filter
+        hidden_div_buy = confirmed_hidden_bull and not (ctx.minus > ctx.plus)
+        hidden_div_sell = confirmed_hidden_bear and not (ctx.plus > ctx.minus)
 
         # 3. Regular Divergence (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR, and H4/L4 gating)
         divergence_buy = confirmed_reg_bull
