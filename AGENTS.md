@@ -40,6 +40,10 @@
   - SCREENER → Opening Bias Screener Symbol/Bias/Move% Table (plain `<thead>`)
   - SCREENER → TLCS Signals 7-Day Matrix (plain `<thead>`)
   - SCREENER → DhanHQ Signals 7-Day Matrix (plain `<thead>`)
+- **Universal Table Row Name Blur & Sharp Data Standard**:
+  - During horizontal scrolling (`scrollLeft > 6`), row names (first column `<th>` and `<td>` across `tbody`, `thead`, and `tfoot`) dynamically blur (`filter: blur(2.5px); opacity: 0.42; user-select: none;`), while data columns (`th:not(:first-child)`, `td:not(:first-child)`) remain 100% visible, sharp, crisp, and unblurred (`filter: none !important; opacity: 1 !important; position: relative; z-index: 5;`).
+  - Active hover or touch focus unblurs the row header (`filter: blur(0px); opacity: 0.95;`).
+  - All 11 tables implement `.table-scroll-container` paired with both inline `onScroll` event toggles and a global capture-phase scroll listener.
 - **Any new table added to the application MUST follow this standard without exception.**
 
 ## Version 3.0: Decoupled Divergence Confirmation, Authentic Regime Styling & Code Alteration Lock Mandate (Effective November 13, 2026)
