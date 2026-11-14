@@ -14,6 +14,13 @@
   - ALL subsequent updates, enhancements, bug fixes, UI revisions, and algorithmic extensions are strictly classified and versioned as **Version 4.0 (`v4.0`)**.
   - No new work shall be committed under the v3.0 designation.
 
+## Version 3.0: Zero Text Collision, Full Visibility & Truncation Elimination Standard (Effective November 14, 2026)
+- **ZERO TRUNCATION & ZERO TEXT COLLISION MANDATE**: Across all cards, metrics containers, badges, and status pills in the TLCS Mobile Terminal (`Tv-Alert-Mobile/src/app/page.tsx`):
+  - No text may flow into or overlap adjacent text fields or badge boundaries.
+  - Subtext and sentiment badges (e.g. F&O Buildups: `Price ▲ • OI ▲`, `[ BULLISH ]`, `[ PROFIT BOOKING ]`, `[ SHORT COVERING ]`) must never be constrained side-by-side with rigid `whitespace-nowrap` inside narrow multi-column cards.
+  - In F&O Stock Buildups (`HubFnoBuildups`), dynamics (`tab.sub`) and market sentiment badges (`tab.sentiment`) are structured with dedicated vertical tiering or responsive wrapping, guaranteeing 100% visibility without right-edge clipping or text touching.
+  - Under dynamic accessibility font elevation rules in `globals.css` (where micro-fonts scale up on mobile viewports), card layouts must maintain sufficient inner width and vertical flex wrapping so that all labels, counts, metrics, and badges render fully visible and unclipped across all viewports from 320px mobile to 4K desktop.
+
 ## Version 3.0: Universal Sticky Table Header Standard (Effective November 14, 2026)
 - **UNIVERSAL STICKY HEADER MANDATE**: All data tables across the TLCS Mobile Terminal (`Tv-Alert-Mobile/src/app/page.tsx`) MUST implement sticky column headers so that header rows remain visible as users scroll horizontally through wide tables and vertically through long table bodies.
 - **Implementation Standard**:
