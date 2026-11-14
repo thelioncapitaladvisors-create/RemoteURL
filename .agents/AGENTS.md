@@ -21,6 +21,27 @@
   - In F&O Stock Buildups (`HubFnoBuildups`), dynamics (`tab.sub`) and market sentiment badges (`tab.sentiment`) are structured with dedicated vertical tiering or responsive wrapping, guaranteeing 100% visibility without right-edge clipping or text touching.
   - Under dynamic accessibility font elevation rules in `globals.css` (where micro-fonts scale up on mobile viewports), card layouts must maintain sufficient inner width and vertical flex wrapping so that all labels, counts, metrics, and badges render fully visible and unclipped across all viewports from 320px mobile to 4K desktop.
 
+## Version 3.0: Universal Static Pinned Symbol Table Headers & Zero-Blur Floating Popover Standard (Effective November 14, 2026)
+- **UNIVERSAL STATIC PINNED SYMBOL HEADER MANDATE**: Across all mobile terminal tables in `Tv-Alert-Mobile/src/app/page.tsx` (Option Chain, Screener Matrix, Live Signals, Virtual Paper Portfolio, Insights, Analytics):
+  - Row header first columns (`tbody td:first-child`, `tfoot td:first-child`, `thead tr th:first-child`) remain permanently pinned at `left: 0` (`position: sticky; left: 0; z-index: 25`).
+  - **Zero Blur Default**: Passive background blur and opacity degradation on symbol text are strictly disabled. Asset symbols, tickers, and names remain 100% sharp, readable, and crisp at all times during horizontal data panning.
+  - **Floating Detail Popover Architecture**: Detailed metric exploration is decoupled into zero-blur elevated floating popovers (`z-index: 50`) triggered on row tap/click, preventing horizontal table clutter.
+  - Table top headers (`thead tr th:not(:first-child)`) remain firmly pinned at `top: 0` (`position: sticky; top: 0; z-index: 30`) with solid theme-matched backgrounds.
+
+## Version 3.0: Option Chain & F&O Buildups Authentic Market Close Day Synchronization Standard (Effective November 14, 2026)
+- **AUTHENTIC MARKET CLOSE SNAPSHOT DATE MANDATE**:
+  - When markets are closed (weekends, holidays, or outside market hours), the Option Chain EOD badge MUST NEVER display client device local date/time (e.g. `14 Nov, 12:15 PM`).
+  - The Option Chain EOD badge MUST ALWAYS synchronize with the authentic last market close session date (`snapshotDate`, e.g. `2026-11-13`), maintaining 100% parity with the F&O Stock Buildups EOD snapshot date.
+  - `getMarketStatus` and `getMarketCloseDate` strictly enforce the official 2026 NSE (15:30 IST) & MCX (23:30 IST) exchange holidays and session closing rules across both backend Netlify functions (`Tv-Alert-Mobile/src/app/api/option-chain/route.ts`, `TLCS_Website_Deploy/netlify/functions/dhan-option-chain.js`) and frontend components (`Tv-Alert-Mobile/src/app/page.tsx`).
+
+## Version 3.0: Zero-Latency Supabase Realtime WebSocket Feeds Mandate (Effective November 14, 2026)
+- **REALTIME WEBSOCKET FEED ARCHITECTURE**:
+  - The TLCS Mobile Terminal MUST subscribe to Supabase Realtime WebSocket channels via `postgres_changes` for instant, zero-latency state synchronization:
+    1. `tlcs_intraday_feed_realtime`: Subscribes to `INSERT`, `UPDATE`, and `DELETE` on `public.signals`, `public.shadow_signals`, `public.pivotboss_scans`, and `public.system_config`.
+    2. `option_chain_realtime_{symbol}`: Subscribes to changes on `public.system_config` for live Option Chain EOD snapshots.
+  - Any database mutation immediately triggers state refresh across Virtual Paper Portfolio, Option Chain, Live Signals, and Screener Matrices without waiting for client polling intervals.
+  - Client-side interval polling operates strictly as a graceful fallback (10s live session, 60s closed).
+
 ## Version 3.0: Universal Sticky Table Header Standard (Effective November 14, 2026)
 - **UNIVERSAL STICKY HEADER MANDATE**: All data tables across the TLCS Mobile Terminal (`Tv-Alert-Mobile/src/app/page.tsx`) MUST implement sticky column headers so that header rows remain visible as users scroll horizontally through wide tables and vertically through long table bodies.
 - **Implementation Standard**:
