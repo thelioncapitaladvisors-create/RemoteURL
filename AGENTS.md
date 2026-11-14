@@ -6,6 +6,13 @@
   - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
   - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
   - Gating must NEVER rely on `close` for limit entry qualification.
+## Version 3.0: Formal Production Freeze & Version 4.0 Mandate (Effective November 14, 2026)
+- **VERSION 3.0 FREEZE DECLARATION**:
+  - Application Version v3.0 is officially declared frozen, finalized, and locked as of November 14, 2026.
+  - Zero unilateral changes may be made to v3.0 code, logic, indicator engines, database schemas, or autonomous cloud configurations.
+- **VERSION 4.0 SUCCESSOR STANDARD**:
+  - ALL subsequent updates, enhancements, bug fixes, UI revisions, and algorithmic extensions are strictly classified and versioned as **Version 4.0 (`v4.0`)**.
+  - No new work shall be committed under the v3.0 designation.
 
 ## Version 3.0: Decoupled Divergence Confirmation, Authentic Regime Styling & Code Alteration Lock Mandate (Effective November 13, 2026)
 - **ZERO UNILATERAL CODE MODIFICATION LOCK**:
