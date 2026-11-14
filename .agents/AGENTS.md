@@ -14,6 +14,27 @@
   - ALL subsequent updates, enhancements, bug fixes, UI revisions, and algorithmic extensions are strictly classified and versioned as **Version 4.0 (`v4.0`)**.
   - No new work shall be committed under the v3.0 designation.
 
+## Version 3.0: Universal Sticky Table Header Standard (Effective November 14, 2026)
+- **UNIVERSAL STICKY HEADER MANDATE**: All data tables across the TLCS Mobile Terminal (`Tv-Alert-Mobile/src/app/page.tsx`) MUST implement sticky column headers so that header rows remain visible as users scroll horizontally through wide tables and vertically through long table bodies.
+- **Implementation Standard**:
+  - `globals.css` `.wc-table-thead` class MUST carry `position: sticky; top: 0; z-index: 30` — this automatically applies sticky headers to all 7+ tables that use this class.
+  - Any plain `<thead>` element in `page.tsx` that is not styled via `.wc-table-thead` MUST include `className="sticky top-0 z-30"` on the `<thead>` element itself.
+  - Z-index stacking hierarchy is strictly: `thead` row (`z-30`) > header first-column `<th>` (`z-20`) > body first-column `<td>` (`z-10`).
+- **First-Column Sticky Parity**: All wide tables MUST retain `sticky left-0` on the first column (`<th>` and `<td>`) with appropriate `z-index` per the hierarchy above, ensuring the row label (Day Type / Regime, Signal Family, Symbol, etc.) is always visible during horizontal scroll.
+- **Covered Table Inventory** (Nov 14, 2026 baseline):
+  - INSIGHTS → Performance Breakdown by Canonical Signal Family (Amber, `wc-table-thead`)
+  - INSIGHTS → VectorBT Confluence Quantitative Benchmark (Amber, `wc-table-thead`)
+  - INSIGHTS → Performance Breakdown by Day Type & Market Regime (Cyan, `wc-table-thead`)
+  - MARKETS → Signal Performance Metrics by Market Segment (Sky, `wc-table-thead`)
+  - ANALYTICS → Weekly EDGE Performance Table (Amber, `wc-table-thead`)
+  - HUB → Signal Distribution Live Signals Header (Rose, `wc-table-thead`)
+  - MARKETS → Market Segment Performance (purple, `sticky top-0 z-30` on `<thead>`)
+  - HUB → Option Chain Strikes Matrix (plain `<thead className="sticky top-0 z-30">`)
+  - SCREENER → Opening Bias Screener Symbol/Bias/Move% Table (plain `<thead>`)
+  - SCREENER → TLCS Signals 7-Day Matrix (plain `<thead>`)
+  - SCREENER → DhanHQ Signals 7-Day Matrix (plain `<thead>`)
+- **Any new table added to the application MUST follow this standard without exception.**
+
 ## Version 3.0: Decoupled Divergence Confirmation, Authentic Regime Styling & Code Alteration Lock Mandate (Effective November 13, 2026)
 - **ZERO UNILATERAL CODE MODIFICATION LOCK**:
   - The AI assistant is strictly, unequivocally forbidden from modifying, refactoring, replacing, or deleting ANY existing Pine Script trading triggers, signal variables, regime blocks, filter defaults, Python BlackBox logic, or mobile frontend algorithms without the user's explicit prior written knowledge and direct line-by-line instruction.
