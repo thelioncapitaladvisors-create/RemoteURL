@@ -85,30 +85,34 @@ Under mobile viewports and dynamic accessibility font scaling, 3 text overlap co
 ## Universal Fixed Sticky Row Headers with Hover & Blurred Background Standard (User Specification)
 
 ### Problem Addressed & Refinement
-Upon inspecting the row header blur effect in production, the user recognized that scrolling row headers off to the left is unnecessary when paired with the hover and blur treatment:
+Upon inspecting the row header blur effect in production, the user recognized that scrolling row headers off to the left is unnecessary when paired with the hover and blur treatment, and requested that the top-left main fixed header also carry the blur and all table top headers remain permanently visible:
 > *"For this effect no need to scroll the row headers to the left. Instead keep them fixed with this hover and blurred background effects. It will be very professional look. Make changes throught application version v3.0"*
+> *"Make the main fixed header also blurred and make table top headers visible during scrolling for all tables of the application."*
 
 ### Architecture & Solution Implemented
 1. **Fixed Sticky Positioning (`position: sticky; left: 0`)**:
    - Row headers remain permanently pinned at `left: 0` during horizontal scroll across all tables (preserving Option Chain's 2-sided symmetrical strike layout via `.option-chain-scroll`).
    - Users never lose row context while scrolling deeply through metric columns.
-2. **Frosted Glassmorphism Backdrop Blur & Soft Blur Hierarchy**:
+2. **Main Fixed Header & Row Name Blur with Frosted Backdrop**:
    - When horizontally scrolled (`.table-is-scrolled`):
-     - `backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);` applies to the sticky cell with theme-tuned translucent backgrounds across all 6 skins (Dark, Light, Slate Gray, The Lion, Golden Gate, Golden Gate Light).
-     - Row names softly blur (`filter: blur(2.5px); opacity: 0.45; user-select: none;`), giving a high-tech frosted aesthetic where metric numbers to the right are 100% visible and unblurred.
-     - Subtle elevation edge shadow (`box-shadow: 4px 0 12px -2px rgba(...)`) crisply delineates the fixed column boundary.
+     - Both the **main fixed header** (`thead tr th:first-child`, e.g. "CONFLUENCE MODEL", "Day Type / Regime", "Signal Family", "Market Segment") and all body row headers (`tbody td:first-child`, `tfoot td:first-child`) softly blur with identical treatment:
+       `filter: blur(2.5px); opacity: 0.45; user-select: none;`
+     - High-end frosted glassmorphism backdrop blur (`backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);`) with theme-tuned translucent backgrounds and subtle elevation edge shadows (`box-shadow: 4px 0 12px -2px rgba(...)`) across all 6 skins (Dark, Light, Slate Gray, The Lion, Golden Gate, Golden Gate Light).
 3. **Instant Hover & Touch Focus Reveal**:
-   - Touching or hovering over any row header cell (or its parent row):
-     `filter: blur(0px); opacity: 0.98; background-color: var(--theme-hover-bg); z-index: 25;`
-     Immediately brings the row title and its status badges into 100% sharp, readable focus.
-4. **Sharp Data Columns Underneath**:
-   - Data columns (`th:not(:first-child)`, `td:not(:first-child)`) slide smoothly behind the frosted row header and remain 100% sharp, crisp, and unblurred (`filter: none !important; opacity: 1 !important;`).
-5. **Top-Left Corner Pinned**:
-   - `thead tr th:first-child` stays pinned in both dimensions (`sticky top-0 left-0 z-35`), ensuring seamless vertical and horizontal scrolling coexistence.
+   - Touching or hovering over the main fixed header or any row header cell (or its parent row):
+     `filter: blur(0px); opacity: 0.98; background-color: var(--theme-hover-bg); z-index: 38;`
+     Immediately brings the title, labels, and status badges into 100% sharp, readable focus.
+4. **Table Top Headers 100% Visible & Sharp During Scrolling**:
+   - All data column top headers (`thead tr th:not(:first-child)`) stay firmly pinned at `top: 0` (`position: sticky; top: 0; z-index: 30; filter: none !important; opacity: 1 !important;`).
+   - Given solid frosted theme backgrounds across all themes (`rgba(248, 250, 252, 0.96)` in light, `rgba(12, 18, 30, 0.96)` in dark), eliminating body text bleed-through during vertical scrolling.
+   - During horizontal scrolling, every top header stays sharp, crisp, and aligned directly above its data column.
+5. **Data Columns Underneath**:
+   - Data columns (`td:not(:first-child)`) slide smoothly behind the frosted row header and remain 100% sharp, crisp, and unblurred (`filter: none !important; opacity: 1 !important; position: relative; z-index: 5;`).
 
 ---
 
 ## Version Classification
 - **v3.0** (User-directed production refinement, Nov 14, 2026).
+
 
 
