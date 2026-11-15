@@ -39,7 +39,30 @@
   - Live trades MUST NEVER exit prematurely on unconfirmed Bar 0 divergences.
   - Divergence exits (`evaluateTradeProgress` in Pine Script and `TradeManager.update` in Python BlackBox) are strictly gated to confirmed divergences requiring 1-bar prior divergence (`[1]`) AND subsequent directional confirmation candle close (`(close > open and close > close[1])` for bullish, `(close < open and close < close[1])` for bearish).
 - **CANONICAL MASTER INDICATOR VERSION 3.0 CHECKSUM PARITY**:
-  - All three source files (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0` and maintain 100% byte-for-byte SHA256 checksum parity (`e4caa5a28359a6be56b2d1b51e0936b6cb0d1709c5282046801216bfd04253f2`).
+  - All three source files (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0` and maintain 100% byte-for-byte SHA256 checksum parity (`bd4ca6422b3f9df711d3786c4bb2f550e14f37ba7e4f3f5a45c5dfd00a222763`).
+
+## Version 3.0: Dual Price & Oscillator Line Validation, Confirmed-Only On-Chart Plotting & Screener 4-Column Balanced Layout Mandate (Effective November 15, 2026)
+- **DUAL PRICE & OSCILLATOR LINE VALIDATION MANDATE**:
+  - In `zigzag.divergence()` across Master Pine Script indicators (`TLCS v3.0`), divergence qualification is strictly bound to both price and oscillator trendlines:
+    ```pine
+    if priceAtBar * dir > priceTheoPrice * dir or oscillatorAtBar * dir > oscTheoPrice * dir
+        validDivergence := false
+        break
+    ```
+  - A divergence setup is completely invalidated if either price OR the oscillator breaches its theoretical slope line between pivot points.
+- **CONFIRMED-ONLY ON-CHART PLOTTING & ZERO BAR 0 PHANTOM LABELS MANDATE**:
+  - Unconfirmed Bar 0 `label.new` and premature `alert()` inside `zigzag.divergence()` are suppressed (`label pLabel = na`).
+  - Visual on-chart `D` (Regular Divergence) and `H` (Hidden Divergence) labels are strictly plotted on the **subsequent directional confirmation candle close** via active `plotshape(DivergenceBuy, ...)`, `plotshape(DivergenceSell, ...)`, `plotshape(HiddenDivBuy, ...)`, and `plotshape(HiddenDivSell, ...)`.
+  - Guarantees 100% candle timestamp synchronization between on-chart labels, webhook execution alerts, and mobile terminal screener entries.
+- **SCREENER 4-COLUMN BALANCED HIGH-DENSITY TERMINAL LAYOUT MANDATE**:
+  - In `renderDhanUnifiedBiasScreener` (`Tv-Alert-Mobile/src/app/page.tsx`), the previous 3-column table is upgraded to an institutional 4-column balanced layout (`SYMBOL` [sticky left-0] | `SETUP & BIAS` | `STATUS & TIMING` | `RETURN (%)`):
+    1. **Elimination of Vertical Bloat & White Space Holes**: Eliminates 9-line stacked bullets in Column 1 and removes empty white space beneath adjacent columns.
+    2. **Uniform 2-Tier Cell Rhythm**: Every column renders exactly 2 compact lines (~46px row height):
+       - Col 1: Symbol + Market Badge (`CRYPTO`/`MCX`/`NSE`) | Setup Badge (`🎯 REGULAR`/`🔍 HIDDEN`)
+       - Col 2: Directional Bias Badge (`▲ BULL REGULAR`) | Regime / Day Type description
+       - Col 3: Flashy Lifecycle Badge (`🔒 CLOSED (WIN/LOSS)`, `⚡ LIVE`, `⏳ ACTIVE LIMIT`) + Session Badge | Entry IST → Exit IST (Hold Duration)
+       - Col 4: Outcome-consistent return % (`+X.XX%` green, `-X.XX%` red) | Points move
+    3. **Zero Duplicate Text**: Eliminates repeated symbol names, redundant timestamp bullets, and duplicate outcome tags. Granular inspection is seamlessly accessible via row tap into the floating detail popover.
 
 ## Version 3.0: Formal Production Freeze & Version 4.0 Mandate (Effective November 14, 2026)
 - **VERSION 3.0 FREEZE DECLARATION**:

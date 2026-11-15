@@ -2870,6 +2870,7 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                     if validDivergence
                         for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
                             priceAtBar = priceMap.get(bar)
+                            oscillatorAtBar = oscillatorMap.get(bar)
                             
                             px1 = lastPricePoint.index
                             py1 = lastPricePoint.price
@@ -2877,7 +2878,13 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                             py2 = pricePoint.price
                             priceTheoPrice = py1 + ((py2 - py1) / (px2 - px1)) * (bar - px1)
 
-                            if priceAtBar * dir > priceTheoPrice * dir
+                            x1 = llastOscillatorPoint.index
+                            y1 = llastOscillatorPoint.price
+                            x2 = oscillatorPoint.index
+                            y2 = oscillatorPoint.price
+                            oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
+
+                            if priceAtBar * dir > priceTheoPrice * dir or oscillatorAtBar * dir > oscTheoPrice * dir
                                 validDivergence := false
                                 break
 
@@ -2892,12 +2899,9 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         pLine = line.new(lastPricePoint.time, lastPricePoint.price, pricePoint.time, pricePoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=1, force_overlay=true)
                         line oLine = na
 
-                        pLabel = label.new(pricePoint.time, pricePoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=true)
+                        label pLabel = na
                         label oLabel = na
                         
-                        if allowedDivergenceTypes.get(divergenceType)
-                            alert('Alert : ' + priceTooltipText, alert.freq_once_per_bar_close)
-                            
                         divergenceObject = DivergenceObject.new(pLine, oLine, pLabel, oLabel, lastPricePoint.index, pricePoint.index, pricePoint, divergenceType)
                         divergenceObjects.push(divergenceObject)
                         true
@@ -3926,13 +3930,13 @@ processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX
 // 9. ON-CHART PLOTTINGS & VISUAL MARKERS
 // ====================================================================
 
-// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS (Legacy plotshapes disabled to prevent duplicate/phantom labels; rendered natively by Zigzag Divergence Screener label.new at line 2890)
-// plotshape(DivergenceBuy,  title = "Bullish Regular Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
-// plotshape(DivergenceSell, title = "Bearish Regular Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
+// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS (Confirmed on candle close; strictly synchronized with trade execution)
+plotshape(DivergenceBuy,  title = "Bullish Regular Divergence (Confirmed)", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
+plotshape(DivergenceSell, title = "Bearish Regular Divergence (Confirmed)", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
 
-// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS (Legacy plotshapes disabled to prevent duplicate/phantom labels; rendered natively by Zigzag Divergence Screener label.new at line 2890)
-// plotshape(HiddenDivBuy,  title = "Bullish Hidden Divergence", style = shape.labelup,   location = location.belowbar, color = color.new(color.teal, 0),   text = "H", textcolor = color.white, size = size.small)
-// plotshape(HiddenDivSell, title = "Bearish Hidden Divergence", style = shape.labeldown, location = location.abovebar, color = color.new(color.orange, 0), text = "H", textcolor = color.black, size = size.small)
+// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS (Confirmed on candle close; strictly synchronized with trade execution)
+plotshape(HiddenDivBuy,   title = "Bullish Hidden Divergence (Confirmed)",  style = shape.labelup,   location = location.belowbar, color = color.teal,   text = "H", textcolor = color.white, size = size.small)
+plotshape(HiddenDivSell,  title = "Bearish Hidden Divergence (Confirmed)",  style = shape.labeldown, location = location.abovebar, color = color.orange, text = "H", textcolor = color.black, size = size.small)
 
 
 // ⚡ 3. LIGHTNING PLOTS
