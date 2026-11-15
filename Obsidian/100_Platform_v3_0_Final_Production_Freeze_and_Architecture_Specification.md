@@ -13,28 +13,28 @@ As of **November 15, 2026 (22:30 IST)**, **TLCS Platform Version 3.0 (`v3.0`)** 
 ### Strict Zero-Modification Lock:
 1. **Zero Unilateral Alterations**: All core logic, Pine Script trading triggers, BlackBox quantitative algorithms, database schemas, API routes, and mobile terminal layout engines under Version 3.0 are strictly immutable.
 2. **Version 4.0 Successor Mandate**: All future enhancements, new feature additions, structural refactors, or new asset integrations must be conducted strictly under the **Version 4.0 (`v4.0`)** designation. No new code shall be committed under the v3.0 designation.
-3. **Backup Snapshot Integrity**: A complete timestamped production snapshot is permanently preserved in `Backups/TLCS_v3.0_Final_Production_Freeze_20261115_222500/` and synced with `Project Backup/`.
+3. **Backup Snapshot Integrity**: A complete timestamped production snapshot is permanently preserved in `Backups/TLCS_v3.0_Final_Production_Freeze_20261115_224500/` and `Backups/TLCS_v3.0_Final_Production_Freeze_20261115_222500/`, synced with `Project Backup/`.
 
 ---
 
 ## 2. Complete Final Version 3.0 Architectural Specifications
 
-### A. Screener Layout: Clean, Non-Cluttered 3-Column Zero-Overlap Architecture
+### A. Screener Layout: Clean, Non-Cluttered 3-Column Layout Architecture
 - **Location**: `renderDhanUnifiedBiasScreener` in `Tv-Alert-Mobile/src/app/page.tsx`
-- **Design Philosophy**: Simple, non-complicated, instantly comprehensible at a glance on mobile viewports (320px to 4K).
+- **Design Philosophy**: Simple, non-complicated, instantly comprehensible at a glance on mobile viewports (320px to 4K). Strictly focused on essential trade attributes.
 - **Column Structure (`table-fixed` 100% Responsive Grid)**:
-  1. **Column 1 (`Symbol & Time`, w-[40%] sm:w-[35%])**:
-     - Line 1: Clean Symbol name (`DOGEUSDT`, `BTCUSDT`, `CRUDEOIL`) in bold tabular text + Standardized Market Badge (`CRYPTO` Amber/Yellow, `MCX` Amber, `NYMEX` Orange, `NIFTY`/`GIFT` Indigo, `FOREX` Teal, `WORLD` Purple, `NSE` Blue).
-     - Line 2: Setup Tag (`🎯 REGULAR`, `🔍 HIDDEN`, `⚡ TOUCH`, `🛡️ BULL REJ`, `🚀 BULL CONT`, `🔥 BULL FIRE`, `⚡ OOR`) • Entry Timestamp in IST (`19:00 IST`).
-  2. **Column 2 (`Setup & Status`, w-[34%] sm:w-[37%])**:
-     - Line 1: Directional Bias Pill (`▲ BULL REGULAR` emerald / `▼ BEAR HIDDEN` rose).
-     - Line 2: High-contrast Lifecycle / Outcome Pill (`⚡ LIVE` pulsing emerald, `⏳ LIMIT` pulsing amber, `🔒 WIN` emerald, `🔒 LOSS` rose) with session date indicator.
-  3. **Column 3 (`Return (%)`, w-[26%] sm:w-[28%] text-right)**:
-     - Line 1: Outcome-Consistent Return Percentage (`+1.20%` emerald / `-0.35%` rose).
+  1. **Column 1 (`Symbol & Time`, w-[36%] sm:w-[34%])**:
+     - Line 1: Clean Symbol name (`DOGEUSDT`, `BTCUSDT`, `CRUDEOIL`) in bold tabular text.
+     - Line 2: Entry / Exit Times (`19:00 → 19:45` for closed, `19:00 IST` for live/active).
+  2. **Column 2 (`Signal & Status`, w-[36%] sm:w-[38%])**:
+     - Line 1: Directional Signal Name Badge (`▲ BULL REGULAR` emerald / `▼ BEAR HIDDEN` rose / `▲ BULL REJ` / `▼ BEAR FIRE`).
+     - Line 2: Signal Status viz Active Limit, Live or Closed (`⏳ ACTIVE LIMIT` pulsing amber, `⚡ LIVE` pulsing emerald, `🔒 CLOSED` neutral slate) with session date indicator when prior.
+  3. **Column 3 (`Outcome / Return`, w-[28%] text-right)**:
+     - Line 1: Win/Loss status tag (`WIN` / `LOSS`) alongside outcome-consistent percentage return (`+1.20%` emerald / `-0.35%` rose).
      - Line 2: Exact Point Move (`+804.55 pts` / `-0.00 pts`).
 - **Zero Horizontal Scrolling & Zero 48px Overlap Bug**:
   - The table fits naturally without requiring horizontal overflow.
-  - Eliminated `.table-scroll-container` and horizontal scroll triggers from this component, permanently preventing the `td:first-child` 48px collapse bug and eliminating text collisions.
+  - Bypasses `.table-scroll-container` and horizontal scroll triggers, permanently preventing the `td:first-child` 48px collapse bug and eliminating text collisions.
 - **Deep Inspection Decoupling**: Tapping any row opens the elevated floating detail popover (`setSelectedDhanOorAsset`) displaying full entry/exit timestamps, hold duration, session date, and institutional execution rules.
 
 ---
