@@ -64,20 +64,20 @@
   - Unconfirmed Bar 0 `label.new` and premature `alert()` inside `zigzag.divergence()` are suppressed (`label pLabel = na`).
   - Visual on-chart `D` (Regular Divergence) and `H` (Hidden Divergence) labels are strictly plotted on the **subsequent directional confirmation candle close** via active `plotshape(DivergenceBuy, ...)`, `plotshape(DivergenceSell, ...)`, `plotshape(HiddenDivBuy, ...)`, and `plotshape(HiddenDivSell, ...)`.
   - Guarantees 100% candle timestamp synchronization between on-chart labels, webhook execution alerts, and mobile terminal screener entries.
-- **SCREENER 4-COLUMN BALANCED HIGH-DENSITY TERMINAL LAYOUT MANDATE**:
-  - In `renderDhanUnifiedBiasScreener` (`Tv-Alert-Mobile/src/app/page.tsx`), the previous 3-column table is upgraded to an institutional 4-column balanced layout (`SYMBOL` [sticky left-0] | `SETUP & BIAS` | `STATUS & TIMING` | `RETURN (%)`):
-    1. **Elimination of Vertical Bloat & White Space Holes**: Eliminates 9-line stacked bullets in Column 1 and removes empty white space beneath adjacent columns.
-    2. **Uniform 2-Tier Cell Rhythm**: Every column renders exactly 2 compact lines (~46px row height):
-       - Col 1: Symbol + Market Badge (`CRYPTO`/`MCX`/`NSE`) | Setup Badge (`🎯 REGULAR`/`🔍 HIDDEN`)
-       - Col 2: Directional Bias Badge (`▲ BULL REGULAR`) | Regime / Day Type description
-       - Col 3: Flashy Lifecycle Badge (`🔒 CLOSED (WIN/LOSS)`, `⚡ LIVE`, `⏳ ACTIVE LIMIT`) + Session Badge | Entry IST → Exit IST (Hold Duration)
-       - Col 4: Outcome-consistent return % (`+X.XX%` green, `-X.XX%` red) | Points move
-    3. **Zero Duplicate Text**: Eliminates repeated symbol names, redundant timestamp bullets, and duplicate outcome tags. Granular inspection is seamlessly accessible via row tap into the floating detail popover.
+- **SCREENER 3-COLUMN INTUITIVE ZERO-OVERLAP RESPONSIVE TERMINAL LAYOUT MANDATE**:
+  - In `renderDhanUnifiedBiasScreener` (`Tv-Alert-Mobile/src/app/page.tsx`), the screener table is strictly standardized to a clean, non-cluttered 3-column layout (`SYMBOL & TIME` [w-[40%] sm:w-[35%]] | `SETUP & STATUS` [w-[34%] sm:w-[37%]] | `RETURN (%)` [w-[26%] sm:w-[28%], text-right]):
+    1. **Elimination of Horizontal Scrolling & Sticky Cell Collapse**: Table fits 100% naturally across mobile viewports (320px to 4K) without horizontal scroll friction. Bypasses `.table-scroll-container` and `table-is-scrolled`, permanently preventing the 48px sticky column collapse and text collision bug.
+    2. **Uniform 2-Tier High-Density Rhythm**:
+       - Col 1: Symbol + Market Badge (`CRYPTO`/`MCX`/`NYMEX`/`NIFTY`/`NSE`) | Setup Badge (`🎯 REGULAR`/`🔍 HIDDEN`/`⚡ TOUCH`/`🔥 FIRE`) • Entry IST (`19:00 IST`)
+       - Col 2: Directional Bias Badge (`▲ BULL REGULAR` / `▼ BEAR HIDDEN`) | Lifecycle Status Pill (`⚡ LIVE`, `⏳ LIMIT`, `🔒 WIN`, `🔒 LOSS`)
+       - Col 3: Outcome-consistent return % (`+X.XX%` green, `-X.XX%` red) | Points move (`+804.55 pts`, `-0.00 pts`)
+    3. **Zero Duplicate Text & Zero Overlap**: Deep granular timestamps, exit times, hold duration, session dates, and institutional playbooks are cleanly decoupled into the floating detail modal popover on row tap (`setSelectedDhanOorAsset`).
 
-## Version 3.0: Formal Production Freeze & Version 4.0 Mandate (Effective November 14, 2026)
-- **VERSION 3.0 FREEZE DECLARATION**:
-  - Application Version v3.0 is officially declared frozen, finalized, and locked as of November 14, 2026.
-  - Zero unilateral changes may be made to v3.0 code, logic, indicator engines, database schemas, or autonomous cloud configurations.
+## Version 3.0: Final Production Freeze & Version 4.0 Mandate (Effective November 15, 2026)
+- **VERSION 3.0 FINAL PRODUCTION FREEZE DECLARATION**:
+  - Application Version v3.0 is officially declared **frozen, finalized, and locked** as of November 15, 2026 (22:30 IST).
+  - Zero unilateral changes may be made to v3.0 code, Pine Script indicators, BlackBox algorithms, database schemas, API endpoints, or mobile layout structures.
+  - Complete production snapshot backup is preserved in `Backups/TLCS_v3.0_Final_Production_Freeze_20261115_222500/` and `Project Backup/`.
 - **VERSION 4.0 SUCCESSOR STANDARD**:
   - ALL subsequent updates, enhancements, bug fixes, UI revisions, and algorithmic extensions are strictly classified and versioned as **Version 4.0 (`v4.0`)**.
   - No new work shall be committed under the v3.0 designation.
