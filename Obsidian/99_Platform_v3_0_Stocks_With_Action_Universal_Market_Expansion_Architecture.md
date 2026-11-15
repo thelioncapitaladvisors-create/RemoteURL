@@ -107,6 +107,12 @@ const extractDhanScreenerAssets = (
 - **Duration Spent Computation**: Computes exact duration (`timeSpentStr`: e.g. `45m`, `1h 15m`) from `hold_duration` or milliseconds delta between signal timestamp and exit timestamp.
 - **Ubiquitous Presentation**: Rendered across both table row headers/sub-rows for all 9 setup cards and the top banner of the asset inspection popover modal.
 
+### E. Strict Outcome-Consistent Move & Return (%) Mandate (Zero Negative Win Rule)
+- **Root Cause Diagnosed**: In `extractDhanScreenerAssets`, raw price subtraction `exitP - entryP` was performed without accounting for trade direction (long vs short), and short percentages were explicitly negated. For short trades that were wins (e.g. `BTCUSDT [CRYPTO] • WIN`), falling asset prices resulted in a `-1.20%` return in a red badge.
+- **Single Source of Truth**: Connected `getExactPct(s)` and `canonicalOutcome` directly to `dayMovePct` and `dayMovePts`.
+- **Zero Negative Win Guarantee**: A winning trade (`outcome === 'WIN'`) is mathematically guaranteed to display a positive percentage (`+X.XX%`) styled in emerald green (`bg-emerald-500/15 text-emerald-800 border-emerald-500/35`).
+- **Dual-Layer Defense**: Enforced at the data ingestion layer in `extractDhanScreenerAssets` and at the UI rendering layer in both the screener table (`Col 3: Move (%)`) and modal inspection popover.
+
 ---
 
 ## 3. Verification & Build Parity
