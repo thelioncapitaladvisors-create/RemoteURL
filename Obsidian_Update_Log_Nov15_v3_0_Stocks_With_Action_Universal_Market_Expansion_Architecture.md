@@ -32,7 +32,7 @@ In response to user requests to expand the **Stocks with Action** screener beyon
      - `Divergence` (`DIV` / Confirmed Regular D & Hidden H Divergences)
      - `Rejections` (`REJ` / Key Level Pivot Rejections)
      - `Continuations` (`CONT` / Trend Continuation Pullbacks)
-     - `Scalp Alert` (`FIRE` / Explosive Momentum Scalps)
+     - `Hi-Pro Alert` (`FIRE` / High-Probability Neutral Zone Confluence Signals)
 
 3. **Dual Engine Source Fidelity (TradingView Webhooks vs DhanHQ BlackBox)**:
    - **TradingView Webhooks (`TV`)**: Native multi-asset webhook feeds populate real-time signals across all 7 markets (`NIFTY`, `STOCKS`, `MCX`, `NYMEX`, `CRYPTO`, `FOREX`, `WORLD`) with zero synthetic latency.

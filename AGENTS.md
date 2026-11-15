@@ -8,7 +8,7 @@
   - Gating must NEVER rely on `close` for limit entry qualification.
 ## Version 3.0: Stocks With Action Universal 7-Market Expansion Mandate (Effective November 15, 2026)
 - **STOCKS WITH ACTION UNIVERSAL 7-MARKET EXPANSION MANDATE**:
-  - Across all 9 institutional setup screener sections (`Outside Range & Value`, `Inside CPR`, `Breakouts / NCPR`, `Narrow Value / NVA`, `Virgin CPR`, `Divergence`, `Rejections`, `Continuations`, `Scalp Alert`) in `renderDhanUnifiedBiasScreener` within `Tv-Alert-Mobile/src/app/page.tsx`:
+  - Across all 9 institutional setup screener sections (`Outside Range & Value`, `Inside CPR`, `Breakouts / NCPR`, `Narrow Value / NVA`, `Virgin CPR`, `Divergence`, `Rejections`, `Continuations`, `Hi-Pro Alert`) in `renderDhanUnifiedBiasScreener` within `Tv-Alert-Mobile/src/app/page.tsx`:
     1. **Universal 7-Market Category Coverage**: Asset filtering and extraction strictly support all 7 canonical market types via `ScreenerMarketCategory` (`'ALL' | 'NIFTY' | 'STOCKS' | 'MCX' | 'NYMEX' | 'CRYPTO' | 'FOREX' | 'WORLD'`).
     2. **Uniform Market Chip Navigation**: Every setup card provides a standardized horizontal scrollable market selector chip set (`ALL`, `NIFTY`, `STOCKS`, `MCX`, `NYMEX`, `CRYPTO`, `FOREX`, `WORLD`) with live category asset counts.
     3. **Standardized Market Badging**: Table row symbol headers dynamically display high-contrast, theme-matched market badges (`MCX` Amber, `NYMEX` Yellow, `NIFTY`/`GIFT` Purple, `CRYPTO` Cyan, `FOREX` Emerald, `WORLD` Rose, `NSE` Slate).
