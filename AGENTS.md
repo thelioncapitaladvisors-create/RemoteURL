@@ -41,6 +41,16 @@
 - **CANONICAL MASTER INDICATOR VERSION 3.0 CHECKSUM PARITY**:
   - All three source files (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0` and maintain 100% byte-for-byte SHA256 checksum parity (`88dcdb039553f03803d5bd6f60b3791483ce663f905098956855e8b58c87d286`).
 
+## Version 3.0: BlackBox Divergence Precision, Minimum Swing Separation & Extreme Invalidation Mandate (Effective November 15, 2026)
+- **BLACKBOX DIVERGENCE PRECISION & ZERO-PHANTOM MANDATE**:
+  - Across Python BlackBox engine (`algo_engine/pivots.py`, `RemoteURL/algo_engine/pivots.py`) and autonomous DhanHQ background scanner (`TLCS_Website_Deploy/netlify/functions/dhan-scanner-background.js`):
+    1. **Minimum 2-Bar Swing Separation**: Divergence comparisons strictly require at least 2 intervening candles ($i - j \ge 2$) between pivots. Consecutive-bar phantom divergences on adjacent candles are strictly prohibited.
+    2. **Prior Swing Pivot Qualification**: In `checkDivergences()`, anchor candle $j$ must qualify as a genuine structural swing pivot ($low \le low[j-1]$ and $low \le low[j+1]$ for bullish swing lows; $high \ge high[j-1]$ and $high \ge high[j+1]$ for bearish swing highs).
+    3. **Structural Extreme Invalidation**: If price breaches the divergence bar's extreme before confirmation (low or close drops below divergence low for Long; high or close rises above divergence high for Short), the setup is immediately and permanently invalidated.
+    4. **Directional Confirmation Window (Bars 1 to 5)**: Requires subsequent directional candle close (`close > open and close > close[1]` for Long; `close < open and close < close[1]` for Short) occurring strictly within 1 to 5 bars of the divergence pivot.
+    5. **Symmetrical DMI Directional Momentum Gating**: Long divergence setups are strictly suppressed when $DI^- > DI^+$; Short divergence setups are strictly suppressed when $DI^+ > DI^-$.
+    6. **Dual Price & Oscillator Trendline Slope Validation**: Theoretical slope barriers must remain unbreached by both price and oscillator across all intervening bars.
+
 ## Version 3.0: Dual Price & Oscillator Line Validation, Confirmed-Only On-Chart Plotting & Screener 4-Column Balanced Layout Mandate (Effective November 15, 2026)
 - **DUAL PRICE & OSCILLATOR LINE VALIDATION MANDATE**:
   - In `zigzag.divergence()` across Master Pine Script indicators (`TLCS v3.0`), divergence qualification is strictly bound to both price and oscillator trendlines:
