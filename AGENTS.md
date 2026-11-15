@@ -39,7 +39,7 @@
   - Live trades MUST NEVER exit prematurely on unconfirmed Bar 0 divergences.
   - Divergence exits (`evaluateTradeProgress` in Pine Script and `TradeManager.update` in Python BlackBox) are strictly gated to confirmed divergences requiring 1-bar prior divergence (`[1]`) AND subsequent directional confirmation candle close (`(close > open and close > close[1])` for bullish, `(close < open and close < close[1])` for bearish).
 - **CANONICAL MASTER INDICATOR VERSION 3.0 CHECKSUM PARITY**:
-  - All three source files (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0` and maintain 100% byte-for-byte SHA256 checksum parity (`bd4ca6422b3f9df711d3786c4bb2f550e14f37ba7e4f3f5a45c5dfd00a222763`).
+  - All three source files (`TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`) deploy `TLCS PivotBoss Indicator v3.0` (@version=6) with shorttitle `TLCS v3.0` and maintain 100% byte-for-byte SHA256 checksum parity (`88dcdb039553f03803d5bd6f60b3791483ce663f905098956855e8b58c87d286`).
 
 ## Version 3.0: Dual Price & Oscillator Line Validation, Confirmed-Only On-Chart Plotting & Screener 4-Column Balanced Layout Mandate (Effective November 15, 2026)
 - **DUAL PRICE & OSCILLATOR LINE VALIDATION MANDATE**:
