@@ -98,6 +98,15 @@ const extractDhanScreenerAssets = (
   `• ⏰ 14 Nov, 19:00 IST (13:30 UTC)`
 - Added dedicated `CHART SIGNAL PLOT TIMESTAMP` banner to the detail modal (`selectedDhanOorAsset`), showing the exact candle time for instant verification against TradingView charts.
 
+### D. Trade Lifecycle Badging, Exit Time & Time Spent Duration
+- **Dynamic Trade Lifecycle Status**:
+  - `⏳ ACTIVE LIMIT`: Pulsing amber tag with ping dot for pending limit orders.
+  - `⚡ LIVE`: Pulsing emerald tag with ping dot for active open positions.
+  - `🔒 CLOSED`: High-contrast tag with outcome status (`(WIN)` green, `(LOSS)` red, or `(B/E)` slate).
+- **Exit Timestamp Synchronization**: Automatically parses `exit_at`, `updated_at`, or close date metadata into `exitTimeIST` (`14 Nov, 19:45 IST`), `exitDateIST`, and `exitTimeUTC`.
+- **Duration Spent Computation**: Computes exact duration (`timeSpentStr`: e.g. `45m`, `1h 15m`) from `hold_duration` or milliseconds delta between signal timestamp and exit timestamp.
+- **Ubiquitous Presentation**: Rendered across both table row headers/sub-rows for all 9 setup cards and the top banner of the asset inspection popover modal.
+
 ---
 
 ## 3. Verification & Build Parity
