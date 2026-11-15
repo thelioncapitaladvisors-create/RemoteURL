@@ -6,6 +6,19 @@
   - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
   - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
   - Gating must NEVER rely on `close` for limit entry qualification.
+## Version 3.0: Markets Tab Metric Typography & Institutional Numeric Scale Synchronization (Effective November 15, 2026)
+- **MARKETS TAB KPI NUMERIC SCALE SYNCHRONIZATION MANDATE**:
+  - Across all 10 statistic metric cards in **Today's Signal Performance** and all 10 cards across each **Market-Wise Section** (NIFTY, STOCKS, MCX, NYMEX, CRYPTO, FOREX, WORLD) in `Tv-Alert-Mobile/src/app/page.tsx`:
+    1. **Institutional Sans-Serif Typography**: Monospace (`font-mono`) on metric pill values is replaced with proportional `font-black` (font-weight: 900) tabular digits (`tnum 1`, `zero 1`). Numbers render with full, rounded glyphs, matching the boldness and clarity of `This Week's Signal Performance` table numbers.
+    2. **Elevated Responsive Numeric Sizing**: `.metric-pill-val` in `globals.css` scales progressively across viewports without clipping or text collision:
+       - Base viewports (<360px): `13px !important;` (elevated from `11px`)
+       - Viewports >= 360px: `13.5px !important;` (elevated from `11.5px`)
+       - Viewports >= 400px: `14.5px !important;` (elevated from `12.5px`)
+       - Viewports >= 640px (tablet): `15.5px !important;` (elevated from `14px`)
+       - Viewports >= 768px (desktop): `16.5px !important;` (elevated from `15px`)
+    3. **Accessibility Scale Support**: Inherits `html[data-font-size="large"]` (`15.5px`) and `html[data-font-size="xl"]` (`17px`).
+    4. **Individual Trade Outcomes Parity**: Standardized rows to `text-xs sm:text-[13px] font-bold` with `font-black` outcomes, R:R, and exact percentage returns.
+
 ## Version 3.0: Symmetrical DMI Directional Momentum Gating for Divergences (Regular D & Hidden H) & Confirmed Exit Mandate (Effective November 14, 2026)
 - **SYMMETRICAL DMI DIRECTIONAL MOMENTUM GATING MANDATE**:
   - Across Master Pine Script indicators (`TLCS v3.0`), Python BlackBox (`StrategyEngine`), and autonomous DhanHQ background scanner (`dhan-scanner-background.js`):
