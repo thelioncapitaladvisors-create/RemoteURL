@@ -1351,23 +1351,23 @@ def compute_divergences(
 
         cur_rsi = rsi_series[i]
 
-        # Regular Bullish Divergence: Lower/Equal Low in Price with Higher Low in RSI (RSI < 45, Green candle)
-        if cur.low <= min_low and cur_rsi > min_rsi and cur_rsi < 45.0 and cur.is_green:
+        # Regular Bullish Divergence: Lower/Equal Low in Price with Higher Low in RSI (RSI < 45, Green candle, >= 2 bars separation)
+        if (i - min_low_idx) >= 2 and cur.low <= min_low and cur_rsi > min_rsi and cur_rsi < 45.0 and cur.is_green:
             if check_trendline_barrier(bars, rsi_series, min_low_idx, i, is_bull=True):
                 reg_bull[i] = True
 
-        # Regular Bearish Divergence: Higher/Equal High in Price with Lower High in RSI (RSI > 55, Red candle)
-        if cur.high >= max_high and cur_rsi < max_rsi and cur_rsi > 55.0 and cur.is_red:
+        # Regular Bearish Divergence: Higher/Equal High in Price with Lower High in RSI (RSI > 55, Red candle, >= 2 bars separation)
+        if (i - max_high_idx) >= 2 and cur.high >= max_high and cur_rsi < max_rsi and cur_rsi > 55.0 and cur.is_red:
             if check_trendline_barrier(bars, rsi_series, max_high_idx, i, is_bull=False):
                 reg_bear[i] = True
 
-        # Hidden Bullish Divergence: Higher Low in Price with Lower/Equal RSI (RSI < 50)
-        if cur.low > min_low and cur_rsi <= min_rsi and cur_rsi < 50.0:
+        # Hidden Bullish Divergence: Higher Low in Price with Lower/Equal RSI (RSI < 50, >= 2 bars separation)
+        if (i - min_low_idx) >= 2 and cur.low > min_low and cur_rsi <= min_rsi and cur_rsi < 50.0:
             if check_trendline_barrier(bars, rsi_series, min_low_idx, i, is_bull=True):
                 hidden_bull[i] = True
 
-        # Hidden Bearish Divergence: Lower High in Price with Higher/Equal RSI (RSI > 50)
-        if cur.high < max_high and cur_rsi >= max_rsi and cur_rsi > 50.0:
+        # Hidden Bearish Divergence: Lower High in Price with Higher/Equal RSI (RSI > 50, >= 2 bars separation)
+        if (i - max_high_idx) >= 2 and cur.high < max_high and cur_rsi >= max_rsi and cur_rsi > 50.0:
             if check_trendline_barrier(bars, rsi_series, max_high_idx, i, is_bull=False):
                 hidden_bear[i] = True
 
