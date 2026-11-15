@@ -91,6 +91,13 @@ const extractDhanScreenerAssets = (
 };
 ```
 
+### C. Trade Signal Exact Chart Candle Timestamping
+- Standardized automatic time parsing (`timeIST`, `dateIST`, `fullTimeIST`, `timeUTC`) across all screened assets.
+- Integrated high-contrast timestamp badges into table row session pills (`[ 14 Nov • 19:00 ]` and `[ TODAY • 09:45 ]`).
+- Embedded detailed timestamp strings in table sub-rows across all 9 setup families:
+  `• ⏰ 14 Nov, 19:00 IST (13:30 UTC)`
+- Added dedicated `CHART SIGNAL PLOT TIMESTAMP` banner to the detail modal (`selectedDhanOorAsset`), showing the exact candle time for instant verification against TradingView charts.
+
 ---
 
 ## 3. Verification & Build Parity
