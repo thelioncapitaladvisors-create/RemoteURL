@@ -1280,13 +1280,48 @@ def compute_rsi(bars: List[OHLC], period: int = 14) -> List[float]:
     return rsi
 
 
+def check_trendline_barrier(bars: List[OHLC], osc: List[float], j: int, i: int, is_bull: bool) -> bool:
+    """
+    Validates that neither price nor oscillator breaches the theoretical
+    trendline slope connecting bar j and bar i.
+    - For Bullish (lows): neither low nor osc can drop below the theoretical line.
+    - For Bearish (highs): neither high nor osc can rise above the theoretical line.
+    """
+    if i <= j + 1:
+        return True
+
+    px1, px2 = float(j), float(i)
+    if is_bull:
+        py1, py2 = bars[j].low, bars[i].low
+        oy1, oy2 = osc[j], osc[i]
+        p_slope = (py2 - py1) / (px2 - px1)
+        o_slope = (oy2 - oy1) / (px2 - px1)
+        for k in range(j + 1, i):
+            p_theo = py1 + p_slope * (k - px1)
+            o_theo = oy1 + o_slope * (k - px1)
+            if bars[k].low < p_theo or osc[k] < o_theo:
+                return False
+    else:
+        py1, py2 = bars[j].high, bars[i].high
+        oy1, oy2 = osc[j], osc[i]
+        p_slope = (py2 - py1) / (px2 - px1)
+        o_slope = (oy2 - oy1) / (px2 - px1)
+        for k in range(j + 1, i):
+            p_theo = py1 + p_slope * (k - px1)
+            o_theo = oy1 + o_slope * (k - px1)
+            if bars[k].high > p_theo or osc[k] > o_theo:
+                return False
+    return True
+
+
 def compute_divergences(
     bars: List[OHLC],
     rsi_series: Optional[List[float]] = None,
     lookback: int = 10
 ) -> Tuple[List[bool], List[bool], List[bool], List[bool]]:
     """
-    Computes regular and hidden momentum divergences on 14-period RSI across bars.
+    Computes regular and hidden momentum divergences on 14-period RSI across bars
+    with strict dual price and oscillator slope validation.
     Returns:
         (reg_bull, reg_bear, hidden_bull, hidden_bear)
     """
@@ -1307,28 +1342,34 @@ def compute_divergences(
         if not prior_bars:
             continue
 
-        min_low = min(b.low for b in prior_bars)
-        max_high = max(b.high for b in prior_bars)
-        min_rsi = min(prior_rsi)
-        max_rsi = max(prior_rsi)
+        min_low_idx = min(range(window_start, i), key=lambda idx: bars[idx].low)
+        max_high_idx = max(range(window_start, i), key=lambda idx: bars[idx].high)
+        min_low = bars[min_low_idx].low
+        max_high = bars[max_high_idx].high
+        min_rsi = rsi_series[min_low_idx]
+        max_rsi = rsi_series[max_high_idx]
 
         cur_rsi = rsi_series[i]
 
         # Regular Bullish Divergence: Lower/Equal Low in Price with Higher Low in RSI (RSI < 45, Green candle)
         if cur.low <= min_low and cur_rsi > min_rsi and cur_rsi < 45.0 and cur.is_green:
-            reg_bull[i] = True
+            if check_trendline_barrier(bars, rsi_series, min_low_idx, i, is_bull=True):
+                reg_bull[i] = True
 
         # Regular Bearish Divergence: Higher/Equal High in Price with Lower High in RSI (RSI > 55, Red candle)
         if cur.high >= max_high and cur_rsi < max_rsi and cur_rsi > 55.0 and cur.is_red:
-            reg_bear[i] = True
+            if check_trendline_barrier(bars, rsi_series, max_high_idx, i, is_bull=False):
+                reg_bear[i] = True
 
         # Hidden Bullish Divergence: Higher Low in Price with Lower/Equal RSI (RSI < 50)
         if cur.low > min_low and cur_rsi <= min_rsi and cur_rsi < 50.0:
-            hidden_bull[i] = True
+            if check_trendline_barrier(bars, rsi_series, min_low_idx, i, is_bull=True):
+                hidden_bull[i] = True
 
         # Hidden Bearish Divergence: Lower High in Price with Higher/Equal RSI (RSI > 50)
         if cur.high < max_high and cur_rsi >= max_rsi and cur_rsi > 50.0:
-            hidden_bear[i] = True
+            if check_trendline_barrier(bars, rsi_series, max_high_idx, i, is_bull=False):
+                hidden_bear[i] = True
 
     return reg_bull, reg_bear, hidden_bull, hidden_bear
 
