@@ -266,7 +266,7 @@ def compute_camarilla(prev_high: float, prev_low: float, prev_close: float) -> C
 # CPR (CENTRAL PIVOT RANGE) CALCULATIONS
 # ════════════════════════════════════════════════════════════════════
 
-def compute_cpr(prev_high: float, prev_low: float, prev_close: float) -> CPRLevels:
+def compute_cpr(prev_high: float, prev_low: float, prev_close: float, cpr_width_avg14: Optional[float] = None) -> CPRLevels:
     """
     Compute Central Pivot Range from previous day's HLC.
     
@@ -278,12 +278,13 @@ def compute_cpr(prev_high: float, prev_low: float, prev_close: float) -> CPRLeve
         DBC = math.min(Tcy, Bcy)
     
     NCPR (Narrow CPR) check:
-        CPR width < 5% of previous day range (or < 0.2% of pivot)
+        cprWidth <= 50% of 14-day average CPR width (or < 5% of prevDayRange fallback)
     
     Args:
-        prev_high:  Previous completed daily bar's High
-        prev_low:   Previous completed daily bar's Low
-        prev_close: Previous completed daily bar's Close
+        prev_high:       Previous completed daily bar's High
+        prev_low:        Previous completed daily bar's Low
+        prev_close:      Previous completed daily bar's Close
+        cpr_width_avg14: Optional 14-day SMA of daily CPR widths
     
     Returns:
         CPRLevels with pivot, tc, bc, width, and is_narrow flag
@@ -296,9 +297,13 @@ def compute_cpr(prev_high: float, prev_low: float, prev_close: float) -> CPRLeve
     bc = min(raw_tc, raw_bc)
     width = abs(tc - bc)
 
-    # NCPR check: width as % of previous day's range < 5%
-    prev_range = max(prev_high - prev_low, 1e-10)  # prevent div-by-zero
-    is_narrow = (width / prev_range) * 100 < 5.0
+    # 14-Day Trailing Relative NCPR Check
+    if cpr_width_avg14 is not None and cpr_width_avg14 > 0:
+        is_narrow = width <= (0.50 * cpr_width_avg14)
+    else:
+        # Fallback when 14-day history is not provided
+        prev_range = max(prev_high - prev_low, 1e-10)  # prevent div-by-zero
+        is_narrow = (width / prev_range) * 100 < 5.0
 
     return CPRLevels(
         pivot=pivot,
@@ -309,21 +314,22 @@ def compute_cpr(prev_high: float, prev_low: float, prev_close: float) -> CPRLeve
     )
 
 
-def compute_daily_levels(prev_high: float, prev_low: float, prev_close: float) -> DailyLevels:
+def compute_daily_levels(prev_high: float, prev_low: float, prev_close: float, cpr_width_avg14: Optional[float] = None) -> DailyLevels:
     """
     Compute all daily levels (Camarilla + CPR) from previous day's HLC.
     
     Args:
-        prev_high:  Previous completed daily bar's High
-        prev_low:   Previous completed daily bar's Low
-        prev_close: Previous completed daily bar's Close
+        prev_high:       Previous completed daily bar's High
+        prev_low:        Previous completed daily bar's Low
+        prev_close:      Previous completed daily bar's Close
+        cpr_width_avg14: Optional 14-day SMA of daily CPR widths
     
     Returns:
         DailyLevels containing both Camarilla and CPR levels
     """
     return DailyLevels(
         camarilla=compute_camarilla(prev_high, prev_low, prev_close),
-        cpr=compute_cpr(prev_high, prev_low, prev_close),
+        cpr=compute_cpr(prev_high, prev_low, prev_close, cpr_width_avg14=cpr_width_avg14),
         prev_high=prev_high,
         prev_low=prev_low,
         prev_close=prev_close,
