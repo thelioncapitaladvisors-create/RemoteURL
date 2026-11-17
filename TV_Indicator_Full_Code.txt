@@ -4004,7 +4004,7 @@ plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.
 plotshape(BounceDown and not LightningSell, title = 'Long Put',   style = shape.arrowdown, location = location.abovebar, color = color.red,   size = size.large)
 
 // ====================================================================
-// 10. FIRE_ALERT CONFLUENCE & DEDICATED WEBHOOK DISPATCHER
+// 10. CONFLUENCE ALERT & DEDICATED WEBHOOK DISPATCHER
 // ====================================================================
 Redzcol   = ((minus > plus) and (fShortEMA < fMedEMA) and (fPivotPDEMAF < fPivotPDEMAS))
 Greenzcol = ((plus > minus) and (fShortEMA > fMedEMA) and (fPivotPDEMAF > fPivotPDEMAS))
@@ -4015,7 +4015,7 @@ bool isInFireZone = not (Greenzcol or Redzcol)
 
 Fire_Alert = Anysignal and isInFireZone
 
-plotshape(Fire_Alert, title = 'Fire Alert Confluence', style = shape.circle, location = location.top, color = isFireLong ? color.green : color.red, size = size.tiny)
+plotshape(Fire_Alert, title = 'Confluence Alert', style = shape.circle, location = location.top, color = isFireLong ? color.green : color.red, size = size.tiny)
 
 string fireActiveSignal = JustMissileBuy ? 'LONG MISSILE' : JustMissileSell ? 'SHORT MISSILE' : JustScalpBuy ? 'LONG SCALP' : JustScalpSell ? 'SHORT SCALP' : LightningBuy ? 'LONG LIGHTNING' : LightningSell ? 'SHORT LIGHTNING' : DivergenceBuy ? 'LONG DIVERGENCE' : DivergenceSell ? 'SHORT DIVERGENCE' : HiddenDivBuy ? 'LONG HIDDEN DIVERGENCE' : HiddenDivSell ? 'SHORT HIDDEN DIVERGENCE' : ExtremeReversalBuy ? 'LONG EXTREME REVERSAL' : ExtremeReversalSell ? 'SHORT EXTREME REVERSAL' : BounceUp ? 'LONG BOUNCE' : BounceDown ? 'SHORT BOUNCE' : 'SIGNAL'
 string fireZone = isInFireZone ? 'FIREZONE' : 'ZONE'
@@ -4040,14 +4040,14 @@ if Fire_Alert and enable_alerts
          str.tostring(trendLine, format.mintick), 
          str.tostring(isFireLong ? trendLine - slAtrMultInput * atrValue : trendLine + slAtrMultInput * atrValue, format.mintick), 
          str.tostring(isFireLong ? trendLine + tp1AtrMultInput * atrValue : trendLine - tp1AtrMultInput * atrValue, format.mintick), 
-         fireZone, dX, mX, 'Fire_Alert: ' + fireActiveSignal + ' in ' + fireZone, 
+         fireZone, dX, mX, 'Confluence_Alert: ' + fireActiveSignal + ' in ' + fireZone, 
          str.tostring(time), fireZone,
          isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
          isNvaStr, isRejStr, isContStr, _c1, vahStr, valStr, vaWidthStr
          ) + '}'
     alert(_firePay, alert.freq_once_per_bar_close)
 
-alertcondition(Fire_Alert, title = 'TLCS Fire Alert (Any Signal + Zone)', message = '{"trigger":"FireAlert","symbol":"{{ticker}}","price":"{{close}}"}')
+alertcondition(Fire_Alert, title = 'TLCS Confluence Alert (Any Signal + Zone)', message = '{"trigger":"FireAlert","symbol":"{{ticker}}","price":"{{close}}"}')
 
 
 

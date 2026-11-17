@@ -266,7 +266,7 @@ class TestTelegramDispatcher(unittest.TestCase):
         self.assertIn("-100111111", cids)
         self.assertIn("-100999999", cids)
         for _, text in raw_sent:
-            self.assertIn("🔥 TLCS FIRE ALERT (NIFTY)", text)
+            self.assertIn("⚡ TLCS CONFLUENCE ALERT (NIFTY)", text)
             self.assertIn("LONG LIGHTNING", text)
             self.assertIn("FIREZONE", text)
             self.assertIn("2500.0", text)
