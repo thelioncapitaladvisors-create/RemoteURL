@@ -135,7 +135,7 @@ class TelegramDispatcher:
         tp2_str = f"\n<b>Target 2:</b> <code>{tp2}</code>" if tp2 else ""
 
         msg = (
-            f"<b>🔥 TLCS FIRE ALERT ({mkt})</b>\n\n"
+            f"<b>⚡ TLCS CONFLUENCE ALERT ({mkt})</b>\n\n"
             f"<b>Symbol:</b> <code>{sym}</code>\n"
             f"<b>Signal:</b> {direction_emoji} <b>{name}</b>\n"
             f"<b>Entry Price:</b> <code>{entry}</code>\n"
@@ -143,8 +143,8 @@ class TelegramDispatcher:
             f"<b>Target 1:</b> <code>{tp1}</code>"
             f"{tp2_str}"
             f"{bias_str}{day_str}\n"
-            f"<b>Firezone:</b> <code>{fire_zone}</code>\n\n"
-            f"<i>High-probability confluence alert generated inside Firezone.</i>"
+            f"<b>Confluence Zone:</b> <code>{fire_zone}</code>\n\n"
+            f"<i>High-probability canonical Confluence Alert generated.</i>"
         )
 
         sent = self.send_message(sym, msg)
