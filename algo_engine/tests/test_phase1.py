@@ -664,53 +664,68 @@ class TestTradeLifecycle(unittest.TestCase):
         self.assertTrue(trade.is_closed)
         self.assertEqual(trade.status, TradeStatus.CANCELLED)
 
-    def test_pre_tp1_midpoint_moves_sl_to_breakeven(self):
-        """When price reaches 50% midpoint to TP1 before TP1 is hit, SL moves to Entry (Breakeven)."""
+    def test_midpoint_tp1_tp2_moves_sl_to_breakeven(self):
+        """When price reaches 50% midpoint between TP1 and TP2 before TP2 is hit, SL moves to Entry (Breakeven)."""
         manager = TradeManager()
 
-        # 1. Long Trade (Entry: 100, SL: 95, TP1: 110 -> Midpoint: 105)
-        long_sig = self._make_signal(direction="LONG", entry=100, sl=95, tp1=110)
+        # 1. Long Trade (Entry: 100, SL: 95, TP1: 110, TP2: 120 -> Midpoint TP1-TP2: 115)
+        long_sig = self._make_signal(direction="LONG", entry=100, sl=95, tp1=110, tp2=120)
         long_trade = manager.create_trade(long_sig)
         manager.update(long_trade, OHLC(100, 101, 99, 100.5), bar_index=1)
         self.assertTrue(long_trade.has_hit_entry)
         self.assertEqual(long_trade.current_sl, 95.0)
 
-        # Bar reaches 106 (> 105 midpoint, < 110 TP1)
-        manager.update(long_trade, OHLC(102, 106, 102, 104), bar_index=2)
-        self.assertFalse(long_trade.tp1_triggered, "TP1 must NOT be triggered yet")
+        # Bar reaches 112 (> 110 TP1, but < 115 Midpoint TP1-TP2) -> TP1 hit, SL stays 95
+        manager.update(long_trade, OHLC(105, 112, 104, 111), bar_index=2)
+        self.assertTrue(long_trade.tp1_triggered, "TP1 must be triggered")
+        self.assertEqual(long_trade.current_sl, 95.0, "SL stays at initial SL until Midpoint TP1-TP2")
+
+        # Bar reaches 116 (> 115 midpoint, < 120 TP2) -> SL moves to Entry 100
+        manager.update(long_trade, OHLC(111, 116, 110, 114), bar_index=3)
+        self.assertFalse(long_trade.tp2_triggered, "TP2 must NOT be triggered yet")
         self.assertAlmostEqual(long_trade.current_sl, 100.0, places=6,
-                                msg="Long SL must move to entry breakeven at 50% midpoint")
+                                msg="Long SL must move to entry breakeven at 50% midpoint between TP1 and TP2")
         self.assertTrue(long_trade.trailing_sl_activated)
 
-        # 2. Short Trade (Entry: 100, SL: 105, TP1: 90 -> Midpoint: 95)
-        short_sig = self._make_signal(direction="SHORT", entry=100, sl=105, tp1=90)
+        # 2. Short Trade (Entry: 100, SL: 105, TP1: 90, TP2: 80 -> Midpoint TP1-TP2: 85)
+        short_sig = self._make_signal(direction="SHORT", entry=100, sl=105, tp1=90, tp2=80)
         short_trade = manager.create_trade(short_sig)
         manager.update(short_trade, OHLC(100, 101, 99, 99.5), bar_index=1)
         self.assertTrue(short_trade.has_hit_entry)
         self.assertEqual(short_trade.current_sl, 105.0)
 
-        # Bar reaches 94 (< 95 midpoint, > 90 TP1)
-        manager.update(short_trade, OHLC(98, 98, 94, 96), bar_index=2)
-        self.assertFalse(short_trade.tp1_triggered, "TP1 must NOT be triggered yet")
+        # Bar reaches 88 (< 90 TP1, but > 85 Midpoint TP1-TP2) -> TP1 hit, SL stays 105
+        manager.update(short_trade, OHLC(95, 96, 88, 89), bar_index=2)
+        self.assertTrue(short_trade.tp1_triggered, "TP1 must be triggered")
+        self.assertEqual(short_trade.current_sl, 105.0, "SL stays at initial SL until Midpoint TP1-TP2")
+
+        # Bar reaches 84 (< 85 midpoint, > 80 TP2) -> SL moves to Entry 100
+        manager.update(short_trade, OHLC(88, 88, 84, 86), bar_index=3)
+        self.assertFalse(short_trade.tp2_triggered, "TP2 must NOT be triggered yet")
         self.assertAlmostEqual(short_trade.current_sl, 100.0, places=6,
-                                msg="Short SL must move to entry breakeven at 50% midpoint")
+                                msg="Short SL must move to entry breakeven at 50% midpoint between TP1 and TP2")
         self.assertTrue(short_trade.trailing_sl_activated)
 
-    def test_tp1_moves_sl_to_breakeven(self):
-        """After TP1 hit, SL should move to entry (breakeven)."""
+    def test_tp1_retains_initial_sl_until_midpoint_tp1_tp2(self):
+        """After TP1 hit, SL remains at initial SL until Midpoint TP1-TP2 is reached."""
         manager = TradeManager()
-        signal = self._make_signal(entry=100, sl=95, tp1=110)
+        signal = self._make_signal(entry=100, sl=95, tp1=110, tp2=120)
         trade = manager.create_trade(signal)
         
         # Fill
         manager.update(trade, OHLC(100, 101, 99, 100.5), bar_index=1)
         self.assertTrue(trade.has_hit_entry)
         
-        # TP1 hit
+        # TP1 hit but below Midpoint TP1-TP2 (115)
         manager.update(trade, OHLC(108, 112, 107, 111), bar_index=2)
         self.assertTrue(trade.tp1_triggered)
+        self.assertAlmostEqual(trade.current_sl, 95.0, places=6,
+                                msg="SL must remain at initial SL at TP1 hit")
+        
+        # Midpoint TP1-TP2 reached (115.5 >= 115)
+        manager.update(trade, OHLC(111, 116, 110, 115.5), bar_index=3)
         self.assertAlmostEqual(trade.current_sl, 100.0, places=6,
-                                msg="SL must move to breakeven after TP1")
+                                msg="SL must move to breakeven after Midpoint TP1-TP2 reached")
 
     def test_tp2_moves_sl_to_tp1(self):
         """After TP2 hit, SL should move to TP1."""
@@ -789,11 +804,16 @@ class TestTradeLifecycle(unittest.TestCase):
         manager.update(trade, OHLC(99, 101, 98, 99), bar_index=1)
         self.assertTrue(trade.has_hit_entry)
         
-        # TP1 hit (low reaches TP1)
+        # TP1 hit (low reaches TP1: 89 <= 90) but above Midpoint TP1-TP2 (85)
         manager.update(trade, OHLC(92, 93, 89, 91), bar_index=2)
         self.assertTrue(trade.tp1_triggered)
+        self.assertAlmostEqual(trade.current_sl, 105.0, places=6,
+                                msg="Short SL remains at initial SL 105 at TP1 hit")
+        
+        # Midpoint TP1-TP2 reached (84 <= 85)
+        manager.update(trade, OHLC(89, 90, 84, 85), bar_index=3)
         self.assertAlmostEqual(trade.current_sl, 100.0, places=6,
-                                msg="Short SL must move to BE after TP1")
+                                msg="Short SL must move to BE after Midpoint TP1-TP2 reached")
 
 
 # ════════════════════════════════════════════════════════════════════

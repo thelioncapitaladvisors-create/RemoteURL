@@ -13,3 +13,4 @@ algo_engine/daemon.log
 
 algo_engine/logs/
 TLCS_frozen_v1.0_backup/
+data_cache/

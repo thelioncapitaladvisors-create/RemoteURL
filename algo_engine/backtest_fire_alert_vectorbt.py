@@ -376,19 +376,19 @@ def simulate_trade_execution_with_fire_tag(df: pd.DataFrame, signals: dict, symb
                 exit_price = None
                 exit_level = None
 
-                mid_tp1 = (entry_price + tp1) / 2.0
+                mid_tp1_tp2 = (tp1 + tp2) / 2.0
 
                 if is_long:
-                    # Version 1.0 Pre-TP1 Midpoint Breakeven Trailing SL Synchronization Mandate:
-                    # Upon reaching or crossing 50% midpoint prior to TP1, SL immediately moved to Entry (Breakeven)
-                    if not hit_tp1 and not hit_midpoint_be and cur_h >= mid_tp1:
+                    # Version 3.0 Midpoint TP1-TP2 Breakeven Trailing SL Synchronization Mandate:
+                    # Upon reaching or crossing 50% midpoint between TP1 and TP2, SL immediately moved to Entry (Breakeven)
+                    if not hit_tp2 and not hit_midpoint_be and cur_h >= mid_tp1_tp2:
                         hit_midpoint_be = True
                         sl_price = max(sl_price, entry_price)
 
                     # Check Stop Loss
                     if cur_l <= sl_price:
                         exit_price = sl_price
-                        exit_level = 'SL' if not (hit_tp1 or hit_midpoint_be) else ('BE' if not hit_tp2 else 'TP1')
+                        exit_level = 'SL' if not hit_midpoint_be else ('BE' if not hit_tp2 else 'TP1')
                     # Check TP4
                     elif cur_h >= tp4:
                         exit_price = tp4
@@ -401,20 +401,19 @@ def simulate_trade_execution_with_fire_tag(df: pd.DataFrame, signals: dict, symb
                     elif cur_h >= tp2 and not hit_tp2:
                         hit_tp2 = True
                         sl_price = tp1  # Move SL to TP1
-                    # Check TP1 -> SL at Entry (Breakeven)
+                    # Check TP1
                     elif cur_h >= tp1 and not hit_tp1:
                         hit_tp1 = True
-                        sl_price = entry_price
 
                 else:  # Short
-                    if not hit_tp1 and not hit_midpoint_be and cur_l <= mid_tp1:
+                    if not hit_tp2 and not hit_midpoint_be and cur_l <= mid_tp1_tp2:
                         hit_midpoint_be = True
                         sl_price = min(sl_price, entry_price)
 
                     # Check Stop Loss
                     if cur_h >= sl_price:
                         exit_price = sl_price
-                        exit_level = 'SL' if not (hit_tp1 or hit_midpoint_be) else ('BE' if not hit_tp2 else 'TP1')
+                        exit_level = 'SL' if not hit_midpoint_be else ('BE' if not hit_tp2 else 'TP1')
                     # Check TP4
                     elif cur_l <= tp4:
                         exit_price = tp4
@@ -427,10 +426,9 @@ def simulate_trade_execution_with_fire_tag(df: pd.DataFrame, signals: dict, symb
                     elif cur_l <= tp2 and not hit_tp2:
                         hit_tp2 = True
                         sl_price = tp1
-                    # Check TP1 -> SL at Entry (Breakeven)
+                    # Check TP1
                     elif cur_l <= tp1 and not hit_tp1:
                         hit_tp1 = True
-                        sl_price = entry_price
 
                 # Check max trade duration (72 hours timeout)
                 if not exit_price and (i - entry_idx) >= 72:

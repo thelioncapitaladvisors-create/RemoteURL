@@ -3183,16 +3183,6 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
 
     // 3. TAKE PROFIT EVALUATIONS (ONLY run if trade is STILL ACTIVE and NOT stopped out)
     if not trade.isClosed and trade.hasHitEntry
-        // ── 3.0 PRE-TP1 BREAKEVEN: Move SL to Entry when price reaches midpoint to TP1 ──
-        float midTP1Level = (trade.entryLevel + trade.tp1Level) / 2.0
-        bool midTP1Reached = not trade.tp1Triggered and (isLong_ ? high >= midTP1Level : low <= midTP1Level)
-        if midTP1Reached and settings.breakEvenEnabled
-            trade.breakEvenAllowed := true
-            trade.breakEvenLevel   := trade.entryLevel
-            if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
-                trade.slLevel := trade.breakEvenLevel
-                trade.trailingSLActivated := true
-
         // TP1
         float tpLevel = trade.tp1Level
         if not trade.tp1Triggered and (isLong_ ? high >= tpLevel : low <= tpLevel)
@@ -3200,12 +3190,17 @@ evaluateTradeProgress(Settings settings, TradeLogic trade, bool triggerTrail, fl
             justHitTP                 := true
             trade.positionRemaining   -= settings.tp1ProfitRatio
             profit += calculateProfit(settings, trade, trade.entryLevel, trade.tp1Level, settings.leverage, isLong_, settings.tp1ProfitRatio)
-            if settings.breakEvenEnabled
-                trade.breakEvenAllowed := true
-                trade.breakEvenLevel   := trade.entryLevel
-                if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
-                    trade.slLevel := trade.breakEvenLevel
-                    trade.trailingSLActivated := true
+            // At TP1 hit: SL stays as it is (risk preserved until price reaches between TP1 and TP2)
+
+        // ── 3.0 MIDPOINT TP1-TP2 BREAKEVEN: Move SL to Entry when price reaches 50% midpoint between TP1 and TP2 ──
+        float midTP1TP2Level = (trade.tp1Level + trade.tp2Level) / 2.0
+        bool midTP1TP2Reached = not trade.tp2Triggered and (isLong_ ? high >= midTP1TP2Level : low <= midTP1TP2Level)
+        if midTP1TP2Reached and settings.breakEvenEnabled
+            trade.breakEvenAllowed := true
+            trade.breakEvenLevel   := trade.entryLevel
+            if isLong_ ? trade.slLevel < trade.breakEvenLevel : trade.slLevel > trade.breakEvenLevel
+                trade.slLevel := trade.breakEvenLevel
+                trade.trailingSLActivated := true
 
         // TP2
         tpLevel := trade.tp2Level
