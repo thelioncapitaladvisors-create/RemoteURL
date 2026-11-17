@@ -341,10 +341,18 @@ class TradeManager:
         # 3. TP EVALUATIONS (lines 2538-2585)
         # ═══════════════════════════════════════════════════════
 
-        # ── Pre-TP1 Midpoint Breakeven: Move SL to Entry at 50% to TP1 ──
-        if not trade.tp1_triggered and self.config.break_even_enabled:
-            mid_tp1 = (trade.entry_price + trade.tp1) / 2.0
-            mid_reached = (bar.high >= mid_tp1 if is_long else bar.low <= mid_tp1)
+        # TP1 (lines 2539-2549)
+        if not trade.tp1_triggered:
+            tp1_hit = (bar.high >= trade.tp1 if is_long
+                       else bar.low <= trade.tp1)
+            if tp1_hit:
+                trade.tp1_triggered = True
+                just_hit_tp = True
+
+        # ── Midpoint TP1-TP2 Breakeven: Move SL to Entry at 50% between TP1 and TP2 ──
+        if not trade.tp2_triggered and self.config.break_even_enabled:
+            mid_tp1_tp2 = (trade.tp1 + trade.tp2) / 2.0
+            mid_reached = (bar.high >= mid_tp1_tp2 if is_long else bar.low <= mid_tp1_tp2)
             if mid_reached:
                 trade.breakeven_level = trade.entry_price
                 if is_long and trade.current_sl < trade.breakeven_level:
@@ -353,22 +361,6 @@ class TradeManager:
                 elif not is_long and trade.current_sl > trade.breakeven_level:
                     trade.current_sl = trade.breakeven_level
                     trade.trailing_sl_activated = True
-
-        # TP1 (lines 2539-2549)
-        if not trade.tp1_triggered:
-            tp1_hit = (bar.high >= trade.tp1 if is_long
-                       else bar.low <= trade.tp1)
-            if tp1_hit:
-                trade.tp1_triggered = True
-                just_hit_tp = True
-                if self.config.break_even_enabled:
-                    trade.breakeven_level = trade.entry_price
-                    if is_long:
-                        if trade.current_sl < trade.breakeven_level:
-                            trade.current_sl = trade.breakeven_level
-                    else:
-                        if trade.current_sl > trade.breakeven_level:
-                            trade.current_sl = trade.breakeven_level
 
         # TP2 (lines 2551-2561)
         if not trade.tp2_triggered and trade.tp1_triggered:
