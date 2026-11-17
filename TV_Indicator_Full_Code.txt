@@ -726,16 +726,16 @@ CPR = DP
 //NCPR = 0.2 > math.abs(DPi - DBcf + DPi - DBcf) / DPi * 100
 
 // ====================================================================
-// NORMALIZED NARROW CPR (NCPR) CHECK
+// NORMALIZED NARROW CPR (NCPR) - 14-DAY TRAILING RELATIVE AVERAGE
 // ====================================================================
-// Instead of dividing by the asset price (DPi), we normalize the CPR width
-// against the Previous Day's High-Low Range. This scales perfectly across
-// Forex, Indices, and Crypto.
-// Threshold: CPR width must be < 5.0% of yesterday's total range.
+// Evaluates CPR width |TC - BC| relative to the asset's trailing 14-day average CPR width.
+// NCPR triggers when current CPR width <= 50% of the trailing 14-day average.
+// Provides 100% scale-invariance across all 7 asset classes (Equities, Forex, MCX, Crypto).
+daily_cpr_avg14 = request.security(syminfo.tickerid, 'D', ta.sma(math.abs((2.0 * close[1] - high[1] - low[1]) / 3.0), 14), lookahead = barmerge.lookahead_on)
 
 float prevDayRange = math.max(DH - DL, syminfo.mintick)
 float cprWidth     = math.abs(DTcf - DBcf)
-bool  NCPR         = 5.0 > (cprWidth / prevDayRange) * 100
+bool  NCPR         = (daily_cpr_avg14 > 0) ? (cprWidth <= (0.50 * daily_cpr_avg14)) : (5.0 > (cprWidth / prevDayRange) * 100)
 float vaWidth      = math.abs(VAH - VAL)
 bool  NVA          = 38.0 > (vaWidth / prevDayRange) * 100
 

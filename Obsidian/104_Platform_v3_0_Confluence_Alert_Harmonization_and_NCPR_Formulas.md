@@ -43,6 +43,20 @@ Per direct user instruction under Version 3.0:
   $$\text{NCPR} = \text{cprWidth} \le 0.5 \times \text{CPR\_Width}_{14\text{-EMA}}$$
   Comparing today CPR width against the asset own trailing 14-day average dynamically normalizes across all asset classes (Equities, Forex, Crypto, MCX commodities) without arbitrary hardcoded percentage cliffs.
 
+### 2.4 Implementation of Recommended 14-Day Trailing Relative Normalized NCPR Formula
+- **Adopted Formula**:
+  $$\text{cprWidth} = |\text{TC} - \text{BC}| = \left| \frac{2C - H - L}{3} \right|$$
+  $$\text{cprWidthAvg14} = \text{SMA}_{14}(\text{cprWidth})$$
+  $$\text{NCPR} = \text{cprWidth} \le (0.50 \times \text{cprWidthAvg14})$$
+- **Cross-Asset Dynamic Normalization**:
+  Comparing each asset's CPR width against its own trailing 14-day historical mean completely eliminates hardcoded arbitrary point or percentage thresholds. Low-volatility equities, crypto pairs, and commodities are each measured against their own intrinsic volatility baseline.
+- **Pine Script Daily SMA Security Architecture**:
+  Calling `ta.sma(cprWidth, 14)` directly on an intraday 5m or 15m chart averages 14 intraday candles of the same session (`cprWidthAvg14 == cprWidth`). Passing `math.abs((2.0 * close[1] - high[1] - low[1]) / 3.0)` to `request.security(syminfo.tickerid, 'D', ta.sma(...), lookahead = barmerge.lookahead_on)` guarantees that the 14-day rolling average is computed across 14 completed daily sessions.
+- **Python BlackBox Engine (`pivots.py`)**:
+  `compute_cpr` and `compute_daily_levels` updated in both `algo_engine/pivots.py` and `RemoteURL/algo_engine/pivots.py` to accept `cpr_width_avg14: Optional[float] = None` and evaluate `is_narrow = width <= (0.50 * cpr_width_avg14)`.
+- **DhanHQ Background Scanner (`dhan-scanner-background.js`)**:
+  Updated `fetchDailyLevels` to compute `cprWidthAvg14` across the trailing 14 daily candles, and updated `computeCPR` / `computeDualCPR` to evaluate `isNarrow = (avg14 && avg14 > 0) ? (cprWidth <= 0.50 * avg14) : (ncprPct < 5.0)`.
+
 ---
 
 ## 3. Confluence Alert Harmonization: Implementation Details
@@ -53,6 +67,10 @@ Per direct user instruction under Version 3.0:
 - **Setup Matrix**: Category renamed to `Confluence Alert` with badge `CONF` / `CONFLUENCE ALERT`.
 - **Detail Modal**: Updated header and playbooks to `BULLISH CONFLUENCE ALERT (CANONICAL CONFLUENCE OUTSIDE GREEN/RED)`.
 - **Dual Compatibility**: `isFireAlertSignal()` enhanced to recognize both legacy `fire_alert` / `FIREZONE` tags and new `confluence` / `CONFLUENCE` triggers.
+- **Default Live Expanded State**:
+  - `isDhanLiveActionOnly` initialized to `true` by default, presenting live and active limit orders on terminal load.
+  - `defaultSetupTab` dynamically resolves the first setup tab containing active live or active limit signals (prioritizing `FIRE` -> `DIV` -> `OOR` -> `NCPR` -> ...).
+  - `effectiveActiveTab` auto-expands the live setup table while permitting manual collapse via `'COLLAPSED'`.
 
 ### 3.2 Backend Webhooks & Telegram Notifications
 - **`Tv-Alert-Mobile/src/app/api/webhook/route.ts`**:
@@ -77,9 +95,16 @@ Per direct user instruction under Version 3.0:
   - Section 10 title: `10. CONFLUENCE ALERT & DEDICATED WEBHOOK DISPATCHER`
   - Plotshape title: `title = 'Confluence Alert'`
   - Alert condition title: `alertcondition(Fire_Alert, title = 'TLCS Confluence Alert (Any Signal + Zone)', ...)`
+  - NCPR implementation:
+    ```pine
+    daily_cpr_avg14 = request.security(syminfo.tickerid, 'D', ta.sma(math.abs((2.0 * close[1] - high[1] - low[1]) / 3.0), 14), lookahead = barmerge.lookahead_on)
+    float prevDayRange = math.max(DH - DL, syminfo.mintick)
+    float cprWidth     = math.abs(DTcf - DBcf)
+    bool  NCPR         = (daily_cpr_avg14 > 0) ? (cprWidth <= (0.50 * daily_cpr_avg14)) : (5.0 > (cprWidth / prevDayRange) * 100)
+    ```
 - **Checksum Parity**:
   All three indicator files maintain 100% byte-for-byte SHA256 checksum parity:
-  `abd4c8aef3ece60cf0317243a3a590ddc28ef2b76a0cca3396003f418b5d6bd0`
+  `80bda52bb9b65edb7eb31710ac681bb29d51d767b3dd8d21604e63163afad2dc`
 
 ---
 
@@ -87,4 +112,5 @@ Per direct user instruction under Version 3.0:
 
 - **Unit Tests**: 136 tests ran (`python3 -m unittest discover algo_engine/tests`) -> 135 passed, 1 skipped, 0 failures.
 - **Production Build**: Next.js 14 production build (`npm run build` in `Tv-Alert-Mobile`) compiled with 0 errors and generated 8 static routes.
+- **Checksum Parity**: SHA256 `80bda52bb9b65edb7eb31710ac681bb29d51d767b3dd8d21604e63163afad2dc` confirmed identical across all indicator files.
 - **Backup Parity**: Local mirrors synced to `Project Backup/` and snapshot preserved in `Backups/TLCS_v3.0_Complete_Backup_20261117_223000/`.\n
