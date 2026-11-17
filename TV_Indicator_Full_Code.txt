@@ -3916,7 +3916,7 @@ var array<TradeVisuals> extremeRevVisualsArr = array.new<TradeVisuals>()
 
 // ── Initialize & Push Trades for All Decoupled Signal Categories ───
 initializeAndPushTrade(settings, JustMissileBuy, JustMissileSell, 'LONG MISSILE', 'SHORT MISSILE', missileSessions, missileVisualsArr, z1, dX, mX, d1_message, JustMissileBuy ? hasBullDivWindow : hasBearDivWindow, 'MISSILE_DIV')
-initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG CONFLUENCE', 'SHORT CONFLUENCE', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message, JustScalpBuy ? hasBullDivWindow : hasBearDivWindow, 'CONFLUENCE_DIV')
+initializeAndPushTrade(settings, JustScalpBuy, JustScalpSell, 'LONG SCALP', 'SHORT SCALP', scalpSessions, scalpVisualsArr, z1, dX, mX, d1_message, JustScalpBuy ? hasBullDivWindow : hasBearDivWindow, 'SCALP_DIV')
 initializeAndPushTrade(settings, LightningBuy, LightningSell, 'LONG LIGHTNING', 'SHORT LIGHTNING', currentSessions, currentVisualsArr, z1, dX, mX, d1_message, LightningBuy ? hasBullDivWindow : hasBearDivWindow, 'LIGHTNING_TRIPLE')
 initializeAndPushTrade(settings, DivergenceBuy, DivergenceSell, 'LONG DIVERGENCE', 'SHORT DIVERGENCE', divergenceSessions, divergenceVisualsArr, z1, dX, mX, d1_message, false, 'REGULAR_DIV')
 initializeAndPushTrade(settings, HiddenDivBuy, HiddenDivSell, 'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE', hiddenDivSessions, hiddenDivVisualsArr, z1, dX, mX, d1_message, false, 'HIDDEN_DIV')
@@ -4001,8 +4001,8 @@ plotshape(JustMissileBuy  and dayAllowed and longAllowed,  title = "Long Missile
 plotshape(JustMissileSell and dayAllowed and shortAllowed, title = "Short Missile", style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
 
 // 💎 6. SCALP PLOTS
-plotshape(JustScalpBuy  and dayAllowed and longAllowed,  title = "Long Confluence",  style = shape.diamond, location = location.belowbar, color = color.green, size = size.small)
-plotshape(JustScalpSell and dayAllowed and shortAllowed, title = "Short Confluence", style = shape.diamond, location = location.abovebar, color = color.red,   size = size.small)
+plotshape(JustScalpBuy  and dayAllowed and longAllowed,  title = "Long Scalp",  style = shape.diamond, location = location.belowbar, color = color.green, size = size.small)
+plotshape(JustScalpSell and dayAllowed and shortAllowed, title = "Short Scalp", style = shape.diamond, location = location.abovebar, color = color.red,   size = size.small)
 
 // 🏹 7. BOUNCE PLOTS (Call & Put Arrows)
 plotshape(BounceUp and not LightningBuy,    title = 'Long Call',  style = shape.arrowup,   location = location.belowbar, color = color.green, size = size.large)
@@ -4022,7 +4022,7 @@ Fire_Alert = Anysignal and isInFireZone
 
 plotshape(Fire_Alert, title = 'Fire Alert Confluence', style = shape.circle, location = location.top, color = isFireLong ? color.green : color.red, size = size.tiny)
 
-string fireActiveSignal = JustMissileBuy ? 'LONG MISSILE' : JustMissileSell ? 'SHORT MISSILE' : JustScalpBuy ? 'LONG CONFLUENCE' : JustScalpSell ? 'SHORT CONFLUENCE' : LightningBuy ? 'LONG LIGHTNING' : LightningSell ? 'SHORT LIGHTNING' : DivergenceBuy ? 'LONG DIVERGENCE' : DivergenceSell ? 'SHORT DIVERGENCE' : HiddenDivBuy ? 'LONG HIDDEN DIVERGENCE' : HiddenDivSell ? 'SHORT HIDDEN DIVERGENCE' : ExtremeReversalBuy ? 'LONG EXTREME REVERSAL' : ExtremeReversalSell ? 'SHORT EXTREME REVERSAL' : BounceUp ? 'LONG BOUNCE' : BounceDown ? 'SHORT BOUNCE' : 'SIGNAL'
+string fireActiveSignal = JustMissileBuy ? 'LONG MISSILE' : JustMissileSell ? 'SHORT MISSILE' : JustScalpBuy ? 'LONG SCALP' : JustScalpSell ? 'SHORT SCALP' : LightningBuy ? 'LONG LIGHTNING' : LightningSell ? 'SHORT LIGHTNING' : DivergenceBuy ? 'LONG DIVERGENCE' : DivergenceSell ? 'SHORT DIVERGENCE' : HiddenDivBuy ? 'LONG HIDDEN DIVERGENCE' : HiddenDivSell ? 'SHORT HIDDEN DIVERGENCE' : ExtremeReversalBuy ? 'LONG EXTREME REVERSAL' : ExtremeReversalSell ? 'SHORT EXTREME REVERSAL' : BounceUp ? 'LONG BOUNCE' : BounceDown ? 'SHORT BOUNCE' : 'SIGNAL'
 string fireZone = isInFireZone ? 'FIREZONE' : 'ZONE'
 
 if Fire_Alert and enable_alerts
