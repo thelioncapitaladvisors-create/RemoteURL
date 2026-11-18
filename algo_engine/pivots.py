@@ -341,8 +341,19 @@ def compute_daily_levels(prev_high: float, prev_low: float, prev_close: float, c
 # VIRGIN CPR (VCPR) DETECTION (1-WEEK LOOKBACK)
 # ════════════════════════════════════════════════════════════════════
 
+def _bar_val(b: Any, key: str, default: float = 0.0) -> float:
+    if isinstance(b, dict):
+        return float(b.get(key, default))
+    return float(getattr(b, key, default))
+
+def _bar_str(b: Any, key: str, default: str = "") -> str:
+    if isinstance(b, dict):
+        return str(b.get(key, default))
+    val = getattr(b, key, None)
+    return str(val) if val is not None else default
+
 def detect_virgin_cpr_zones(
-    daily_bars: List[Dict[str, Any]],
+    daily_bars: List[Any],
     current_price: Optional[float] = None,
     max_lookback_days: int = 30
 ) -> List[VirginCPRZone]:
@@ -367,7 +378,7 @@ def detect_virgin_cpr_zones(
             array.set(zAct, i, false)
             
     Args:
-        daily_bars: List of daily dicts ordered chronologically:
+        daily_bars: List of daily dicts or OHLC objects ordered chronologically:
                     [{"high": ..., "low": ..., "close": ..., "date": ...}, ...]
         current_price: Current market price for distance & position calculations.
         max_lookback_days: Maximum number of completed sessions to evaluate (default 30 / past 1 month).
@@ -387,23 +398,32 @@ def detect_virgin_cpr_zones(
         prev = bars[i - 1]
         cur = bars[i]
 
-        p = (prev['high'] + prev['low'] + prev['close']) / 3.0
-        bc = (prev['high'] + prev['low']) / 2.0
+        prev_h = _bar_val(prev, 'high')
+        prev_l = _bar_val(prev, 'low')
+        prev_c = _bar_val(prev, 'close')
+
+        p = (prev_h + prev_l + prev_c) / 3.0
+        bc = (prev_h + prev_l) / 2.0
         tc = 2.0 * p - bc
         top = max(tc, bc)
         bottom = min(tc, bc)
         width = abs(top - bottom)
 
+        cur_h = _bar_val(cur, 'high')
+        cur_l = _bar_val(cur, 'low')
+
         # Did day i touch its own CPR during its session?
         # Pine Script: touched = touched or (high >= curLo and low <= curHi)
-        own_touched = (cur['high'] >= bottom and cur['low'] <= top)
+        own_touched = (cur_h >= bottom and cur_l <= top)
 
         if not own_touched:
             # Check if any subsequent day j > i traded into [bottom, top]
             touched_later = False
             for j in range(i + 1, n):
                 sub = bars[j]
-                if sub['high'] >= bottom and sub['low'] <= top:
+                sub_h = _bar_val(sub, 'high')
+                sub_l = _bar_val(sub, 'low')
+                if sub_h >= bottom and sub_l <= top:
                     touched_later = True
                     break
 
@@ -430,7 +450,7 @@ def detect_virgin_cpr_zones(
                         dist_pts = round(abs(current_price - bottom), 2)
                         dist_pct = round((dist_pts / current_price) * 100.0, 2)
 
-                date_str = cur.get('date') or cur.get('timestamp') or f"Day-{i}"
+                date_str = _bar_str(cur, 'date') or _bar_str(cur, 'timestamp') or f"Day-{i}"
                 if isinstance(date_str, str) and 'T' in date_str:
                     date_str = date_str.split('T')[0]
 
@@ -451,7 +471,7 @@ def detect_virgin_cpr_zones(
 
 
 def detect_virgin_cpr_touches(
-    daily_bars: List[Dict[str, Any]],
+    daily_bars: List[Any],
     current_price: Optional[float] = None,
     high_price: Optional[float] = None,
     low_price: Optional[float] = None,
@@ -488,20 +508,29 @@ def detect_virgin_cpr_touches(
         prev = bars[i - 1]
         cur = bars[i]
 
-        p = (prev['high'] + prev['low'] + prev['close']) / 3.0
-        bc = (prev['high'] + prev['low']) / 2.0
+        prev_h = _bar_val(prev, 'high')
+        prev_l = _bar_val(prev, 'low')
+        prev_c = _bar_val(prev, 'close')
+
+        p = (prev_h + prev_l + prev_c) / 3.0
+        bc = (prev_h + prev_l) / 2.0
         tc = 2.0 * p - bc
         top = max(tc, bc)
         bottom = min(tc, bc)
         width = abs(top - bottom)
 
+        cur_h = _bar_val(cur, 'high')
+        cur_l = _bar_val(cur, 'low')
+
         # Did day i touch its own CPR during its session?
-        own_touched = (cur['high'] >= bottom and cur['low'] <= top)
+        own_touched = (cur_h >= bottom and cur_l <= top)
         if not own_touched:
             touched_later = False
             for j in range(i + 1, n):
                 sub = bars[j]
-                if sub['high'] >= bottom and sub['low'] <= top:
+                sub_h = _bar_val(sub, 'high')
+                sub_l = _bar_val(sub, 'low')
+                if sub_h >= bottom and sub_l <= top:
                     touched_later = True
                     break
 
@@ -528,7 +557,7 @@ def detect_virgin_cpr_touches(
                     entry = top if is_long else bottom
                     touch_val = current_price if current_price is not None else ((top + bottom) / 2.0)
 
-                    date_str = cur.get('date') or cur.get('timestamp') or f"Day-{i}"
+                    date_str = _bar_str(cur, 'date') or _bar_str(cur, 'timestamp') or f"Day-{i}"
                     if isinstance(date_str, str) and 'T' in date_str:
                         date_str = date_str.split('T')[0]
 

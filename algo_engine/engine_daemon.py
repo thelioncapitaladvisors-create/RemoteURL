@@ -25,7 +25,7 @@ from .pivots import (
     OHLC, compute_daily_levels, compute_emas_from_bars,
     compute_atr, compute_pivot_trend_emas, compute_dmi, compute_m0_m10,
     compute_institutional_bias_c1, compute_day_type_mx,
-    compute_rsi, compute_divergences
+    compute_rsi, compute_divergences, detect_virgin_cpr_zones
 )
 from .day_types import DayTypeClassifier, DayTypeResult
 from .strategies import StrategyEngine, StrategySignal, MarketContext
@@ -256,7 +256,10 @@ class EngineDaemon:
             b_hid_div = hidden_bull[-2]
             s_hid_div = hidden_bear[-2]
 
-        # 5. Assemble MarketContext
+        # 5. Compute Virgin CPR (VCPR) zones over rolling 30-day history (PivotBoss STP 2.0)
+        vcpr_zones = detect_virgin_cpr_zones(bars_daily, current_price=bar.close, max_lookback_days=30) if bars_daily else []
+
+        # 6. Assemble MarketContext
         ctx = MarketContext(
             bar=bar,
             bar_index=len(bars_15m),
@@ -290,6 +293,7 @@ class EngineDaemon:
             minus=minus_val,
             m0=m0_val,
             m10=m10_val,
+            virgin_cpr_zones=vcpr_zones,
         )
 
         # Check market hours: Never evaluate or trigger trades for closed markets (unless explicit mock simulation)
