@@ -11440,7 +11440,7 @@ function MobileScreensaver() {
                     <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-slate-900/90 text-[10px] sm:text-[11px] font-mono font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider">
                       <th className="py-2.5 px-3 w-[36%] sm:w-[34%]">Symbol &amp; Time</th>
                       <th className="py-2.5 px-2.5 w-[36%] sm:w-[38%]">Setup &amp; Direction</th>
-                      <th className="py-2.5 px-3 w-[28%] text-right">Status / Move</th>
+                      <th className="py-2.5 px-3 w-[28%] text-right">Return (%)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-xs">
@@ -11497,25 +11497,18 @@ function MobileScreensaver() {
                                 <span className="truncate">{asset.relationshipBadge || (isBull ? 'BULLISH' : 'BEARISH')}</span>
                               </span>
                             </div>
-                            <div className="mt-0.5 flex items-center gap-1 flex-wrap">
-                              <span className="inline-flex items-center gap-1 px-1.5 py-[1px] rounded-full text-[8.5px] sm:text-[9px] font-mono font-black bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/50 animate-pulse">
-                                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
-                                <span>⏳ WATCHLIST</span>
-                              </span>
-                              {!asset.isTodaySession && (
+                            {!asset.isTodaySession && (
+                              <div className="mt-0.5 flex items-center gap-1 flex-wrap">
                                 <span className="text-[8.5px] font-mono font-medium text-dim">
                                   {asset.dateIST || (asset.sessionDate ? asset.sessionDate.slice(5) : '')}
                                 </span>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </td>
 
-                          {/* Col 3: Status / Move */}
+                          {/* Col 3: Return (%) */}
                           <td className="py-2.5 px-3 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1">
-                              <span className="text-[9px] sm:text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
-                                SETTING UP
-                              </span>
+                            <div className="flex items-center justify-end">
                               <span className={`font-mono font-black text-xs sm:text-[13px] px-1.5 py-0.5 rounded-md inline-block ${
                                 isPositive
                                   ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/35'
@@ -16338,38 +16331,38 @@ function MobileScreensaver() {
                                   <span>{displayName} PERFORMANCE</span>
                                 </span>
                               </h3>
-                              <div className="grid grid-cols-4 gap-1 sm:gap-1.5 shiny-card rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border border-primary/20 bg-secondary/20 shadow-lg backdrop-blur-xl mb-1 text-primary">
-                                <div className="flex flex-col items-center justify-center p-1 sm:p-1.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5">
-                                  <span className="text-[9.5px] min-[380px]:text-[10px] sm:text-xs uppercase tracking-wider text-primary/75 dark:text-primary/85 font-bold mb-0.5 whitespace-nowrap text-center">Win Rate</span>
-                                  <span className="font-black font-mono text-xs min-[380px]:text-sm sm:text-base text-primary">{mWinRate}%</span>
+                              <div className="grid grid-cols-2 min-[380px]:grid-cols-4 gap-1 sm:gap-1.5 shiny-card rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border border-primary/20 bg-secondary/20 shadow-lg backdrop-blur-xl mb-1 text-primary">
+                                <div className="flex flex-col items-center justify-center min-w-0 p-1.5 sm:p-2 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5 overflow-hidden">
+                                  <span className="metric-pill-label text-primary/75 dark:text-primary/85 font-bold mb-0.5">Win Rate</span>
+                                  <span className="font-black metric-pill-val text-primary">{mWinRate}%</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center p-1 sm:p-1.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5">
-                                  <span className="text-[9.5px] min-[380px]:text-[10px] sm:text-xs uppercase tracking-wider text-primary/75 dark:text-primary/85 font-bold mb-0.5 whitespace-nowrap text-center">Expectancy</span>
-                                  <span className={`font-black font-mono text-xs min-[380px]:text-sm sm:text-base ${Number(mAvgR || 0) >= 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{mAvgR !== '--' ? `${Number(mAvgR) >= 0 ? '+' : ''}${mAvgR}%` : '--'}</span>
+                                <div className="flex flex-col items-center justify-center min-w-0 p-1.5 sm:p-2 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5 overflow-hidden">
+                                  <span className="metric-pill-label text-primary/75 dark:text-primary/85 font-bold mb-0.5">Expectancy</span>
+                                  <span className={`font-black metric-pill-val ${Number(mAvgR || 0) >= 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{mAvgR !== '--' ? `${Number(mAvgR) >= 0 ? '+' : ''}${mAvgR}%` : '--'}</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center p-1 sm:p-1.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5">
-                                  <span className="text-[9.5px] min-[380px]:text-[10px] sm:text-xs uppercase tracking-wider text-primary/75 dark:text-primary/85 font-bold mb-0.5 whitespace-nowrap text-center">Profit Factor</span>
-                                  <span className={`font-black font-mono text-xs min-[380px]:text-sm sm:text-base ${mProfitFactor === 'MAX' || Number(mProfitFactor) >= 1.5 ? 'text-amber-600 theme-gray:text-amber-700 dark:text-amber-300 glow-accent' : (Number(mProfitFactor) >= 1 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger')}`}>{mProfitFactor}</span>
+                                <div className="flex flex-col items-center justify-center min-w-0 p-1.5 sm:p-2 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5 overflow-hidden">
+                                  <span className="metric-pill-label text-primary/75 dark:text-primary/85 font-bold mb-0.5">Profit Factor</span>
+                                  <span className={`font-black metric-pill-val ${mProfitFactor === 'MAX' || Number(mProfitFactor) >= 1.5 ? 'text-amber-600 theme-gray:text-amber-700 dark:text-amber-300 glow-accent' : (Number(mProfitFactor) >= 1 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger')}`}>{mProfitFactor}</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center p-1 sm:p-1.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5">
-                                  <span className="text-[9.5px] min-[380px]:text-[10px] sm:text-xs uppercase tracking-wider text-primary/75 dark:text-primary/85 font-bold mb-0.5 whitespace-nowrap text-center">Calmar Ratio</span>
-                                  <span className={`font-black font-mono text-xs min-[380px]:text-sm sm:text-base ${mCalmar !== '0.00' && (mCalmar === 'MAX' || parseFloat(mCalmar) >= 1) ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : (parseFloat(mCalmar) < 0 ? 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger' : 'text-dim')}`}>{mCalmar !== '0.00' ? mCalmar : '--'}</span>
+                                <div className="flex flex-col items-center justify-center min-w-0 p-1.5 sm:p-2 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5 overflow-hidden">
+                                  <span className="metric-pill-label text-primary/75 dark:text-primary/85 font-bold mb-0.5">Calmar Ratio</span>
+                                  <span className={`font-black metric-pill-val ${mCalmar !== '0.00' && (mCalmar === 'MAX' || parseFloat(mCalmar) >= 1) ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : (parseFloat(mCalmar) < 0 ? 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger' : 'text-dim')}`}>{mCalmar !== '0.00' ? mCalmar : '--'}</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center p-1 sm:p-1.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5">
-                                  <span className="text-[9.5px] min-[380px]:text-[10px] sm:text-xs uppercase tracking-wider text-primary/75 dark:text-primary/85 font-bold mb-0.5 whitespace-nowrap text-center">Half-Kelly %</span>
-                                  <span className={`font-black font-mono text-xs min-[380px]:text-sm sm:text-base ${mKelly != null && mKelly >= 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{mKelly != null ? `${mKelly > 0 ? '+' : ''}${mKelly.toFixed(1)}%` : '--'}</span>
+                                <div className="flex flex-col items-center justify-center min-w-0 p-1.5 sm:p-2 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5 overflow-hidden">
+                                  <span className="metric-pill-label text-primary/75 dark:text-primary/85 font-bold mb-0.5">Half-Kelly %</span>
+                                  <span className={`font-black metric-pill-val ${mKelly != null && mKelly >= 0 ? 'text-green-600 theme-gray:text-green-700 dark:text-green-300 glow-success' : 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger'}`}>{mKelly != null ? `${mKelly > 0 ? '+' : ''}${mKelly.toFixed(1)}%` : '--'}</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center p-1 sm:p-1.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5">
-                                  <span className="text-[9.5px] min-[380px]:text-[10px] sm:text-xs uppercase tracking-wider text-primary/75 dark:text-primary/85 font-bold mb-0.5 whitespace-nowrap text-center">Max Drawdown</span>
-                                  <span className={`font-black font-mono text-xs min-[380px]:text-sm sm:text-base ${mMaxDD > 0 ? 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger' : 'text-dim'}`}>{mMaxDD > 0 ? `-${mMaxDD.toFixed(2)}%` : '0.00%'}</span>
+                                <div className="flex flex-col items-center justify-center min-w-0 p-1.5 sm:p-2 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5 overflow-hidden">
+                                  <span className="metric-pill-label text-primary/75 dark:text-primary/85 font-bold mb-0.5">Max Drawdown</span>
+                                  <span className={`font-black metric-pill-val ${mMaxDD > 0 ? 'text-red-600 theme-gray:text-red-700 dark:text-red-300 glow-danger' : 'text-dim'}`}>{mMaxDD > 0 ? `-${mMaxDD.toFixed(2)}%` : '0.00%'}</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center p-1 sm:p-1.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5">
-                                  <span className="text-[9.5px] min-[380px]:text-[10px] sm:text-xs uppercase tracking-wider text-primary/75 dark:text-primary/85 font-bold mb-0.5 whitespace-nowrap text-center">Total Trades</span>
-                                  <span className="font-black font-mono text-xs min-[380px]:text-sm sm:text-base text-primary">{mSignals.length}</span>
+                                <div className="flex flex-col items-center justify-center min-w-0 p-1.5 sm:p-2 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5 overflow-hidden">
+                                  <span className="metric-pill-label text-primary/75 dark:text-primary/85 font-bold mb-0.5">Total Trades</span>
+                                  <span className="font-black metric-pill-val text-primary">{mSignals.length}</span>
                                 </div>
-                                <div className="flex flex-col items-center justify-center p-1 sm:p-1.5 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5">
-                                  <span className="text-[9.5px] min-[380px]:text-[10px] sm:text-xs uppercase tracking-wider text-primary/75 dark:text-primary/85 font-bold mb-0.5 whitespace-nowrap text-center">Wins/Loss/BE</span>
-                                  <span className="font-black font-mono text-xs min-[380px]:text-sm sm:text-base whitespace-nowrap flex items-center justify-center gap-0.5">
+                                <div className="flex flex-col items-center justify-center min-w-0 p-1.5 sm:p-2 bg-black/[0.02] dark:bg-white/[0.03] rounded-lg border border-black/5 dark:border-white/5 overflow-hidden">
+                                  <span className="metric-pill-label text-primary/75 dark:text-primary/85 font-bold mb-0.5">Wins/Loss/BE</span>
+                                  <span className="font-black metric-pill-val whitespace-nowrap flex items-center justify-center gap-0.5">
                                     <span className="text-green-600 theme-gray:text-green-700 dark:text-green-400 font-black">{mWins.length}</span><span className="text-dim/40 font-normal">/</span><span className="text-red-600 theme-gray:text-red-700 dark:text-red-400 font-black">{mLosses.length}</span><span className="text-dim/40 font-normal">/</span><span className="text-blue-500 font-black">{mBE}</span>
                                   </span>
                                 </div>
