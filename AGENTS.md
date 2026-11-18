@@ -6,6 +6,27 @@
   - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
   - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
   - Gating must NEVER rely on `close` for limit entry qualification.
+## Version 4.0: Live Signals & Watchlist Separation, Zero-Truncation UI & LOGS 3-Tier Filter Mandate (Effective November 18, 2026)
+- **LIVE SIGNALS & WATCHLIST SEPARATION MANDATE**:
+  - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) in `Tv-Alert-Mobile/src/app/page.tsx` and root `page.tsx`:
+    1. **Strict Pipeline Isolation**: The screener is sliced into two dedicated institutional sections:
+       - `renderDhanLiveSignalsSection()`: Bound to `liveSignalsAssets` (`extractDhanScreenerAssets(..., liveActionOnly=true, watchlistOnly=false)`), displaying exclusively active limit orders and live execution trades.
+       - `renderDhanWatchlistSection()`: Bound to `watchlistAssets` (`extractDhanScreenerAssets(..., liveActionOnly=false, watchlistOnly=true)`), displaying qualifying day-type candidates and setups.
+    2. **3-Tier LOGS Design Standard**: Both sections implement the exact 3-tier filter rhythm established in the LOGS tab's Trade Filters:
+       - Tier 1: Horizontal scrollable status & setup selector pills with real-time asset counts and a right-aligned `TOTAL: X` badge.
+       - Tier 2: Horizontal scrollable 8-market category chips (`ALL`, `NIFTY`, `STOCKS`, `MCX`, `NYMEX`, `CRYPTO`, `FOREX`, `WORLD`) with live category asset counts.
+       - Tier 3: Directional bias (`ALL`, `BULL`, `BEAR`) and session timing toggles (`ALL`, `REG`, `EXT`).
+       - Header Summary: 1-row compact KPI strip showing total assets, active count, wins/losses, and average move.
+    3. **3-Column Intuitive Responsive Grid**: Tables adhere to the zero-overlap 3-column layout (`SYMBOL & TIME` | `SETUP & STATUS` | `RETURN (%)`), permanently eliminating horizontal scroll friction and preventing the 48px sticky column collapse bug.
+- **ZERO TRUNCATION & PILL GEOMETRY MANDATE (ANALYTICS TEARSHEET)**:
+  - Across all 22 metric pills in the Analytics Tearsheet card (`Tv-Alert-Mobile/src/app/page.tsx`):
+    1. **Fluid Vertical Wrapping**: Rigid `whitespace-nowrap` and `overflow-hidden` constraints are strictly prohibited on multi-word labels. Metric labels must carry `break-words leading-tight tracking-tight` allowing natural 2-line wrapping.
+    2. **Elevated Pill Container**: Pill containers must maintain `min-h-[54px] sm:min-h-[58px] p-2 sm:p-2.5 rounded-xl` to accommodate dynamic mobile font elevation rules (`11.5px` baseline) without vertical clipping.
+    3. **Streamlined Formatting**: Streak counts and date spans render with concise formatting (`X Cons.`, `X Wins/Losses`) to prevent text overflow across mobile viewports (320px to 4K).
+- **SYSTEM-WIDE VERSION 4.0 SUCCESSOR DECLARATION**:
+  - The application version is officially designated **Version 4.0 (`v4.0`)** across `Tv-Alert-Mobile/package.json` (`"version": "4.0.0"`), terminal headers (`TLCS TERMINAL v4.0`), verification daemons (`Active Daemon v4.0`), and legal footers (`Store Ready v4.0`).
+  - Zero unilateral modifications may be made to Pine Script indicators, BlackBox entry triggers, or trade management rules.
+
 ## Version 3.0: Stocks With Action Universal 7-Market Expansion Mandate (Effective November 15, 2026)
 - **STOCKS WITH ACTION UNIVERSAL 7-MARKET EXPANSION MANDATE**:
   - Across all 9 institutional setup screener sections (`Outside Range & Value`, `Inside CPR`, `Breakouts / NCPR`, `Narrow Value / NVA`, `Virgin CPR`, `Divergence`, `Rejections`, `Continuations`, `Hi-Pro Alert`) in `renderDhanUnifiedBiasScreener` within `Tv-Alert-Mobile/src/app/page.tsx`:
