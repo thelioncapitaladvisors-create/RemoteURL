@@ -11577,8 +11577,18 @@ function MobileScreensaver() {
           <motion.div key="terminal" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex flex-col relative z-10 overflow-hidden w-full max-w-full">
             <header className="w-full max-w-full flex justify-between items-center mb-2 sm:mb-2.5 shrink-0 gap-2">
               <div className="flex flex-col min-w-0">
-                <h1 className="text-lg sm:text-xl font-bold italic tracking-tighter">TLCS <span className="bg-accent text-[var(--text-on-accent)] text-[10px] sm:text-xs px-1.5 py-0.5 sm:py-1 rounded ml-1 not-italic font-black">PRO</span></h1>
-                <div className="text-[11px] sm:text-xs font-mono text-dim tracking-[0.2em] uppercase font-bold mt-0.5">TLCS TERMINAL v4.0</div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h1 className="text-lg sm:text-xl font-bold italic tracking-tighter flex items-center">
+                    TLCS
+                    <span className="bg-accent text-[var(--text-on-accent)] text-[10px] sm:text-xs px-1.5 py-0.5 sm:py-1 rounded ml-1.5 not-italic font-black">PRO</span>
+                  </h1>
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/35 shadow-2xs">
+                    v4.0
+                  </span>
+                </div>
+                <div className="text-[10px] sm:text-xs font-mono text-dim uppercase font-bold tracking-wider mt-0.5">
+                  TLCS TERMINAL
+                </div>
                 <div className="flex items-center gap-1.5 mt-1.5">
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-accent/10 border border-accent/25 max-w-full">
                     <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center text-[var(--text-on-accent)] text-[9px] sm:text-[10px] font-black shrink-0">
