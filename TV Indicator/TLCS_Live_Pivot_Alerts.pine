@@ -4049,6 +4049,20 @@ if Fire_Alert and enable_alerts
 
 alertcondition(Fire_Alert, title = 'TLCS Confluence Alert (Any Signal + Zone)', message = '{"trigger":"FireAlert","symbol":"{{ticker}}","price":"{{close}}"}')
 
+// ── SCREENER WATCHLIST UPDATE ALERT (SESSION OPEN & REJECTION CONFIRMATION) ──
+bool isNewDaySession = ta.change(time('D')) != 0
+bool isNewRejectionSetup = ta.change(REJECTIONDAY) and REJECTIONDAY
+if isNewDaySession or isNewRejectionSetup
+    string _scPay = '{' + str.format(
+         '"trigger":"ScreenerUpdate","secret":"{0}","symbol":"{1}","type":"SCREENER SETUP","status":"WATCHLIST","opening_bias":"{2}","day_type":"{3}","dayType":"{2}","marketType":"{3}","entryTime":"{4}","is_ncpr":{5},"is_inside_cpr":{6},"dtc":"{7}","dbc":"{8}","prev_range":"{9}","cpr_width":"{10}","is_nva":{11},"is_rejection":{12},"is_continuation":{13},"c1":"{14}","vah":"{15}","val":"{16}","va_width":"{17}"',
+         webhook_secret, syminfo.ticker, dX, mX, str.tostring(time),
+         isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
+         isNvaStr, isRejStr, isContStr, _c1, vahStr, valStr, vaWidthStr
+         ) + '}'
+    alert(_scPay, alert.freq_once_per_bar_close)
+
+alertcondition(isNewDaySession or isNewRejectionSetup, title = 'TLCS Screener Watchlist Update', message = '{"trigger":"ScreenerUpdate","symbol":"{{ticker}}","status":"WATCHLIST"}')
+
 
 
 
