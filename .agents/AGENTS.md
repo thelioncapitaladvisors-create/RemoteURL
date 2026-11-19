@@ -7,6 +7,14 @@
   - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
   - Gating must NEVER rely on `close` for limit entry qualification.
 ## Version 4.0: Universal Live Signals & Day Type Watchlist Architecture, Ungated Strategies & Zero-Collision Mandate (Effective November 19, 2026)
+- **HUB TAB BIFURCATED LIVE SIGNALS & DEDICATED WATCHLIST ARCHITECTURE MANDATE**:
+  - Across the HUB tab (`activeTab === 'DASHBOARD'`) in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
+    1. **Bifurcated 2-Tier Section Separation**: The Daily Signal Matrix is strictly divided into two distinct sections:
+       - **Section 1: Live Signals Matrix (`🚨 LIVE SIGNALS`)**: Dedicated exclusively to real-time execution signals (`CONFLUENCE`, `DIVERGENCE`, `LIGHTNING`, `EXTREME REVERSAL`, `MISSILE`, `SCALP`). All non-execution day-types are strictly excluded.
+       - **Section 2: Dedicated Watchlist Section Below It (`📋 DAY TYPE WATCHLIST`)**: Dedicated exclusively to qualifying day-type market structure candidates (`REJECTED BULLISH`, `REJECTED BEARISH`, `REJECTION BLUEPRINT`, `BULLISH CONTINUATION`, `BEARISH CONTINUATION`, `INSIDE DAY CPR`, `NCPR`, `VCPR`, `ABSORPTION`, `FAILED NEW LOW/HIGH`, `OUTSIDE DAY`, `STOP RUN`, `ACCUMULATION`).
+    2. **Master View Switcher Bar**: Positioned directly above the matrices, providing instantaneous 3-way toggle filtering: `🌐 ALL SECTIONS` (both sections stacked), `🚨 LIVE SIGNALS` (isolated live trade signals), and `📋 WATCHLIST` (isolated watchlist candidates).
+    3. **Separate Dedicated Filter Tab Buttons**: Both sections feature independent, collapsible multi-pill filter switchers with real-time asset counts and dynamic fallback to `ALL` when empty.
+    4. **Accurate Watchlist Badging**: Non-execution day-types in the Watchlist section explicitly render `🛡️ REJECTION WATCHLIST` and `🚀 CONTINUATION WATCHLIST` (eliminating confusing "LIVE SIGNAL" badges on market structure watchlists).
 - **UNIVERSAL LIVE SIGNALS & DAY TYPE WATCHLIST ARCHITECTURE MANDATE**:
   - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) in `Tv-Alert-Mobile/src/app/page.tsx`, root `page.tsx`, and `RemoteURL/page.tsx`:
     1. **Universal Strategy Ingestion for Live Signals**: `renderDhanLiveSignalsSection()` is bound to `liveSignalsAssets` via `extractDhanScreenerAssets('ALL_LIVE', ..., liveActionOnly=true, watchlistOnly=false)`, capturing all active limit orders (`tradeLifecycle === 'ACTIVE LIMIT'`) and live execution trades (`tradeLifecycle === 'LIVE'`) across ALL strategy types (`MISSILE`, `SCALP`, `LIGHTNING`, `EXTREME REVERSAL`, `DIVERGENCE`, `HIDDEN DIVERGENCE`, `CONFLUENCE / FIRE_ALERT`, `VIRGIN CPR`, `REJECTION`, `CONTINUATION`, `BOUNCE`).
