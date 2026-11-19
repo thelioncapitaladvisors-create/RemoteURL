@@ -74,8 +74,8 @@ Following the exact visual rhythm and collapsible architecture of the **INSIGHTS
    ```
 3. **Mirror Parity Checksum**:
    All 3 instances maintain exact SHA256 byte-for-byte synchronization:
-   - `Tv-Alert-Mobile/src/app/page.tsx`: `4fc60e435bf31495bd05f89f0fd64b8a971ac0f459163089763974a02a0fa655`
-   - `page.tsx`: `4fc60e435bf31495bd05f89f0fd64b8a971ac0f459163089763974a02a0fa655`
-   - `RemoteURL/page.tsx`: `4fc60e435bf31495bd05f89f0fd64b8a971ac0f459163089763974a02a0fa655`
+   - `Tv-Alert-Mobile/src/app/page.tsx`: `bcb4f4bd5a5fd33a2e08dfe766d61d90cac69aed0a3657e0ce559e80710b88f9`
+   - `page.tsx`: `bcb4f4bd5a5fd33a2e08dfe766d61d90cac69aed0a3657e0ce559e80710b88f9`
+   - `RemoteURL/page.tsx`: `bcb4f4bd5a5fd33a2e08dfe766d61d90cac69aed0a3657e0ce559e80710b88f9`
 
 

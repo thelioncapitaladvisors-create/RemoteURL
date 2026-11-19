@@ -565,10 +565,22 @@ function resolveOutcome(s?: Signal | null): 'WIN' | 'LOSS' | 'BREAKEVEN' | 'OPEN
     }
 
     // Step 3: Keyword fallback — only reached when exact_pct is genuinely absent
-    if (st.includes('ACTIVE') || o === 'OPEN' || st === 'OPEN') return 'OPEN';
+    if ((st.includes('ACTIVE') || o === 'OPEN' || st === 'OPEN') && !s.exit_at && s.exit_price == null && !st.includes('EXIT') && !st.includes('HIT') && !st.includes('CLOSED')) return 'OPEN';
     if (o === 'WIN'  || st.includes('WIN'))  return 'WIN';
     if (o === 'LOSS' || st.includes('LOSS')) return 'LOSS';
     if ((st.includes('STOP') || st.includes('SL')) && !st.includes('TRAIL')) return 'LOSS';
+    if (st.includes('EXIT') || st.includes('CLOSED') || s.exit_at != null || s.exit_price != null) {
+        const entryP = Number(s.entry || 0);
+        const exitP = Number(s.exit_price || 0);
+        if (entryP > 0 && exitP > 0) {
+            const isLong = (s.type || '').toUpperCase().includes('LONG') || (s.type || '').toUpperCase().includes('BUY');
+            const diff = isLong ? (exitP - entryP) : (entryP - exitP);
+            if (diff > 0.00001) return 'WIN';
+            if (diff < -0.00001) return 'LOSS';
+            return 'BREAKEVEN';
+        }
+        return 'BREAKEVEN';
+    }
     return 'OPEN';
 }
 
@@ -12360,13 +12372,34 @@ function MobileScreensaver() {
                             const matching = filteredSigs.filter(s => matchSignalToCategory(cat.id, s));
                             
                             let bulls = matching.filter(s => {
+                                let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+                                const c1 = String(meta.c1 || '').toUpperCase();
+                                const instBias = String(meta.institutional_bias || '').toUpperCase();
+                                const rejType = String(meta.rejection_type || '').toUpperCase();
+                                const dir = String(meta.direction || meta.bias_direction || meta.zone || meta.opening_bias || '').toUpperCase();
+
+                                // 1. Highest Priority: Explicit Confirmed Day-Type / Market Structure Bias from c1, rejType, instBias
+                                if (c1.includes('CONFIRMED BULLISH') || c1.includes('BULLISH REJECTION') || rejType.includes('BULL') || instBias.includes('BULL') || isRejectedBullishSignal(s) || isBullishContinuationSignal(s)) {
+                                    return true;
+                                }
+                                if (c1.includes('CONFIRMED BEARISH') || c1.includes('BEARISH REJECTION') || rejType.includes('BEAR') || instBias.includes('BEAR') || isRejectedBearishSignal(s) || isBearishContinuationSignal(s)) {
+                                    return false;
+                                }
+
+                                // 2. Watchlist or Opening Bias Direction
+                                if (isWatchlistMode) {
+                                    if (dir.includes('BULL') || dir.includes('BUY') || dir.includes('LONG')) return true;
+                                    if (dir.includes('BEAR') || dir.includes('SELL') || dir.includes('SHORT')) return false;
+                                }
+
+                                // 3. Trade Execution Type
                                 const t = (s.type || '').toUpperCase();
                                 if (t.includes('LONG') || t.includes('BUY')) return true;
                                 if (t.includes('SHORT') || t.includes('SELL')) return false;
-                                let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-                                const dir = String(meta.direction || meta.bias_direction || meta.zone || meta.opening_bias || '').toUpperCase();
+
                                 if (dir.includes('BULL') || dir.includes('BUY') || dir.includes('LONG')) return true;
                                 if (dir.includes('BEAR') || dir.includes('SELL') || dir.includes('SHORT')) return false;
+
                                 const entryP = Number((s as any).price || s.entry || meta.entry || meta.open || 0);
                                 const exitP = Number(s.exit_price || meta.exit_price || meta.ltp || meta.close || 0);
                                 return exitP >= entryP;
@@ -12385,6 +12418,9 @@ function MobileScreensaver() {
                             } else if (cat.id === 'BEARISH_CONTINUATION') {
                                 bulls = [];
                                 bears = matching;
+                            } else if (cat.id === 'REJECTION') {
+                                bulls = matching.filter(s => isRejectedBullishSignal(s) || (typeof s.metadata === 'object' && String((s.metadata as any)?.c1 || '').toUpperCase().includes('BULL')));
+                                bears = matching.filter(s => !bulls.includes(s));
                             } else if (cat.id === 'NCPR') {
                                 bulls = matching.filter(s => {
                                     const t = (s.type || '').toUpperCase();
