@@ -1285,14 +1285,19 @@ class TestOscillatorAndReversalSystems(unittest.TestCase):
         """
         Verify that on TYPICAL DAY, TRADING RANGE, SIDEWAYS days:
         - dayAllowed is strictly governed by (not isSidewaysDay or isRejectionDay) matching Pine line 3140.
-        - When isRejectionDay is False on sideways days (close inside CPR), dayAllowed is False (blocking day-gated signals).
-        - When isRejectionDay is True on sideways days (close breaks CPR boundary), dayAllowed is True (permitting signals).
+        - Extreme Reversal signals in v4.0 are ungated by dayAllowed and longAllowed/shortAllowed,
+          firing immediately on extreme_long_signal or extreme_short_signal.
+        - Day-gated strategies (like VCPR) are blocked when isRejectionDay is False and permitted when True.
         """
         engine = StrategyEngine()
         # 1. Bar inside CPR: close = 0.8250 (between dbc=0.8245 and dtc=0.8255) -> Not Rejection Day
         bar_inside_cpr = OHLC(
             open=0.8250, high=0.8253, low=0.8248, close=0.8250,
             volume=1000
+        )
+        vcpr_z = VirginCPRZone(
+            date='2026-10-20', top=0.8252, bottom=0.8247, pivot=0.8250, width=0.0005,
+            is_active=True, position='BELOW', distance_pts=0.0, distance_pct=0.0
         )
         ctx_non_rejection = MarketContext(
             bar=bar_inside_cpr,
@@ -1303,12 +1308,17 @@ class TestOscillatorAndReversalSystems(unittest.TestCase):
             opening_bias="IN RANGE IN VALUE",
             institutional_bias="WATCH",
             extreme_long_signal=True,
-            session_highest=0.8260, session_lowest=0.8240, atr=0.0020
+            prev_close=0.8260,
+            session_highest=0.8260, session_lowest=0.8240, atr=0.0020,
+            virgin_cpr_zones=[vcpr_z]
         )
         signals = engine.evaluate(ctx_non_rejection)
-        # Without Rejection Day on a sideways day, day_allowed is False, blocking day-gated Extreme Reversal
+        # Extreme Reversal is ungated in v4.0 and must trigger
         extreme_rev_sigs = [s for s in signals if "EXTREME REVERSAL" in s.name]
-        self.assertEqual(len(extreme_rev_sigs), 0, "Extreme Reversal must be blocked on sideways day when isRejectionDay is False")
+        self.assertEqual(len(extreme_rev_sigs), 1, "Extreme Reversal must fire in v4.0 ungated from dayAllowed")
+        # Day-gated VCPR must be blocked when day_allowed is False
+        vcpr_sigs = [s for s in signals if "VIRGIN CPR" in s.name]
+        self.assertEqual(len(vcpr_sigs), 0, "Day-gated VCPR must be blocked on sideways day when isRejectionDay is False")
 
         # 2. Bar penetrating CPR: close = 0.8260 > dtc=0.8255 with open < dtc (confirmed_bearish rejection) -> isRejectionDay is True
         bar_rejection = OHLC(
@@ -1317,18 +1327,22 @@ class TestOscillatorAndReversalSystems(unittest.TestCase):
         )
         ctx_rejection = MarketContext(
             bar=bar_rejection,
-            bar_index=1,
+            bar_index=2,
             H4=1.0000, L4=0.7000, H3=0.8300, L3=0.8200,
             cpr_pivot=0.8250, cpr_tc=0.8255, cpr_bc=0.8245,
             day_type_label="TYPICAL DAY, TRADING RANGE, SIDEWAYS",
             opening_bias="IN RANGE IN VALUE",
             institutional_bias="REJECTION",
             extreme_long_signal=True,
-            session_highest=0.8260, session_lowest=0.8240, atr=0.0020
+            prev_close=0.8260,
+            session_highest=0.8260, session_lowest=0.8240, atr=0.0020,
+            virgin_cpr_zones=[vcpr_z]
         )
         signals_rejection = engine.evaluate(ctx_rejection)
         extreme_rev_sigs_rej = [s for s in signals_rejection if "EXTREME REVERSAL" in s.name]
-        self.assertGreaterEqual(len(extreme_rev_sigs_rej), 1, "Extreme Reversal must be permitted on sideways day when isRejectionDay is True")
+        self.assertGreaterEqual(len(extreme_rev_sigs_rej), 1, "Extreme Reversal must be permitted on sideways day")
+        vcpr_sigs_rej = [s for s in signals_rejection if "VIRGIN CPR" in s.name]
+        self.assertGreaterEqual(len(vcpr_sigs_rej), 1, "VCPR must be permitted on sideways day when isRejectionDay is True")
 
 
 # ════════════════════════════════════════════════════════════════════

@@ -667,9 +667,9 @@ class StrategyEngine:
         divergence_buy = confirmed_reg_bull and not (ctx.minus > ctx.plus)
         divergence_sell = confirmed_reg_bear and not (ctx.plus > ctx.minus)
 
-        # 4. Extreme Reversal (Independent signal, standard dayAllowed gate, lines 3166-3168)
-        extreme_rev_buy = ctx.extreme_long_signal and long_allowed and day_allowed
-        extreme_rev_sell = ctx.extreme_short_signal and short_allowed and day_allowed
+        # 4. Extreme Reversal (Independent signal, ungated per v4.0 mandate)
+        extreme_rev_buy = ctx.extreme_long_signal
+        extreme_rev_sell = ctx.extreme_short_signal
 
         # 5. Missile (Decoupled, lines 3171-3172)
         just_missile_buy = (can_buy and not lightning_buy and not extreme_rev_buy
