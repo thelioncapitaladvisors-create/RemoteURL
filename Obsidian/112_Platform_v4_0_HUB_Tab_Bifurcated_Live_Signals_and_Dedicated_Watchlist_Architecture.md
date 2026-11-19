@@ -50,6 +50,17 @@ Positioned directly above the matrices, a high-contrast 3-way toggle provides se
   - `🏛️ BLUEPRINTS` (Absorption, Failed New Low/High, Outside Day, Stop Run, Accumulation)
 - **Outcome-Consistent Labels**: Badging dynamically displays `🛡️ REJECTION WATCHLIST` and `🚀 CONTINUATION WATCHLIST` (replacing misleading "LIVE SIGNAL" tags).
 
+### 2.4 Collapsible Card Architecture (INSIGHTS Standard Alignment)
+Following the exact visual rhythm and collapsible architecture of the **INSIGHTS tab** (`media_1795108519207.png`):
+- Both Section 1 (`🚨 LIVE SIGNALS`) and Section 2 (`📋 DAY TYPE WATCHLIST`) are wrapped in `shiny-card rounded-3xl p-4 sm:p-5 relative overflow-hidden` containers.
+- **Header Elements**:
+  - Distinctive icon and uppercase section title (`⚡ LIVE SIGNALS` / `🩵 WATCHLIST`).
+  - Clear descriptive subtitle (`ACTIVE LIMIT ORDERS & EXECUTING TRADES` / `DAY-TYPE CANDIDATES & PIVOT REGIME SETUPS`).
+  - Real-time active counter badges (`• X ACTIVE SIGNALS` / `• X CANDIDATES`).
+  - Native `EXPAND` / `COLLAPSE` toggle buttons with dynamic chevron indicators (`ChevronUp` / `ChevronDown`).
+- **Initial State**: Both cards default to collapsed (`isHubLiveMasterExpanded: false`, `isHubWatchlistMasterExpanded: false`), providing an ultra-clean, decluttered mobile viewport while offering immediate expansion on tap.
+- **Top-Level Toggle Integration**: Selecting `🚨 LIVE SIGNALS` or `📋 WATCHLIST` from the master view switcher automatically auto-expands the targeted section (`setIsHubLiveMasterExpanded(true)` / `setIsHubWatchlistMasterExpanded(true)`).
+
 ---
 
 ## 3. Parity & Build Verification
@@ -63,6 +74,7 @@ Positioned directly above the matrices, a high-contrast 3-way toggle provides se
    ```
 2. **Mirror Parity Checksum**:
    All 3 instances maintain exact SHA256 byte-for-byte synchronization:
-   - `Tv-Alert-Mobile/src/app/page.tsx`: `a5461a6e20c6dfdcf25f779db2439462a7d5c4deec1a082e27d3cbc99e690851`
-   - `page.tsx`: `a5461a6e20c6dfdcf25f779db2439462a7d5c4deec1a082e27d3cbc99e690851`
-   - `RemoteURL/page.tsx`: `a5461a6e20c6dfdcf25f779db2439462a7d5c4deec1a082e27d3cbc99e690851`
+   - `Tv-Alert-Mobile/src/app/page.tsx`: `4b30fe2c7df94572e2733eb07f3a3bfbf8e6df58b5008096faae5490c4ac3d93`
+   - `page.tsx`: `4b30fe2c7df94572e2733eb07f3a3bfbf8e6df58b5008096faae5490c4ac3d93`
+   - `RemoteURL/page.tsx`: `4b30fe2c7df94572e2733eb07f3a3bfbf8e6df58b5008096faae5490c4ac3d93`
+
