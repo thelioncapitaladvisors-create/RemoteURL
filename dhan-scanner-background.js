@@ -1849,8 +1849,9 @@ async function runDhanScan(limitCount = null) {
                 const LightningBuy = standardLightningBuy;
                 const LightningSell = standardLightningSell;
 
-                const ExtremeReversalBuy = Elongsignal && longAllowed && dayAllowed;
-                const ExtremeReversalSell = Eshortsignal && shortAllowed && dayAllowed;
+                // Extreme Reversal strategies are exempt from dayAllowed and H4/L4 gating per v4.0 mandate
+                const ExtremeReversalBuy = Elongsignal;
+                const ExtremeReversalSell = Eshortsignal;
 
                 // Divergence strategies are exempt from dayAllowed and H4/L4 gating (confirmed on candle close)
                 // Version 3.0: Symmetrical DMI Directional Filter (Avoid Long D when minus > plus, avoid Short D when plus > minus)

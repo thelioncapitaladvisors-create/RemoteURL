@@ -3545,8 +3545,8 @@ checkAnyBounceDown(r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r
 
 // 1. Definition (13 parameters)
 initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool is_conf = false, string conf_type = "") =>
-    // ── H4/L4 HARD GATE (Exempt for Divergence and Lightning signals per user mandate) ──
-    bool isGatingExempt = str.contains(longName, 'DIVERGENCE') or str.contains(longName, 'LIGHTNING')
+    // ── H4/L4 HARD GATE (Exempt for Divergence, Lightning, and Extreme Reversal signals per user mandate) ──
+    bool isGatingExempt = str.contains(longName, 'DIVERGENCE') or str.contains(longName, 'LIGHTNING') or str.contains(longName, 'EXTREME REVERSAL')
     bool _buy  = isGatingExempt ? buyCond  : (buyCond  and low < H4)
     bool _sell = isGatingExempt ? sellCond : (sellCond and high > L4)
     bool alreadyOpenedThisBar = false
@@ -3870,9 +3870,9 @@ bool LightningSell  = standardLightningSell
 // Flag to bypass day type / sideways filter inside initializeAndPushTrade when H triggers
 bool lightningBypassDayFilter = HiddenDivBuy or HiddenDivSell
 
-// 4. Extreme Reversal (Independent signal, standard dayAllowed gate)
-bool ExtremeReversalBuy  = Elongsignal and longAllowed and dayAllowed
-bool ExtremeReversalSell = Eshortsignal and shortAllowed and dayAllowed
+// 4. Extreme Reversal (Independent signal, ungated per v4.0 mandate)
+bool ExtremeReversalBuy  = Elongsignal
+bool ExtremeReversalSell = Eshortsignal
 
 // Confluence Gating (Orthogonal Trend + Divergence Window - 6 Bars)
 bool hasBullDivWindow = (inWindowRegBull or inWindowHiddenBull or confirmedRegBull or confirmedHiddenBull)
