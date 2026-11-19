@@ -12598,12 +12598,12 @@ function MobileScreensaver() {
                                         onClick={() => setHubSectionView('ALL')}
                                         className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
                                             hubSectionView === 'ALL'
-                                                ? 'bg-primary text-white border-primary shadow-sm'
-                                                : 'bg-white/60 dark:bg-slate-800/60 text-dim border-transparent hover:text-primary'
+                                                ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-500/20'
+                                                : 'bg-white/60 dark:bg-slate-800/60 text-blue-600 dark:text-blue-400 border-transparent hover:bg-blue-500/10'
                                         }`}
                                     >
                                         <span>🌐 ALL SECTIONS</span>
-                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'ALL' ? 'bg-white/25 text-white' : 'bg-black/10 dark:bg-white/10 text-primary'}`}>
+                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'ALL' ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'}`}>
                                             {liveSignalRows.length + watchlistSignalRows.length}
                                         </span>
                                     </button>
@@ -12825,23 +12825,51 @@ function MobileScreensaver() {
                                                                     </button>
                                                                 )}
 
-                                                                {/* JUMP TO WATCHLIST FILTER TAB BUTTON */}
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        setHubSectionView('WATCHLIST');
-                                                                        setIsHubWatchlistMasterExpanded(true);
-                                                                    }}
-                                                                    className="w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 cursor-pointer select-none active:scale-95"
-                                                                >
-                                                                    <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                                        <span className="shrink-0 text-xs">📋</span>
-                                                                        <span className="truncate">VIEW WATCHLIST</span>
-                                                                    </span>
-                                                                    <span className="px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 bg-cyan-500/25 text-cyan-800 dark:text-cyan-200">
-                                                                        {watchlistSignalRows.length}
-                                                                    </span>
-                                                                </button>
+                                                                {/* MISSILE */}
+                                                                {liveMissileCountInScan > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setHubLiveTab(prev => prev === 'MISSILE' ? 'ALL' : 'MISSILE')}
+                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                            effectiveHubLiveTab === 'MISSILE'
+                                                                                ? 'bg-emerald-600 text-white border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/10'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                            <span className="shrink-0 text-xs">🚀</span>
+                                                                            <span className="truncate">MISSILE</span>
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                            effectiveHubLiveTab === 'MISSILE' ? 'bg-white/25 text-white' : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-200'
+                                                                        }`}>
+                                                                            {liveMissileCountInScan}
+                                                                        </span>
+                                                                    </button>
+                                                                )}
+
+                                                                {/* SCALP */}
+                                                                {liveScalpCountInScan > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setHubLiveTab(prev => prev === 'SCALP' ? 'ALL' : 'SCALP')}
+                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                            effectiveHubLiveTab === 'SCALP'
+                                                                                ? 'bg-amber-600 text-white border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/10'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                            <span className="shrink-0 text-xs">⚡</span>
+                                                                            <span className="truncate">SCALP</span>
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                            effectiveHubLiveTab === 'SCALP' ? 'bg-white/25 text-white' : 'bg-amber-500/20 text-amber-700 dark:text-amber-200'
+                                                                        }`}>
+                                                                            {liveScalpCountInScan}
+                                                                        </span>
+                                                                    </button>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     )}
