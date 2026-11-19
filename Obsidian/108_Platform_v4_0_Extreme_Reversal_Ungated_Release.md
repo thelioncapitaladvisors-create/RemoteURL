@@ -77,16 +77,19 @@ const ExtremeReversalBuy = Elongsignal;
 const ExtremeReversalSell = Eshortsignal;
 ```
 
+### 3.4 Pine Script Screener Payload Scope Parity Fix
+In TradingView, Pine Script v6 enforces strict local variable scoping. The 12 screener string formatting variables (`isNcprStr`, `isInsideStr`, `isNvaStr`, `isRejStr`, `isContStr`, `dtcStr`, `dbcStr`, `prevRangeStr`, `cprWidthStr`, `vahStr`, `valStr`, `vaWidthStr`) were previously declared indented inside `if Fire_Alert and enable_alerts`. When referenced by `if isNewDaySession or isNewRejectionSetup`, TradingView threw compiler error `CE10272: Undeclared identifier "isNcprStr"`. These declarations have been lifted to the global script scope immediately before `if Fire_Alert and enable_alerts`, ensuring zero compile errors and full availability across all alert branches.
+
 ---
 
 ## 4. Verification & Parity Audit
 
 ### 4.1 SHA256 Checksum Parity Across Master Pine Script Indicators
 All 4 indicator files maintain 100% byte-for-byte SHA256 parity:
-- `TV Indicator/TLCS_Live_Pivot_Alerts.pine`: `9d9fc035da693b6967590fc9fbbeb77f20bcbd9b641884f38a96ee99d9d61cbf`
-- `TV_Indicator_Full_Code.txt`: `9d9fc035da693b6967590fc9fbbeb77f20bcbd9b641884f38a96ee99d9d61cbf`
-- `user_code.pine`: `9d9fc035da693b6967590fc9fbbeb77f20bcbd9b641884f38a96ee99d9d61cbf`
-- `TLCS_Live_Pivot_Alerts.pine`: `9d9fc035da693b6967590fc9fbbeb77f20bcbd9b641884f38a96ee99d9d61cbf`
+- `TV Indicator/TLCS_Live_Pivot_Alerts.pine`: `39c54b890337c5766297c9f955a43fc60380a6c76f34c4ccdf704dea88525f15`
+- `TV_Indicator_Full_Code.txt`: `39c54b890337c5766297c9f955a43fc60380a6c76f34c4ccdf704dea88525f15`
+- `user_code.pine`: `39c54b890337c5766297c9f955a43fc60380a6c76f34c4ccdf704dea88525f15`
+- `TLCS_Live_Pivot_Alerts.pine`: `39c54b890337c5766297c9f955a43fc60380a6c76f34c4ccdf704dea88525f15`
 
 ### 4.2 SHA256 Checksum Parity Across Python BlackBox Engines
 Both Python strategy modules maintain 100% byte-for-byte SHA256 parity:
