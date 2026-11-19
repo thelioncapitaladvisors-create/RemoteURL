@@ -3558,8 +3558,11 @@ function MobileScreensaver() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalonePwa, setIsStandalonePwa] = useState<boolean>(true);
   const [confluenceMode, setConfluenceMode] = useState<'ALL' | 'CONFLUENCE_ONLY'>('ALL');
-  const [hubLiveTab, setHubLiveTab] = useState<'ALL' | 'INSIDE_DAY' | 'DIVERGENCE' | 'REJECTED' | 'CONTINUATION' | 'FIRE_ALERT' | 'NCPR'>('ALL');
+  const [hubLiveTab, setHubLiveTab] = useState<'ALL' | 'INSIDE_DAY' | 'DIVERGENCE' | 'REJECTED' | 'CONTINUATION' | 'FIRE_ALERT' | 'NCPR' | 'MISSILE' | 'SCALP' | 'LIGHTNING' | 'EXTREME_REVERSAL'>('ALL');
+  const [hubWatchlistTab, setHubWatchlistTab] = useState<'ALL' | 'REJECTED' | 'CONTINUATION' | 'INSIDE_DAY' | 'NCPR' | 'VCPR' | 'BLUEPRINT'>('ALL');
+  const [hubSectionView, setHubSectionView] = useState<'ALL' | 'LIVE' | 'WATCHLIST'>('ALL');
   const [isHubLiveButtonsExpanded, setIsHubLiveButtonsExpanded] = useState<boolean>(true);
+  const [isHubWatchlistButtonsExpanded, setIsHubWatchlistButtonsExpanded] = useState<boolean>(true);
 
   // ── AUTONOMOUS AUDIT & RESOLUTION AGENT STATE ────────────────────────
   const [auditStatus, setAuditStatus] = useState<'HEALTHY' | 'DESYNC' | 'CHECKING'>('CHECKING');
@@ -12150,28 +12153,31 @@ function MobileScreensaver() {
 
                       {/* Daily Signal Dashboard Matrix */}
                       {(() => {
-                        const parameterCategories = [
+                        const liveParameterCategories = [
                             { id: 'FIRE_ALERT', label: 'Confluence' },
-                            { id: 'MISSILE', label: 'Missile' },
-                            { id: 'SCALP', label: 'Scalp' },
                             { id: 'LIGHTNING', label: 'Lightning' },
                             { id: 'EXTREME_REVERSAL', label: 'Extreme Reversal' },
                             { id: 'DIVERGENCE', label: 'Divergence' },
                             { id: 'HIDDEN_DIVERGENCE', label: 'Hidden Divergence' },
+                            { id: 'MISSILE', label: 'Missile' },
+                            { id: 'SCALP', label: 'Scalp' }
+                        ];
+
+                        const watchlistParameterCategories = [
                             { id: 'REJECTED_BULLISH', label: 'Rejected Bullish' },
                             { id: 'REJECTED_BEARISH', label: 'Rejected Bearish' },
                             { id: 'BULLISH_CONTINUATION', label: 'Bullish Continuation' },
                             { id: 'BEARISH_CONTINUATION', label: 'Bearish Continuation' },
-                            { id: 'VIRGIN_CPR', label: 'VCPR' },
                             { id: 'REJECTION', label: 'Rejection Blueprint' },
+                            { id: 'INSIDE_DAY', label: 'Inside Day CPR' },
+                            { id: 'NCPR', label: 'NCPR' },
+                            { id: 'VIRGIN_CPR', label: 'VCPR' },
                             { id: 'ABSORPTION', label: 'Absorption Blueprint' },
                             { id: 'FAILED_NEW_LOW', label: 'Failed New High/Low Blueprint' },
                             { id: 'OUTSIDE_DAY', label: 'Outside Day' },
                             { id: 'STOP_RUN', label: 'Stop Run Day' },
                             { id: 'STOP_RUN_SEQ', label: 'Stop Run Sequence' },
-                            { id: 'ACCUMULATION', label: 'Accumulation Sequence' },
-                            { id: 'INSIDE_DAY', label: 'Inside Day CPR' },
-                            { id: 'NCPR', label: 'NCPR' }
+                            { id: 'ACCUMULATION', label: 'Accumulation Sequence' }
                         ];
 
                         // Normalized Narrow CPR (< 5.0% range) signal identifier
@@ -12218,11 +12224,18 @@ function MobileScreensaver() {
                                 return m === analyticsMarket || (analyticsMarket === 'nifty' && m === 'stocks');
                               });
 
-                        const liveDivCountInScan = filteredSigs.filter(s => isDivSignal(s)).length;
-                        const liveRejectedCountInScan = filteredSigs.filter(s => isRejectedSignal(s)).length;
-                        const liveContinuationCountInScan = filteredSigs.filter(s => isContinuationSignal(s)).length;
+                        // Counts for Live Signals
                         const liveFireCountInScan = filteredSigs.filter(s => isFireAlertSignal(s)).length;
-                        const liveInsideDayCountInScan = filteredSigs.filter(s => {
+                        const liveDivCountInScan = filteredSigs.filter(s => isDivSignal(s)).length;
+                        const liveLightningCountInScan = filteredSigs.filter(s => (s.type || '').toUpperCase().includes('LIGHTNING')).length;
+                        const liveExtRevCountInScan = filteredSigs.filter(s => { const t = (s.type || '').toUpperCase(); return t.includes('EXTREME') && t.includes('REVERSAL'); }).length;
+                        const liveMissileCountInScan = filteredSigs.filter(s => (s.type || '').toUpperCase().includes('MISSILE')).length;
+                        const liveScalpCountInScan = filteredSigs.filter(s => (s.type || '').toUpperCase().includes('SCALP')).length;
+
+                        // Counts for Watchlist Candidates
+                        const watchlistRejectedCountInScan = filteredSigs.filter(s => isRejectedBullishSignal(s) || isRejectedBearishSignal(s) || isRejectedSignal(s) || (typeof s.metadata === 'object' && String(s.metadata?.day_type || '').toUpperCase().includes('REJECTION'))).length;
+                        const watchlistContinuationCountInScan = filteredSigs.filter(s => isBullishContinuationSignal(s) || isBearishContinuationSignal(s)).length;
+                        const watchlistInsideDayCountInScan = filteredSigs.filter(s => {
                             let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
                             const dt = (meta.day_type || s.trigger || '').toUpperCase();
                             if (meta.is_inside_cpr === true || meta.two_day_relationship === 'INSIDE' || dt.includes('INSIDE')) return true;
@@ -12234,83 +12247,115 @@ function MobileScreensaver() {
                             const yTop = Math.max(ytc, ybc), yBottom = Math.min(ytc, ybc);
                             return top > 0 && bottom > 0 && yTop > 0 && yBottom > 0 && (top < yTop) && (bottom > yBottom);
                         }).length;
-                        const liveNcprCountInScan = filteredSigs.filter(s => isNcprSignal(s)).length;
+                        const watchlistNcprCountInScan = filteredSigs.filter(s => isNcprSignal(s)).length;
+                        const watchlistVcprCountInScan = filteredSigs.filter(s => (s.type || '').toUpperCase().includes('VIRGIN') || (s.type || '').toUpperCase().includes('VCPR')).length;
+                        const watchlistBlueprintCountInScan = filteredSigs.filter(s => {
+                            let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+                            const dt = (meta.day_type || s.trigger || '').toUpperCase();
+                            return dt.includes('ABSORPTION') || dt.includes('FAILED') || dt.includes('OUTSIDE') || dt.includes('STOP RUN') || dt.includes('ACCUMULATION');
+                        }).length;
 
-                        // Gracefully fallback to 'ALL' if the currently selected tab has zero signals
+                        // Gracefully fallback to 'ALL' if the currently selected Live tab has zero signals
                         const effectiveHubLiveTab = (
                             (hubLiveTab === 'FIRE_ALERT' && liveFireCountInScan === 0) ||
                             (hubLiveTab === 'DIVERGENCE' && liveDivCountInScan === 0) ||
-                            (hubLiveTab === 'REJECTED' && liveRejectedCountInScan === 0) ||
-                            (hubLiveTab === 'INSIDE_DAY' && liveInsideDayCountInScan === 0) ||
-                            (hubLiveTab === 'CONTINUATION' && liveContinuationCountInScan === 0) ||
-                            (hubLiveTab === 'NCPR' && liveNcprCountInScan === 0)
+                            (hubLiveTab === 'LIGHTNING' && liveLightningCountInScan === 0) ||
+                            (hubLiveTab === 'EXTREME_REVERSAL' && liveExtRevCountInScan === 0) ||
+                            (hubLiveTab === 'MISSILE' && liveMissileCountInScan === 0) ||
+                            (hubLiveTab === 'SCALP' && liveScalpCountInScan === 0)
                         ) ? 'ALL' : hubLiveTab;
 
-                        const displayedCategories = effectiveHubLiveTab === 'FIRE_ALERT'
-                            ? parameterCategories.filter(cat => cat.id === 'FIRE_ALERT')
-                            : effectiveHubLiveTab === 'INSIDE_DAY'
-                            ? parameterCategories.filter(cat => cat.id === 'INSIDE_DAY')
+                        const displayedLiveCategories = effectiveHubLiveTab === 'FIRE_ALERT'
+                            ? liveParameterCategories.filter(cat => cat.id === 'FIRE_ALERT')
                             : effectiveHubLiveTab === 'DIVERGENCE'
-                            ? parameterCategories.filter(cat => cat.id === 'DIVERGENCE' || cat.id === 'HIDDEN_DIVERGENCE')
-                            : effectiveHubLiveTab === 'REJECTED'
-                            ? parameterCategories.filter(cat => cat.id === 'REJECTED_BULLISH' || cat.id === 'REJECTED_BEARISH' || cat.id === 'REJECTION')
-                            : effectiveHubLiveTab === 'CONTINUATION'
-                            ? parameterCategories.filter(cat => cat.id === 'BULLISH_CONTINUATION' || cat.id === 'BEARISH_CONTINUATION')
-                            : effectiveHubLiveTab === 'NCPR'
-                            ? parameterCategories.filter(cat => cat.id === 'NCPR')
-                            : parameterCategories;
+                            ? liveParameterCategories.filter(cat => cat.id === 'DIVERGENCE' || cat.id === 'HIDDEN_DIVERGENCE')
+                            : effectiveHubLiveTab === 'LIGHTNING'
+                            ? liveParameterCategories.filter(cat => cat.id === 'LIGHTNING')
+                            : effectiveHubLiveTab === 'EXTREME_REVERSAL'
+                            ? liveParameterCategories.filter(cat => cat.id === 'EXTREME_REVERSAL')
+                            : effectiveHubLiveTab === 'MISSILE'
+                            ? liveParameterCategories.filter(cat => cat.id === 'MISSILE')
+                            : effectiveHubLiveTab === 'SCALP'
+                            ? liveParameterCategories.filter(cat => cat.id === 'SCALP')
+                            : liveParameterCategories;
 
-                        const liveSignalRows = displayedCategories.map(cat => {
-                            const matching = filteredSigs.filter(s => {
-                                const t = (s.type || '').toUpperCase();
-                                let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-                                const dt = (meta.day_type || s.trigger || '').toUpperCase();
-                                const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
-                                if (cat.id === 'FIRE_ALERT') return isFireAlertSignal(s);
-                                if (cat.id === 'MISSILE') return t.includes('MISSILE');
-                                if (cat.id === 'SCALP') return t.includes('SCALP');
-                                if (cat.id === 'LIGHTNING') return t.includes('LIGHTNING');
-                                if (cat.id === 'EXTREME_REVERSAL') return t.includes('EXTREME') && t.includes('REVERSAL');
-                                if (cat.id === 'DIVERGENCE') {
-                                    if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
-                                    return (t.includes('DIVERGENCE') && !t.includes('HIDDEN')) || (!t.includes('HIDDEN') && (meta.divergence_type === 'REGULAR' || meta.confluence_type === 'REGULAR_DIV' || meta.confluence_type === 'DIVERGENCE'));
-                                }
-                                if (cat.id === 'HIDDEN_DIVERGENCE') {
-                                    if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
-                                    return (t.includes('HIDDEN') && (t.includes('DIVERGENCE') || t.includes('DIV'))) || meta.divergence_type === 'HIDDEN' || meta.confluence_type === 'HIDDEN_DIV' || meta.confluence_type === 'HIDDEN_DIVERGENCE';
-                                }
-                                if (cat.id === 'REJECTED_BULLISH') return isRejectedBullishSignal(s);
-                                if (cat.id === 'REJECTED_BEARISH') return isRejectedBearishSignal(s);
-                                if (cat.id === 'BULLISH_CONTINUATION') return isBullishContinuationSignal(s);
-                                if (cat.id === 'BEARISH_CONTINUATION') return isBearishContinuationSignal(s);
-                                if (cat.id === 'VIRGIN_CPR') return t.includes('VIRGIN') || t.includes('VCPR');
-                                if (cat.id === 'REJECTION') return isRejectedSignal(s) || dt.includes('REJECTION') || bias.includes('REJECTION');
-                                if (cat.id === 'ABSORPTION') return dt.includes('ABSORPTION');
-                                if (cat.id === 'FAILED_NEW_LOW') return dt.includes('FAILED');
-                                if (cat.id === 'OUTSIDE_DAY') return dt.includes('OUTSIDE');
-                                if (cat.id === 'STOP_RUN') return dt.includes('STOP RUN') && !dt.includes('SEQ');
-                                if (cat.id === 'STOP_RUN_SEQ') return dt.includes('STOP RUN') && dt.includes('SEQ');
-                                if (cat.id === 'ACCUMULATION') return dt.includes('ACCUMULATION') || dt.includes('ACC/DIST');
-                                if (cat.id === 'INSIDE_DAY') {
-                                  // Inside Day CPR: today's CPR lies within yesterday's CPR
-                                  // INSIDE = ((DTc < YTc) and (DBc > YBc))
-                                  const isExplicit = meta.is_inside_cpr === true || meta.two_day_relationship === 'INSIDE' || dt.includes('INSIDE');
-                                  if (isExplicit) return true;
-                                  const dtc = Number(meta.dtc || meta.cpr?.tc || meta.cpr_tc || meta.tc || 0);
-                                  const dbc = Number(meta.dbc || meta.cpr?.bc || meta.cpr_bc || meta.bc || 0);
-                                  const ytc = Number(meta.ytc || meta.prev_tc || meta.prev_cpr_top || meta.prev_cpr?.tc || 0);
-                                  const ybc = Number(meta.ybc || meta.prev_bc || meta.prev_cpr_bottom || meta.prev_cpr?.bc || 0);
-                                  const top = Math.max(dtc, dbc);
-                                  const bottom = Math.min(dtc, dbc);
-                                  const yTop = Math.max(ytc, ybc);
-                                  const yBottom = Math.min(ytc, ybc);
-                                  return top > 0 && bottom > 0 && yTop > 0 && yBottom > 0 && (top < yTop) && (bottom > yBottom);
-                                }
-                                if (cat.id === 'NCPR') {
-                                  return isNcprSignal(s);
-                                }
-                                return false;
-                            });
+                        // Gracefully fallback to 'ALL' if the currently selected Watchlist tab has zero signals
+                        const effectiveHubWatchlistTab = (
+                            (hubWatchlistTab === 'REJECTED' && watchlistRejectedCountInScan === 0) ||
+                            (hubWatchlistTab === 'CONTINUATION' && watchlistContinuationCountInScan === 0) ||
+                            (hubWatchlistTab === 'INSIDE_DAY' && watchlistInsideDayCountInScan === 0) ||
+                            (hubWatchlistTab === 'NCPR' && watchlistNcprCountInScan === 0) ||
+                            (hubWatchlistTab === 'VCPR' && watchlistVcprCountInScan === 0) ||
+                            (hubWatchlistTab === 'BLUEPRINT' && watchlistBlueprintCountInScan === 0)
+                        ) ? 'ALL' : hubWatchlistTab;
+
+                        const displayedWatchlistCategories = effectiveHubWatchlistTab === 'REJECTED'
+                            ? watchlistParameterCategories.filter(cat => cat.id === 'REJECTED_BULLISH' || cat.id === 'REJECTED_BEARISH' || cat.id === 'REJECTION')
+                            : effectiveHubWatchlistTab === 'CONTINUATION'
+                            ? watchlistParameterCategories.filter(cat => cat.id === 'BULLISH_CONTINUATION' || cat.id === 'BEARISH_CONTINUATION')
+                            : effectiveHubWatchlistTab === 'INSIDE_DAY'
+                            ? watchlistParameterCategories.filter(cat => cat.id === 'INSIDE_DAY')
+                            : effectiveHubWatchlistTab === 'NCPR'
+                            ? watchlistParameterCategories.filter(cat => cat.id === 'NCPR')
+                            : effectiveHubWatchlistTab === 'VCPR'
+                            ? watchlistParameterCategories.filter(cat => cat.id === 'VIRGIN_CPR')
+                            : effectiveHubWatchlistTab === 'BLUEPRINT'
+                            ? watchlistParameterCategories.filter(cat => cat.id === 'ABSORPTION' || cat.id === 'FAILED_NEW_LOW' || cat.id === 'OUTSIDE_DAY' || cat.id === 'STOP_RUN' || cat.id === 'STOP_RUN_SEQ' || cat.id === 'ACCUMULATION')
+                            : watchlistParameterCategories;
+
+                        const matchSignalToCategory = (catId: string, s: Signal) => {
+                            const t = (s.type || '').toUpperCase();
+                            let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+                            const dt = (meta.day_type || s.trigger || '').toUpperCase();
+                            const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
+                            if (catId === 'FIRE_ALERT') return isFireAlertSignal(s);
+                            if (catId === 'MISSILE') return t.includes('MISSILE');
+                            if (catId === 'SCALP') return t.includes('SCALP');
+                            if (catId === 'LIGHTNING') return t.includes('LIGHTNING');
+                            if (catId === 'EXTREME_REVERSAL') return t.includes('EXTREME') && t.includes('REVERSAL');
+                            if (catId === 'DIVERGENCE') {
+                                if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
+                                return (t.includes('DIVERGENCE') && !t.includes('HIDDEN')) || (!t.includes('HIDDEN') && (meta.divergence_type === 'REGULAR' || meta.confluence_type === 'REGULAR_DIV' || meta.confluence_type === 'DIVERGENCE'));
+                            }
+                            if (catId === 'HIDDEN_DIVERGENCE') {
+                                if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
+                                return (t.includes('HIDDEN') && (t.includes('DIVERGENCE') || t.includes('DIV'))) || meta.divergence_type === 'HIDDEN' || meta.confluence_type === 'HIDDEN_DIV' || meta.confluence_type === 'HIDDEN_DIVERGENCE';
+                            }
+                            if (catId === 'REJECTED_BULLISH') return isRejectedBullishSignal(s);
+                            if (catId === 'REJECTED_BEARISH') return isRejectedBearishSignal(s);
+                            if (catId === 'BULLISH_CONTINUATION') return isBullishContinuationSignal(s);
+                            if (catId === 'BEARISH_CONTINUATION') return isBearishContinuationSignal(s);
+                            if (catId === 'VIRGIN_CPR') return t.includes('VIRGIN') || t.includes('VCPR');
+                            if (catId === 'REJECTION') return isRejectedSignal(s) || dt.includes('REJECTION') || bias.includes('REJECTION');
+                            if (catId === 'ABSORPTION') return dt.includes('ABSORPTION');
+                            if (catId === 'FAILED_NEW_LOW') return dt.includes('FAILED');
+                            if (catId === 'OUTSIDE_DAY') return dt.includes('OUTSIDE');
+                            if (catId === 'STOP_RUN') return dt.includes('STOP RUN') && !dt.includes('SEQ');
+                            if (catId === 'STOP_RUN_SEQ') return dt.includes('STOP RUN') && dt.includes('SEQ');
+                            if (catId === 'ACCUMULATION') return dt.includes('ACCUMULATION') || dt.includes('ACC/DIST');
+                            if (catId === 'INSIDE_DAY') {
+                              const isExplicit = meta.is_inside_cpr === true || meta.two_day_relationship === 'INSIDE' || dt.includes('INSIDE');
+                              if (isExplicit) return true;
+                              const dtc = Number(meta.dtc || meta.cpr?.tc || meta.cpr_tc || meta.tc || 0);
+                              const dbc = Number(meta.dbc || meta.cpr?.bc || meta.cpr_bc || meta.bc || 0);
+                              const ytc = Number(meta.ytc || meta.prev_tc || meta.prev_cpr_top || meta.prev_cpr?.tc || 0);
+                              const ybc = Number(meta.ybc || meta.prev_bc || meta.prev_cpr_bottom || meta.prev_cpr?.bc || 0);
+                              const top = Math.max(dtc, dbc);
+                              const bottom = Math.min(dtc, dbc);
+                              const yTop = Math.max(ytc, ybc);
+                              const yBottom = Math.min(ytc, ybc);
+                              return top > 0 && bottom > 0 && yTop > 0 && yBottom > 0 && (top < yTop) && (bottom > yBottom);
+                            }
+                            if (catId === 'NCPR') {
+                              return isNcprSignal(s);
+                            }
+                            return false;
+                        };
+
+                        const cleanSym = (sym: string) => (sym || '').replace(/^(NSE_DLY|NSE|MCX|NYMEX|COMEX|BINANCE|TVC):/i, '').replace(/1!$/, '');
+
+                        const renderCategoryRow = (cat: { id: string; label: string }, isWatchlistMode: boolean = false) => {
+                            const matching = filteredSigs.filter(s => matchSignalToCategory(cat.id, s));
                             
                             let bulls = matching.filter(s => {
                                 const t = (s.type || '').toUpperCase();
@@ -12354,7 +12399,6 @@ function MobileScreensaver() {
                                 bears = matching.filter(s => !bulls.includes(s));
                             }
                             
-                            const cleanSym = (sym: string) => (sym || '').replace(/^(NSE_DLY|NSE|MCX|NYMEX|COMEX|BINANCE|TVC):/i, '').replace(/1!$/, '');
                             const bullSyms = Array.from(new Set(bulls.map(b => cleanSym(b.symbol))));
                             const bearSyms = Array.from(new Set(bears.map(b => cleanSym(b.symbol))));
                             
@@ -12362,10 +12406,13 @@ function MobileScreensaver() {
                             
                             const isFireRow = cat.id === 'FIRE_ALERT';
                             const isDivergenceRow = cat.id === 'DIVERGENCE' || cat.id === 'HIDDEN_DIVERGENCE';
+                            const isLightningRow = cat.id === 'LIGHTNING';
+                            const isExtRevRow = cat.id === 'EXTREME_REVERSAL';
                             const isRejectionRow = cat.id === 'REJECTED_BULLISH' || cat.id === 'REJECTED_BEARISH' || cat.id === 'REJECTION';
                             const isContinuationRow = cat.id === 'BULLISH_CONTINUATION' || cat.id === 'BEARISH_CONTINUATION';
                             const isInsideDayRow = cat.id === 'INSIDE_DAY';
                             const isNcprRow = cat.id === 'NCPR';
+                            const isVcprRow = cat.id === 'VIRGIN_CPR';
                             
                             return (
                                 <tr key={cat.id} className="hover:bg-rose-500/[0.03] dark:hover:bg-rose-500/[0.05] transition-colors">
@@ -12382,19 +12429,39 @@ function MobileScreensaver() {
                                                 {isDivergenceRow && (
                                                     <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(168,85,247,0.25)] flex items-center gap-1">
                                                         <span className="text-[7.5px]">⚡</span>
-                                                        <span>LIVE DIVERGENCE SIGNAL</span>
+                                                        <span>LIVE DIVERGENCE</span>
+                                                    </span>
+                                                )}
+                                                {isLightningRow && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(245,158,11,0.25)] flex items-center gap-1">
+                                                        <span className="text-[7.5px]">⚡</span>
+                                                        <span>LIGHTNING</span>
+                                                    </span>
+                                                )}
+                                                {isExtRevRow && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(244,63,94,0.25)] flex items-center gap-1">
+                                                        <span className="text-[7.5px]">⚡</span>
+                                                        <span>EXTREME REVERSAL</span>
                                                     </span>
                                                 )}
                                                 {isRejectionRow && (
-                                                    <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(245,158,11,0.25)] flex items-center gap-1">
+                                                    <span className={`px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black uppercase tracking-wider flex items-center gap-1 ${
+                                                        isWatchlistMode 
+                                                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                                                            : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/35 shadow-[0_0_8px_rgba(245,158,11,0.25)]'
+                                                    }`}>
                                                         <span className="text-[7.5px]">🛡️</span>
-                                                        <span>LIVE REJECTION SIGNAL</span>
+                                                        <span>{isWatchlistMode ? 'REJECTION WATCHLIST' : 'LIVE REJECTION'}</span>
                                                     </span>
                                                 )}
                                                 {isContinuationRow && (
-                                                    <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(20,184,166,0.25)] flex items-center gap-1">
+                                                    <span className={`px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black uppercase tracking-wider flex items-center gap-1 ${
+                                                        isWatchlistMode
+                                                            ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30'
+                                                            : 'bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/35 shadow-[0_0_8px_rgba(20,184,166,0.25)]'
+                                                    }`}>
                                                         <span className="text-[7.5px]">🚀</span>
-                                                        <span>LIVE CONTINUATION SIGNAL</span>
+                                                        <span>{isWatchlistMode ? 'CONTINUATION WATCHLIST' : 'LIVE CONTINUATION'}</span>
                                                     </span>
                                                 )}
                                                 {isInsideDayRow && (
@@ -12407,6 +12474,12 @@ function MobileScreensaver() {
                                                     <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(99,102,241,0.25)] flex items-center gap-1">
                                                         <span className="text-[7.5px]">📐</span>
                                                         <span>NCPR</span>
+                                                    </span>
+                                                )}
+                                                {isVcprRow && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-fuchsia-500/20 text-fuchsia-600 dark:text-fuchsia-400 border border-fuchsia-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(217,70,239,0.25)] flex items-center gap-1">
+                                                        <span className="text-[7.5px]">🧲</span>
+                                                        <span>VIRGIN CPR</span>
                                                     </span>
                                                 )}
                                             </div>
@@ -12433,6 +12506,12 @@ function MobileScreensaver() {
                                                             {isDivergenceRow && (
                                                                 <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-purple-200 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700 ml-0.5">DIV</span>
                                                             )}
+                                                            {isLightningRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">LTG</span>
+                                                            )}
+                                                            {isExtRevRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">EXT</span>
+                                                            )}
                                                             {isRejectionRow && (
                                                                 <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">REJ</span>
                                                             )}
@@ -12444,6 +12523,9 @@ function MobileScreensaver() {
                                                             )}
                                                             {isNcprRow && (
                                                                 <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 ml-0.5">NCPR</span>
+                                                            )}
+                                                            {isVcprRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-fuchsia-200 dark:bg-fuchsia-900/60 text-fuchsia-800 dark:text-fuchsia-200 border border-fuchsia-300 dark:border-fuchsia-700 ml-0.5">VCPR</span>
                                                             )}
                                                         </span>
                                                     ))}
@@ -12468,6 +12550,12 @@ function MobileScreensaver() {
                                                             {isDivergenceRow && (
                                                                 <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-purple-200 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700 ml-0.5">DIV</span>
                                                             )}
+                                                            {isLightningRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">LTG</span>
+                                                            )}
+                                                            {isExtRevRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">EXT</span>
+                                                            )}
                                                             {isRejectionRow && (
                                                                 <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">REJ</span>
                                                             )}
@@ -12480,6 +12568,9 @@ function MobileScreensaver() {
                                                             {isNcprRow && (
                                                                 <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 ml-0.5">NCPR</span>
                                                             )}
+                                                            {isVcprRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-fuchsia-200 dark:bg-fuchsia-900/60 text-fuchsia-800 dark:text-fuchsia-200 border border-fuchsia-300 dark:border-fuchsia-700 ml-0.5">VCPR</span>
+                                                            )}
                                                         </span>
                                                     ))}
                                                 </div>
@@ -12488,314 +12579,518 @@ function MobileScreensaver() {
                                     </td>
                                 </tr>
                             );
-                        }).filter(Boolean);
+                        };
+
+                        const liveSignalRows = displayedLiveCategories.map(cat => renderCategoryRow(cat, false)).filter(Boolean);
+                        const watchlistSignalRows = displayedWatchlistCategories.map(cat => renderCategoryRow(cat, true)).filter(Boolean);
 
                         const hasLiveSignals = liveSignalRows.length > 0;
+                        const hasWatchlistSignals = watchlistSignalRows.length > 0;
 
                         return (
-                            <div className="mb-2">
-                                <div className="w-full mb-2">
-                                    <div 
-                                        className="w-full overflow-x-auto hide-scrollbar table-scroll-container rounded-2xl wc-table-card border border-rose-500/30 dark:border-rose-500/30 shadow-[0_4px_25px_rgba(244,63,94,0.12)]"
-                                        onScroll={(e) => { if (e.currentTarget.scrollLeft > 6) e.currentTarget.classList.add('table-is-scrolled'); else e.currentTarget.classList.remove('table-is-scrolled'); }}
+                            <div className="mb-4 space-y-4">
+                                {/* Top-Level Matrix View Switcher */}
+                                <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/5 dark:border-white/5 w-fit overflow-x-auto hide-scrollbar">
+                                    <button
+                                        type="button"
+                                        onClick={() => setHubSectionView('ALL')}
+                                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                                            hubSectionView === 'ALL'
+                                                ? 'bg-primary text-white border-primary shadow-sm'
+                                                : 'bg-white/60 dark:bg-slate-800/60 text-dim border-transparent hover:text-primary'
+                                        }`}
                                     >
-                                        {/* Breaking News Banner Strip */}
-                                        <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-rose-600 via-red-600 to-amber-500 text-white rounded-t-2xl shadow-sm border-b border-white/10 overflow-hidden">
-                                            <div className="flex items-center gap-2">
-                                                <span className="inline-flex rounded-full h-2.5 w-2.5 bg-yellow-300 shrink-0"></span>
-                                                <span className="font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-widest flex items-center gap-1.5 drop-shadow-sm">
-                                                    <span>🚨 LIVE SIGNALS</span>
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsHubLiveButtonsExpanded(prev => !prev)}
-                                                    className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/20 hover:bg-black/35 text-white font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 border border-white/20 select-none cursor-pointer"
-                                                    title={isHubLiveButtonsExpanded ? 'Collapse filter buttons' : 'Expand filter buttons'}
-                                                >
-                                                    <span>{isHubLiveButtonsExpanded ? 'COLLAPSE' : 'EXPAND'}</span>
-                                                    {isHubLiveButtonsExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                                                </button>
-                                                <div className="flex items-center gap-1.5 font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/95">
-                                                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
-                                                    <span>REAL-TIME SCAN</span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <span>🌐 ALL SECTIONS</span>
+                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'ALL' ? 'bg-white/25 text-white' : 'bg-black/10 dark:bg-white/10 text-primary'}`}>
+                                            {liveSignalRows.length + watchlistSignalRows.length}
+                                        </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setHubSectionView('LIVE')}
+                                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                                            hubSectionView === 'LIVE'
+                                                ? 'bg-rose-600 text-white border-rose-500 shadow-sm shadow-rose-500/20'
+                                                : 'bg-white/60 dark:bg-slate-800/60 text-rose-600 dark:text-rose-400 border-transparent hover:bg-rose-500/10'
+                                        }`}
+                                    >
+                                        <span>🚨 LIVE SIGNALS</span>
+                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'LIVE' ? 'bg-white/25 text-white' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'}`}>
+                                            {liveSignalRows.length}
+                                        </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setHubSectionView('WATCHLIST')}
+                                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                                            hubSectionView === 'WATCHLIST'
+                                                ? 'bg-cyan-600 text-white border-cyan-500 shadow-sm shadow-cyan-500/20'
+                                                : 'bg-white/60 dark:bg-slate-800/60 text-cyan-600 dark:text-cyan-400 border-transparent hover:bg-cyan-500/10'
+                                        }`}
+                                    >
+                                        <span>📋 WATCHLIST</span>
+                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'WATCHLIST' ? 'bg-white/25 text-white' : 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400'}`}>
+                                            {watchlistSignalRows.length}
+                                        </span>
+                                    </button>
+                                </div>
 
-                                        {/* Tab Filter Switcher for Live Signals (Collapsible 3 Rows Layout) */}
-                                        {/* Tab Filter Switcher for Live Signals (Collapsible Layout - only showing filters with > 0 signals) */}
-                                        {isHubLiveButtonsExpanded && (
-                                            <div className="p-2 sm:p-2.5 bg-black/5 dark:bg-white/[0.03] border-b border-black/5 dark:border-white/5 w-full transition-all duration-300">
-                                                <div className="grid grid-cols-2 gap-1.5 sm:gap-2 w-full">
-                                                    {/* ALL SIGNALS (always visible anchor) */}
+                                {/* SECTION 1: LIVE SIGNALS TABLE */}
+                                {(hubSectionView === 'ALL' || hubSectionView === 'LIVE') && (
+                                    <div className="w-full">
+                                        <div 
+                                            className="w-full overflow-x-auto hide-scrollbar table-scroll-container rounded-2xl wc-table-card border border-rose-500/30 dark:border-rose-500/30 shadow-[0_4px_25px_rgba(244,63,94,0.12)]"
+                                            onScroll={(e) => { if (e.currentTarget.scrollLeft > 6) e.currentTarget.classList.add('table-is-scrolled'); else e.currentTarget.classList.remove('table-is-scrolled'); }}
+                                        >
+                                            {/* Breaking News Banner Strip */}
+                                            <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-rose-600 via-red-600 to-amber-500 text-white rounded-t-2xl shadow-sm border-b border-white/10 overflow-hidden">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="inline-flex rounded-full h-2.5 w-2.5 bg-yellow-300 shrink-0"></span>
+                                                    <span className="font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-widest flex items-center gap-1.5 drop-shadow-sm">
+                                                        <span>🚨 LIVE SIGNALS</span>
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
                                                     <button
                                                         type="button"
-                                                        onClick={() => setHubLiveTab('ALL')}
-                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
-                                                            ([liveFireCountInScan, liveDivCountInScan, liveRejectedCountInScan, liveInsideDayCountInScan, liveContinuationCountInScan, liveNcprCountInScan].filter(c => c > 0).length === 0) ? 'col-span-2' : ''
-                                                        } ${
-                                                            effectiveHubLiveTab === 'ALL'
-                                                                ? 'bg-rose-600 text-white border-rose-500 shadow-sm'
-                                                                : 'bg-white/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/60 hover:border-rose-400'
-                                                        }`}
+                                                        onClick={() => setIsHubLiveButtonsExpanded(prev => !prev)}
+                                                        className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/20 hover:bg-black/35 text-white font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 border border-white/20 select-none cursor-pointer"
+                                                        title={isHubLiveButtonsExpanded ? 'Collapse filter buttons' : 'Expand filter buttons'}
                                                     >
-                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                            <span className="shrink-0 text-xs">🌐</span>
-                                                            <span className="truncate">ALL SIGNALS</span>
-                                                        </span>
-                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
-                                                            effectiveHubLiveTab === 'ALL' ? 'bg-white/25 text-white' : 'bg-black/5 dark:bg-white/10 text-slate-800 dark:text-slate-200'
-                                                        }`}>
-                                                            {filteredSigs.length}
-                                                        </span>
+                                                        <span>{isHubLiveButtonsExpanded ? 'COLLAPSE' : 'EXPAND'}</span>
+                                                        {isHubLiveButtonsExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                                                     </button>
-
-                                                    {/* HI-PRO ALERTS (Toggle) - Only shown if count > 0 */}
-                                                    {liveFireCountInScan > 0 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setHubLiveTab(prev => prev === 'FIRE_ALERT' ? 'ALL' : 'FIRE_ALERT')}
-                                                            className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
-                                                                effectiveHubLiveTab === 'FIRE_ALERT'
-                                                                    ? 'bg-rose-600 text-white border-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.4)]'
-                                                                    : 'bg-white/60 dark:bg-slate-800/60 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/10'
-                                                            }`}
-                                                        >
-                                                            <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                                <span className="shrink-0 text-xs">⚡</span>
-                                                                <span className="truncate">
-                                                                    CONFLUENCE
-                                                                </span>
-                                                            </span>
-                                                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
-                                                                effectiveHubLiveTab === 'FIRE_ALERT' ? 'bg-white/25 text-white' : 'bg-rose-500/20 text-rose-700 dark:text-rose-200'
-                                                            }`}>
-                                                                {liveFireCountInScan}
-                                                            </span>
-                                                        </button>
-                                                    )}
-
-                                                    {/* DIVERGENCE SIGNALS (Toggle) - Only shown if count > 0 */}
-                                                    {liveDivCountInScan > 0 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setHubLiveTab(prev => prev === 'DIVERGENCE' ? 'ALL' : 'DIVERGENCE')}
-                                                            className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
-                                                                effectiveHubLiveTab === 'DIVERGENCE'
-                                                                    ? 'bg-purple-600 text-white border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.4)]'
-                                                                    : 'bg-white/60 dark:bg-slate-800/60 text-purple-700 dark:text-purple-300 border-purple-500/30 hover:bg-purple-500/10'
-                                                            }`}
-                                                        >
-                                                            <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                                <span className="shrink-0 text-xs">⚡</span>
-                                                                <span className="truncate">
-                                                                    DIVERGENCE
-                                                                </span>
-                                                            </span>
-                                                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
-                                                                effectiveHubLiveTab === 'DIVERGENCE' ? 'bg-white/25 text-white' : 'bg-purple-500/20 text-purple-700 dark:text-purple-200'
-                                                            }`}>
-                                                                {liveDivCountInScan}
-                                                            </span>
-                                                        </button>
-                                                    )}
-
-                                                    {/* REJECTED SIGNALS (Toggle) - Only shown if count > 0 */}
-                                                    {liveRejectedCountInScan > 0 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setHubLiveTab(prev => prev === 'REJECTED' ? 'ALL' : 'REJECTED')}
-                                                            className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
-                                                                effectiveHubLiveTab === 'REJECTED'
-                                                                    ? 'bg-amber-600 text-white border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
-                                                                    : 'bg-white/60 dark:bg-slate-800/60 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/10'
-                                                            }`}
-                                                        >
-                                                            <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                                <span className="shrink-0 text-xs">🛡️</span>
-                                                                <span className="truncate">
-                                                                    REJECTED
-                                                                </span>
-                                                            </span>
-                                                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
-                                                                effectiveHubLiveTab === 'REJECTED' ? 'bg-white/25 text-white' : 'bg-amber-500/20 text-amber-700 dark:text-amber-200'
-                                                            }`}>
-                                                                {liveRejectedCountInScan}
-                                                            </span>
-                                                        </button>
-                                                    )}
-
-                                                    {/* INSIDE DAY CPR SIGNALS (Toggle) - Only shown if count > 0 */}
-                                                    {liveInsideDayCountInScan > 0 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setHubLiveTab(prev => prev === 'INSIDE_DAY' ? 'ALL' : 'INSIDE_DAY')}
-                                                            className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
-                                                                effectiveHubLiveTab === 'INSIDE_DAY'
-                                                                    ? 'bg-sky-600 text-white border-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.4)]'
-                                                                    : 'bg-white/60 dark:bg-slate-800/60 text-sky-700 dark:text-sky-300 border-sky-500/30 hover:bg-sky-500/10'
-                                                            }`}
-                                                        >
-                                                            <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                                <span className="shrink-0 text-xs">🎯</span>
-                                                                <span className="truncate">
-                                                                    INSIDE DAY
-                                                                </span>
-                                                            </span>
-                                                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
-                                                                effectiveHubLiveTab === 'INSIDE_DAY' ? 'bg-white/25 text-white' : 'bg-sky-500/20 text-sky-700 dark:text-sky-200'
-                                                            }`}>
-                                                                {liveInsideDayCountInScan}
-                                                            </span>
-                                                        </button>
-                                                    )}
-
-                                                    {/* CONTINUATION SIGNALS (Toggle) - Only shown if count > 0 */}
-                                                    {liveContinuationCountInScan > 0 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setHubLiveTab(prev => prev === 'CONTINUATION' ? 'ALL' : 'CONTINUATION')}
-                                                            className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
-                                                                effectiveHubLiveTab === 'CONTINUATION'
-                                                                    ? 'bg-teal-600 text-white border-teal-500 shadow-[0_0_12px_rgba(20,184,166,0.4)]'
-                                                                    : 'bg-white/60 dark:bg-slate-800/60 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/10'
-                                                            }`}
-                                                        >
-                                                            <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                                <span className="shrink-0 text-xs">🚀</span>
-                                                                <span className="truncate">
-                                                                    CONTINUATION
-                                                                </span>
-                                                            </span>
-                                                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
-                                                                effectiveHubLiveTab === 'CONTINUATION' ? 'bg-white/25 text-white' : 'bg-teal-500/20 text-teal-700 dark:text-teal-200'
-                                                            }`}>
-                                                                {liveContinuationCountInScan}
-                                                            </span>
-                                                        </button>
-                                                    )}
-
-                                                    {/* NCPR SIGNALS (Toggle) - Only shown if count > 0 */}
-                                                    {liveNcprCountInScan > 0 && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setHubLiveTab(prev => prev === 'NCPR' ? 'ALL' : 'NCPR')}
-                                                            className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
-                                                                effectiveHubLiveTab === 'NCPR'
-                                                                    ? 'bg-indigo-600 text-white border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.4)]'
-                                                                    : 'bg-white/60 dark:bg-slate-800/60 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/10'
-                                                            }`}
-                                                        >
-                                                            <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                                <span className="shrink-0 text-xs">📐</span>
-                                                                <span className="truncate">
-                                                                    NCPR
-                                                                </span>
-                                                            </span>
-                                                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
-                                                                effectiveHubLiveTab === 'NCPR' ? 'bg-white/25 text-white' : 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-200'
-                                                            }`}>
-                                                                {liveNcprCountInScan}
-                                                            </span>
-                                                        </button>
-                                                    )}
+                                                    <div className="flex items-center gap-1.5 font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/95">
+                                                        <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+                                                        <span>REAL-TIME SCAN</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        )}
 
-                                        <table className="w-full min-w-[340px] text-left text-xs sm:text-sm border-collapse">
-                                            {hasLiveSignals && (
-                                                <thead className="wc-table-thead text-primary font-black text-xs sm:text-sm uppercase tracking-wider bg-rose-500/[0.04] dark:bg-rose-500/[0.08] border-b border-rose-500/20">
-                                                    <tr>
-                                                        <th className="py-2.5 px-3 text-left border-r border-black/5 dark:border-white/5 min-w-[130px] whitespace-nowrap">
-                                                            <div className="flex items-center gap-1.5">
-                                                                <span className="w-1.5 h-3.5 rounded-full bg-amber-500 shrink-0"></span>
-                                                                <span className="font-black text-slate-800 dark:text-slate-200 text-xs sm:text-sm tracking-wider">
-                                                                    FILTER
+                                            {/* Tab Filter Switcher for Live Signals */}
+                                            {isHubLiveButtonsExpanded && (
+                                                <div className="p-2 sm:p-2.5 bg-black/5 dark:bg-white/[0.03] border-b border-black/5 dark:border-white/5 w-full transition-all duration-300">
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 w-full">
+                                                        {/* ALL LIVE SIGNALS */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setHubLiveTab('ALL')}
+                                                            className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                effectiveHubLiveTab === 'ALL'
+                                                                    ? 'bg-rose-600 text-white border-rose-500 shadow-sm'
+                                                                    : 'bg-white/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/60 hover:border-rose-400'
+                                                            }`}
+                                                        >
+                                                            <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                <span className="shrink-0 text-xs">🌐</span>
+                                                                <span className="truncate">ALL LIVE</span>
+                                                            </span>
+                                                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                effectiveHubLiveTab === 'ALL' ? 'bg-white/25 text-white' : 'bg-black/5 dark:bg-white/10 text-slate-800 dark:text-slate-200'
+                                                            }`}>
+                                                                {liveSignalRows.length}
+                                                            </span>
+                                                        </button>
+
+                                                        {/* CONFLUENCE */}
+                                                        {liveFireCountInScan > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHubLiveTab(prev => prev === 'FIRE_ALERT' ? 'ALL' : 'FIRE_ALERT')}
+                                                                className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                    effectiveHubLiveTab === 'FIRE_ALERT'
+                                                                        ? 'bg-rose-600 text-white border-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.4)]'
+                                                                        : 'bg-white/60 dark:bg-slate-800/60 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/10'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                    <span className="shrink-0 text-xs">⚡</span>
+                                                                    <span className="truncate">CONFLUENCE</span>
                                                                 </span>
-                                                            </div>
-                                                        </th>
-                                                        <th className="py-2.5 px-3 text-center min-w-[180px] whitespace-nowrap">
-                                                            <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/15 dark:bg-rose-500/25 border border-rose-500/40">
-                                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600 dark:bg-rose-400 shrink-0"></span>
-                                                                <span className="text-xs sm:text-sm font-black tracking-widest uppercase text-rose-700 dark:text-rose-300">
-                                                                    LIVE SIGNALS
+                                                                <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                    effectiveHubLiveTab === 'FIRE_ALERT' ? 'bg-white/25 text-white' : 'bg-rose-500/20 text-rose-700 dark:text-rose-200'
+                                                                }`}>
+                                                                    {liveFireCountInScan}
                                                                 </span>
-                                                                <span className="text-xs">⚡</span>
-                                                            </div>
-                                                        </th>
-                                                    </tr>
-                                                </thead>
+                                                            </button>
+                                                        )}
+
+                                                        {/* DIVERGENCE */}
+                                                        {liveDivCountInScan > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHubLiveTab(prev => prev === 'DIVERGENCE' ? 'ALL' : 'DIVERGENCE')}
+                                                                className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                    effectiveHubLiveTab === 'DIVERGENCE'
+                                                                        ? 'bg-purple-600 text-white border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.4)]'
+                                                                        : 'bg-white/60 dark:bg-slate-800/60 text-purple-700 dark:text-purple-300 border-purple-500/30 hover:bg-purple-500/10'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                    <span className="shrink-0 text-xs">⚡</span>
+                                                                    <span className="truncate">DIVERGENCE</span>
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                    effectiveHubLiveTab === 'DIVERGENCE' ? 'bg-white/25 text-white' : 'bg-purple-500/20 text-purple-700 dark:text-purple-200'
+                                                                }`}>
+                                                                    {liveDivCountInScan}
+                                                                </span>
+                                                            </button>
+                                                        )}
+
+                                                        {/* LIGHTNING */}
+                                                        {liveLightningCountInScan > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHubLiveTab(prev => prev === 'LIGHTNING' ? 'ALL' : 'LIGHTNING')}
+                                                                className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                    effectiveHubLiveTab === 'LIGHTNING'
+                                                                        ? 'bg-amber-600 text-white border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                                                                        : 'bg-white/60 dark:bg-slate-800/60 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/10'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                    <span className="shrink-0 text-xs">⚡</span>
+                                                                    <span className="truncate">LIGHTNING</span>
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                    effectiveHubLiveTab === 'LIGHTNING' ? 'bg-white/25 text-white' : 'bg-amber-500/20 text-amber-700 dark:text-amber-200'
+                                                                }`}>
+                                                                    {liveLightningCountInScan}
+                                                                </span>
+                                                            </button>
+                                                        )}
+
+                                                        {/* EXTREME REVERSAL */}
+                                                        {liveExtRevCountInScan > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHubLiveTab(prev => prev === 'EXTREME_REVERSAL' ? 'ALL' : 'EXTREME_REVERSAL')}
+                                                                className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                    effectiveHubLiveTab === 'EXTREME_REVERSAL'
+                                                                        ? 'bg-rose-600 text-white border-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.4)]'
+                                                                        : 'bg-white/60 dark:bg-slate-800/60 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/10'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                    <span className="shrink-0 text-xs">⚡</span>
+                                                                    <span className="truncate">EXT REV</span>
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                    effectiveHubLiveTab === 'EXTREME_REVERSAL' ? 'bg-white/25 text-white' : 'bg-rose-500/20 text-rose-700 dark:text-rose-200'
+                                                                }`}>
+                                                                    {liveExtRevCountInScan}
+                                                                </span>
+                                                            </button>
+                                                        )}
+
+                                                        {/* JUMP TO WATCHLIST FILTER TAB BUTTON */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setHubSectionView(prev => prev === 'WATCHLIST' ? 'ALL' : 'WATCHLIST')}
+                                                            className="w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border border-cyan-500/40 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 cursor-pointer select-none active:scale-95"
+                                                        >
+                                                            <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                <span className="shrink-0 text-xs">📋</span>
+                                                                <span className="truncate">VIEW WATCHLIST</span>
+                                                            </span>
+                                                            <span className="px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 bg-cyan-500/25 text-cyan-800 dark:text-cyan-200">
+                                                                {watchlistSignalRows.length}
+                                                            </span>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             )}
-                                            <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                                                {hasLiveSignals ? (
-                                                    liveSignalRows
-                                                ) : (
-                                                    <tr>
-                                                        <td colSpan={2} className="py-6 text-center">
-                                                            {hubLiveTab === 'FIRE_ALERT' ? (
+
+                                            <table className="w-full min-w-[340px] text-left text-xs sm:text-sm border-collapse">
+                                                {hasLiveSignals && (
+                                                    <thead className="wc-table-thead text-primary font-black text-xs sm:text-sm uppercase tracking-wider bg-rose-500/[0.04] dark:bg-rose-500/[0.08] border-b border-rose-500/20">
+                                                        <tr>
+                                                            <th className="py-2.5 px-3 text-left border-r border-black/5 dark:border-white/5 min-w-[130px] whitespace-nowrap">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="w-1.5 h-3.5 rounded-full bg-rose-500 shrink-0"></span>
+                                                                    <span className="font-black text-slate-800 dark:text-slate-200 text-xs sm:text-sm tracking-wider">
+                                                                        STRATEGY
+                                                                    </span>
+                                                                </div>
+                                                            </th>
+                                                            <th className="py-2.5 px-3 text-center min-w-[180px] whitespace-nowrap">
+                                                                <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/15 dark:bg-rose-500/25 border border-rose-500/40">
+                                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600 dark:bg-rose-400 shrink-0"></span>
+                                                                    <span className="text-xs sm:text-sm font-black tracking-widest uppercase text-rose-700 dark:text-rose-300">
+                                                                        LIVE SIGNALS
+                                                                    </span>
+                                                                    <span className="text-xs">⚡</span>
+                                                                </div>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                )}
+                                                <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                                                    {hasLiveSignals ? (
+                                                        liveSignalRows
+                                                    ) : (
+                                                        <tr>
+                                                            <td colSpan={2} className="py-6 text-center">
                                                                 <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-500/[0.05] border border-rose-500/20 font-mono text-xs text-dim">
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
-                                                                        <span className="font-black text-rose-600 dark:text-rose-400 tracking-wider uppercase">No Confluence Active</span>
+                                                                        <span className="font-black text-rose-600 dark:text-rose-400 tracking-wider uppercase">No Live Execution Signals Active</span>
                                                                     </div>
-                                                                    <span className="text-[10px] text-dim font-medium">Scanning all active markets for Canonical Scalp Confluences firing outside Greenzone &amp; Redzone</span>
+                                                                    <span className="text-[10px] text-dim font-medium">Scanning all active markets for real-time Confluence, Divergence, Lightning, and Extreme Reversal execution trades</span>
                                                                 </div>
-                                                            ) : hubLiveTab === 'INSIDE_DAY' ? (
-                                                                <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-sky-500/[0.05] border border-sky-500/20 font-mono text-xs text-dim">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0"></span>
-                                                                        <span className="font-black text-sky-600 dark:text-sky-400 tracking-wider uppercase">No Live Inside Day CPR Signals Active</span>
-                                                                    </div>
-                                                                    <span className="text-[10px] text-dim font-medium">Scanning all active markets for Inside Day 2-day CPR relationship (today's CPR completely inside yesterday's CPR)</span>
-                                                                </div>
-                                                            ) : hubLiveTab === 'DIVERGENCE' ? (
-                                                                <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-purple-500/[0.05] border border-purple-500/20 font-mono text-xs text-dim">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0"></span>
-                                                                        <span className="font-black text-purple-600 dark:text-purple-400 tracking-wider uppercase">No Live Divergence Signals Active</span>
-                                                                    </div>
-                                                                    <span className="text-[10px] text-dim font-medium">Scanning MCX & NYMEX (NG, CL, GC, SI) + GIFT NIFTY for RSI 14 Regular & Hidden Divergences</span>
-                                                                </div>
-                                                            ) : hubLiveTab === 'REJECTED' ? (
-                                                                <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500/[0.05] border border-amber-500/20 font-mono text-xs text-dim">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
-                                                                        <span className="font-black text-amber-600 dark:text-amber-400 tracking-wider uppercase">No Live Rejected Bullish / Bearish Signals Active</span>
-                                                                    </div>
-                                                                    <span className="text-[10px] text-dim font-medium">Scanning all active markets for Rejected Bullish & Rejected Bearish CPR opening bias / rejection setups</span>
-                                                                </div>
-                                                            ) : hubLiveTab === 'CONTINUATION' ? (
-                                                                <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-teal-500/[0.05] border border-teal-500/20 font-mono text-xs text-dim">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0"></span>
-                                                                        <span className="font-black text-teal-600 dark:text-teal-400 tracking-wider uppercase">No Live Bullish / Bearish Continuation Signals Active</span>
-                                                                    </div>
-                                                                    <span className="text-[10px] text-dim font-medium">Scanning all active markets for Bullish &amp; Bearish Continuation CPR bias expansion setups</span>
-                                                                </div>
-                                                            ) : hubLiveTab === 'NCPR' ? (
-                                                                <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-500/[0.05] border border-indigo-500/20 font-mono text-xs text-dim">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
-                                                                        <span className="font-black text-indigo-600 dark:text-indigo-400 tracking-wider uppercase">No NCPR Signals Active</span>
-                                                                    </div>
-                                                                    <span className="text-[10px] text-dim font-medium">Scanning all active markets for Narrow CPR (&lt; 5.0% range) compression breakout setups</span>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/5 font-mono text-xs text-dim">
-                                                                    <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500"></span>
-                                                                    <span className="font-bold tracking-wider">No Live Signals</span>
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
+
+                                {/* SECTION 2: SEPARATE WATCHLIST SECTION BELOW IT */}
+                                {(hubSectionView === 'ALL' || hubSectionView === 'WATCHLIST') && (
+                                    <div className="w-full">
+                                        <div 
+                                            className="w-full overflow-x-auto hide-scrollbar table-scroll-container rounded-2xl wc-table-card border border-cyan-500/30 dark:border-cyan-500/30 shadow-[0_4px_25px_rgba(6,182,212,0.12)]"
+                                            onScroll={(e) => { if (e.currentTarget.scrollLeft > 6) e.currentTarget.classList.add('table-is-scrolled'); else e.currentTarget.classList.remove('table-is-scrolled'); }}
+                                        >
+                                            {/* Watchlist Banner Strip */}
+                                            <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-cyan-600 via-sky-600 to-indigo-600 text-white rounded-t-2xl shadow-sm border-b border-white/10 overflow-hidden">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="inline-flex rounded-full h-2.5 w-2.5 bg-cyan-300 shrink-0 animate-pulse"></span>
+                                                    <span className="font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-widest flex items-center gap-1.5 drop-shadow-sm">
+                                                        <span>📋 DAY TYPE WATCHLIST</span>
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsHubWatchlistButtonsExpanded(prev => !prev)}
+                                                        className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/20 hover:bg-black/35 text-white font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 border border-white/20 select-none cursor-pointer"
+                                                        title={isHubWatchlistButtonsExpanded ? 'Collapse filter buttons' : 'Expand filter buttons'}
+                                                    >
+                                                        <span>{isHubWatchlistButtonsExpanded ? 'COLLAPSE' : 'EXPAND'}</span>
+                                                        {isHubWatchlistButtonsExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                                    </button>
+                                                    <div className="flex items-center gap-1.5 font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/95">
+                                                        <span className="inline-block w-2 h-2 rounded-full bg-cyan-300 shrink-0"></span>
+                                                        <span>DAY-TYPE CANDIDATES</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Tab Filter Switcher for Watchlist Candidates */}
+                                            {isHubWatchlistButtonsExpanded && (
+                                                <div className="p-2 sm:p-2.5 bg-black/5 dark:bg-white/[0.03] border-b border-black/5 dark:border-white/5 w-full transition-all duration-300">
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 w-full">
+                                                        {/* ALL WATCHLIST */}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setHubWatchlistTab('ALL')}
+                                                            className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                effectiveHubWatchlistTab === 'ALL'
+                                                                    ? 'bg-cyan-600 text-white border-cyan-500 shadow-sm'
+                                                                    : 'bg-white/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/60 hover:border-cyan-400'
+                                                            }`}
+                                                        >
+                                                            <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                <span className="shrink-0 text-xs">📋</span>
+                                                                <span className="truncate">ALL WATCHLIST</span>
+                                                            </span>
+                                                            <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                effectiveHubWatchlistTab === 'ALL' ? 'bg-white/25 text-white' : 'bg-black/5 dark:bg-white/10 text-slate-800 dark:text-slate-200'
+                                                            }`}>
+                                                                {watchlistSignalRows.length}
+                                                            </span>
+                                                        </button>
+
+                                                        {/* REJECTIONS */}
+                                                        {watchlistRejectedCountInScan > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHubWatchlistTab(prev => prev === 'REJECTED' ? 'ALL' : 'REJECTED')}
+                                                                className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                    effectiveHubWatchlistTab === 'REJECTED'
+                                                                        ? 'bg-amber-600 text-white border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                                                                        : 'bg-white/60 dark:bg-slate-800/60 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/10'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                    <span className="shrink-0 text-xs">🛡️</span>
+                                                                    <span className="truncate">REJECTIONS</span>
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                    effectiveHubWatchlistTab === 'REJECTED' ? 'bg-white/25 text-white' : 'bg-amber-500/20 text-amber-700 dark:text-amber-200'
+                                                                }`}>
+                                                                    {watchlistRejectedCountInScan}
+                                                                </span>
+                                                            </button>
+                                                        )}
+
+                                                        {/* CONTINUATIONS */}
+                                                        {watchlistContinuationCountInScan > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHubWatchlistTab(prev => prev === 'CONTINUATION' ? 'ALL' : 'CONTINUATION')}
+                                                                className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                    effectiveHubWatchlistTab === 'CONTINUATION'
+                                                                        ? 'bg-teal-600 text-white border-teal-500 shadow-[0_0_12px_rgba(20,184,166,0.4)]'
+                                                                        : 'bg-white/60 dark:bg-slate-800/60 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/10'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                    <span className="shrink-0 text-xs">🚀</span>
+                                                                    <span className="truncate">CONTINUATIONS</span>
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                    effectiveHubWatchlistTab === 'CONTINUATION' ? 'bg-white/25 text-white' : 'bg-teal-500/20 text-teal-700 dark:text-teal-200'
+                                                                }`}>
+                                                                    {watchlistContinuationCountInScan}
+                                                                </span>
+                                                            </button>
+                                                        )}
+
+                                                        {/* INSIDE DAY CPR */}
+                                                        {watchlistInsideDayCountInScan > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHubWatchlistTab(prev => prev === 'INSIDE_DAY' ? 'ALL' : 'INSIDE_DAY')}
+                                                                className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                    effectiveHubWatchlistTab === 'INSIDE_DAY'
+                                                                        ? 'bg-sky-600 text-white border-sky-500 shadow-[0_0_12px_rgba(14,165,233,0.4)]'
+                                                                        : 'bg-white/60 dark:bg-slate-800/60 text-sky-700 dark:text-sky-300 border-sky-500/30 hover:bg-sky-500/10'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                    <span className="shrink-0 text-xs">🎯</span>
+                                                                    <span className="truncate">INSIDE DAY</span>
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                    effectiveHubWatchlistTab === 'INSIDE_DAY' ? 'bg-white/25 text-white' : 'bg-sky-500/20 text-sky-700 dark:text-sky-200'
+                                                                }`}>
+                                                                    {watchlistInsideDayCountInScan}
+                                                                </span>
+                                                            </button>
+                                                        )}
+
+                                                        {/* NCPR */}
+                                                        {watchlistNcprCountInScan > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHubWatchlistTab(prev => prev === 'NCPR' ? 'ALL' : 'NCPR')}
+                                                                className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                    effectiveHubWatchlistTab === 'NCPR'
+                                                                        ? 'bg-indigo-600 text-white border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.4)]'
+                                                                        : 'bg-white/60 dark:bg-slate-800/60 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/10'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                    <span className="shrink-0 text-xs">📐</span>
+                                                                    <span className="truncate">NCPR</span>
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                    effectiveHubWatchlistTab === 'NCPR' ? 'bg-white/25 text-white' : 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-200'
+                                                                }`}>
+                                                                    {watchlistNcprCountInScan}
+                                                                </span>
+                                                            </button>
+                                                        )}
+
+                                                        {/* VIRGIN CPR */}
+                                                        {watchlistVcprCountInScan > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHubWatchlistTab(prev => prev === 'VCPR' ? 'ALL' : 'VCPR')}
+                                                                className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                    effectiveHubWatchlistTab === 'VCPR'
+                                                                        ? 'bg-fuchsia-600 text-white border-fuchsia-500 shadow-[0_0_12px_rgba(217,70,239,0.4)]'
+                                                                        : 'bg-white/60 dark:bg-slate-800/60 text-fuchsia-700 dark:text-fuchsia-300 border-fuchsia-500/30 hover:bg-fuchsia-500/10'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                    <span className="shrink-0 text-xs">🧲</span>
+                                                                    <span className="truncate">VCPR</span>
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                    effectiveHubWatchlistTab === 'VCPR' ? 'bg-white/25 text-white' : 'bg-fuchsia-500/20 text-fuchsia-700 dark:text-fuchsia-200'
+                                                                }`}>
+                                                                    {watchlistVcprCountInScan}
+                                                                </span>
+                                                            </button>
+                                                        )}
+
+                                                        {/* BLUEPRINTS & SEQUENCES */}
+                                                        {watchlistBlueprintCountInScan > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setHubWatchlistTab(prev => prev === 'BLUEPRINT' ? 'ALL' : 'BLUEPRINT')}
+                                                                className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                    effectiveHubWatchlistTab === 'BLUEPRINT'
+                                                                        ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]'
+                                                                        : 'bg-white/60 dark:bg-slate-800/60 text-blue-700 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/10'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                    <span className="shrink-0 text-xs">🏛️</span>
+                                                                    <span className="truncate">BLUEPRINTS</span>
+                                                                </span>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                    effectiveHubWatchlistTab === 'BLUEPRINT' ? 'bg-white/25 text-white' : 'bg-blue-500/20 text-blue-700 dark:text-blue-200'
+                                                                }`}>
+                                                                    {watchlistBlueprintCountInScan}
+                                                                </span>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <table className="w-full min-w-[340px] text-left text-xs sm:text-sm border-collapse">
+                                                {hasWatchlistSignals && (
+                                                    <thead className="wc-table-thead text-primary font-black text-xs sm:text-sm uppercase tracking-wider bg-cyan-500/[0.04] dark:bg-cyan-500/[0.08] border-b border-cyan-500/20">
+                                                        <tr>
+                                                            <th className="py-2.5 px-3 text-left border-r border-black/5 dark:border-white/5 min-w-[130px] whitespace-nowrap">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="w-1.5 h-3.5 rounded-full bg-cyan-500 shrink-0"></span>
+                                                                    <span className="font-black text-slate-800 dark:text-slate-200 text-xs sm:text-sm tracking-wider">
+                                                                        SETUP / DAY TYPE
+                                                                    </span>
+                                                                </div>
+                                                            </th>
+                                                            <th className="py-2.5 px-3 text-center min-w-[180px] whitespace-nowrap">
+                                                                <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 dark:bg-cyan-500/25 border border-cyan-500/40">
+                                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500 shrink-0"></span>
+                                                                    <span className="text-xs sm:text-sm font-black tracking-widest uppercase text-cyan-700 dark:text-cyan-300">
+                                                                        WATCHLIST CANDIDATES
+                                                                    </span>
+                                                                    <span className="text-xs">📋</span>
+                                                                </div>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                )}
+                                                <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                                                    {hasWatchlistSignals ? (
+                                                        watchlistSignalRows
+                                                    ) : (
+                                                        <tr>
+                                                            <td colSpan={2} className="py-6 text-center">
+                                                                <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-cyan-500/[0.05] border border-cyan-500/20 font-mono text-xs text-dim">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0"></span>
+                                                                        <span className="font-black text-cyan-600 dark:text-cyan-400 tracking-wider uppercase">No Watchlist Candidates Active</span>
+                                                                    </div>
+                                                                    <span className="text-[10px] text-dim font-medium">Scanning all active markets for Rejection, Continuation, Inside Day CPR, NCPR, and Pivot Boss Day-Type qualifying regimes</span>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         );
                       })()}
