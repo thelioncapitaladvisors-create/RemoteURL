@@ -290,6 +290,10 @@ def simulate_single_trade(df: pd.DataFrame, entry_i: int, is_long: bool, entry_p
             elif regime == 'TP1_BREAKEVEN':
                 if hit_tp1 and not hit_tp2:
                     sl_price = max(sl_price, entry_price)
+            elif regime == 'TP1_BE_AND_MID_ADVANCE':
+                if hit_tp1 and not hit_tp2 and not hit_mid_tp1_tp2 and cur_h >= mid_tp1_tp2:
+                    hit_mid_tp1_tp2 = True
+                    sl_price = max(sl_price, mid_entry_tp1)
 
             if cur_l <= sl_price:
                 exit_price = sl_price
@@ -301,6 +305,8 @@ def simulate_single_trade(df: pd.DataFrame, entry_i: int, is_long: bool, entry_p
                     exit_level = 'TP2_TRAIL'
                 elif sl_price >= tp1:
                     exit_level = 'TP1_TRAIL'
+                elif abs(sl_price - mid_entry_tp1) < 1e-5:
+                    exit_level = 'MID_ENTRY_TP1_TRAIL'
                 else:
                     exit_level = 'TRAIL_SL'
                 break
@@ -317,7 +323,7 @@ def simulate_single_trade(df: pd.DataFrame, entry_i: int, is_long: bool, entry_p
                 sl_price = tp1
             elif cur_h >= tp1 and not hit_tp1:
                 hit_tp1 = True
-                if regime == 'TP1_BREAKEVEN':
+                if regime in ('TP1_BREAKEVEN', 'TP1_BE_AND_MID_ADVANCE'):
                     sl_price = max(sl_price, entry_price)
 
         else: # Short
@@ -332,6 +338,10 @@ def simulate_single_trade(df: pd.DataFrame, entry_i: int, is_long: bool, entry_p
             elif regime == 'TP1_BREAKEVEN':
                 if hit_tp1 and not hit_tp2:
                     sl_price = min(sl_price, entry_price)
+            elif regime == 'TP1_BE_AND_MID_ADVANCE':
+                if hit_tp1 and not hit_tp2 and not hit_mid_tp1_tp2 and cur_l <= mid_tp1_tp2:
+                    hit_mid_tp1_tp2 = True
+                    sl_price = min(sl_price, mid_entry_tp1)
 
             if cur_h >= sl_price:
                 exit_price = sl_price
@@ -343,6 +353,8 @@ def simulate_single_trade(df: pd.DataFrame, entry_i: int, is_long: bool, entry_p
                     exit_level = 'TP2_TRAIL'
                 elif sl_price <= tp1:
                     exit_level = 'TP1_TRAIL'
+                elif abs(sl_price - mid_entry_tp1) < 1e-5:
+                    exit_level = 'MID_ENTRY_TP1_TRAIL'
                 else:
                     exit_level = 'TRAIL_SL'
                 break
@@ -359,7 +371,7 @@ def simulate_single_trade(df: pd.DataFrame, entry_i: int, is_long: bool, entry_p
                 sl_price = tp1
             elif cur_l <= tp1 and not hit_tp1:
                 hit_tp1 = True
-                if regime == 'TP1_BREAKEVEN':
+                if regime in ('TP1_BREAKEVEN', 'TP1_BE_AND_MID_ADVANCE'):
                     sl_price = min(sl_price, entry_price)
 
         if (i - entry_i) >= 72:
@@ -493,13 +505,14 @@ def compute_vbt_metrics(trades: list) -> dict:
 
 def run_trailing_sl_analysis():
     print("=" * 105)
-    print("   TLCS v3.0: VECTORBT TRAILING SL QUANTITATIVE COMPARATIVE ANALYSIS")
-    print("   Comparing: [A] Pre-TP1 Midpoint  VS  [B] Midpoint TP1-TP2  VS  [C] TP1 Breakeven")
+    print("   TLCS v4.0: VECTORBT TRAILING SL QUANTITATIVE COMPARATIVE ANALYSIS")
+    print("   Comparing: [A] Pre-TP1 Mid  VS  [B] Mid TP1-TP2  VS  [C] TP1 BE  VS  [D] TP1 BE + Mid Advance")
     print("=" * 105)
 
     trades_a = []
     trades_b = []
     trades_c = []
+    trades_d = []
     pairwise_comparisons = []
 
     for sym, info in TARGET_ASSETS.items():
@@ -544,6 +557,7 @@ def run_trailing_sl_analysis():
                     t_a = simulate_single_trade(df_ind, entry_i, is_long, entry_price, cur_atr, 'PRE_TP1_MID')
                     t_b = simulate_single_trade(df_ind, entry_i, is_long, entry_price, cur_atr, 'MIDPOINT_TP1_TP2')
                     t_c = simulate_single_trade(df_ind, entry_i, is_long, entry_price, cur_atr, 'TP1_BREAKEVEN')
+                    t_d = simulate_single_trade(df_ind, entry_i, is_long, entry_price, cur_atr, 'TP1_BE_AND_MID_ADVANCE')
 
                     t_a['symbol'] = sym
                     t_a['signal'] = sig_name
@@ -554,10 +568,14 @@ def run_trailing_sl_analysis():
                     t_c['symbol'] = sym
                     t_c['signal'] = sig_name
                     t_c['base_type'] = base_type
+                    t_d['symbol'] = sym
+                    t_d['signal'] = sig_name
+                    t_d['base_type'] = base_type
 
                     trades_a.append(t_a)
                     trades_b.append(t_b)
                     trades_c.append(t_c)
+                    trades_d.append(t_d)
 
                     pairwise_comparisons.append({
                         'symbol': sym,
@@ -572,7 +590,12 @@ def run_trailing_sl_analysis():
                         'ret_c': t_c['exact_pct'],
                         'out_c': t_c['outcome'],
                         'exit_c': t_c['exit_level'],
-                        'delta_b_vs_a': round(t_b['exact_pct'] - t_a['exact_pct'], 4)
+                        'ret_d': t_d['exact_pct'],
+                        'out_d': t_d['outcome'],
+                        'exit_d': t_d['exit_level'],
+                        'delta_b_vs_a': round(t_b['exact_pct'] - t_a['exact_pct'], 4),
+                        'delta_d_vs_b': round(t_d['exact_pct'] - t_b['exact_pct'], 4),
+                        'delta_d_vs_a': round(t_d['exact_pct'] - t_a['exact_pct'], 4)
                     })
 
     if not trades_a:
@@ -582,6 +605,7 @@ def run_trailing_sl_analysis():
     m_a = compute_vbt_metrics(trades_a)
     m_b = compute_vbt_metrics(trades_b)
     m_c = compute_vbt_metrics(trades_c)
+    m_d = compute_vbt_metrics(trades_d)
 
     print("\n" + "=" * 105)
     print("   HEAD-TO-HEAD VECTORBT PERFORMANCE: TRAILING SL REGIME COMPARISON")
@@ -603,7 +627,7 @@ def run_trailing_sl_analysis():
             'Kelly %': f"{m_a['kelly_pct']:.2f}%"
         },
         {
-            'Trailing SL Regime': 'B: Midpoint TP1-TP2 (New Mandate)',
+            'Trailing SL Regime': 'B: Midpoint TP1-TP2 (Prev Baseline)',
             'Trades': m_b['total_trades'],
             'W / L / BE': f"{m_b['wins']} / {m_b['losses']} / {m_b['breakevens']}",
             'Win Rate': f"{m_b['win_rate']:.2f}%",
@@ -629,6 +653,20 @@ def run_trailing_sl_analysis():
             'Sharpe': f"{m_c['sharpe']:.2f}",
             'Sortino': f"{m_c['sortino']:.2f}",
             'Kelly %': f"{m_c['kelly_pct']:.2f}%"
+        },
+        {
+            'Trailing SL Regime': 'D: TP1 BE + Mid Advance (New Mandate)',
+            'Trades': m_d['total_trades'],
+            'W / L / BE': f"{m_d['wins']} / {m_d['losses']} / {m_d['breakevens']}",
+            'Win Rate': f"{m_d['win_rate']:.2f}%",
+            'Profit Factor': f"{m_d['profit_factor']:.2f}",
+            'Net Return': f"{m_d['net_return']:+.2f}%",
+            'Expectancy': f"{m_d['expectancy']:+.4f}%",
+            'Realized R:R': f"{m_d['realized_rr']:.2f}R",
+            'Max DD': f"-{m_d['max_drawdown']:.2f}%",
+            'Sharpe': f"{m_d['sharpe']:.2f}",
+            'Sortino': f"{m_d['sortino']:.2f}",
+            'Kelly %': f"{m_d['kelly_pct']:.2f}%"
         }
     ]
 
@@ -648,40 +686,44 @@ def run_trailing_sl_analysis():
     pf_delta = m_b['profit_factor'] - m_a['profit_factor']
     exp_delta = m_b['expectancy'] - m_a['expectancy']
 
+    net_delta_d_vs_b = m_d['net_return'] - m_b['net_return']
+    wr_delta_d_vs_b = m_d['win_rate'] - m_b['win_rate']
+    pf_delta_d_vs_b = m_d['profit_factor'] - m_b['profit_factor']
+    exp_delta_d_vs_b = m_d['expectancy'] - m_b['expectancy']
+
+    d_wins_more_b = [p for p in pairwise_comparisons if p['delta_d_vs_b'] > 0.0001]
+    b_wins_more_d = [p for p in pairwise_comparisons if p['delta_d_vs_b'] < -0.0001]
+
     print("\n" + "─" * 105)
-    print(f"PAIRWISE TRANSITION ANALYSIS (REGIME B vs REGIME A across {len(pairwise_comparisons)} trades):")
-    print(f"   * Net Return Edge:            {net_delta:+.2f}% total return delta ({m_b['net_return']:+.2f}% vs {m_a['net_return']:+.2f}%)")
-    print(f"   * Win Rate Delta:             {wr_delta:+.2f}% ({m_b['win_rate']:.2f}% vs {m_a['win_rate']:.2f}%)")
-    print(f"   * Profit Factor Delta:        {pf_delta:+.2f} ({m_b['profit_factor']:.2f} vs {m_a['profit_factor']:.2f})")
-    print(f"   * Expectancy Delta:           {exp_delta:+.4f}% per trade ({m_b['expectancy']:+.4f}% vs {m_a['expectancy']:+.4f}%)")
-    print(f"   * Trades where B outperformed A (Runners Captured):     {len(b_wins_more)} trades (+{sum(p['delta_b_vs_a'] for p in b_wins_more):.2f}% gained)")
-    print(f"   * Trades where A outperformed B (Breakeven Protection): {len(a_wins_more)} trades ({sum(p['delta_b_vs_a'] for p in a_wins_more):.2f}% given back)")
-    print(f"   * Trades with Identical Execution:                      {len(identical)} trades")
-    print(f"   * Breakeven -> Win Conversion (Runners not suffocated): {len(be_to_win)} trades")
-    print(f"   * Breakeven -> Loss Conversion (Reversals after TP1):   {len(be_to_loss)} trades")
-    print(f"   * Win -> Higher Win (Trailing further into TP2/3/4):    {len(win_to_win_more)} trades")
+    print(f"PAIRWISE TRANSITION ANALYSIS (REGIME D [New Mandate] vs REGIME B [Prev Baseline] across {len(pairwise_comparisons)} trades):")
+    print(f"   * Net Return Edge:            {net_delta_d_vs_b:+.2f}% total return delta ({m_d['net_return']:+.2f}% vs {m_b['net_return']:+.2f}%)")
+    print(f"   * Win Rate Delta:             {wr_delta_d_vs_b:+.2f}% ({m_d['win_rate']:.2f}% vs {m_b['win_rate']:.2f}%)")
+    print(f"   * Profit Factor Delta:        {pf_delta_d_vs_b:+.2f} ({m_d['profit_factor']:.2f} vs {m_b['profit_factor']:.2f})")
+    print(f"   * Expectancy Delta:           {exp_delta_d_vs_b:+.4f}% per trade ({m_d['expectancy']:+.4f}% vs {m_b['expectancy']:+.4f}%)")
+    print(f"   * Trades where D outperformed B (Protected Gains):      {len(d_wins_more_b)} trades (+{sum(p['delta_d_vs_b'] for p in d_wins_more_b):.2f}% gained)")
+    print(f"   * Trades where B outperformed D:                        {len(b_wins_more_d)} trades ({sum(p['delta_d_vs_b'] for p in b_wins_more_d):.2f}% given back)")
     print("─" * 105)
 
     setup_types = sorted(list(set(p['base_type'] for p in pairwise_comparisons)))
     print("\n" + "=" * 105)
-    print("   SETUP FAMILY BREAKDOWN: REGIME A VS REGIME B")
+    print("   SETUP FAMILY BREAKDOWN: REGIME B VS REGIME D")
     print("=" * 105)
     setup_rows = []
     for st in setup_types:
-        st_trades_a = [t for t in trades_a if t['base_type'] == st]
         st_trades_b = [t for t in trades_b if t['base_type'] == st]
-        st_m_a = compute_vbt_metrics(st_trades_a)
+        st_trades_d = [t for t in trades_d if t['base_type'] == st]
         st_m_b = compute_vbt_metrics(st_trades_b)
+        st_m_d = compute_vbt_metrics(st_trades_d)
         setup_rows.append({
             'Setup': st,
-            'Count': len(st_trades_a),
-            'WR [A]': f"{st_m_a['win_rate']:.1f}%",
+            'Count': len(st_trades_b),
             'WR [B]': f"{st_m_b['win_rate']:.1f}%",
-            'PF [A]': f"{st_m_a['profit_factor']:.2f}",
+            'WR [D]': f"{st_m_d['win_rate']:.1f}%",
             'PF [B]': f"{st_m_b['profit_factor']:.2f}",
-            'Net [A]': f"{st_m_a['net_return']:+.2f}%",
+            'PF [D]': f"{st_m_d['profit_factor']:.2f}",
             'Net [B]': f"{st_m_b['net_return']:+.2f}%",
-            'Return Delta': f"{(st_m_b['net_return'] - st_m_a['net_return']):+.2f}%"
+            'Net [D]': f"{st_m_d['net_return']:+.2f}%",
+            'Return Delta (D - B)': f"{(st_m_d['net_return'] - st_m_b['net_return']):+.2f}%"
         })
     df_st = pd.DataFrame(setup_rows)
     print(df_st.to_string(index=False))
@@ -694,15 +736,14 @@ def run_trailing_sl_analysis():
         'regime_a_pre_tp1_mid': m_a,
         'regime_b_midpoint_tp1_tp2': m_b,
         'regime_c_tp1_breakeven': m_c,
-        'edge_delta_b_vs_a': {
-            'net_return_delta': round(net_delta, 2),
-            'win_rate_delta': round(wr_delta, 2),
-            'profit_factor_delta': round(pf_delta, 2),
-            'expectancy_delta': round(exp_delta, 4),
-            'b_outperformed_count': len(b_wins_more),
-            'a_outperformed_count': len(a_wins_more),
-            'be_to_win_count': len(be_to_win),
-            'be_to_loss_count': len(be_to_loss)
+        'regime_d_tp1_be_mid_advance': m_d,
+        'edge_delta_d_vs_b': {
+            'net_return_delta': round(net_delta_d_vs_b, 2),
+            'win_rate_delta': round(wr_delta_d_vs_b, 2),
+            'profit_factor_delta': round(pf_delta_d_vs_b, 2),
+            'expectancy_delta': round(exp_delta_d_vs_b, 4),
+            'd_outperformed_b_count': len(d_wins_more_b),
+            'b_outperformed_d_count': len(b_wins_more_d)
         },
         'by_setup': setup_rows
     }

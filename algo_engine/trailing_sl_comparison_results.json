@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-17T14:51:33.823492+00:00",
+  "timestamp": "2026-11-19T17:10:35.483192+00:00",
   "period": "1 Year Hourly Continuous Data",
   "total_evaluated_trades": 32604,
   "regime_a_pre_tp1_mid": {
@@ -62,82 +62,100 @@
     "annualized_return": 1260.9,
     "max_consec_losses": 39
   },
-  "edge_delta_b_vs_a": {
-    "net_return_delta": 5287.3,
-    "win_rate_delta": 20.34,
-    "profit_factor_delta": 0.6,
-    "expectancy_delta": 0.1621,
-    "b_outperformed_count": 6631,
-    "a_outperformed_count": 8272,
-    "be_to_win_count": 6631,
-    "be_to_loss_count": 8272
+  "regime_d_tp1_be_mid_advance": {
+    "total_trades": 32604,
+    "wins": 9528,
+    "losses": 19602,
+    "breakevens": 3474,
+    "win_rate": 29.22,
+    "profit_factor": 1.07,
+    "net_return": 855.03,
+    "expectancy": 0.0262,
+    "avg_win": 1.31,
+    "avg_loss": 0.59,
+    "realized_rr": 2.21,
+    "max_drawdown": 509.96,
+    "sharpe": 0.93,
+    "sortino": 2.32,
+    "calmar": 1.68,
+    "kelly_pct": 0.0,
+    "annualized_return": 855.03,
+    "max_consec_losses": 39
+  },
+  "edge_delta_d_vs_b": {
+    "net_return_delta": -147.19,
+    "win_rate_delta": 1.87,
+    "profit_factor_delta": -0.01,
+    "expectancy_delta": -0.0045,
+    "d_outperformed_b_count": 3781,
+    "b_outperformed_d_count": 1785
   },
   "by_setup": [
     {
       "Setup": "DIVERGENCE",
       "Count": 17,
-      "WR [A]": "0.0%",
       "WR [B]": "35.3%",
-      "PF [A]": "0.00",
+      "WR [D]": "29.4%",
       "PF [B]": "1.52",
-      "Net [A]": "-2.59%",
+      "PF [D]": "1.29",
       "Net [B]": "+3.71%",
-      "Return Delta": "+6.30%"
+      "Net [D]": "+1.14%",
+      "Return Delta (D - B)": "-2.57%"
     },
     {
       "Setup": "EXTREME REVERSAL",
       "Count": 35,
-      "WR [A]": "0.0%",
       "WR [B]": "14.3%",
-      "PF [A]": "0.00",
+      "WR [D]": "20.0%",
       "PF [B]": "0.31",
-      "Net [A]": "-32.15%",
+      "PF [D]": "0.30",
       "Net [B]": "-25.65%",
-      "Return Delta": "+6.50%"
+      "Net [D]": "-24.59%",
+      "Return Delta (D - B)": "+1.06%"
     },
     {
       "Setup": "HIDDEN DIVERGENCE",
       "Count": 15289,
-      "WR [A]": "7.3%",
       "WR [B]": "27.6%",
-      "PF [A]": "0.52",
+      "WR [D]": "29.4%",
       "PF [B]": "1.09",
-      "Net [A]": "-1836.10%",
+      "PF [D]": "1.08",
       "Net [B]": "+526.89%",
-      "Return Delta": "+2362.99%"
+      "Net [D]": "+458.98%",
+      "Return Delta (D - B)": "-67.91%"
     },
     {
       "Setup": "LIGHTNING",
       "Count": 2339,
-      "WR [A]": "6.5%",
       "WR [B]": "27.3%",
-      "PF [A]": "0.41",
+      "WR [D]": "30.3%",
       "PF [B]": "1.05",
-      "Net [A]": "-366.89%",
+      "PF [D]": "1.03",
       "Net [B]": "+50.11%",
-      "Return Delta": "+417.00%"
+      "Net [D]": "+28.31%",
+      "Return Delta (D - B)": "-21.80%"
     },
     {
       "Setup": "MISSILE",
       "Count": 12190,
-      "WR [A]": "6.8%",
       "WR [B]": "27.1%",
-      "PF [A]": "0.45",
+      "WR [D]": "28.9%",
       "PF [B]": "1.08",
-      "Net [A]": "-1662.01%",
+      "PF [D]": "1.09",
       "Net [B]": "+392.08%",
-      "Return Delta": "+2054.09%"
+      "Net [D]": "+373.12%",
+      "Return Delta (D - B)": "-18.96%"
     },
     {
       "Setup": "SCALP",
       "Count": 2734,
-      "WR [A]": "7.0%",
       "WR [B]": "27.5%",
-      "PF [A]": "0.47",
+      "WR [D]": "28.6%",
       "PF [B]": "1.05",
-      "Net [A]": "-385.35%",
+      "PF [D]": "1.02",
       "Net [B]": "+55.07%",
-      "Return Delta": "+440.42%"
+      "Net [D]": "+18.07%",
+      "Return Delta (D - B)": "-37.00%"
     }
   ]
 }
