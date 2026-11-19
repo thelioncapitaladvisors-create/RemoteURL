@@ -140,7 +140,7 @@ function isConfluenceSignal(sig: any, allSignals?: any[]): { isConfluence: boole
   let meta = sig.metadata;
   if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) { meta = {}; } }
   
-  if (meta && (meta.is_confluence === true || meta.is_confluence === 'true' || Boolean(meta.confluence_type) || Boolean(meta.confluence_tag) || meta.has_divergence_confluence === true)) {
+  if (meta && meta.is_confluence !== false && meta.is_confluence !== 'false' && (meta.is_confluence === true || meta.is_confluence === 'true' || meta.has_divergence_confluence === true || Boolean(meta.confluence_tag) || (Boolean(meta.confluence_type) && meta.confluence_type !== 'NONE' && meta.is_confluence === true))) {
     const cType = meta.confluence_type || meta.confluence_tag || 'CONFLUENCE';
     const cLabel = cType === 'MISSILE_DIV' ? 'MISSILE + DIV' :
                   (cType === 'SCALP_DIV' || cType === 'CONFLUENCE_DIV') ? 'SCALP + DIV' :
@@ -3906,7 +3906,7 @@ function MobileScreensaver() {
 
   // ── SEPARATED WATCHLIST SECTION STATE (LOGS-TAB DESIGN LANGUAGE) ──
   const [isWatchlistMasterExpanded, setIsWatchlistMasterExpanded] = useState<boolean>(true);
-  const [watchlistActiveFilter, setWatchlistActiveFilter] = useState<'ALL' | 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR_MAGNET'>('ALL');
+  const [watchlistActiveFilter, setWatchlistActiveFilter] = useState<'ALL' | 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR_MAGNET' | 'REJ' | 'CONT'>('ALL');
   const [watchlistMarketFilter, setWatchlistMarketFilter] = useState<ScreenerMarketCategory>('ALL');
   const [watchlistDirectionFilter, setWatchlistDirectionFilter] = useState<'ALL' | 'BULLISH' | 'BEARISH'>('ALL');
   const [watchlistSessionFilter, setWatchlistSessionFilter] = useState<'TODAY' | 'ALL'>('TODAY');
@@ -5298,14 +5298,17 @@ function MobileScreensaver() {
     const trig = (s.trigger || '').toUpperCase();
     let meta = s.metadata || {};
     if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) {} }
-    const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
+    const bias = (meta.opening_bias || '').toUpperCase();
+    const c1 = (meta.c1 || '').toUpperCase();
+    const instBias = (meta.institutional_bias || '').toUpperCase();
+    const rejType = (meta.rejection_type || '').toUpperCase();
     const dt = (meta.day_type || meta.dayType || meta.dt || '').toUpperCase();
     const fam = (meta.setup_family || '').toUpperCase();
     const msg = (meta.tradeMessage || meta.analysis || '').toUpperCase();
+    const zone = (meta.zone || '').toUpperCase();
+    const full = `${t} ${trig} ${bias} ${c1} ${instBias} ${rejType} ${dt} ${fam} ${msg} ${zone}`;
 
-    return t.includes('REJECT') || trig.includes('REJECT') ||
-           bias.includes('REJECT') || dt.includes('REJECT') ||
-           fam.includes('REJECT') || msg.includes('REJECT') ||
+    return full.includes('REJECT') ||
            meta.is_rejection === true || meta.is_rejection === 'true' ||
            meta.is_rejection_day === true || meta.is_rejection_day === 'true' ||
            Boolean(meta.rejection_type);
@@ -5317,13 +5320,28 @@ function MobileScreensaver() {
     const trig = (s.trigger || '').toUpperCase();
     let meta = s.metadata || {};
     if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) {} }
-    const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
+    const bias = (meta.opening_bias || '').toUpperCase();
+    const c1 = (meta.c1 || '').toUpperCase();
+    const instBias = (meta.institutional_bias || '').toUpperCase();
+    const rejType = (meta.rejection_type || '').toUpperCase();
     const dt = (meta.day_type || meta.dayType || meta.dt || '').toUpperCase();
     const msg = (meta.tradeMessage || meta.analysis || '').toUpperCase();
-    const full = `${t} ${trig} ${bias} ${dt} ${msg}`;
+    const zone = (meta.zone || '').toUpperCase();
+    const full = `${t} ${trig} ${bias} ${c1} ${instBias} ${rejType} ${dt} ${msg} ${zone}`;
 
-    if (full.includes('REJECTED BULLISH') || full.includes('BULLISH REJECTION') || full.includes('REJECTED_BULLISH')) return true;
-    if (full.includes('REJECTED BEARISH') || full.includes('BEARISH REJECTION') || full.includes('REJECTED_BEARISH')) return false;
+    if (full.includes('REJECTED BULLISH') || full.includes('BULLISH REJECTION') || full.includes('REJECTED_BULLISH') || rejType.includes('BULL') || c1.includes('REJECTED BULLISH') || instBias.includes('REJECTED BULLISH')) return true;
+    if (full.includes('REJECTED BEARISH') || full.includes('BEARISH REJECTION') || full.includes('REJECTED_BEARISH') || rejType.includes('BEAR') || c1.includes('REJECTED BEARISH') || instBias.includes('REJECTED BEARISH')) return false;
+
+    // Opening print reversal logic (Frank Ochoa PivotBoss STP 2.0 / Pine Script lines 780-795)
+    if (c1 === 'REJECTION' || trig.includes('REJECTION')) {
+      if (zone === 'SHORT ZONE') return false;
+      if (zone === 'LONG ZONE') return true;
+      const close = Number(meta.fill_price || meta.open_price || meta.cmp || (s as any).entry || 0);
+      const dtc = Number(meta.dtc || meta.cpr?.tc || 0);
+      const dbc = Number(meta.dbc || meta.cpr?.bc || 0);
+      if (dbc > 0 && close > 0 && close < dbc) return false;
+      if (dtc > 0 && close > 0 && close > dtc) return true;
+    }
 
     return t.includes('LONG') || t.includes('BUY');
   };
@@ -5334,13 +5352,28 @@ function MobileScreensaver() {
     const trig = (s.trigger || '').toUpperCase();
     let meta = s.metadata || {};
     if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) {} }
-    const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
+    const bias = (meta.opening_bias || '').toUpperCase();
+    const c1 = (meta.c1 || '').toUpperCase();
+    const instBias = (meta.institutional_bias || '').toUpperCase();
+    const rejType = (meta.rejection_type || '').toUpperCase();
     const dt = (meta.day_type || meta.dayType || meta.dt || '').toUpperCase();
     const msg = (meta.tradeMessage || meta.analysis || '').toUpperCase();
-    const full = `${t} ${trig} ${bias} ${dt} ${msg}`;
+    const zone = (meta.zone || '').toUpperCase();
+    const full = `${t} ${trig} ${bias} ${c1} ${instBias} ${rejType} ${dt} ${msg} ${zone}`;
 
-    if (full.includes('REJECTED BEARISH') || full.includes('BEARISH REJECTION') || full.includes('REJECTED_BEARISH')) return true;
-    if (full.includes('REJECTED BULLISH') || full.includes('BULLISH REJECTION') || full.includes('REJECTED_BULLISH')) return false;
+    if (full.includes('REJECTED BEARISH') || full.includes('BEARISH REJECTION') || full.includes('REJECTED_BEARISH') || rejType.includes('BEAR') || c1.includes('REJECTED BEARISH') || instBias.includes('REJECTED BEARISH')) return true;
+    if (full.includes('REJECTED BULLISH') || full.includes('BULLISH REJECTION') || full.includes('REJECTED_BULLISH') || rejType.includes('BULL') || c1.includes('REJECTED BULLISH') || instBias.includes('REJECTED BULLISH')) return false;
+
+    // Opening print reversal logic (Frank Ochoa PivotBoss STP 2.0 / Pine Script lines 780-795)
+    if (c1 === 'REJECTION' || trig.includes('REJECTION')) {
+      if (zone === 'SHORT ZONE') return true;
+      if (zone === 'LONG ZONE') return false;
+      const close = Number(meta.fill_price || meta.open_price || meta.cmp || (s as any).entry || 0);
+      const dtc = Number(meta.dtc || meta.cpr?.tc || 0);
+      const dbc = Number(meta.dbc || meta.cpr?.bc || 0);
+      if (dbc > 0 && close > 0 && close < dbc) return true;
+      if (dtc > 0 && close > 0 && close > dtc) return false;
+    }
 
     return t.includes('SHORT') || t.includes('SELL');
   };
@@ -5351,14 +5384,16 @@ function MobileScreensaver() {
     const trig = (s.trigger || '').toUpperCase();
     let meta = s.metadata || {};
     if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) {} }
-    const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
+    const bias = (meta.opening_bias || '').toUpperCase();
+    const c1 = (meta.c1 || '').toUpperCase();
+    const instBias = (meta.institutional_bias || '').toUpperCase();
+    const contType = (meta.continuation_type || '').toUpperCase();
     const dt = (meta.day_type || meta.dayType || meta.dt || '').toUpperCase();
     const fam = (meta.setup_family || '').toUpperCase();
     const msg = (meta.tradeMessage || meta.analysis || '').toUpperCase();
+    const full = `${t} ${trig} ${bias} ${c1} ${instBias} ${contType} ${dt} ${fam} ${msg}`;
 
-    return t.includes('CONTINUATION') || trig.includes('CONTINUATION') ||
-           bias.includes('CONTINUATION') || dt.includes('CONTINUATION') ||
-           fam.includes('CONTINUATION') || msg.includes('CONTINUATION') ||
+    return full.includes('CONTINUATION') ||
            meta.is_continuation === true || meta.is_continuation === 'true' ||
            Boolean(meta.continuation_type);
   };
@@ -5369,13 +5404,16 @@ function MobileScreensaver() {
     const trig = (s.trigger || '').toUpperCase();
     let meta = s.metadata || {};
     if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) {} }
-    const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
+    const bias = (meta.opening_bias || '').toUpperCase();
+    const c1 = (meta.c1 || '').toUpperCase();
+    const instBias = (meta.institutional_bias || '').toUpperCase();
+    const contType = (meta.continuation_type || '').toUpperCase();
     const dt = (meta.day_type || meta.dayType || meta.dt || '').toUpperCase();
     const msg = (meta.tradeMessage || meta.analysis || '').toUpperCase();
-    const full = `${t} ${trig} ${bias} ${dt} ${msg}`;
+    const full = `${t} ${trig} ${bias} ${c1} ${instBias} ${contType} ${dt} ${msg}`;
 
-    if (full.includes('BULLISH CONTINUATION') || full.includes('BULLISH_CONTINUATION') || full.includes('BULL CONT')) return true;
-    if (full.includes('BEARISH CONTINUATION') || full.includes('BEARISH_CONTINUATION') || full.includes('BEAR CONT')) return false;
+    if (full.includes('BULLISH CONTINUATION') || full.includes('BULLISH_CONTINUATION') || full.includes('BULL CONT') || contType.includes('BULL') || c1.includes('BULL') || instBias.includes('BULL')) return true;
+    if (full.includes('BEARISH CONTINUATION') || full.includes('BEARISH_CONTINUATION') || full.includes('BEAR CONT') || contType.includes('BEAR') || c1.includes('BEAR') || instBias.includes('BEAR')) return false;
 
     return t.includes('LONG') || t.includes('BUY');
   };
@@ -5386,13 +5424,16 @@ function MobileScreensaver() {
     const trig = (s.trigger || '').toUpperCase();
     let meta = s.metadata || {};
     if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) {} }
-    const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
+    const bias = (meta.opening_bias || '').toUpperCase();
+    const c1 = (meta.c1 || '').toUpperCase();
+    const instBias = (meta.institutional_bias || '').toUpperCase();
+    const contType = (meta.continuation_type || '').toUpperCase();
     const dt = (meta.day_type || meta.dayType || meta.dt || '').toUpperCase();
     const msg = (meta.tradeMessage || meta.analysis || '').toUpperCase();
-    const full = `${t} ${trig} ${bias} ${dt} ${msg}`;
+    const full = `${t} ${trig} ${bias} ${c1} ${instBias} ${contType} ${dt} ${msg}`;
 
-    if (full.includes('BEARISH CONTINUATION') || full.includes('BEARISH_CONTINUATION') || full.includes('BEAR CONT')) return true;
-    if (full.includes('BULLISH CONTINUATION') || full.includes('BULLISH_CONTINUATION') || full.includes('BULL CONT')) return false;
+    if (full.includes('BEARISH CONTINUATION') || full.includes('BEARISH_CONTINUATION') || full.includes('BEAR CONT') || contType.includes('BEAR') || c1.includes('BEAR') || instBias.includes('BEAR')) return true;
+    if (full.includes('BULLISH CONTINUATION') || full.includes('BULLISH_CONTINUATION') || full.includes('BULL CONT') || contType.includes('BULL') || c1.includes('BULL') || instBias.includes('BULL')) return false;
 
     return t.includes('SHORT') || t.includes('SELL');
   };
@@ -5441,6 +5482,24 @@ function MobileScreensaver() {
     const full = `${t} ${fam} ${msg}`;
     if (full.includes('LONG') || full.includes('BUY') || full.includes('BULL')) return false;
     return t.includes('SHORT') || t.includes('SELL') || full.includes('BEAR');
+  };
+
+  const isDivSignal = (s: Signal): boolean => {
+    if (!s) return false;
+    const t = (s.type || '').toUpperCase();
+    // Distinct strategy families (Missile, Scalp, Lightning, Extreme Reversal) are mutually exclusive from standalone Divergence
+    if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
+    const trig = (s.trigger || '').toUpperCase();
+    let meta = s.metadata || {};
+    if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) {} }
+    const fam = (meta.setup_family || meta.signal_family || '').toUpperCase();
+    const dType = (meta.divergence_type || '').toUpperCase();
+    const cType = (meta.confluence_type || meta.confluence_tag || '').toUpperCase();
+
+    return t.includes('DIVERGENCE') || t.includes('DIV') ||
+           trig.includes('DIVERGENCE') || fam.includes('DIVERGENCE') ||
+           dType === 'REGULAR' || dType === 'HIDDEN' ||
+           cType === 'REGULAR_DIV' || cType === 'HIDDEN_DIV' || cType === 'DIVERGENCE' || cType === 'HIDDEN_DIVERGENCE';
   };
 
   const marketsClosedSignals = useMemo(() => {
@@ -6623,8 +6682,8 @@ function MobileScreensaver() {
       );
 
       const relType: 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR' | 'DIV' | 'REJ' | 'CONT' | 'FIRE' = setupType;
-      const relBadge = setupType === 'OOR' ? '⚡ OOR / OOV' : setupType === 'INSIDE' ? '📦 INSIDE CPR' : setupType === 'NCPR' ? '🎯 BREAKOUTS (NCPR)' : setupType === 'NVA' ? '📊 NARROW VALUE (NVA)' : setupType === 'DIV' ? (isHiddenDivSignal ? '🔍 HIDDEN DIV' : '🎯 REGULAR DIV') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? '🛡️ BULLISH REJ' : '🛡️ BEARISH REJ') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? '🚀 BULLISH CONT' : '🚀 BEARISH CONT') : setupType === 'FIRE' ? '⚡ CONFLUENCE ALERT' : (isVcprTouchSignal ? '⚡ VCPR TOUCH' : '🧲 VIRGIN CPR');
-      const relBias = setupType === 'OOR' ? 'OUT OF RANGE / OUT OF VALUE' : setupType === 'INSIDE' ? 'INSIDE CPR BREAKOUT' : setupType === 'NCPR' ? 'BREAKOUTS (NARROW CPR < 5.0%)' : setupType === 'NVA' ? 'NARROW VALUE AREA (VAL / VAH)' : setupType === 'DIV' ? (isHiddenDivSignal ? 'HIDDEN DIVERGENCE (CONTINUATION)' : 'REGULAR DIVERGENCE (REVERSAL)') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? 'REJECTED BULLISH (CPR BOTTOM)' : 'REJECTED BEARISH (CPR TOP)') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? 'BULLISH CONTINUATION (EXPANSION)' : 'BEARISH CONTINUATION (BREAKDOWN)') : setupType === 'FIRE' ? 'CANONICAL CONFLUENCE (OUTSIDE GREEN/RED)' : (isVcprTouchSignal ? 'VIRGIN CPR TOUCH TEST' : 'UNTOUCHED VIRGIN CPR (1-MONTH)');
+      const relBadge = setupType === 'OOR' ? '⚡ OOR / OOV' : setupType === 'INSIDE' ? '📦 INSIDE CPR' : setupType === 'NCPR' ? '🎯 NCPR' : setupType === 'NVA' ? '📊 NVAL' : setupType === 'DIV' ? (isHiddenDivSignal ? '🔍 HIDDEN DIV' : '🎯 REGULAR DIV') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? '🛡️ BULLISH REJ' : '🛡️ BEARISH REJ') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? '🚀 BULLISH CONT' : '🚀 BEARISH CONT') : setupType === 'FIRE' ? '⚡ CONFLUENCE' : (isVcprTouchSignal ? '⚡ VCPR TOUCH' : '🧲 VCPR');
+      const relBias = setupType === 'OOR' ? 'OUT OF RANGE / OUT OF VALUE' : setupType === 'INSIDE' ? 'INSIDE CPR BREAKOUT' : setupType === 'NCPR' ? 'NCPR (< 5.0% RANGE)' : setupType === 'NVA' ? 'NVAL (VAL / VAH)' : setupType === 'DIV' ? (isHiddenDivSignal ? 'HIDDEN DIVERGENCE (CONTINUATION)' : 'REGULAR DIVERGENCE (REVERSAL)') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? 'REJECTED BULLISH (CPR BOTTOM)' : 'REJECTED BEARISH (CPR TOP)') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? 'BULLISH CONTINUATION (EXPANSION)' : 'BEARISH CONTINUATION (BREAKDOWN)') : setupType === 'FIRE' ? 'CANONICAL CONFLUENCE (OUTSIDE GREEN/RED)' : (isVcprTouchSignal ? 'VCPR TOUCH TEST' : 'UNTOUCHED VCPR (1-MONTH)');
 
       let dayMovePts = 0;
       let dayMovePct = 0;
@@ -6689,7 +6748,7 @@ function MobileScreensaver() {
           direction,
           signals: [s],
           openingBias: relBias,
-          dayType: meta.day_type || (setupType === 'OOR' ? 'BIG MOVE / BREAKOUT' : setupType === 'INSIDE' ? 'INSIDE CPR / BREAKOUT' : setupType === 'NCPR' ? 'NARROW CPR / BREAKOUT' : setupType === 'NVA' ? 'NARROW VALUE / BREAKOUT' : setupType === 'DIV' ? (isHiddenDivSignal ? 'HIDDEN DIVERGENCE' : 'REGULAR DIVERGENCE') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? 'REJECTED BULLISH' : 'REJECTED BEARISH') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? 'BULLISH CONTINUATION' : 'BEARISH CONTINUATION') : setupType === 'FIRE' ? 'CONFLUENCE' : (isVcprTouchSignal ? 'VIRGIN CPR TOUCH TEST' : 'VIRGIN CPR MAGNET')),
+          dayType: meta.day_type || (setupType === 'OOR' ? 'BIG MOVE / BREAKOUT' : setupType === 'INSIDE' ? 'INSIDE CPR / BREAKOUT' : setupType === 'NCPR' ? 'NCPR' : setupType === 'NVA' ? 'NVAL' : setupType === 'DIV' ? (isHiddenDivSignal ? 'HIDDEN DIVERGENCE' : 'REGULAR DIVERGENCE') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? 'REJECTED BULLISH' : 'REJECTED BEARISH') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? 'BULLISH CONTINUATION' : 'BEARISH CONTINUATION') : setupType === 'FIRE' ? 'CONFLUENCE' : (isVcprTouchSignal ? 'VCPR TOUCH TEST' : 'VCPR MAGNET')),
           openPrice: entryP,
           latestPrice: exitP > 0 ? exitP : entryP,
           dayMovePts,
@@ -6747,7 +6806,7 @@ function MobileScreensaver() {
         if (isVcprTouchSignal) {
           existing.isVcprTouch = true;
           existing.relationshipBadge = '⚡ VCPR TOUCH';
-          existing.openingBias = 'VIRGIN CPR TOUCH TEST';
+          existing.openingBias = 'VCPR TOUCH TEST';
           if (meta.vcpr_touch_date) existing.vcprDate = meta.vcpr_touch_date;
           if (meta.vcpr_touch_price) existing.vcprTouchPrice = Number(meta.vcpr_touch_price);
         }
@@ -7047,7 +7106,9 @@ function MobileScreensaver() {
 
   // ── SEPARATED WATCHLIST ASSETS (DAY-TYPE CANDIDATES & PIVOT REGIMES) ──
   const { watchlistAssets, watchlistStats } = useMemo(() => {
-    const setups: { id: 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR'; subFilter?: string }[] = [
+    const setups: { id: 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR' | 'REJ' | 'CONT'; subFilter?: string }[] = [
+      { id: 'REJ' },
+      { id: 'CONT' },
       { id: 'OOR' },
       { id: 'INSIDE' },
       { id: 'NCPR' },
@@ -7088,11 +7149,15 @@ function MobileScreensaver() {
     const ncprCount = combined.filter(a => a.relationshipType === 'NCPR').length;
     const nvaCount = combined.filter(a => a.relationshipType === 'NVA').length;
     const vcprMagnetCount = combined.filter(a => a.relationshipType === 'VCPR' && !a.isVcprTouch).length;
+    const rejCount = combined.filter(a => a.relationshipType === 'REJ').length;
+    const contCount = combined.filter(a => a.relationshipType === 'CONT').length;
 
     return {
       watchlistAssets: combined,
       watchlistStats: {
         total: combined.length,
+        rejCount,
+        contCount,
         oorCount,
         insideCount,
         ncprCount,
@@ -7104,6 +7169,8 @@ function MobileScreensaver() {
 
   const filteredWatchlist = useMemo(() => {
     return watchlistAssets.filter(a => {
+      if (watchlistActiveFilter === 'REJ') return a.relationshipType === 'REJ';
+      if (watchlistActiveFilter === 'CONT') return a.relationshipType === 'CONT';
       if (watchlistActiveFilter === 'OOR') return a.relationshipType === 'OOR';
       if (watchlistActiveFilter === 'INSIDE') return a.relationshipType === 'INSIDE';
       if (watchlistActiveFilter === 'NCPR') return a.relationshipType === 'NCPR';
@@ -8188,7 +8255,7 @@ function MobileScreensaver() {
       { key: 'EXTREME REVERSAL', label: 'EXTREME REVERSAL', icon: '🔄' },
       { key: 'HIDDEN DIVERGENCE', label: 'HIDDEN DIVERGENCE', icon: '🔍' },
       { key: 'LIGHTNING', label: 'LIGHTNING', icon: '🌩️' },
-      { key: 'VIRGIN CPR', label: 'VIRGIN CPR', icon: '🧲' },
+      { key: 'VIRGIN CPR', label: 'VCPR', icon: '🧲' },
     ];
 
     const getFamilyKey = (type?: string | null): string | null => {
@@ -8901,8 +8968,8 @@ function MobileScreensaver() {
       },
       {
         key: 'NCPR',
-        label: 'NARROW CPR (NCPR / NVAL)',
-        shortLabel: 'NCPR (< 5.0%)',
+        label: 'NCPR',
+        shortLabel: 'NCPR',
         icon: '🎯',
         matcher: (s) => {
           let meta = s.metadata || {};
@@ -8925,8 +8992,8 @@ function MobileScreensaver() {
       },
       {
         key: 'NVA',
-        label: 'NARROW VALUE AREA (NVA)',
-        shortLabel: 'NARROW VA',
+        label: 'NVAL',
+        shortLabel: 'NVAL',
         icon: '📊',
         matcher: (s) => {
           let meta = s.metadata || {};
@@ -8948,8 +9015,8 @@ function MobileScreensaver() {
       },
       {
         key: 'VCPR',
-        label: 'VIRGIN CPR (VCPR)',
-        shortLabel: 'VIRGIN CPR',
+        label: 'VCPR',
+        shortLabel: 'VCPR',
         icon: '🧲',
         matcher: (s) => {
           let meta = s.metadata || {};
@@ -10780,11 +10847,7 @@ function MobileScreensaver() {
             if (!['WIN', 'LOSS', 'BREAKEVEN'].includes(o)) return false;
           }
         } else if (dashboardFilter === 'LIVE_DIVERGENCE') {
-          const t = (s.type || '').toUpperCase();
-          const trig = (s.trigger || '').toUpperCase();
-          const fam = (meta.setup_family || '').toUpperCase();
-          const isDiv = t.includes('DIVERGENCE') || t.includes('DIV') || trig.includes('DIVERGENCE') || fam.includes('DIVERGENCE') || meta.has_divergence_confluence === true || meta.is_confluence === true || Boolean(meta.confluence_type) || Boolean(meta.divergence_type);
-          if (!isDiv) return false;
+          if (!isDivSignal(s)) return false;
           if (isBlackBox) {
             if (!mktOpen || !(o === 'OPEN' || st.includes('ACTIVE'))) return false;
           } else {
@@ -10870,17 +10933,17 @@ function MobileScreensaver() {
     return (
       <div className={`shiny-card rounded-3xl p-4 sm:p-5 relative overflow-hidden ${theme === 'lion' ? 'lion-card-gold' : (theme === 'goldengate' || theme === 'goldengate-light') ? 'gg-card-sunset' : ''}`}>
         {/* Section Header */}
-        <div className="flex justify-between items-start mb-4 border-b border-primary/20 dark:border-primary/30 pb-3">
-          <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 mb-4 border-b border-primary/20 dark:border-primary/30 pb-3">
+          <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-primary mt-1 flex items-center gap-2">
               <Zap className="text-accent shrink-0" size={22} />
               <span>LIVE SIGNALS</span>
             </h2>
-            <span className="text-[10px] font-mono font-bold text-dim uppercase tracking-wider">
+            <span className="text-[10px] sm:text-[10.5px] font-mono font-bold text-dim uppercase tracking-wider whitespace-nowrap block mt-0.5">
               ACTIVE LIMIT ORDERS &amp; EXECUTING TRADES
             </span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             {liveSignalsStats.total > 0 && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-accent/10 border border-accent/25">
                 <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"/>
@@ -11135,7 +11198,7 @@ function MobileScreensaver() {
                           {/* Col 2: Signal & Status */}
                           <td className="py-2.5 px-2.5 min-w-0">
                             <div>
-                              <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-mono font-black px-1.5 sm:px-2 py-0.5 rounded-md ${
+                              <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-mono font-black px-1.5 sm:px-2 py-0.5 rounded-md max-w-full ${
                                 isBull
                                   ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30'
                                   : 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30'
@@ -11215,11 +11278,13 @@ function MobileScreensaver() {
   const renderDhanWatchlistSection = () => {
     const watchlistFilterOptions = [
       { value: 'ALL', label: 'ALL', count: watchlistStats.total },
+      ...(watchlistStats.rejCount > 0 ? [{ value: 'REJ', label: '🛡️ REJECTIONS', count: watchlistStats.rejCount }] : []),
+      ...(watchlistStats.contCount > 0 ? [{ value: 'CONT', label: '🚀 CONTINUATIONS', count: watchlistStats.contCount }] : []),
       ...(watchlistStats.oorCount > 0 ? [{ value: 'OOR', label: '⚡ OUT OF RANGE', count: watchlistStats.oorCount }] : []),
       ...(watchlistStats.insideCount > 0 ? [{ value: 'INSIDE', label: '🎯 INSIDE CPR', count: watchlistStats.insideCount }] : []),
-      ...(watchlistStats.ncprCount > 0 ? [{ value: 'NCPR', label: '📐 BREAKOUTS (NCPR)', count: watchlistStats.ncprCount }] : []),
-      ...(watchlistStats.nvaCount > 0 ? [{ value: 'NVA', label: '📊 NARROW VALUE', count: watchlistStats.nvaCount }] : []),
-      ...(watchlistStats.vcprMagnetCount > 0 ? [{ value: 'VCPR_MAGNET', label: '🧲 VIRGIN MAGNETS', count: watchlistStats.vcprMagnetCount }] : []),
+      ...(watchlistStats.ncprCount > 0 ? [{ value: 'NCPR', label: '📐 NCPR', count: watchlistStats.ncprCount }] : []),
+      ...(watchlistStats.nvaCount > 0 ? [{ value: 'NVA', label: '📊 NVAL', count: watchlistStats.nvaCount }] : []),
+      ...(watchlistStats.vcprMagnetCount > 0 ? [{ value: 'VCPR_MAGNET', label: '🧲 VCPR MAGNETS', count: watchlistStats.vcprMagnetCount }] : []),
     ];
 
     const marketChips: { id: ScreenerMarketCategory; label: string }[] = [
@@ -11242,17 +11307,17 @@ function MobileScreensaver() {
     return (
       <div className={`shiny-card rounded-3xl p-4 sm:p-5 relative overflow-hidden ${theme === 'lion' ? 'lion-card-gold' : (theme === 'goldengate' || theme === 'goldengate-light') ? 'gg-card-sunset' : ''}`}>
         {/* Section Header */}
-        <div className="flex justify-between items-start mb-4 border-b border-primary/20 dark:border-primary/30 pb-3">
-          <div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 mb-4 border-b border-primary/20 dark:border-primary/30 pb-3">
+          <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-primary mt-1 flex items-center gap-2">
               <Layers className="text-cyan-500 shrink-0" size={22} />
               <span>WATCHLIST</span>
             </h2>
-            <span className="text-[10px] font-mono font-bold text-dim uppercase tracking-wider">
+            <span className="text-[10px] sm:text-[10.5px] font-mono font-bold text-dim uppercase tracking-wider whitespace-nowrap block mt-0.5">
               DAY-TYPE CANDIDATES &amp; PIVOT REGIME SETUPS
             </span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
             {watchlistStats.total > 0 && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/25">
                 <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"/>
@@ -11278,6 +11343,8 @@ function MobileScreensaver() {
             <div className="flex flex-wrap items-center gap-1.5">
               {watchlistFilterOptions.map(f => {
                 const isSelected = watchlistActiveFilter === f.value;
+                const isRejPill = f.value === 'REJ';
+                const isContPill = f.value === 'CONT';
                 const isOorPill = f.value === 'OOR';
                 const isInsidePill = f.value === 'INSIDE';
                 const isNcprPill = f.value === 'NCPR';
@@ -11291,7 +11358,11 @@ function MobileScreensaver() {
                     onClick={() => setWatchlistActiveFilter(f.value as any)}
                     className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all border flex items-center gap-1.5 shadow-sm cursor-pointer ${
                       isSelected
-                        ? isOorPill
+                        ? isRejPill
+                          ? 'bg-amber-600 text-white border-amber-500 shadow-md scale-[1.01]'
+                          : isContPill
+                          ? 'bg-teal-600 text-white border-teal-500 shadow-md scale-[1.01]'
+                          : isOorPill
                           ? 'bg-fuchsia-600 text-white border-fuchsia-500 shadow-md scale-[1.01]'
                           : isInsidePill
                           ? 'bg-amber-600 text-white border-amber-500 shadow-md scale-[1.01]'
@@ -11302,6 +11373,10 @@ function MobileScreensaver() {
                           : isVcprPill
                           ? 'bg-indigo-600 text-white border-indigo-500 shadow-md scale-[1.01]'
                           : 'bg-cyan-600 text-white border-cyan-500 shadow-md scale-[1.01]'
+                        : isRejPill
+                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-800/60 hover:border-amber-400'
+                        : isContPill
+                        ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-300 dark:border-teal-800/60 hover:border-teal-400'
                         : isOorPill
                         ? 'bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400 border-fuchsia-300 dark:border-fuchsia-800/60 hover:border-fuchsia-400'
                         : isInsidePill
@@ -11488,7 +11563,7 @@ function MobileScreensaver() {
                           {/* Col 2: Setup & Direction */}
                           <td className="py-2.5 px-2.5 min-w-0">
                             <div>
-                              <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-mono font-black px-1.5 sm:px-2 py-0.5 rounded-md ${
+                              <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-mono font-black px-1.5 sm:px-2 py-0.5 rounded-md max-w-full ${
                                 isBull
                                   ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30'
                                   : 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30'
@@ -12009,7 +12084,7 @@ function MobileScreensaver() {
                       {/* Daily Signal Dashboard Matrix */}
                       {(() => {
                         const parameterCategories = [
-                            { id: 'FIRE_ALERT', label: 'Confluence Alert' },
+                            { id: 'FIRE_ALERT', label: 'Confluence' },
                             { id: 'MISSILE', label: 'Missile' },
                             { id: 'SCALP', label: 'Scalp' },
                             { id: 'LIGHTNING', label: 'Lightning' },
@@ -12020,7 +12095,7 @@ function MobileScreensaver() {
                             { id: 'REJECTED_BEARISH', label: 'Rejected Bearish' },
                             { id: 'BULLISH_CONTINUATION', label: 'Bullish Continuation' },
                             { id: 'BEARISH_CONTINUATION', label: 'Bearish Continuation' },
-                            { id: 'VIRGIN_CPR', label: 'Virgin CPR' },
+                            { id: 'VIRGIN_CPR', label: 'VCPR' },
                             { id: 'REJECTION', label: 'Rejection Blueprint' },
                             { id: 'ABSORPTION', label: 'Absorption Blueprint' },
                             { id: 'FAILED_NEW_LOW', label: 'Failed New High/Low Blueprint' },
@@ -12029,19 +12104,8 @@ function MobileScreensaver() {
                             { id: 'STOP_RUN_SEQ', label: 'Stop Run Sequence' },
                             { id: 'ACCUMULATION', label: 'Accumulation Sequence' },
                             { id: 'INSIDE_DAY', label: 'Inside Day CPR' },
-                            { id: 'NCPR', label: 'Breakouts' }
+                            { id: 'NCPR', label: 'NCPR' }
                         ];
-
-                        // Comprehensive Divergence signal identifier (Regular, Hidden, and Confluence Divergences)
-                        const isDivSignal = (s: Signal) => {
-                            if (!s) return false;
-                            const t = (s.type || '').toUpperCase();
-                            const trig = (s.trigger || '').toUpperCase();
-                            let meta = s.metadata || {};
-                            if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) {} }
-                            const fam = (meta.setup_family || '').toUpperCase();
-                            return t.includes('DIVERGENCE') || t.includes('DIV') || trig.includes('DIVERGENCE') || fam.includes('DIVERGENCE') || meta.has_divergence_confluence === true || meta.is_confluence === true || Boolean(meta.confluence_type) || Boolean(meta.divergence_type);
-                        };
 
                         // Normalized Narrow CPR (< 5.0% range) signal identifier
                         const isNcprSignal = (s: Signal) => {
@@ -12134,23 +12198,26 @@ function MobileScreensaver() {
                                 const t = (s.type || '').toUpperCase();
                                 let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
                                 const dt = (meta.day_type || s.trigger || '').toUpperCase();
-                                const trig = (s.trigger || '').toUpperCase();
                                 const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
-                                const isDivConfluence = meta.has_divergence_confluence === true || meta.is_confluence === true || meta.confluence_type === 'DIVERGENCE' || meta.confluence_tag === 'DIVERGENCE' || trig.includes('DIVERGENCE');
-                                
                                 if (cat.id === 'FIRE_ALERT') return isFireAlertSignal(s);
                                 if (cat.id === 'MISSILE') return t.includes('MISSILE');
-                                if (cat.id === 'SCALP') return t.includes('SCALP') || t.includes('CONFLUENCE');
+                                if (cat.id === 'SCALP') return t.includes('SCALP');
                                 if (cat.id === 'LIGHTNING') return t.includes('LIGHTNING');
                                 if (cat.id === 'EXTREME_REVERSAL') return t.includes('EXTREME') && t.includes('REVERSAL');
-                                if (cat.id === 'DIVERGENCE') return (t.includes('DIVERGENCE') && !t.includes('HIDDEN')) || (!t.includes('HIDDEN') && (meta.divergence_type === 'REGULAR' || (isDivConfluence && !t.includes('HIDDEN'))));
-                                if (cat.id === 'HIDDEN_DIVERGENCE') return (t.includes('HIDDEN') && t.includes('DIVERGENCE')) || meta.divergence_type === 'HIDDEN' || (isDivConfluence && t.includes('HIDDEN'));
+                                if (cat.id === 'DIVERGENCE') {
+                                    if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
+                                    return (t.includes('DIVERGENCE') && !t.includes('HIDDEN')) || (!t.includes('HIDDEN') && (meta.divergence_type === 'REGULAR' || meta.confluence_type === 'REGULAR_DIV' || meta.confluence_type === 'DIVERGENCE'));
+                                }
+                                if (cat.id === 'HIDDEN_DIVERGENCE') {
+                                    if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
+                                    return (t.includes('HIDDEN') && (t.includes('DIVERGENCE') || t.includes('DIV'))) || meta.divergence_type === 'HIDDEN' || meta.confluence_type === 'HIDDEN_DIV' || meta.confluence_type === 'HIDDEN_DIVERGENCE';
+                                }
                                 if (cat.id === 'REJECTED_BULLISH') return isRejectedBullishSignal(s);
                                 if (cat.id === 'REJECTED_BEARISH') return isRejectedBearishSignal(s);
                                 if (cat.id === 'BULLISH_CONTINUATION') return isBullishContinuationSignal(s);
                                 if (cat.id === 'BEARISH_CONTINUATION') return isBearishContinuationSignal(s);
                                 if (cat.id === 'VIRGIN_CPR') return t.includes('VIRGIN') || t.includes('VCPR');
-                                if (cat.id === 'REJECTION') return dt.includes('REJECTION') || bias.includes('REJECTION');
+                                if (cat.id === 'REJECTION') return isRejectedSignal(s) || dt.includes('REJECTION') || bias.includes('REJECTION');
                                 if (cat.id === 'ABSORPTION') return dt.includes('ABSORPTION');
                                 if (cat.id === 'FAILED_NEW_LOW') return dt.includes('FAILED');
                                 if (cat.id === 'OUTSIDE_DAY') return dt.includes('OUTSIDE');
@@ -12178,8 +12245,19 @@ function MobileScreensaver() {
                                 return false;
                             });
                             
-                            let bulls = matching.filter(s => (s.type || '').toUpperCase().includes('LONG') || (s.type || '').toUpperCase().includes('BUY'));
-                            let bears = matching.filter(s => (s.type || '').toUpperCase().includes('SHORT') || (s.type || '').toUpperCase().includes('SELL'));
+                            let bulls = matching.filter(s => {
+                                const t = (s.type || '').toUpperCase();
+                                if (t.includes('LONG') || t.includes('BUY')) return true;
+                                if (t.includes('SHORT') || t.includes('SELL')) return false;
+                                let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+                                const dir = String(meta.direction || meta.bias_direction || meta.zone || meta.opening_bias || '').toUpperCase();
+                                if (dir.includes('BULL') || dir.includes('BUY') || dir.includes('LONG')) return true;
+                                if (dir.includes('BEAR') || dir.includes('SELL') || dir.includes('SHORT')) return false;
+                                const entryP = Number((s as any).price || s.entry || meta.entry || meta.open || 0);
+                                const exitP = Number(s.exit_price || meta.exit_price || meta.ltp || meta.close || 0);
+                                return exitP >= entryP;
+                            });
+                            let bears = matching.filter(s => !bulls.includes(s));
                             
                             if (cat.id === 'REJECTED_BULLISH') {
                                 bulls = matching;
@@ -12197,9 +12275,9 @@ function MobileScreensaver() {
                                 bulls = matching.filter(s => {
                                     const t = (s.type || '').toUpperCase();
                                     let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-                                    const dir = String(meta.direction || meta.bias_direction || meta.ncpr_direction || '').toUpperCase();
-                                    if (dir === 'BULLISH' || dir === 'BUY') return true;
-                                    if (dir === 'BEARISH' || dir === 'SELL') return false;
+                                    const dir = String(meta.direction || meta.bias_direction || meta.ncpr_direction || meta.zone || '').toUpperCase();
+                                    if (dir === 'BULLISH' || dir === 'BUY' || dir.includes('LONG')) return true;
+                                    if (dir === 'BEARISH' || dir === 'SELL' || dir.includes('SHORT')) return false;
                                     if (t.includes('SHORT') || t.includes('SELL')) return false;
                                     if (t.includes('LONG') || t.includes('BUY')) return true;
                                     const entryP = Number((s as any).price || s.entry || meta.entry || meta.open || 0);
@@ -12231,7 +12309,7 @@ function MobileScreensaver() {
                                                 {isFireRow && (
                                                     <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(244,63,94,0.25)] flex items-center gap-1">
                                                         <span className="text-[7.5px]">⚡</span>
-                                                        <span>CONFLUENCE ALERT</span>
+                                                        <span>CONFLUENCE</span>
                                                     </span>
                                                 )}
                                                 {isDivergenceRow && (
@@ -12261,7 +12339,7 @@ function MobileScreensaver() {
                                                 {isNcprRow && (
                                                     <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(99,102,241,0.25)] flex items-center gap-1">
                                                         <span className="text-[7.5px]">📐</span>
-                                                        <span>BREAKOUTS</span>
+                                                        <span>NCPR</span>
                                                     </span>
                                                 )}
                                             </div>
@@ -12421,7 +12499,7 @@ function MobileScreensaver() {
                                                             <span className="flex items-center gap-1.5 min-w-0 truncate">
                                                                 <span className="shrink-0 text-xs">⚡</span>
                                                                 <span className="truncate">
-                                                                    CONFLUENCE ALERTS
+                                                                    CONFLUENCE
                                                                 </span>
                                                             </span>
                                                             <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
@@ -12532,7 +12610,7 @@ function MobileScreensaver() {
                                                         </button>
                                                     )}
 
-                                                    {/* BREAKOUTS (NCPR) SIGNALS (Toggle) - Only shown if count > 0 */}
+                                                    {/* NCPR SIGNALS (Toggle) - Only shown if count > 0 */}
                                                     {liveNcprCountInScan > 0 && (
                                                         <button
                                                             type="button"
@@ -12546,7 +12624,7 @@ function MobileScreensaver() {
                                                             <span className="flex items-center gap-1.5 min-w-0 truncate">
                                                                 <span className="shrink-0 text-xs">📐</span>
                                                                 <span className="truncate">
-                                                                    BREAKOUTS
+                                                                    NCPR
                                                                 </span>
                                                             </span>
                                                             <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
@@ -12594,7 +12672,7 @@ function MobileScreensaver() {
                                                                 <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-500/[0.05] border border-rose-500/20 font-mono text-xs text-dim">
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
-                                                                        <span className="font-black text-rose-600 dark:text-rose-400 tracking-wider uppercase">No Confluence Alerts Active</span>
+                                                                        <span className="font-black text-rose-600 dark:text-rose-400 tracking-wider uppercase">No Confluence Active</span>
                                                                     </div>
                                                                     <span className="text-[10px] text-dim font-medium">Scanning all active markets for Canonical Scalp Confluences firing outside Greenzone &amp; Redzone</span>
                                                                 </div>
@@ -12634,7 +12712,7 @@ function MobileScreensaver() {
                                                                 <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-500/[0.05] border border-indigo-500/20 font-mono text-xs text-dim">
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
-                                                                        <span className="font-black text-indigo-600 dark:text-indigo-400 tracking-wider uppercase">No Breakout Signals Active</span>
+                                                                        <span className="font-black text-indigo-600 dark:text-indigo-400 tracking-wider uppercase">No NCPR Signals Active</span>
                                                                     </div>
                                                                     <span className="text-[10px] text-dim font-medium">Scanning all active markets for Narrow CPR (&lt; 5.0% range) compression breakout setups</span>
                                                                 </div>
@@ -13654,13 +13732,7 @@ function MobileScreensaver() {
                         }
 
                         const liveDivCountDash = marketFilteredLogs.filter(s => {
-                          const t = (s.type || '').toUpperCase();
-                          const trig = (s.trigger || '').toUpperCase();
-                          let meta = s.metadata || {};
-                          if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) {} }
-                          const fam = (meta.setup_family || '').toUpperCase();
-                          const isDiv = t.includes('DIVERGENCE') || t.includes('DIV') || trig.includes('DIVERGENCE') || fam.includes('DIVERGENCE') || meta.has_divergence_confluence === true || meta.is_confluence === true || Boolean(meta.confluence_type) || Boolean(meta.divergence_type);
-                          if (!isDiv) return false;
+                          if (!isDivSignal(s)) return false;
                           const o = resolveOutcome(s);
                           const st = (s.status || '').toUpperCase();
                           const mktOpen = isBlackBox ? isDhanSignalMarketOpen(s) : true;
@@ -14010,11 +14082,14 @@ function MobileScreensaver() {
                                       <StrategyBadge typeStr={signal.type} isActive={isActive} />
                                       {(() => {
                                         const sigTypeUpper = (signal.type || '').toUpperCase();
+                                        if (sigTypeUpper.includes('MISSILE') || sigTypeUpper.includes('SCALP') || sigTypeUpper.includes('LIGHTNING') || sigTypeUpper.includes('EXTREME')) return null;
                                         const sigTrigUpper = (signal.trigger || '').toUpperCase();
-                                        const sigFamUpper = (sigMeta.setup_family || '').toUpperCase();
-                                        const isRegularDivSig = (sigTypeUpper.includes('DIVERGENCE') && !sigTypeUpper.includes('HIDDEN')) || sigMeta.divergence_type === 'REGULAR' || (sigMeta.confluence_type === 'DIVERGENCE' && !sigTypeUpper.includes('HIDDEN'));
-                                        const isHiddenDivSig = (sigTypeUpper.includes('HIDDEN') && sigTypeUpper.includes('DIVERGENCE')) || sigMeta.divergence_type === 'HIDDEN' || sigMeta.confluence_type === 'HIDDEN_DIVERGENCE';
-                                        const isDivTrade = isRegularDivSig || isHiddenDivSig || sigTypeUpper.includes('DIV') || sigTrigUpper.includes('DIVERGENCE') || sigFamUpper.includes('DIVERGENCE') || sigMeta.has_divergence_confluence === true || sigMeta.is_confluence === true || Boolean(sigMeta.confluence_type) || Boolean(sigMeta.divergence_type);
+                                        const sigFamUpper = (sigMeta.setup_family || sigMeta.signal_family || '').toUpperCase();
+                                        const sigDType = (sigMeta.divergence_type || '').toUpperCase();
+                                        const sigCType = (sigMeta.confluence_type || sigMeta.confluence_tag || '').toUpperCase();
+                                        const isRegularDivSig = !sigTypeUpper.includes('HIDDEN') && (sigTypeUpper.includes('DIVERGENCE') || sigDType === 'REGULAR' || sigCType === 'REGULAR_DIV' || sigCType === 'DIVERGENCE' || sigFamUpper === 'DIVERGENCE');
+                                        const isHiddenDivSig = (sigTypeUpper.includes('HIDDEN') && (sigTypeUpper.includes('DIVERGENCE') || sigTypeUpper.includes('DIV'))) || sigDType === 'HIDDEN' || sigCType === 'HIDDEN_DIV' || sigCType === 'HIDDEN_DIVERGENCE' || sigFamUpper.includes('HIDDEN');
+                                        const isDivTrade = isRegularDivSig || isHiddenDivSig || isDivSignal(signal);
                                         if (!isDivTrade) return null;
                                         return (
                                           <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg border font-mono uppercase tracking-widest font-black text-[9px] sm:text-[9.5px] ${
@@ -16687,7 +16762,7 @@ function MobileScreensaver() {
                         { id: 'SCALP', label: 'Scalp', icon: '⚡', check: (s: any) => (s.type || '').toUpperCase().includes('SCALP'), scanKey: (r: any) => r.scalp || (r.bSc ? 'Bullish' : r.sSc ? 'Bearish' : 'NONE') },
                         { id: 'LIGHTNING', label: 'Lightning', icon: '⚡', check: (s: any) => (s.type || '').toUpperCase().includes('LIGHTNING'), scanKey: (r: any) => r.light || (r.bL ? 'Bullish' : r.sL ? 'Bearish' : 'NONE') },
                         { id: 'EXTREME_REV', label: 'Extreme Reversal', icon: '🔄', check: (s: any) => { const t = (s.type || '').toUpperCase(); return t.includes('EXTREME') && t.includes('REVERSAL'); }, scanKey: (r: any) => r.extRev || (r.bExt ? 'Bullish' : r.sExt ? 'Bearish' : 'NONE') },
-                        { id: 'VIRGIN_CPR', label: 'Virgin CPR', icon: '🛡️', check: (s: any) => { const t = (s.type || '').toUpperCase(); return t.includes('VIRGIN') || t.includes('VCPR'); }, scanKey: (r: any) => r.is_vcpr ? (r.vcpr_direction || 'Touch') : 'NONE' }
+                        { id: 'VIRGIN_CPR', label: 'VCPR', icon: '🛡️', check: (s: any) => { const t = (s.type || '').toUpperCase(); return t.includes('VIRGIN') || t.includes('VCPR'); }, scanKey: (r: any) => r.is_vcpr ? (r.vcpr_direction || 'Touch') : 'NONE' }
                       ];
 
                       // Section 2: DAY TYPE BLUEPRINTS (Daily Closed Candle Scans)
@@ -16696,7 +16771,7 @@ function MobileScreensaver() {
                         { id: 'OUTSIDE_DAY', label: 'Outside Day Blueprint', icon: '🧭', scanKey: (r: any) => r.out || 'NONE', dtMatch: (dt: string) => dt.includes('OUTSIDE') },
                         { id: 'INSIDE_DAY', label: 'Inside Day Blueprint', icon: '↔️', scanKey: (r: any) => (r.ins && r.ins !== 'NONE') ? r.ins : (r.inside && r.inside !== 'NONE') ? r.inside : (r.dt && r.dt.includes('INSIDE')) ? 'Inside' : 'NONE', dtMatch: (dt: string) => dt.includes('INSIDE') },
                         { id: 'OOR_OOV', label: 'Out of Range / Out of Value', icon: '📈', scanKey: (r: any) => (r.oor && r.oor !== 'NONE') ? r.oor : (r.bias && r.bias.includes('OUT OF RANGE') && !r.bias.includes('IN RANGE')) ? 'Out of Range' : 'NONE', dtMatch: (dt: string) => dt.includes('OUT OF RANGE') && !dt.includes('IN RANGE') },
-                        { id: 'NVA', label: 'Narrow Value Area (NVA)', icon: '📊', scanKey: (r: any) => (r.nva && r.nva !== 'NONE') ? r.nva : (r.ncpr && r.ncpr !== 'NONE') ? 'NVA/NCPR' : (r.is_nva || r.is_ncpr) ? 'NVA' : 'NONE', dtMatch: (dt: string) => dt.includes('NARROW') || dt.includes('NVA') || dt.includes('NCPR') },
+                        { id: 'NVA', label: 'NVAL', icon: '📊', scanKey: (r: any) => (r.nva && r.nva !== 'NONE') ? r.nva : (r.ncpr && r.ncpr !== 'NONE') ? 'NVA/NCPR' : (r.is_nva || r.is_ncpr) ? 'NVA' : 'NONE', dtMatch: (dt: string) => dt.includes('NARROW') || dt.includes('NVA') || dt.includes('NCPR') },
                         { id: 'REJECTION_DAY', label: 'Rejection Day Blueprint', icon: '🛑', scanKey: (r: any) => r.rej || 'NONE', dtMatch: (dt: string) => dt.includes('REJECTION') },
                         { id: 'ABSORPTION_DAY', label: 'Absorption Day Blueprint', icon: '🧲', scanKey: (r: any) => r.abs || 'NONE', dtMatch: (dt: string) => dt.includes('ABSORPTION') },
                         { id: 'STOP_RUN_DAY', label: 'Stop Run Day Blueprint', icon: '🏃', scanKey: (r: any) => r.srd || 'NONE', dtMatch: (dt: string) => dt.includes('STOP RUN') }
@@ -17430,7 +17505,7 @@ function MobileScreensaver() {
                                 { id: 'SCALP', label: 'Scalp', icon: '⚡', check: (s: any) => (s.type || '').toUpperCase().includes('SCALP') },
                                 { id: 'LIGHTNING', label: 'Lightning', icon: '⚡', check: (s: any) => (s.type || '').toUpperCase().includes('LIGHTNING') },
                                 { id: 'EXTREME_REV', label: 'Extreme Reversal', icon: '🔄', check: (s: any) => { const t = (s.type || '').toUpperCase(); return t.includes('EXTREME') && t.includes('REVERSAL'); } },
-                                { id: 'VIRGIN_CPR', label: 'Virgin CPR', icon: '🛡️', check: (s: any) => { const t = (s.type || '').toUpperCase(); return t.includes('VIRGIN') || t.includes('VCPR'); } }
+                                { id: 'VIRGIN_CPR', label: 'VCPR', icon: '🛡️', check: (s: any) => { const t = (s.type || '').toUpperCase(); return t.includes('VIRGIN') || t.includes('VCPR'); } }
                               ];
 
                               // Section 2: Day Type Blueprints (PivotBoss Daily Closed Candle Scans + Dhan Intraday Day Types)
@@ -17439,7 +17514,7 @@ function MobileScreensaver() {
                                 { id: 'OUTSIDE_DAY', label: 'Outside Day Blueprint', icon: '🧭', scanKey: (r: any) => r.out || 'NONE', dtMatch: (dt: string) => dt.includes('OUTSIDE') },
                                 { id: 'INSIDE_DAY', label: 'Inside Day Blueprint', icon: '↔️', scanKey: (r: any) => (r.ins && r.ins !== 'NONE') ? r.ins : (r.inside && r.inside !== 'NONE') ? r.inside : (r.dt && r.dt.includes('INSIDE')) ? 'Inside' : 'NONE', dtMatch: (dt: string) => dt.includes('INSIDE') },
                                 { id: 'OOR_OOV', label: 'Out of Range / Out of Value', icon: '📈', scanKey: (r: any) => (r.oor && r.oor !== 'NONE') ? r.oor : (r.bias && r.bias.includes('OUT OF RANGE') && !r.bias.includes('IN RANGE')) ? 'Out of Range' : 'NONE', dtMatch: (dt: string) => dt.includes('OUT OF RANGE') && !dt.includes('IN RANGE') },
-                                { id: 'NVA', label: 'Narrow Value Area (NVA)', icon: '📊', scanKey: (r: any) => (r.nva && r.nva !== 'NONE') ? r.nva : (r.ncpr && r.ncpr !== 'NONE') ? 'NVA/NCPR' : (r.is_nva || r.is_ncpr) ? 'NVA' : 'NONE', dtMatch: (dt: string) => dt.includes('NARROW') || dt.includes('NVA') || dt.includes('NCPR') },
+                                { id: 'NVA', label: 'NVAL', icon: '📊', scanKey: (r: any) => (r.nva && r.nva !== 'NONE') ? r.nva : (r.ncpr && r.ncpr !== 'NONE') ? 'NVA/NCPR' : (r.is_nva || r.is_ncpr) ? 'NVA' : 'NONE', dtMatch: (dt: string) => dt.includes('NARROW') || dt.includes('NVA') || dt.includes('NCPR') },
                                 { id: 'REJECTION_DAY', label: 'Rejection Day Blueprint', icon: '🛑', scanKey: (r: any) => r.rej || 'NONE', dtMatch: (dt: string) => dt.includes('REJECTION') },
                                 { id: 'ABSORPTION_DAY', label: 'Absorption Day Blueprint', icon: '🧲', scanKey: (r: any) => r.abs || 'NONE', dtMatch: (dt: string) => dt.includes('ABSORPTION') },
                                 { id: 'STOP_RUN_DAY', label: 'Stop Run Day Blueprint', icon: '🏃', scanKey: (r: any) => r.srd || 'NONE', dtMatch: (dt: string) => dt.includes('STOP RUN') }
@@ -20467,9 +20542,9 @@ function MobileScreensaver() {
                   : selectedDhanOorAsset.relationshipType === 'INSIDE'
                   ? 'INSIDE CPR BREAKOUT (DTC < YTC & DBC > YBC)'
                   : selectedDhanOorAsset.relationshipType === 'NCPR'
-                  ? 'BREAKOUTS (NORMALIZED NARROW CPR < 5.0% RANGE)'
+                  ? 'NCPR (< 5.0% RANGE)'
                   : selectedDhanOorAsset.relationshipType === 'NVA'
-                  ? 'NARROW VALUE AREA (VAL / VAH < 38% RANGE)'
+                  ? 'NVAL (VAL / VAH < 38% RANGE)'
                   : selectedDhanOorAsset.relationshipType === 'DIV'
                   ? (selectedDhanOorAsset.relationshipBadge?.includes('HIDDEN')
                       ? (selectedDhanOorAsset.direction === 'BULLISH' ? 'BULLISH HIDDEN DIVERGENCE (CONTINUATION)' : 'BEARISH HIDDEN DIVERGENCE (CONTINUATION)')
@@ -20479,10 +20554,10 @@ function MobileScreensaver() {
                   : selectedDhanOorAsset.relationshipType === 'CONT'
                   ? (selectedDhanOorAsset.direction === 'BULLISH' ? 'BULLISH CONTINUATION (EXPANSION OUT OF VALUE)' : 'BEARISH CONTINUATION (BREAKDOWN OUT OF VALUE)')
                   : selectedDhanOorAsset.relationshipType === 'FIRE'
-                  ? (selectedDhanOorAsset.direction === 'BULLISH' ? 'BULLISH CONFLUENCE ALERT (CANONICAL CONFLUENCE OUTSIDE GREEN/RED)' : 'BEARISH CONFLUENCE ALERT (CANONICAL CONFLUENCE OUTSIDE GREEN/RED)')
+                  ? (selectedDhanOorAsset.direction === 'BULLISH' ? 'BULLISH CONFLUENCE (CANONICAL CONFLUENCE OUTSIDE GREEN/RED)' : 'BEARISH CONFLUENCE (CANONICAL CONFLUENCE OUTSIDE GREEN/RED)')
                   : (selectedDhanOorAsset.isVcprTouch
-                      ? (selectedDhanOorAsset.direction === 'BULLISH' ? 'VIRGIN CPR TOUCH TEST (SUPPORT BOUNCE)' : 'VIRGIN CPR TOUCH TEST (RESISTANCE REJECTION)')
-                      : (selectedDhanOorAsset.direction === 'BULLISH' ? 'UNTOUCHED VIRGIN CPR (SUPPORT MAGNET BELOW)' : 'UNTOUCHED VIRGIN CPR (RESISTANCE MAGNET ABOVE)'))}
+                      ? (selectedDhanOorAsset.direction === 'BULLISH' ? 'VCPR TOUCH TEST (SUPPORT BOUNCE)' : 'VCPR TOUCH TEST (RESISTANCE REJECTION)')
+                      : (selectedDhanOorAsset.direction === 'BULLISH' ? 'UNTOUCHED VCPR (SUPPORT MAGNET BELOW)' : 'UNTOUCHED VCPR (RESISTANCE MAGNET ABOVE)'))}
               </span>
             </div>
 
@@ -20566,7 +20641,7 @@ function MobileScreensaver() {
               <div className="p-2.5 rounded-xl bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5 flex flex-col gap-1 text-xs font-mono">
                 <div className="flex items-center justify-between">
                   <span className="text-dim">
-                    {selectedDhanOorAsset.relationshipType === 'NCPR' ? 'CPR Width & Compression Ratio:' : selectedDhanOorAsset.relationshipType === 'NVA' ? 'Value Area Width & Ratio:' : 'Untouched Virgin CPR Pivot:'}
+                    {selectedDhanOorAsset.relationshipType === 'NCPR' ? 'CPR Width & Compression Ratio:' : selectedDhanOorAsset.relationshipType === 'NVA' ? 'Value Area Width & Ratio:' : 'Untouched VCPR Pivot:'}
                   </span>
                   <span className="font-bold text-primary">
                     {selectedDhanOorAsset.relationshipType === 'NCPR'
@@ -20629,9 +20704,9 @@ function MobileScreensaver() {
               ) : selectedDhanOorAsset.relationshipType === 'INSIDE' ? (
                 <p>• Inside CPR Breakout: CPR is completely inside yesterday\'s CPR (DTc &lt; YTc &amp; DBc &gt; YBc), anticipating a breakout expansion day once price escapes the boundary.</p>
               ) : selectedDhanOorAsset.relationshipType === 'NCPR' ? (
-                <p>• Breakouts (Normalized Narrow CPR): CPR width is &lt; 5.0% of yesterday\'s range, forecasting severe energy compression and explosive directional breakout moves.</p>
+                <p>• NCPR (Normalized Narrow CPR): CPR width is &lt; 5.0% of yesterday\'s range, forecasting severe energy compression and explosive directional breakout moves.</p>
               ) : selectedDhanOorAsset.relationshipType === 'NVA' ? (
-                <p>• Narrow Value Area: Market Profile Value Area (VAL-VAH) is compressed (&lt; 38% of day\'s range), signaling deep consensus and impending high-velocity price discovery.</p>
+                <p>• NVAL (Narrow Value Area): Market Profile Value Area (VAL-VAH) is compressed (&lt; 38% of day\'s range), signaling deep consensus and impending high-velocity price discovery.</p>
               ) : selectedDhanOorAsset.relationshipType === 'DIV' ? (
                 <p>• {selectedDhanOorAsset.relationshipBadge?.includes('HIDDEN') ? 'Hidden Divergence (Trend Continuation): Price makes a higher low (bullish) or lower high (bearish) against RSI oscillator extreme, indicating strong trend resumption in institutional commodities.' : 'Regular Divergence (Mean Reversion / Reversal): Price makes a lower low (bullish) or higher high (bearish) against RSI oscillator divergence, signaling momentum exhaustion and impending swing reversal.'}</p>
               ) : selectedDhanOorAsset.relationshipType === 'REJ' ? (
@@ -20639,11 +20714,11 @@ function MobileScreensaver() {
               ) : selectedDhanOorAsset.relationshipType === 'CONT' ? (
                 <p>• {selectedDhanOorAsset.direction === 'BULLISH' ? 'Bullish Continuation (Order Flow Expansion): Sustained buying conviction pushing price beyond initial balance and previous value area. Trail stops aggressively with moving average / CPR levels.' : 'Bearish Continuation (Order Flow Breakdown): Sustained institutional selling driving price lower past value area low. Look for intraday expansion targets.'}</p>
               ) : selectedDhanOorAsset.relationshipType === 'FIRE' ? (
-                <p>• {selectedDhanOorAsset.direction === 'BULLISH' ? 'Bullish Confluence Alert (Confluence Expansion): Canonical Bullish Signal triggered completely outside Greenzone and Redzone boundaries. Highest-conviction directional impulse with zero adverse zone resistance.' : 'Bearish Confluence Alert (Confluence Breakdown): Canonical Bearish Signal triggered completely outside Greenzone and Redzone boundaries. Sharp momentum expansion with unconstrained downside order flow.'}</p>
+                <p>• {selectedDhanOorAsset.direction === 'BULLISH' ? 'Bullish Confluence (Confluence Expansion): Canonical Bullish Signal triggered completely outside Greenzone and Redzone boundaries. Highest-conviction directional impulse with zero adverse zone resistance.' : 'Bearish Confluence (Confluence Breakdown): Canonical Bearish Signal triggered completely outside Greenzone and Redzone boundaries. Sharp momentum expansion with unconstrained downside order flow.'}</p>
               ) : selectedDhanOorAsset.isVcprTouch ? (
-                <p>• Virgin CPR Touch: Price has entered or tested the Virgin CPR zone ({selectedDhanOorAsset.vcprDate ? `Dated ${selectedDhanOorAsset.vcprDate}` : ''}). Look for responsive price action: support bounce if tested from above, or resistance rejection if tested from below.</p>
+                <p>• VCPR Touch: Price has entered or tested the Virgin CPR zone ({selectedDhanOorAsset.vcprDate ? `Dated ${selectedDhanOorAsset.vcprDate}` : ''}). Look for responsive price action: support bounce if tested from above, or resistance rejection if tested from below.</p>
               ) : (
-                <p>• Virgin CPR Magnet: Untouched CPR from past sessions acts as an institutional magnet; watch for retest reactions or complete magnet fills.</p>
+                <p>• VCPR Magnet: Untouched CPR from past sessions acts as an institutional magnet; watch for retest reactions or complete magnet fills.</p>
               )}
               <p>• Filter candidates for high-probability intraday trend expansion or mean reversion.</p>
             </div>
