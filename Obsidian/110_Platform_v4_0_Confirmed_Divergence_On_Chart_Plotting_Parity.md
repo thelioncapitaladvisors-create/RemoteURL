@@ -1,10 +1,10 @@
-# 110: Platform v3.0 Confirmed Divergence On-Chart Plotting & Timestamp Parity
+# 110: Platform v4.0 Confirmed Divergence On-Chart Plotting & Timestamp Parity
 
 **Document Designation**: Production Indicator Architecture & Visualization Specification  
-**Version**: Version 3.0 (`v3.0`)  
-**Effective Date**: November 19, 2026 (22:45 IST)  
+**Version**: Version 4.0 (`v4.0`)  
+**Effective Date**: November 19, 2026 (22:50 IST)  
 **Status**: Canonical Production Standard & Deployed  
-**Indicator SHA256**: `1972271db887f107c17557b9ce700606d015eef00199799862168f04daaf85b0`
+**Indicator SHA256**: `8ccbdf075db9651f0e7dea8d97759ce2b37850ffba31193ddb12e60feaeafa8e`
 
 ---
 
@@ -60,15 +60,15 @@ This guarantees that **zero phantom labels** appear at unconfirmed historical sw
 
 ### 2.3 Master Indicator Version Designation
 
-Per direct instruction, the indicator title and shorttitle are locked as **Version 3.0 (`v3.0`)**:
+The indicator title and shorttitle are officially designated as **Version 4.0 (`v4.0`)**:
 ```pine
-// TLCS PivotBoss Indicator — Version 3.0 (Master Release)
+// TLCS PivotBoss Indicator — Version 4.0 (Master Release)
 // Canonical Production Indicator & Standalone DhanHQ BlackBox Parity
 // ====================================================================
 
 //@version=6
 
-indicator('TLCS PivotBoss Indicator v3.0', shorttitle = 'TLCS v3.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
+indicator('TLCS PivotBoss Indicator v4.0', shorttitle = 'TLCS v4.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
 ```
 
 ### 2.4 BlackBox Engine Parity (`algo_engine/pivots.py`)
@@ -85,14 +85,14 @@ All 8 indicator copies across root and `RemoteURL` repositories are synchronized
 
 | File Path | SHA256 Checksum | Parity Status |
 | :--- | :--- | :---: |
-| `TV Indicator/TLCS_Live_Pivot_Alerts.pine` | `1972271db887f107c17557b9ce700606d015eef00199799862168f04daaf85b0` | **MATCH** |
-| `TV_Indicator_Full_Code.txt` | `1972271db887f107c17557b9ce700606d015eef00199799862168f04daaf85b0` | **MATCH** |
-| `user_code.pine` | `1972271db887f107c17557b9ce700606d015eef00199799862168f04daaf85b0` | **MATCH** |
-| `TLCS_Live_Pivot_Alerts.pine` | `1972271db887f107c17557b9ce700606d015eef00199799862168f04daaf85b0` | **MATCH** |
-| `RemoteURL/TV Indicator/TLCS_Live_Pivot_Alerts.pine` | `1972271db887f107c17557b9ce700606d015eef00199799862168f04daaf85b0` | **MATCH** |
-| `RemoteURL/TV_Indicator_Full_Code.txt` | `1972271db887f107c17557b9ce700606d015eef00199799862168f04daaf85b0` | **MATCH** |
-| `RemoteURL/user_code.pine` | `1972271db887f107c17557b9ce700606d015eef00199799862168f04daaf85b0` | **MATCH** |
-| `RemoteURL/TLCS_Live_Pivot_Alerts.pine` | `1972271db887f107c17557b9ce700606d015eef00199799862168f04daaf85b0` | **MATCH** |
+| `TV Indicator/TLCS_Live_Pivot_Alerts.pine` | `8ccbdf075db9651f0e7dea8d97759ce2b37850ffba31193ddb12e60feaeafa8e` | **MATCH** |
+| `TV_Indicator_Full_Code.txt` | `8ccbdf075db9651f0e7dea8d97759ce2b37850ffba31193ddb12e60feaeafa8e` | **MATCH** |
+| `user_code.pine` | `8ccbdf075db9651f0e7dea8d97759ce2b37850ffba31193ddb12e60feaeafa8e` | **MATCH** |
+| `TLCS_Live_Pivot_Alerts.pine` | `8ccbdf075db9651f0e7dea8d97759ce2b37850ffba31193ddb12e60feaeafa8e` | **MATCH** |
+| `RemoteURL/TV Indicator/TLCS_Live_Pivot_Alerts.pine` | `8ccbdf075db9651f0e7dea8d97759ce2b37850ffba31193ddb12e60feaeafa8e` | **MATCH** |
+| `RemoteURL/TV_Indicator_Full_Code.txt` | `8ccbdf075db9651f0e7dea8d97759ce2b37850ffba31193ddb12e60feaeafa8e` | **MATCH** |
+| `RemoteURL/user_code.pine` | `8ccbdf075db9651f0e7dea8d97759ce2b37850ffba31193ddb12e60feaeafa8e` | **MATCH** |
+| `RemoteURL/TLCS_Live_Pivot_Alerts.pine` | `8ccbdf075db9651f0e7dea8d97759ce2b37850ffba31193ddb12e60feaeafa8e` | **MATCH** |
 
 ---
 
