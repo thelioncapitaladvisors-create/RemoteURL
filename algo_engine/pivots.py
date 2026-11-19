@@ -1386,23 +1386,30 @@ def compute_divergences(
 
         cur_rsi = rsi_series[i]
 
-        # Regular Bullish Divergence: Lower/Equal Low in Price with Higher Low in RSI (RSI < 45, Green candle, >= 2 bars separation)
-        if (i - min_low_idx) >= 2 and cur.low <= min_low and cur_rsi > min_rsi and cur_rsi < 45.0 and cur.is_green:
+        is_prior_swing_low = (min_low_idx > 0 and min_low_idx < i and 
+                              bars[min_low_idx].low <= bars[min_low_idx - 1].low and 
+                              bars[min_low_idx].low <= bars[min_low_idx + 1].low)
+        is_prior_swing_high = (max_high_idx > 0 and max_high_idx < i and 
+                               bars[max_high_idx].high >= bars[max_high_idx - 1].high and 
+                               bars[max_high_idx].high >= bars[max_high_idx + 1].high)
+
+        # Regular Bullish Divergence: Lower/Equal Low in Price with Higher Low in RSI (RSI < 45, >= 2 bars separation)
+        if (i - min_low_idx) >= 2 and is_prior_swing_low and cur.low <= min_low and cur_rsi > min_rsi and cur_rsi < 45.0:
             if check_trendline_barrier(bars, rsi_series, min_low_idx, i, is_bull=True):
                 reg_bull[i] = True
 
-        # Regular Bearish Divergence: Higher/Equal High in Price with Lower High in RSI (RSI > 55, Red candle, >= 2 bars separation)
-        if (i - max_high_idx) >= 2 and cur.high >= max_high and cur_rsi < max_rsi and cur_rsi > 55.0 and cur.is_red:
+        # Regular Bearish Divergence: Higher/Equal High in Price with Lower High in RSI (RSI > 55, >= 2 bars separation)
+        if (i - max_high_idx) >= 2 and is_prior_swing_high and cur.high >= max_high and cur_rsi < max_rsi and cur_rsi > 55.0:
             if check_trendline_barrier(bars, rsi_series, max_high_idx, i, is_bull=False):
                 reg_bear[i] = True
 
         # Hidden Bullish Divergence: Higher Low in Price with Lower/Equal RSI (RSI < 50, >= 2 bars separation)
-        if (i - min_low_idx) >= 2 and cur.low > min_low and cur_rsi <= min_rsi and cur_rsi < 50.0:
+        if (i - min_low_idx) >= 2 and is_prior_swing_low and cur.low > min_low and cur_rsi <= min_rsi and cur_rsi < 50.0:
             if check_trendline_barrier(bars, rsi_series, min_low_idx, i, is_bull=True):
                 hidden_bull[i] = True
 
         # Hidden Bearish Divergence: Lower High in Price with Higher/Equal RSI (RSI > 50, >= 2 bars separation)
-        if (i - max_high_idx) >= 2 and cur.high < max_high and cur_rsi >= max_rsi and cur_rsi > 50.0:
+        if (i - max_high_idx) >= 2 and is_prior_swing_high and cur.high < max_high and cur_rsi >= max_rsi and cur_rsi > 50.0:
             if check_trendline_barrier(bars, rsi_series, max_high_idx, i, is_bull=False):
                 hidden_bear[i] = True
 
