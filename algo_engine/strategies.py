@@ -651,9 +651,9 @@ class StrategyEngine:
         # COMPUTE ALL 12 STRATEGY TRIGGERS (Pine Script v7.0 lines 3147-3176)
         # ═══════════════════════════════════════════════════════
 
-        # 1. Standard Lightning (Pure Native Missile + Scalp Confluence, lines 3148-3161)
-        standard_lightning_buy = can_buy and scalp_buy and long_allowed and day_allowed
-        standard_lightning_sell = can_sell and scalp_sell and short_allowed and day_allowed
+        # 1. Standard Lightning (Pure Native Missile + Scalp Confluence - Ungated per v4.0 mandate)
+        standard_lightning_buy = can_buy and scalp_buy
+        standard_lightning_sell = can_sell and scalp_sell
         lightning_buy = standard_lightning_buy
         lightning_sell = standard_lightning_sell
 

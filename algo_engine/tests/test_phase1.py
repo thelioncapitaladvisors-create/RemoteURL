@@ -1381,7 +1381,7 @@ class TestV7IndicatorParity(unittest.TestCase):
         self.assertEqual(len(div_sigs5), 1, "DivergenceBuy must fire on GrS within 6 bars of regBullDiv")
 
     def test_lightning_requires_scalp_confluence(self):
-        """LightningBuy in v7.0 is strictly (CanBuy and ScalpBuy) and longAllowed and dayAllowed."""
+        """LightningBuy in v4.0 is strictly (CanBuy and ScalpBuy) ungated by longAllowed and dayAllowed."""
         engine = StrategyEngine()
 
         # Regular bull div with GrS does NOT trigger LightningBuy (it triggers Long Divergence)
