@@ -6,18 +6,21 @@
   - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
   - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
   - Gating must NEVER rely on `close` for limit entry qualification.
-## Version 4.0: Live Signals & Watchlist Separation, Zero-Truncation UI & LOGS 3-Tier Filter Mandate (Effective November 18, 2026)
-- **LIVE SIGNALS & WATCHLIST SEPARATION MANDATE**:
-  - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) in `Tv-Alert-Mobile/src/app/page.tsx` and root `page.tsx`:
-    1. **Strict Pipeline Isolation**: The screener is sliced into two dedicated institutional sections:
-       - `renderDhanLiveSignalsSection()`: Bound to `liveSignalsAssets` (`extractDhanScreenerAssets(..., liveActionOnly=true, watchlistOnly=false)`), displaying exclusively active limit orders and live execution trades.
-       - `renderDhanWatchlistSection()`: Bound to `watchlistAssets` (`extractDhanScreenerAssets(..., liveActionOnly=false, watchlistOnly=true)`), displaying qualifying day-type candidates and setups.
-    2. **3-Tier LOGS Design Standard**: Both sections implement the exact 3-tier filter rhythm established in the LOGS tab's Trade Filters:
-       - Tier 1: Horizontal scrollable status & setup selector pills with real-time asset counts and a right-aligned `TOTAL: X` badge.
+## Version 4.0: Universal Live Signals & Day Type Watchlist Architecture, Ungated Strategies & Zero-Collision Mandate (Effective November 19, 2026)
+- **UNIVERSAL LIVE SIGNALS & DAY TYPE WATCHLIST ARCHITECTURE MANDATE**:
+  - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) in `Tv-Alert-Mobile/src/app/page.tsx`, root `page.tsx`, and `RemoteURL/page.tsx`:
+    1. **Universal Strategy Ingestion for Live Signals**: `renderDhanLiveSignalsSection()` is bound to `liveSignalsAssets` via `extractDhanScreenerAssets('ALL_LIVE', ..., liveActionOnly=true, watchlistOnly=false)`, capturing all active limit orders (`tradeLifecycle === 'ACTIVE LIMIT'`) and live execution trades (`tradeLifecycle === 'LIVE'`) across ALL strategy types (`MISSILE`, `SCALP`, `LIGHTNING`, `EXTREME REVERSAL`, `DIVERGENCE`, `HIDDEN DIVERGENCE`, `CONFLUENCE / FIRE_ALERT`, `VIRGIN CPR`, `REJECTION`, `CONTINUATION`, `BOUNCE`).
+    2. **Comprehensive Real-Time Day Type Watchlist**: `renderDhanWatchlistSection()` is bound to `watchlistAssets` via `extractDhanScreenerAssets(setup.id, ..., liveActionOnly=false, watchlistOnly=false)`, dynamically displaying all qualifying day-type candidates and 2-day pivot relationships (`INSIDE`, `OOR`, `BIG_MOVE`, `NCPR`, `NVA`, `REJ`, `CONT`, `VCPR_MAGNET`) on a real-time basis without dropping signals due to trade execution statuses.
+    3. **3-Tier LOGS Design Standard**: Both sections implement the exact 3-tier filter rhythm established in the LOGS tab's Trade Filters:
+       - Tier 1: Horizontal scrollable status & setup selector pills (`ALL`, `ACTIVE LIMITS`, `LIVE TRADES`, `LIGHTNING`, `EXT REV`, `MISSILE`, `SCALP`, `DIVERGENCE`, `BIG MOVE`, etc.) with real-time asset counts and a right-aligned `TOTAL: X` badge.
        - Tier 2: Horizontal scrollable 8-market category chips (`ALL`, `NIFTY`, `STOCKS`, `MCX`, `NYMEX`, `CRYPTO`, `FOREX`, `WORLD`) with live category asset counts.
-       - Tier 3: Directional bias (`ALL`, `BULL`, `BEAR`) and session timing toggles (`ALL`, `REG`, `EXT`).
+       - Tier 3: Directional bias (`ALL`, `BULL`, `BEAR`) and session timing toggles (`ALL`, `REG`, `EXT` / `TODAY`, `ALL SESSIONS`).
        - Header Summary: 1-row compact KPI strip showing total assets, active count, wins/losses, and average move.
-    3. **3-Column Intuitive Responsive Grid**: Tables adhere to the zero-overlap 3-column layout (`SYMBOL & TIME` | `SETUP & STATUS` | `RETURN (%)`), permanently eliminating horizontal scroll friction and preventing the 48px sticky column collapse bug.
+    4. **3-Column Intuitive Zero-Collision Layout**: Tables adhere to the balanced 3-column layout (`SYMBOL & TIME` [w-[34%] sm:w-[32%]] | `SETUP & STATUS` [w-[42%] sm:w-[44%]] | `RETURN (%)` [w-[24%] text-right]) with inner `min-w-0 max-w-full overflow-hidden truncate` wrappers, permanently eliminating text overlap and cell collision across mobile viewports.
+- **EXTREME REVERSAL & LIGHTNING UNGATING MANDATE**:
+  - Across Pine Script indicators (`TLCS v3.0 / v4.0`), Python BlackBox (`algo_engine/strategies.py`), and background scanners:
+    1. **Lightning Signals**: Initiated purely on native Missile + Scalp confluence (`CanBuy and ScalpBuy` / `CanSell and ScalpSell`), completely exempt from `dayAllowed` restrictions, Long/Short directional biases, and $H_4/L_4$ limit touch-point gating.
+    2. **Extreme Reversal Signals**: Initiated purely on Bollinger Band extreme exhaustion (`Elongsignal` / `Eshortsignal`), completely exempt from `dayAllowed` restrictions, Long/Short directional biases, and $H_4/L_4$ limit touch-point gating.
 - **ZERO TRUNCATION & PILL GEOMETRY MANDATE (ANALYTICS TEARSHEET)**:
   - Across all 22 metric pills in the Analytics Tearsheet card (`Tv-Alert-Mobile/src/app/page.tsx`):
     1. **Fluid Vertical Wrapping**: Rigid `whitespace-nowrap` and `overflow-hidden` constraints are strictly prohibited on multi-word labels. Metric labels must carry `break-words leading-tight tracking-tight` allowing natural 2-line wrapping.

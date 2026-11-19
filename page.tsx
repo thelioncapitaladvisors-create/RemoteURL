@@ -3899,14 +3899,14 @@ function MobileScreensaver() {
 
   // ── SEPARATED LIVE SIGNALS SECTION STATE (LOGS-TAB DESIGN LANGUAGE) ──
   const [isLiveSignalsMasterExpanded, setIsLiveSignalsMasterExpanded] = useState<boolean>(true);
-  const [liveSignalsActiveFilter, setLiveSignalsActiveFilter] = useState<'ALL' | 'ACTIVE_LIMITS' | 'LIVE' | 'FIRE' | 'DIV' | 'REJ' | 'CONT' | 'VCPR_TOUCH'>('ALL');
+  const [liveSignalsActiveFilter, setLiveSignalsActiveFilter] = useState<'ALL' | 'ACTIVE_LIMITS' | 'LIVE' | 'FIRE' | 'LIGHTNING' | 'EXT_REV' | 'MISSILE' | 'SCALP' | 'DIV' | 'REJ' | 'CONT' | 'VCPR_TOUCH'>('ALL');
   const [liveSignalsMarketFilter, setLiveSignalsMarketFilter] = useState<ScreenerMarketCategory>('ALL');
   const [liveSignalsDirectionFilter, setLiveSignalsDirectionFilter] = useState<'ALL' | 'BULLISH' | 'BEARISH'>('ALL');
   const [liveSignalsSessionFilter, setLiveSignalsSessionFilter] = useState<'TODAY' | 'ALL'>('TODAY');
 
   // ── SEPARATED WATCHLIST SECTION STATE (LOGS-TAB DESIGN LANGUAGE) ──
   const [isWatchlistMasterExpanded, setIsWatchlistMasterExpanded] = useState<boolean>(true);
-  const [watchlistActiveFilter, setWatchlistActiveFilter] = useState<'ALL' | 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR_MAGNET' | 'REJ' | 'CONT'>('ALL');
+  const [watchlistActiveFilter, setWatchlistActiveFilter] = useState<'ALL' | 'OOR' | 'INSIDE' | 'BIG_MOVE' | 'NCPR' | 'NVA' | 'VCPR_MAGNET' | 'REJ' | 'CONT'>('ALL');
   const [watchlistMarketFilter, setWatchlistMarketFilter] = useState<ScreenerMarketCategory>('ALL');
   const [watchlistDirectionFilter, setWatchlistDirectionFilter] = useState<'ALL' | 'BULLISH' | 'BEARISH'>('ALL');
   const [watchlistSessionFilter, setWatchlistSessionFilter] = useState<'TODAY' | 'ALL'>('TODAY');
@@ -6107,7 +6107,7 @@ function MobileScreensaver() {
   // ── DHANHQ BLACKBOX SCREENER DATA EXTRACTION ENGINE ──
   // Shared extractor for Section 4A (OOR), Section 4B (Inside Day), Section 4C (Narrow CPR - NCPR), Section 4D (Narrow Value Area - NVA), Section 4E (Virgin CPR - VCPR), Section 4F (Divergence - DIV), Section 4G (Rejected - REJ), Section 4H (Continuation - CONT), and Section 4I (Fire Alert - FIRE)
   const extractDhanScreenerAssets = useCallback((
-    setupType: 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR' | 'DIV' | 'REJ' | 'CONT' | 'FIRE',
+    setupType: 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR' | 'DIV' | 'REJ' | 'CONT' | 'FIRE' | 'BIG_MOVE' | 'ALL_LIVE',
     marketFilter: ScreenerMarketCategory | string = 'ALL',
     directionFilter: 'ALL' | 'BULLISH' | 'BEARISH' = 'ALL',
     sessionFilter: 'TODAY' | 'ALL' = 'TODAY',
@@ -6377,6 +6377,18 @@ function MobileScreensaver() {
         if (!isFireAlertSignal(s)) return false;
         if (fireSubFilter === 'BULLISH' && !isBullishFireAlertSignal(s)) return false;
         if (fireSubFilter === 'BEARISH' && !isBearishFireAlertSignal(s)) return false;
+      } else if (setupType === 'BIG_MOVE') {
+        const isBigMove = dayType.includes('BIG MOVE') || 
+                          dayType.includes('BREAKOUT') || 
+                          rawBias.includes('BIG MOVE') || 
+                          rawBias.includes('BREAKOUT') || 
+                          (meta.two_day_relationship || '').toUpperCase().includes('BIG MOVE') || 
+                          (meta.two_day_relationship || '').toUpperCase().includes('BREAKOUT') ||
+                          (s.type || '').toUpperCase().includes('BIG MOVE') ||
+                          (s.trigger || '').toUpperCase().includes('BIG MOVE');
+        if (!isBigMove) return false;
+      } else if (setupType === 'ALL_LIVE') {
+        // Universal live pass-through: allow all active limit and live trade signals
       }
 
       if (setupType === 'DIV') {
@@ -6652,6 +6664,15 @@ function MobileScreensaver() {
         direction = isBullishContinuationSignal(s) ? 'BULLISH' : 'BEARISH';
       } else if (setupType === 'FIRE') {
         direction = isBullishFireAlertSignal(s) ? 'BULLISH' : 'BEARISH';
+      } else if (setupType === 'BIG_MOVE') {
+        if (isLong) direction = 'BULLISH';
+        else if (isShort) direction = 'BEARISH';
+        else if (s.entry_price && meta.vah && s.entry_price > meta.vah) direction = 'BULLISH';
+        else direction = 'BEARISH';
+      } else if (setupType === 'ALL_LIVE') {
+        if (isLong) direction = 'BULLISH';
+        else if (isShort) direction = 'BEARISH';
+        else direction = 'BULLISH';
       } else if (!isLong && !isShort) {
         if (s.entry_price && meta.vah && s.entry_price > meta.vah) direction = 'BULLISH';
         else direction = 'BEARISH';
@@ -6681,9 +6702,55 @@ function MobileScreensaver() {
         (meta.confluence_type || '').toUpperCase().includes('HIDDEN')
       );
 
-      const relType: 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR' | 'DIV' | 'REJ' | 'CONT' | 'FIRE' = setupType;
-      const relBadge = setupType === 'OOR' ? '⚡ OOR / OOV' : setupType === 'INSIDE' ? '📦 INSIDE CPR' : setupType === 'NCPR' ? '🎯 NCPR' : setupType === 'NVA' ? '📊 NVAL' : setupType === 'DIV' ? (isHiddenDivSignal ? '🔍 HIDDEN DIV' : '🎯 REGULAR DIV') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? '🛡️ BULLISH REJ' : '🛡️ BEARISH REJ') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? '🚀 BULLISH CONT' : '🚀 BEARISH CONT') : setupType === 'FIRE' ? '⚡ CONFLUENCE' : (isVcprTouchSignal ? '⚡ VCPR TOUCH' : '🧲 VCPR');
-      const relBias = setupType === 'OOR' ? 'OUT OF RANGE / OUT OF VALUE' : setupType === 'INSIDE' ? 'INSIDE CPR BREAKOUT' : setupType === 'NCPR' ? 'NCPR (< 5.0% RANGE)' : setupType === 'NVA' ? 'NVAL (VAL / VAH)' : setupType === 'DIV' ? (isHiddenDivSignal ? 'HIDDEN DIVERGENCE (CONTINUATION)' : 'REGULAR DIVERGENCE (REVERSAL)') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? 'REJECTED BULLISH (CPR BOTTOM)' : 'REJECTED BEARISH (CPR TOP)') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? 'BULLISH CONTINUATION (EXPANSION)' : 'BEARISH CONTINUATION (BREAKDOWN)') : setupType === 'FIRE' ? 'CANONICAL CONFLUENCE (OUTSIDE GREEN/RED)' : (isVcprTouchSignal ? 'VCPR TOUCH TEST' : 'UNTOUCHED VCPR (1-MONTH)');
+      const sigTypeUpper = ((s.type || '') + ' ' + (s.trigger || '') + ' ' + (meta.strategy || '') + ' ' + (meta.signal_type || '')).toUpperCase();
+      let relType: 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR' | 'DIV' | 'REJ' | 'CONT' | 'FIRE' | 'BIG_MOVE' | 'ALL_LIVE' = setupType;
+      let relBadge = setupType === 'OOR' ? '⚡ OOR / OOV' : setupType === 'INSIDE' ? '📦 INSIDE CPR' : setupType === 'NCPR' ? '🎯 NCPR' : setupType === 'NVA' ? '📊 NVAL' : setupType === 'DIV' ? (isHiddenDivSignal ? '🔍 HIDDEN DIV' : '🎯 REGULAR DIV') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? '🛡️ BULLISH REJ' : '🛡️ BEARISH REJ') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? '🚀 BULLISH CONT' : '🚀 BEARISH CONT') : setupType === 'FIRE' ? '⚡ CONFLUENCE' : setupType === 'BIG_MOVE' ? '💥 BIG MOVE' : (isVcprTouchSignal ? '⚡ VCPR TOUCH' : '🧲 VCPR');
+      let relBias = setupType === 'OOR' ? 'OUT OF RANGE / OUT OF VALUE' : setupType === 'INSIDE' ? 'INSIDE CPR BREAKOUT' : setupType === 'NCPR' ? 'NCPR (< 5.0% RANGE)' : setupType === 'NVA' ? 'NVAL (VAL / VAH)' : setupType === 'DIV' ? (isHiddenDivSignal ? 'HIDDEN DIVERGENCE (CONTINUATION)' : 'REGULAR DIVERGENCE (REVERSAL)') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? 'REJECTED BULLISH (CPR BOTTOM)' : 'REJECTED BEARISH (CPR TOP)') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? 'BULLISH CONTINUATION (EXPANSION)' : 'BEARISH CONTINUATION (BREAKDOWN)') : setupType === 'FIRE' ? 'CANONICAL CONFLUENCE (OUTSIDE GREEN/RED)' : setupType === 'BIG_MOVE' ? 'BIG MOVE / BREAKOUT DAY' : (isVcprTouchSignal ? 'VCPR TOUCH TEST' : 'UNTOUCHED VCPR (1-MONTH)');
+
+      if (setupType === 'ALL_LIVE') {
+        if (sigTypeUpper.includes('LIGHTNING')) {
+          relType = 'FIRE';
+          relBadge = '⚡ LIGHTNING';
+          relBias = 'LIGHTNING (MISSILE + SCALP CONFLUENCE)';
+        } else if (sigTypeUpper.includes('EXTREME REVERSAL') || sigTypeUpper.includes('EXT REV') || sigTypeUpper.includes('EXTREME')) {
+          relType = 'REJ';
+          relBadge = '🔥 EXT REV';
+          relBias = 'EXTREME REVERSAL (MEAN REVERSION)';
+        } else if (sigTypeUpper.includes('MISSILE')) {
+          relType = 'FIRE';
+          relBadge = '🚀 MISSILE';
+          relBias = 'PIVOTBOSS MISSILE (TREND EXPANSION)';
+        } else if (sigTypeUpper.includes('SCALP')) {
+          relType = 'FIRE';
+          relBadge = '💎 SCALP';
+          relBias = 'PIVOTBOSS SCALP (MOMENTUM)';
+        } else if (sigTypeUpper.includes('DIVERGENCE') || sigTypeUpper.includes('DIV')) {
+          relType = 'DIV';
+          const isHidden = sigTypeUpper.includes('HIDDEN');
+          relBadge = isHidden ? '🔍 HIDDEN DIV' : '🎯 REGULAR DIV';
+          relBias = isHidden ? 'HIDDEN DIVERGENCE (CONTINUATION)' : 'REGULAR DIVERGENCE (REVERSAL)';
+        } else if (isFireAlertSignal(s)) {
+          relType = 'FIRE';
+          relBadge = '⚡ CONFLUENCE';
+          relBias = 'CANONICAL CONFLUENCE (FIRE ALERT)';
+        } else if (isRejectedSignal(s)) {
+          relType = 'REJ';
+          relBadge = isRejectedBullishSignal(s) ? '🛡️ BULLISH REJ' : '🛡️ BEARISH REJ';
+          relBias = isRejectedBullishSignal(s) ? 'REJECTED BULLISH (CPR BOTTOM)' : 'REJECTED BEARISH (CPR TOP)';
+        } else if (isContinuationSignal(s)) {
+          relType = 'CONT';
+          relBadge = isBullishContinuationSignal(s) ? '🚀 BULLISH CONT' : '🚀 BEARISH CONT';
+          relBias = isBullishContinuationSignal(s) ? 'BULLISH CONTINUATION' : 'BEARISH CONTINUATION';
+        } else if (isVcprTouchSignal) {
+          relType = 'VCPR';
+          relBadge = '⚡ VCPR TOUCH';
+          relBias = 'VIRGIN CPR TOUCH TEST';
+        } else {
+          relType = 'ALL_LIVE';
+          relBadge = (s.type || 'LIVE SIGNAL').toUpperCase();
+          relBias = (meta.opening_bias || meta.day_type || 'INTRADAY TRADE').toUpperCase();
+        }
+      }
 
       let dayMovePts = 0;
       let dayMovePct = 0;
@@ -6748,7 +6815,7 @@ function MobileScreensaver() {
           direction,
           signals: [s],
           openingBias: relBias,
-          dayType: meta.day_type || (setupType === 'OOR' ? 'BIG MOVE / BREAKOUT' : setupType === 'INSIDE' ? 'INSIDE CPR / BREAKOUT' : setupType === 'NCPR' ? 'NCPR' : setupType === 'NVA' ? 'NVAL' : setupType === 'DIV' ? (isHiddenDivSignal ? 'HIDDEN DIVERGENCE' : 'REGULAR DIVERGENCE') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? 'REJECTED BULLISH' : 'REJECTED BEARISH') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? 'BULLISH CONTINUATION' : 'BEARISH CONTINUATION') : setupType === 'FIRE' ? 'CONFLUENCE' : (isVcprTouchSignal ? 'VCPR TOUCH TEST' : 'VCPR MAGNET')),
+          dayType: meta.day_type || (setupType === 'OOR' ? 'BIG MOVE / BREAKOUT' : setupType === 'INSIDE' ? 'INSIDE CPR / BREAKOUT' : setupType === 'BIG_MOVE' ? 'BIG MOVE / BREAKOUT' : setupType === 'NCPR' ? 'NCPR' : setupType === 'NVA' ? 'NVAL' : setupType === 'DIV' ? (isHiddenDivSignal ? 'HIDDEN DIVERGENCE' : 'REGULAR DIVERGENCE') : setupType === 'REJ' ? (isRejectedBullishSignal(s) ? 'REJECTED BULLISH' : 'REJECTED BEARISH') : setupType === 'CONT' ? (isBullishContinuationSignal(s) ? 'BULLISH CONTINUATION' : 'BEARISH CONTINUATION') : setupType === 'FIRE' ? 'CONFLUENCE' : setupType === 'ALL_LIVE' ? relBias : (isVcprTouchSignal ? 'VCPR TOUCH TEST' : 'VCPR MAGNET')),
           openPrice: entryP,
           latestPrice: exitP > 0 ? exitP : entryP,
           dayMovePts,
@@ -7023,43 +7090,22 @@ function MobileScreensaver() {
 
   // ── SEPARATED LIVE SIGNALS ASSETS (ACTIVE LIMITS & LIVE TRADES) ──
   const { liveSignalsAssets, liveSignalsStats } = useMemo(() => {
-    const setups: { id: 'FIRE' | 'DIV' | 'REJ' | 'CONT' | 'VCPR' | 'OOR' | 'INSIDE' | 'NCPR' | 'NVA'; subFilter?: string }[] = [
-      { id: 'FIRE' },
-      { id: 'DIV' },
-      { id: 'REJ' },
-      { id: 'CONT' },
-      { id: 'VCPR', subFilter: 'TOUCH' },
-      { id: 'OOR' },
-      { id: 'INSIDE' },
-      { id: 'NCPR' },
-      { id: 'NVA' },
-    ];
-    const combined: any[] = [];
-    const seen = new Set<string>();
+    const { assets } = extractDhanScreenerAssets(
+      'ALL_LIVE',
+      liveSignalsMarketFilter,
+      liveSignalsDirectionFilter,
+      liveSignalsSessionFilter,
+      '',
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true, // liveActionOnly: strictly retains ACTIVE LIMIT and LIVE condition trades
+      false
+    );
 
-    for (const setup of setups) {
-      const { assets } = extractDhanScreenerAssets(
-        setup.id,
-        liveSignalsMarketFilter,
-        liveSignalsDirectionFilter,
-        liveSignalsSessionFilter,
-        '',
-        setup.subFilter === 'TOUCH' ? 'TOUCH' : undefined,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        true, // liveActionOnly: strictly retains ACTIVE LIMIT and LIVE condition trades
-        false
-      );
-      for (const a of assets) {
-        const k = `${a.cleanSym}_${a.sessionDate}_${a.relationshipType}`;
-        if (!seen.has(k)) {
-          seen.add(k);
-          combined.push(a);
-        }
-      }
-    }
+    const combined = [...assets];
 
     combined.sort((a, b) => {
       const orderA = a.tradeLifecycle === 'LIVE' ? 0 : 1;
@@ -7070,11 +7116,15 @@ function MobileScreensaver() {
 
     const activeLimitsCount = combined.filter(a => a.tradeLifecycle === 'ACTIVE LIMIT').length;
     const liveCount = combined.filter(a => a.tradeLifecycle === 'LIVE').length;
-    const fireCount = combined.filter(a => a.relationshipType === 'FIRE').length;
-    const divCount = combined.filter(a => a.relationshipType === 'DIV').length;
-    const rejCount = combined.filter(a => a.relationshipType === 'REJ').length;
-    const contCount = combined.filter(a => a.relationshipType === 'CONT').length;
-    const vcprTouchCount = combined.filter(a => a.isVcprTouch).length;
+    const fireCount = combined.filter(a => a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE').length;
+    const lightningCount = combined.filter(a => a.relationshipBadge?.includes('LIGHTNING')).length;
+    const extRevCount = combined.filter(a => a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME')).length;
+    const missileCount = combined.filter(a => a.relationshipBadge?.includes('MISSILE')).length;
+    const scalpCount = combined.filter(a => a.relationshipBadge?.includes('SCALP')).length;
+    const divCount = combined.filter(a => a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV').length;
+    const rejCount = combined.filter(a => a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ').length;
+    const contCount = combined.filter(a => a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT').length;
+    const vcprTouchCount = combined.filter(a => a.isVcprTouch || a.relationshipBadge?.includes('VCPR')).length;
 
     return {
       liveSignalsAssets: combined,
@@ -7083,6 +7133,10 @@ function MobileScreensaver() {
         activeLimitsCount,
         liveCount,
         fireCount,
+        lightningCount,
+        extRevCount,
+        missileCount,
+        scalpCount,
         divCount,
         rejCount,
         contCount,
@@ -7095,22 +7149,27 @@ function MobileScreensaver() {
     return liveSignalsAssets.filter(a => {
       if (liveSignalsActiveFilter === 'ACTIVE_LIMITS') return a.tradeLifecycle === 'ACTIVE LIMIT';
       if (liveSignalsActiveFilter === 'LIVE') return a.tradeLifecycle === 'LIVE';
-      if (liveSignalsActiveFilter === 'FIRE') return a.relationshipType === 'FIRE';
-      if (liveSignalsActiveFilter === 'DIV') return a.relationshipType === 'DIV';
-      if (liveSignalsActiveFilter === 'REJ') return a.relationshipType === 'REJ';
-      if (liveSignalsActiveFilter === 'CONT') return a.relationshipType === 'CONT';
-      if (liveSignalsActiveFilter === 'VCPR_TOUCH') return a.isVcprTouch;
+      if (liveSignalsActiveFilter === 'FIRE') return a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE';
+      if (liveSignalsActiveFilter === 'LIGHTNING') return a.relationshipBadge?.includes('LIGHTNING');
+      if (liveSignalsActiveFilter === 'EXT_REV') return a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME');
+      if (liveSignalsActiveFilter === 'MISSILE') return a.relationshipBadge?.includes('MISSILE');
+      if (liveSignalsActiveFilter === 'SCALP') return a.relationshipBadge?.includes('SCALP');
+      if (liveSignalsActiveFilter === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
+      if (liveSignalsActiveFilter === 'REJ') return a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ';
+      if (liveSignalsActiveFilter === 'CONT') return a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT';
+      if (liveSignalsActiveFilter === 'VCPR_TOUCH') return a.isVcprTouch || a.relationshipBadge?.includes('VCPR');
       return true;
     });
   }, [liveSignalsAssets, liveSignalsActiveFilter]);
 
   // ── SEPARATED WATCHLIST ASSETS (DAY-TYPE CANDIDATES & PIVOT REGIMES) ──
   const { watchlistAssets, watchlistStats } = useMemo(() => {
-    const setups: { id: 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR' | 'REJ' | 'CONT'; subFilter?: string }[] = [
+    const setups: { id: 'REJ' | 'CONT' | 'OOR' | 'INSIDE' | 'BIG_MOVE' | 'NCPR' | 'NVA' | 'VCPR'; subFilter?: string }[] = [
       { id: 'REJ' },
       { id: 'CONT' },
       { id: 'OOR' },
       { id: 'INSIDE' },
+      { id: 'BIG_MOVE' },
       { id: 'NCPR' },
       { id: 'NVA' },
       { id: 'VCPR', subFilter: 'MAGNET' },
@@ -7131,7 +7190,7 @@ function MobileScreensaver() {
         undefined,
         undefined,
         false,
-        true // watchlistOnly: strictly retains day-type setup candidates
+        false
       );
       for (const a of assets) {
         const k = `${a.cleanSym}_${a.sessionDate}_${a.relationshipType}`;
@@ -7146,6 +7205,7 @@ function MobileScreensaver() {
 
     const oorCount = combined.filter(a => a.relationshipType === 'OOR').length;
     const insideCount = combined.filter(a => a.relationshipType === 'INSIDE').length;
+    const bigMoveCount = combined.filter(a => a.relationshipType === 'BIG_MOVE').length;
     const ncprCount = combined.filter(a => a.relationshipType === 'NCPR').length;
     const nvaCount = combined.filter(a => a.relationshipType === 'NVA').length;
     const vcprMagnetCount = combined.filter(a => a.relationshipType === 'VCPR' && !a.isVcprTouch).length;
@@ -7160,6 +7220,7 @@ function MobileScreensaver() {
         contCount,
         oorCount,
         insideCount,
+        bigMoveCount,
         ncprCount,
         nvaCount,
         vcprMagnetCount,
@@ -7173,6 +7234,7 @@ function MobileScreensaver() {
       if (watchlistActiveFilter === 'CONT') return a.relationshipType === 'CONT';
       if (watchlistActiveFilter === 'OOR') return a.relationshipType === 'OOR';
       if (watchlistActiveFilter === 'INSIDE') return a.relationshipType === 'INSIDE';
+      if (watchlistActiveFilter === 'BIG_MOVE') return a.relationshipType === 'BIG_MOVE';
       if (watchlistActiveFilter === 'NCPR') return a.relationshipType === 'NCPR';
       if (watchlistActiveFilter === 'NVA') return a.relationshipType === 'NVA';
       if (watchlistActiveFilter === 'VCPR_MAGNET') return a.relationshipType === 'VCPR' && !a.isVcprTouch;
@@ -10907,7 +10969,11 @@ function MobileScreensaver() {
       ...(liveSignalsStats.activeLimitsCount > 0 ? [{ value: 'ACTIVE_LIMITS', label: '⏳ ACTIVE LIMITS', count: liveSignalsStats.activeLimitsCount }] : []),
       ...(liveSignalsStats.liveCount > 0 ? [{ value: 'LIVE', label: '⚡ LIVE TRADES', count: liveSignalsStats.liveCount }] : []),
       ...(liveSignalsStats.fireCount > 0 ? [{ value: 'FIRE', label: '🔥 CONFLUENCE', count: liveSignalsStats.fireCount }] : []),
-      ...(liveSignalsStats.divCount > 0 ? [{ value: 'DIV', label: '〰️ DIVERGENCE', count: liveSignalsStats.divCount }] : []),
+      ...(liveSignalsStats.lightningCount > 0 ? [{ value: 'LIGHTNING', label: '⚡ LIGHTNING', count: liveSignalsStats.lightningCount }] : []),
+      ...(liveSignalsStats.extRevCount > 0 ? [{ value: 'EXT_REV', label: '🔥 EXT REV', count: liveSignalsStats.extRevCount }] : []),
+      ...(liveSignalsStats.missileCount > 0 ? [{ value: 'MISSILE', label: '🚀 MISSILE', count: liveSignalsStats.missileCount }] : []),
+      ...(liveSignalsStats.scalpCount > 0 ? [{ value: 'SCALP', label: '💎 SCALP', count: liveSignalsStats.scalpCount }] : []),
+      ...(liveSignalsStats.divCount > 0 ? [{ value: 'DIV', label: '🎯 DIVERGENCE', count: liveSignalsStats.divCount }] : []),
       ...(liveSignalsStats.rejCount > 0 ? [{ value: 'REJ', label: '🛡️ REJECTIONS', count: liveSignalsStats.rejCount }] : []),
       ...(liveSignalsStats.contCount > 0 ? [{ value: 'CONT', label: '🚀 CONTINUATIONS', count: liveSignalsStats.contCount }] : []),
       ...(liveSignalsStats.vcprTouchCount > 0 ? [{ value: 'VCPR_TOUCH', label: '⚡ VCPR TOUCH', count: liveSignalsStats.vcprTouchCount }] : []),
@@ -11141,9 +11207,9 @@ function MobileScreensaver() {
                 <table className="w-full text-left border-collapse table-fixed">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-slate-900/90 text-[10px] sm:text-[11px] font-mono font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider">
-                      <th className="py-2.5 px-3 w-[36%] sm:w-[34%]">Symbol &amp; Time</th>
-                      <th className="py-2.5 px-2.5 w-[36%] sm:w-[38%]">Signal &amp; Status</th>
-                      <th className="py-2.5 px-3 w-[28%] text-right">Outcome / Return</th>
+                      <th className="py-2.5 px-2.5 sm:px-3 w-[34%] sm:w-[32%]">Symbol &amp; Time</th>
+                      <th className="py-2.5 px-2 sm:px-2.5 w-[42%] sm:w-[44%]">Signal &amp; Status</th>
+                      <th className="py-2.5 px-2 sm:px-3 w-[24%] text-right">Outcome / Return</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-xs">
@@ -11162,7 +11228,7 @@ function MobileScreensaver() {
                           className="hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors cursor-pointer select-none"
                         >
                           {/* Col 1: Symbol & Market Badge & Time */}
-                          <td className="py-2.5 px-3 min-w-0">
+                          <td className="py-2.5 px-2.5 sm:px-3 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-mono font-black uppercase tracking-wider ${
                                 asset.marketCategory === 'MCX COMMODITIES' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40' :
@@ -11196,15 +11262,15 @@ function MobileScreensaver() {
                           </td>
 
                           {/* Col 2: Signal & Status */}
-                          <td className="py-2.5 px-2.5 min-w-0">
-                            <div>
-                              <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-mono font-black px-1.5 sm:px-2 py-0.5 rounded-md max-w-full ${
+                          <td className="py-2.5 px-2 sm:px-2.5 min-w-0">
+                            <div className="flex items-center min-w-0 max-w-full overflow-hidden">
+                              <span className={`inline-flex items-center gap-1 text-[9.5px] sm:text-xs font-mono font-black px-1.5 sm:px-2 py-0.5 rounded-md min-w-0 max-w-full overflow-hidden truncate ${
                                 isBull
                                   ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30'
                                   : 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30'
                               }`}>
-                                <span>{isBull ? '▲' : '▼'}</span>
-                                <span className="truncate">{asset.relationshipBadge || (isBull ? 'BULLISH' : 'BEARISH')}</span>
+                                <span className="shrink-0">{isBull ? '▲' : '▼'}</span>
+                                <span className="truncate shrink min-w-0">{asset.relationshipBadge || (isBull ? 'BULLISH' : 'BEARISH')}</span>
                               </span>
                             </div>
                             <div className="mt-0.5 flex items-center gap-1 flex-wrap">
@@ -11234,7 +11300,7 @@ function MobileScreensaver() {
                           </td>
 
                           {/* Col 3: Outcome & Return */}
-                          <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                          <td className="py-2.5 px-2 sm:px-3 text-right whitespace-nowrap min-w-0">
                             <div className="flex items-center justify-end gap-1">
                               {asset.tradeLifecycle === 'CLOSED' && asset.latestOutcome && (
                                 <span className={`text-[8.5px] sm:text-[9px] font-mono font-black px-1.5 py-[1px] rounded uppercase ${
@@ -11282,6 +11348,7 @@ function MobileScreensaver() {
       ...(watchlistStats.contCount > 0 ? [{ value: 'CONT', label: '🚀 CONTINUATIONS', count: watchlistStats.contCount }] : []),
       ...(watchlistStats.oorCount > 0 ? [{ value: 'OOR', label: '⚡ OUT OF RANGE', count: watchlistStats.oorCount }] : []),
       ...(watchlistStats.insideCount > 0 ? [{ value: 'INSIDE', label: '🎯 INSIDE CPR', count: watchlistStats.insideCount }] : []),
+      ...(watchlistStats.bigMoveCount > 0 ? [{ value: 'BIG_MOVE', label: '💥 BIG MOVE', count: watchlistStats.bigMoveCount }] : []),
       ...(watchlistStats.ncprCount > 0 ? [{ value: 'NCPR', label: '📐 NCPR', count: watchlistStats.ncprCount }] : []),
       ...(watchlistStats.nvaCount > 0 ? [{ value: 'NVA', label: '📊 NVAL', count: watchlistStats.nvaCount }] : []),
       ...(watchlistStats.vcprMagnetCount > 0 ? [{ value: 'VCPR_MAGNET', label: '🧲 VCPR MAGNETS', count: watchlistStats.vcprMagnetCount }] : []),
@@ -11513,9 +11580,9 @@ function MobileScreensaver() {
                 <table className="w-full text-left border-collapse table-fixed">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-slate-900/90 text-[10px] sm:text-[11px] font-mono font-black uppercase text-slate-700 dark:text-slate-300 tracking-wider">
-                      <th className="py-2.5 px-3 w-[36%] sm:w-[34%]">Symbol &amp; Time</th>
-                      <th className="py-2.5 px-2.5 w-[36%] sm:w-[38%]">Setup &amp; Direction</th>
-                      <th className="py-2.5 px-3 w-[28%] text-right">Return (%)</th>
+                      <th className="py-2.5 px-2.5 sm:px-3 w-[34%] sm:w-[32%]">Symbol &amp; Time</th>
+                      <th className="py-2.5 px-2 sm:px-2.5 w-[42%] sm:w-[44%]">Setup &amp; Direction</th>
+                      <th className="py-2.5 px-2 sm:px-3 w-[24%] text-right">Return (%)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono text-xs">
@@ -11531,7 +11598,7 @@ function MobileScreensaver() {
                           className="hover:bg-cyan-50/40 dark:hover:bg-cyan-950/20 transition-colors cursor-pointer select-none"
                         >
                           {/* Col 1: Symbol & Market Badge & Time */}
-                          <td className="py-2.5 px-3 min-w-0">
+                          <td className="py-2.5 px-2.5 sm:px-3 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-mono font-black uppercase tracking-wider ${
                                 asset.marketCategory === 'MCX COMMODITIES' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40' :
@@ -11561,15 +11628,15 @@ function MobileScreensaver() {
                           </td>
 
                           {/* Col 2: Setup & Direction */}
-                          <td className="py-2.5 px-2.5 min-w-0">
-                            <div>
-                              <span className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-mono font-black px-1.5 sm:px-2 py-0.5 rounded-md max-w-full ${
+                          <td className="py-2.5 px-2 sm:px-2.5 min-w-0">
+                            <div className="flex items-center min-w-0 max-w-full overflow-hidden">
+                              <span className={`inline-flex items-center gap-1 text-[9.5px] sm:text-xs font-mono font-black px-1.5 sm:px-2 py-0.5 rounded-md min-w-0 max-w-full overflow-hidden truncate ${
                                 isBull
                                   ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30'
                                   : 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30'
                               }`}>
-                                <span>{isBull ? '▲' : '▼'}</span>
-                                <span className="truncate">{asset.relationshipBadge || (isBull ? 'BULLISH' : 'BEARISH')}</span>
+                                <span className="shrink-0">{isBull ? '▲' : '▼'}</span>
+                                <span className="truncate shrink min-w-0">{asset.relationshipBadge || (isBull ? 'BULLISH' : 'BEARISH')}</span>
                               </span>
                             </div>
                             {!asset.isTodaySession && (
@@ -11582,7 +11649,7 @@ function MobileScreensaver() {
                           </td>
 
                           {/* Col 3: Return (%) */}
-                          <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                          <td className="py-2.5 px-2 sm:px-3 text-right whitespace-nowrap min-w-0">
                             <div className="flex items-center justify-end">
                               <span className={`font-mono font-black text-xs sm:text-[13px] px-1.5 py-0.5 rounded-md inline-block ${
                                 isPositive
