@@ -4020,20 +4020,20 @@ plotshape(Fire_Alert, title = 'Confluence Alert', style = shape.circle, location
 string fireActiveSignal = JustMissileBuy ? 'LONG MISSILE' : JustMissileSell ? 'SHORT MISSILE' : JustScalpBuy ? 'LONG SCALP' : JustScalpSell ? 'SHORT SCALP' : LightningBuy ? 'LONG LIGHTNING' : LightningSell ? 'SHORT LIGHTNING' : DivergenceBuy ? 'LONG DIVERGENCE' : DivergenceSell ? 'SHORT DIVERGENCE' : HiddenDivBuy ? 'LONG HIDDEN DIVERGENCE' : HiddenDivSell ? 'SHORT HIDDEN DIVERGENCE' : ExtremeReversalBuy ? 'LONG EXTREME REVERSAL' : ExtremeReversalSell ? 'SHORT EXTREME REVERSAL' : BounceUp ? 'LONG BOUNCE' : BounceDown ? 'SHORT BOUNCE' : 'SIGNAL'
 string fireZone = isInFireZone ? 'FIREZONE' : 'ZONE'
 
-if Fire_Alert and enable_alerts
-    string isNcprStr    = NCPR ? "true" : "false"
-    string isInsideStr  = INSIDE ? "true" : "false"
-    string isNvaStr     = NVA ? "true" : "false"
-    string isRejStr     = REJECTIONDAY ? "true" : "false"
-    string isContStr    = str.contains(_c1, "CONTINUATION") ? "true" : "false"
-    string dtcStr       = str.tostring(DTcf, format.mintick)
-    string dbcStr       = str.tostring(DBcf, format.mintick)
-    string prevRangeStr = str.tostring(prevDayRange, format.mintick)
-    string cprWidthStr  = str.tostring(cprWidth, format.mintick)
-    string vahStr       = str.tostring(VAH, format.mintick)
-    string valStr       = str.tostring(VAL, format.mintick)
-    string vaWidthStr   = str.tostring(vaWidth, format.mintick)
+string isNcprStr    = NCPR ? "true" : "false"
+string isInsideStr  = INSIDE ? "true" : "false"
+string isNvaStr     = NVA ? "true" : "false"
+string isRejStr     = REJECTIONDAY ? "true" : "false"
+string isContStr    = str.contains(_c1, "CONTINUATION") ? "true" : "false"
+string dtcStr       = str.tostring(DTcf, format.mintick)
+string dbcStr       = str.tostring(DBcf, format.mintick)
+string prevRangeStr = str.tostring(prevDayRange, format.mintick)
+string cprWidthStr  = str.tostring(cprWidth, format.mintick)
+string vahStr       = str.tostring(VAH, format.mintick)
+string valStr       = str.tostring(VAL, format.mintick)
+string vaWidthStr   = str.tostring(vaWidth, format.mintick)
 
+if Fire_Alert and enable_alerts
     string _firePay = '{' + str.format(
          '"trigger":"FireAlert","secret":"{0}","symbol":"{1}","type":"{2}","status":"OPEN","entryPrice":"{3}","slLevel":"{4}","tpLevel":"{5}","zone":"{6}","opening_bias":"{7}","day_type":"{8}","dayType":"{7}","marketType":"{8}","tradeMessage":"{9}","entryTime":"{10}","fire_zone":"{11}","is_ncpr":{12},"is_inside_cpr":{13},"dtc":"{14}","dbc":"{15}","prev_range":"{16}","cpr_width":"{17}","is_nva":{18},"is_rejection":{19},"is_continuation":{20},"c1":"{21}","vah":"{22}","val":"{23}","va_width":"{24}"',
          webhook_secret, syminfo.ticker, fireActiveSignal, 
