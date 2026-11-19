@@ -12227,7 +12227,24 @@ function MobileScreensaver() {
 
                         const baseHubSigs = (engineSource === 'SHADOW' || hubDataSource === 'DHAN')
                             ? activeBlackboxSigs
-                            : activeSignals.filter(s => isExecutedTrade(s) || isDivSignal(s) || isRejectedSignal(s) || isContinuationSignal(s) || isFireAlertSignal(s) || isNcprSignal(s) || (s.status || '').toUpperCase().includes('ACTIVE'));
+                            : activeSignals.filter(s => {
+                                const t = (s.type || '').toUpperCase();
+                                const st = (s.status || '').toUpperCase();
+                                return isExecutedTrade(s) || 
+                                       isDivSignal(s) || 
+                                       isRejectedSignal(s) || 
+                                       isContinuationSignal(s) || 
+                                       isFireAlertSignal(s) || 
+                                       isNcprSignal(s) || 
+                                       t.includes('EXTREME') || 
+                                       t.includes('LIGHTNING') || 
+                                       t.includes('MISSILE') || 
+                                       t.includes('SCALP') || 
+                                       t.includes('VIRGIN') || 
+                                       t.includes('VCPR') || 
+                                       st.includes('ACTIVE') || 
+                                       st.includes('OPEN');
+                            });
 
                         const hubSigsToFilter = Array.from(new Map([...baseHubSigs, ...ncprEligibleSignals].map(s => [s.id || `${s.symbol}_${s.signal_ts || s.created_at}`, s])).values());
 
