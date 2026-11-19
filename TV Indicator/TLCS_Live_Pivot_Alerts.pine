@@ -3545,10 +3545,10 @@ checkAnyBounceDown(r01, r02, r03, r04, r05, r06, r07, r08, r09, r10, r11, r12, r
 
 // 1. Definition (13 parameters)
 initializeAndPushTrade(Settings settings, bool buyCond, bool sellCond, string longName, string shortName, array<TradeLogic> sessionsArr, array<TradeVisuals> visualsArr, string z1, string dX, string mX, string d1_message, bool is_conf = false, string conf_type = "") =>
-    // ── H4/L4 HARD GATE (Exempt for Divergence signals per user mandate) ──
-    bool isDivTrade = str.contains(longName, 'DIVERGENCE')
-    bool _buy  = isDivTrade ? buyCond  : (buyCond  and low < H4)
-    bool _sell = isDivTrade ? sellCond : (sellCond and high > L4)
+    // ── H4/L4 HARD GATE (Exempt for Divergence and Lightning signals per user mandate) ──
+    bool isGatingExempt = str.contains(longName, 'DIVERGENCE') or str.contains(longName, 'LIGHTNING')
+    bool _buy  = isGatingExempt ? buyCond  : (buyCond  and low < H4)
+    bool _sell = isGatingExempt ? sellCond : (sellCond and high > L4)
     bool alreadyOpenedThisBar = false
     if array.size(sessionsArr) > 0
         TradeLogic lastTrade = array.get(sessionsArr, array.size(sessionsArr) - 1)
@@ -3849,9 +3849,9 @@ if confirmedHiddenBull
 if confirmedHiddenBear
     lastFiredHiddenBearBar := lastHiddenBearDivBar
 
-// 1. Standard Lightning (Pure Native Missile + Scalp Confluence)
-bool standardLightningBuy  = (CanBuy and ScalpBuy) and longAllowed and dayAllowed
-bool standardLightningSell = (CanSell and ScalpSell) and shortAllowed and dayAllowed
+// 1. Standard Lightning (Pure Native Missile + Scalp Confluence - Ungated per v4.0 mandate)
+bool standardLightningBuy  = (CanBuy and ScalpBuy)
+bool standardLightningSell = (CanSell and ScalpSell)
 
 // 2. Regular Divergence Signals (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR and H4/L4 gating)
 // Version 3.0: Symmetrical DMI Directional Filter
@@ -3982,10 +3982,10 @@ processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX
 
 
 // ⚡ 3. LIGHTNING PLOTS
-plotchar(LightningBuy  and dayAllowed and longAllowed,  title = "Lightning Buy (Star)",  char = '★', location = location.belowbar, color = color.teal,   size = size.normal)
-plotchar(LightningSell and dayAllowed and shortAllowed, title = "Lightning Sell (Star)", char = '★', location = location.abovebar, color = color.maroon, size = size.normal)
-plotchar(LightningBuy  and dayAllowed and longAllowed,  title = "Lightning Buy (Bolt)",  char = '⚡', location = location.belowbar, color = color.lime,   size = size.normal)
-plotchar(LightningSell and dayAllowed and shortAllowed, title = "Lightning Sell (Bolt)", char = '⚡', location = location.abovebar, color = color.lime,   size = size.normal)
+plotchar(LightningBuy,  title = "Lightning Buy (Star)",  char = '★', location = location.belowbar, color = color.teal,   size = size.normal)
+plotchar(LightningSell, title = "Lightning Sell (Star)", char = '★', location = location.abovebar, color = color.maroon, size = size.normal)
+plotchar(LightningBuy,  title = "Lightning Buy (Bolt)",  char = '⚡', location = location.belowbar, color = color.lime,   size = size.normal)
+plotchar(LightningSell, title = "Lightning Sell (Bolt)", char = '⚡', location = location.abovebar, color = color.lime,   size = size.normal)
 
 // 🔥 4. EXTREME REVERSAL PLOTS
 plotshape(ExtremeReversalBuy,  title = "Bullish Extreme Reversal", style = shape.arrowup,   location = location.belowbar, color = color.aqua,    size = size.normal, text = "EXT REV", textcolor = color.aqua)
