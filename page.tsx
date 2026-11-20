@@ -2760,6 +2760,7 @@ function HubOptionChain() {
 // ─────────────────────────────────────────────────────────────────────────────
 function HubFnoBuildups() {
   const [expandedFilter, setExpandedFilter] = useState<'LONG_BUILDUP' | 'SHORT_BUILDUP' | 'LONG_UNWINDING' | 'SHORT_UNWINDING' | null>(null);
+  const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string>('');
@@ -2937,9 +2938,34 @@ function HubFnoBuildups() {
           >
             <RefreshCcw size={14} className={loading ? 'animate-spin text-accent' : 'text-secondary'} />
           </button>
+
+          {/* Explicit Expand / Collapse Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setIsExpanded(prev => !prev)}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-wider transition-all border shadow-xs cursor-pointer select-none active:scale-[0.98] ${
+              isExpanded
+                ? 'bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
+                : 'bg-purple-600 text-white border-purple-500 hover:bg-purple-700 shadow-purple-500/20'
+            }`}
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp size={12} className="stroke-[3]" />
+                <span>COLLAPSE</span>
+              </>
+            ) : (
+              <>
+                <ChevronDown size={12} className="stroke-[3]" />
+                <span>EXPAND</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 
+      {isExpanded && (
+        <>
       {/* 2. MARKET BREADTH SUMMARY STRIP */}
       {summary && (
         <div className="p-3 rounded-2xl border border-primary/20 bg-secondary/30 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 shadow-sm text-xs sm:text-sm font-mono">
@@ -3157,6 +3183,8 @@ function HubFnoBuildups() {
             })
           )}
         </div>
+      )}
+      </>
       )}
 
       {/* 5. INTERACTIVE STOCK DETAIL MODAL */}
@@ -3570,13 +3598,21 @@ function MobileScreensaver() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isStandalonePwa, setIsStandalonePwa] = useState<boolean>(true);
   const [confluenceMode, setConfluenceMode] = useState<'ALL' | 'CONFLUENCE_ONLY'>('ALL');
-  const [hubLiveTab, setHubLiveTab] = useState<'ALL' | 'INSIDE_DAY' | 'DIVERGENCE' | 'REJECTED' | 'CONTINUATION' | 'FIRE_ALERT' | 'NCPR' | 'MISSILE' | 'SCALP' | 'LIGHTNING' | 'EXTREME_REVERSAL'>('ALL');
-  const [hubWatchlistTab, setHubWatchlistTab] = useState<'ALL' | 'REJECTED' | 'CONTINUATION' | 'INSIDE_DAY' | 'NCPR' | 'VCPR' | 'BLUEPRINT'>('ALL');
-  const [hubSectionView, setHubSectionView] = useState<'ALL' | 'LIVE' | 'WATCHLIST'>('ALL');
-  const [isHubLiveMasterExpanded, setIsHubLiveMasterExpanded] = useState<boolean>(false);
-  const [isHubWatchlistMasterExpanded, setIsHubWatchlistMasterExpanded] = useState<boolean>(false);
+  const [hubLiveTab, setHubLiveTab] = useState<'ALL' | 'FIRE_ALERT' | 'LIGHTNING' | 'EXTREME_REVERSAL' | 'DIVERGENCE' | 'MISSILE' | 'SCALP'>('ALL');
+  const [hubWatchlistTab, setHubWatchlistTab] = useState<'ALL' | 'OOR' | 'INSIDE_DAY' | 'NCPR' | 'NVA' | 'BIG_MOVE' | 'VCPR'>('ALL');
+  const [hubBlueprintTab, setHubBlueprintTab] = useState<'ALL' | 'REJECTED' | 'CONTINUATION' | 'ABSORPTION' | 'FAILED_NEW' | 'OUTSIDE' | 'STOP_RUN' | 'ACCUMULATION'>('ALL');
+  const [hubSectionView, setHubSectionView] = useState<'ALL' | 'LIVE' | 'WATCHLIST' | 'BLUEPRINT'>('ALL');
+  const [hubLiveViewMode, setHubLiveViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
+  const [hubWatchlistViewMode, setHubWatchlistViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
+  const [hubBlueprintViewMode, setHubBlueprintViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
+  const [isHubLiveMasterExpanded, setIsHubLiveMasterExpanded] = useState<boolean>(true);
+  const [isHubWatchlistMasterExpanded, setIsHubWatchlistMasterExpanded] = useState<boolean>(true);
+  const [isHubBlueprintMasterExpanded, setIsHubBlueprintMasterExpanded] = useState<boolean>(true);
   const [isHubLiveButtonsExpanded, setIsHubLiveButtonsExpanded] = useState<boolean>(true);
   const [isHubWatchlistButtonsExpanded, setIsHubWatchlistButtonsExpanded] = useState<boolean>(true);
+  const [isHubBlueprintButtonsExpanded, setIsHubBlueprintButtonsExpanded] = useState<boolean>(true);
+  const [hubLowerSectionView, setHubLowerSectionView] = useState<'ALL' | 'PERFORMANCE' | 'FNO' | 'OPTION_CHAIN'>('ALL');
+  const [isHubPerfExpanded, setIsHubPerfExpanded] = useState<boolean>(true);
 
   // ── AUTONOMOUS AUDIT & RESOLUTION AGENT STATE ────────────────────────
   const [auditStatus, setAuditStatus] = useState<'HEALTHY' | 'DESYNC' | 'CHECKING'>('CHECKING');
@@ -11020,10 +11056,10 @@ function MobileScreensaver() {
           <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-primary mt-1 flex items-center gap-2">
               <Zap className="text-accent shrink-0" size={22} />
-              <span>LIVE SIGNALS</span>
+              <span>{activeTab === 'INSIGHTS' ? 'DAILY LIVE SIGNALS (1D SWING)' : 'LIVE SIGNALS'}</span>
             </h2>
             <span className="text-[10px] sm:text-[10.5px] font-mono font-bold text-dim uppercase tracking-wider whitespace-nowrap block mt-0.5">
-              ACTIVE LIMIT ORDERS &amp; EXECUTING TRADES
+              {activeTab === 'INSIGHTS' ? 'ACTIVE 1D LIMIT ORDERS & DAILY SWING EXECUTION SIGNALS' : 'ACTIVE LIMIT ORDERS & EXECUTING TRADES'}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
@@ -11699,7 +11735,6 @@ function MobileScreensaver() {
     return (
       <div className="flex flex-col gap-4 w-full">
         {renderDhanLiveSignalsSection()}
-        {renderDhanWatchlistSection()}
       </div>
     );
   };
@@ -11742,7 +11777,7 @@ function MobileScreensaver() {
                     <span className="bg-accent text-[var(--text-on-accent)] text-[10px] sm:text-xs px-1.5 py-0.5 sm:py-1 rounded ml-1.5 not-italic font-black">PRO</span>
                   </h1>
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/35 shadow-2xs">
-                    v4.0
+                    v5.0
                   </span>
                 </div>
                 <div className="text-[10px] sm:text-xs font-mono text-dim uppercase font-bold tracking-wider mt-0.5">
@@ -11931,7 +11966,7 @@ function MobileScreensaver() {
                         <span className="text-xs sm:text-sm font-mono font-black uppercase text-primary">Autonomous Engine Verification Protocol</span>
                       </div>
                       <span className="text-[9px] font-mono font-black text-emerald-800 dark:text-emerald-200 bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                        Active Daemon v4.0
+                        Active Daemon v5.0
                       </span>
                     </div>
 
@@ -12177,18 +12212,26 @@ function MobileScreensaver() {
                             { id: 'SCALP', label: 'Scalp' }
                         ];
 
+                        // Section 2: Market Structure & Pivot Regimes
                         const watchlistParameterCategories = [
-                            { id: 'REJECTED_BULLISH', label: 'Rejected Bullish' },
-                            { id: 'REJECTED_BEARISH', label: 'Rejected Bearish' },
+                            { id: 'OOR', label: 'Out of Range & Value' },
+                            { id: 'INSIDE_DAY', label: 'Inside Day CPR' },
+                            { id: 'NCPR', label: 'Narrow CPR (NCPR)' },
+                            { id: 'NVA', label: 'Narrow Value Area (NVA)' },
+                            { id: 'BIG_MOVE', label: 'Big Move Day' },
+                            { id: 'VIRGIN_CPR', label: 'Virgin CPR Magnet' }
+                        ];
+
+                        // Section 3: PivotBoss STP 2.0 Day Type Blueprints & Sequences
+                        const blueprintParameterCategories = [
+                            { id: 'REJECTED_BULLISH', label: 'Rejected Bullish (CPR Bounce)' },
+                            { id: 'REJECTED_BEARISH', label: 'Rejected Bearish (CPR Resistance)' },
+                            { id: 'REJECTION', label: 'Rejection Blueprint' },
                             { id: 'BULLISH_CONTINUATION', label: 'Bullish Continuation' },
                             { id: 'BEARISH_CONTINUATION', label: 'Bearish Continuation' },
-                            { id: 'REJECTION', label: 'Rejection Blueprint' },
-                            { id: 'INSIDE_DAY', label: 'Inside Day CPR' },
-                            { id: 'NCPR', label: 'NCPR' },
-                            { id: 'VIRGIN_CPR', label: 'VCPR' },
                             { id: 'ABSORPTION', label: 'Absorption Blueprint' },
-                            { id: 'FAILED_NEW_LOW', label: 'Failed New High/Low Blueprint' },
-                            { id: 'OUTSIDE_DAY', label: 'Outside Day' },
+                            { id: 'FAILED_NEW_LOW', label: 'Failed New High/Low' },
+                            { id: 'OUTSIDE_DAY', label: 'Outside Day Blueprint' },
                             { id: 'STOP_RUN', label: 'Stop Run Day' },
                             { id: 'STOP_RUN_SEQ', label: 'Stop Run Sequence' },
                             { id: 'ACCUMULATION', label: 'Accumulation Sequence' }
@@ -12223,7 +12266,13 @@ function MobileScreensaver() {
                             return !isNaN(ts) && ts >= startOfToday && isToday;
                         });
 
+                        const oorSignals: Signal[] = (dhanOorEligibleAssets || []).flatMap((a: any) => a.signals || []);
+                        const insideSignals: Signal[] = (dhanInsideEligibleAssets || []).flatMap((a: any) => a.signals || []);
                         const ncprEligibleSignals: Signal[] = (dhanNcprEligibleAssets || []).flatMap((a: any) => a.signals || []);
+                        const nvaSignals: Signal[] = (dhanNvaEligibleAssets || []).flatMap((a: any) => a.signals || []);
+                        const vcprSignals: Signal[] = (dhanVcprEligibleAssets || []).flatMap((a: any) => a.signals || []);
+                        const rejSignals: Signal[] = (dhanRejEligibleAssets || []).flatMap((a: any) => a.signals || []);
+                        const contSignals: Signal[] = (dhanContEligibleAssets || []).flatMap((a: any) => a.signals || []);
 
                         const baseHubSigs = (engineSource === 'SHADOW' || hubDataSource === 'DHAN')
                             ? activeBlackboxSigs
@@ -12246,7 +12295,16 @@ function MobileScreensaver() {
                                        st.includes('OPEN');
                             });
 
-                        const hubSigsToFilter = Array.from(new Map([...baseHubSigs, ...ncprEligibleSignals].map(s => [s.id || `${s.symbol}_${s.signal_ts || s.created_at}`, s])).values());
+                        const hubSigsToFilter = Array.from(new Map([
+                            ...baseHubSigs,
+                            ...oorSignals,
+                            ...insideSignals,
+                            ...ncprEligibleSignals,
+                            ...nvaSignals,
+                            ...vcprSignals,
+                            ...rejSignals,
+                            ...contSignals
+                        ].map(s => [s.id || `${s.symbol}_${s.signal_ts || s.created_at}`, s])).values());
 
                         const filteredSigs = analyticsMarket === 'ALL' 
                             ? hubSigsToFilter 
@@ -12254,6 +12312,70 @@ function MobileScreensaver() {
                                 const m = getMarket(s);
                                 return m === analyticsMarket || (analyticsMarket === 'nifty' && m === 'stocks');
                               });
+
+                        const matchSignalToCategory = (catId: string, s: Signal) => {
+                            const t = (s.type || '').toUpperCase();
+                            let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+                            const dt = (meta.day_type || s.trigger || '').toUpperCase();
+                            const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
+                            const fam = String(meta.setup_family || '').toUpperCase();
+
+                            // ── SECTION 1: LIVE PARAMETER CATEGORIES ──
+                            if (catId === 'FIRE_ALERT') return isFireAlertSignal(s);
+                            if (catId === 'MISSILE') return t.includes('MISSILE');
+                            if (catId === 'SCALP') return t.includes('SCALP');
+                            if (catId === 'LIGHTNING') return t.includes('LIGHTNING');
+                            if (catId === 'EXTREME_REVERSAL') return t.includes('EXTREME') && t.includes('REVERSAL');
+                            if (catId === 'DIVERGENCE') {
+                                if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
+                                return (t.includes('DIVERGENCE') && !t.includes('HIDDEN')) || (!t.includes('HIDDEN') && (meta.divergence_type === 'REGULAR' || meta.confluence_type === 'REGULAR_DIV' || meta.confluence_type === 'DIVERGENCE'));
+                            }
+                            if (catId === 'HIDDEN_DIVERGENCE') {
+                                if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
+                                return (t.includes('HIDDEN') && (t.includes('DIVERGENCE') || t.includes('DIV'))) || meta.divergence_type === 'HIDDEN' || meta.confluence_type === 'HIDDEN_DIV' || meta.confluence_type === 'HIDDEN_DIVERGENCE';
+                            }
+
+                            // ── SECTION 2: WATCHLIST (MARKET STRUCTURE & PIVOT REGIMES) ──
+                            if (catId === 'OOR') {
+                                return bias.includes('OUT OF RANGE') || bias.includes('OUTSIDE RANGE') || bias.includes('OOR') || meta.two_day_relationship === 'OOR' || dt.includes('OOR') || dt.includes('OUT OF RANGE');
+                            }
+                            if (catId === 'INSIDE_DAY') {
+                                const isExplicit = meta.is_inside_cpr === true || meta.two_day_relationship === 'INSIDE' || dt.includes('INSIDE');
+                                if (isExplicit) return true;
+                                const dtc = Number(meta.dtc || meta.cpr?.tc || meta.cpr_tc || meta.tc || 0);
+                                const dbc = Number(meta.dbc || meta.cpr?.bc || meta.cpr_bc || meta.bc || 0);
+                                const ytc = Number(meta.ytc || meta.prev_tc || meta.prev_cpr_top || meta.prev_cpr?.tc || 0);
+                                const ybc = Number(meta.ybc || meta.prev_bc || meta.prev_cpr_bottom || meta.prev_cpr?.bc || 0);
+                                const top = Math.max(dtc, dbc), bottom = Math.min(dtc, dbc);
+                                const yTop = Math.max(ytc, ybc), yBottom = Math.min(ytc, ybc);
+                                return top > 0 && bottom > 0 && yTop > 0 && yBottom > 0 && (top < yTop) && (bottom > yBottom);
+                            }
+                            if (catId === 'NCPR') return isNcprSignal(s);
+                            if (catId === 'NVA') {
+                                return meta.is_nval === true || meta.is_nval === 'true' || meta.two_day_relationship === 'NVA' || dt.includes('NVA') || dt.includes('NVAL') || bias.includes('NVA');
+                            }
+                            if (catId === 'BIG_MOVE') {
+                                return meta.is_big_move === true || dt.includes('BIG_MOVE') || dt.includes('BIG MOVE') || Number(meta.adr_pct || 0) >= 120;
+                            }
+                            if (catId === 'VIRGIN_CPR') {
+                                return t.includes('VIRGIN') || t.includes('VCPR') || meta.is_vcpr === true || dt.includes('VCPR') || fam.includes('VCPR');
+                            }
+
+                            // ── SECTION 3: BLUEPRINTS (PIVOTBOSS STP 2.0 DAY TYPES & SEQUENCES) ──
+                            if (catId === 'REJECTED_BULLISH') return isRejectedBullishSignal(s);
+                            if (catId === 'REJECTED_BEARISH') return isRejectedBearishSignal(s);
+                            if (catId === 'REJECTION') return (isRejectedSignal(s) || dt.includes('REJECTION') || bias.includes('REJECTION')) && !isRejectedBullishSignal(s) && !isRejectedBearishSignal(s);
+                            if (catId === 'BULLISH_CONTINUATION') return isBullishContinuationSignal(s);
+                            if (catId === 'BEARISH_CONTINUATION') return isBearishContinuationSignal(s);
+                            if (catId === 'ABSORPTION') return dt.includes('ABSORPTION') || fam.includes('ABSORPTION');
+                            if (catId === 'FAILED_NEW_LOW') return dt.includes('FAILED') || dt.includes('FNL') || dt.includes('FNH') || fam.includes('FAILED');
+                            if (catId === 'OUTSIDE_DAY') return dt.includes('OUTSIDE') || fam.includes('OUTSIDE');
+                            if (catId === 'STOP_RUN') return (dt.includes('STOP RUN') || fam.includes('STOP RUN')) && !dt.includes('SEQ');
+                            if (catId === 'STOP_RUN_SEQ') return (dt.includes('STOP RUN') || fam.includes('STOP RUN')) && (dt.includes('SEQ') || dt.includes('SEQUENCE'));
+                            if (catId === 'ACCUMULATION') return dt.includes('ACCUMULATION') || dt.includes('ACC/DIST') || fam.includes('ACCUMULATION');
+
+                            return false;
+                        };
 
                         // Counts for Live Signals
                         const liveFireCountInScan = filteredSigs.filter(s => isFireAlertSignal(s)).length;
@@ -12263,28 +12385,22 @@ function MobileScreensaver() {
                         const liveMissileCountInScan = filteredSigs.filter(s => (s.type || '').toUpperCase().includes('MISSILE')).length;
                         const liveScalpCountInScan = filteredSigs.filter(s => (s.type || '').toUpperCase().includes('SCALP')).length;
 
-                        // Counts for Watchlist Candidates
-                        const watchlistRejectedCountInScan = filteredSigs.filter(s => isRejectedBullishSignal(s) || isRejectedBearishSignal(s) || isRejectedSignal(s) || (typeof s.metadata === 'object' && String(s.metadata?.day_type || '').toUpperCase().includes('REJECTION'))).length;
-                        const watchlistContinuationCountInScan = filteredSigs.filter(s => isBullishContinuationSignal(s) || isBearishContinuationSignal(s)).length;
-                        const watchlistInsideDayCountInScan = filteredSigs.filter(s => {
-                            let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-                            const dt = (meta.day_type || s.trigger || '').toUpperCase();
-                            if (meta.is_inside_cpr === true || meta.two_day_relationship === 'INSIDE' || dt.includes('INSIDE')) return true;
-                            const dtc = Number(meta.dtc || meta.cpr?.tc || meta.cpr_tc || meta.tc || 0);
-                            const dbc = Number(meta.dbc || meta.cpr?.bc || meta.cpr_bc || meta.bc || 0);
-                            const ytc = Number(meta.ytc || meta.prev_tc || meta.prev_cpr_top || meta.prev_cpr?.tc || 0);
-                            const ybc = Number(meta.ybc || meta.prev_bc || meta.prev_cpr_bottom || meta.prev_cpr?.bc || 0);
-                            const top = Math.max(dtc, dbc), bottom = Math.min(dtc, dbc);
-                            const yTop = Math.max(ytc, ybc), yBottom = Math.min(ytc, ybc);
-                            return top > 0 && bottom > 0 && yTop > 0 && yBottom > 0 && (top < yTop) && (bottom > yBottom);
-                        }).length;
-                        const watchlistNcprCountInScan = filteredSigs.filter(s => isNcprSignal(s)).length;
-                        const watchlistVcprCountInScan = filteredSigs.filter(s => (s.type || '').toUpperCase().includes('VIRGIN') || (s.type || '').toUpperCase().includes('VCPR')).length;
-                        const watchlistBlueprintCountInScan = filteredSigs.filter(s => {
-                            let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-                            const dt = (meta.day_type || s.trigger || '').toUpperCase();
-                            return dt.includes('ABSORPTION') || dt.includes('FAILED') || dt.includes('OUTSIDE') || dt.includes('STOP RUN') || dt.includes('ACCUMULATION');
-                        }).length;
+                        // Counts for Market Structure Watchlist Candidates
+                        const watchlistOorCountInScan = filteredSigs.filter(s => matchSignalToCategory('OOR', s)).length;
+                        const watchlistInsideDayCountInScan = filteredSigs.filter(s => matchSignalToCategory('INSIDE_DAY', s)).length;
+                        const watchlistNcprCountInScan = filteredSigs.filter(s => matchSignalToCategory('NCPR', s)).length;
+                        const watchlistNvaCountInScan = filteredSigs.filter(s => matchSignalToCategory('NVA', s)).length;
+                        const watchlistBigMoveCountInScan = filteredSigs.filter(s => matchSignalToCategory('BIG_MOVE', s)).length;
+                        const watchlistVcprCountInScan = filteredSigs.filter(s => matchSignalToCategory('VIRGIN_CPR', s)).length;
+
+                        // Counts for PivotBoss STP 2.0 Blueprint Candidates
+                        const bpRejectedCountInScan = filteredSigs.filter(s => isRejectedBullishSignal(s) || isRejectedBearishSignal(s) || isRejectedSignal(s)).length;
+                        const bpContinuationCountInScan = filteredSigs.filter(s => isBullishContinuationSignal(s) || isBearishContinuationSignal(s)).length;
+                        const bpAbsorptionCountInScan = filteredSigs.filter(s => matchSignalToCategory('ABSORPTION', s)).length;
+                        const bpFailedNewCountInScan = filteredSigs.filter(s => matchSignalToCategory('FAILED_NEW_LOW', s)).length;
+                        const bpOutsideDayCountInScan = filteredSigs.filter(s => matchSignalToCategory('OUTSIDE_DAY', s)).length;
+                        const bpStopRunCountInScan = filteredSigs.filter(s => matchSignalToCategory('STOP_RUN', s) || matchSignalToCategory('STOP_RUN_SEQ', s)).length;
+                        const bpAccumulationCountInScan = filteredSigs.filter(s => matchSignalToCategory('ACCUMULATION', s)).length;
 
                         // Gracefully fallback to 'ALL' if the currently selected Live tab has zero signals
                         const effectiveHubLiveTab = (
@@ -12312,76 +12428,54 @@ function MobileScreensaver() {
 
                         // Gracefully fallback to 'ALL' if the currently selected Watchlist tab has zero signals
                         const effectiveHubWatchlistTab = (
-                            (hubWatchlistTab === 'REJECTED' && watchlistRejectedCountInScan === 0) ||
-                            (hubWatchlistTab === 'CONTINUATION' && watchlistContinuationCountInScan === 0) ||
+                            (hubWatchlistTab === 'OOR' && watchlistOorCountInScan === 0) ||
                             (hubWatchlistTab === 'INSIDE_DAY' && watchlistInsideDayCountInScan === 0) ||
                             (hubWatchlistTab === 'NCPR' && watchlistNcprCountInScan === 0) ||
-                            (hubWatchlistTab === 'VCPR' && watchlistVcprCountInScan === 0) ||
-                            (hubWatchlistTab === 'BLUEPRINT' && watchlistBlueprintCountInScan === 0)
+                            (hubWatchlistTab === 'NVA' && watchlistNvaCountInScan === 0) ||
+                            (hubWatchlistTab === 'BIG_MOVE' && watchlistBigMoveCountInScan === 0) ||
+                            (hubWatchlistTab === 'VCPR' && watchlistVcprCountInScan === 0)
                         ) ? 'ALL' : hubWatchlistTab;
 
-                        const displayedWatchlistCategories = effectiveHubWatchlistTab === 'REJECTED'
-                            ? watchlistParameterCategories.filter(cat => cat.id === 'REJECTED_BULLISH' || cat.id === 'REJECTED_BEARISH' || cat.id === 'REJECTION')
-                            : effectiveHubWatchlistTab === 'CONTINUATION'
-                            ? watchlistParameterCategories.filter(cat => cat.id === 'BULLISH_CONTINUATION' || cat.id === 'BEARISH_CONTINUATION')
+                        const displayedWatchlistCategories = effectiveHubWatchlistTab === 'OOR'
+                            ? watchlistParameterCategories.filter(cat => cat.id === 'OOR')
                             : effectiveHubWatchlistTab === 'INSIDE_DAY'
                             ? watchlistParameterCategories.filter(cat => cat.id === 'INSIDE_DAY')
                             : effectiveHubWatchlistTab === 'NCPR'
                             ? watchlistParameterCategories.filter(cat => cat.id === 'NCPR')
+                            : effectiveHubWatchlistTab === 'NVA'
+                            ? watchlistParameterCategories.filter(cat => cat.id === 'NVA')
+                            : effectiveHubWatchlistTab === 'BIG_MOVE'
+                            ? watchlistParameterCategories.filter(cat => cat.id === 'BIG_MOVE')
                             : effectiveHubWatchlistTab === 'VCPR'
                             ? watchlistParameterCategories.filter(cat => cat.id === 'VIRGIN_CPR')
-                            : effectiveHubWatchlistTab === 'BLUEPRINT'
-                            ? watchlistParameterCategories.filter(cat => cat.id === 'ABSORPTION' || cat.id === 'FAILED_NEW_LOW' || cat.id === 'OUTSIDE_DAY' || cat.id === 'STOP_RUN' || cat.id === 'STOP_RUN_SEQ' || cat.id === 'ACCUMULATION')
                             : watchlistParameterCategories;
 
-                        const matchSignalToCategory = (catId: string, s: Signal) => {
-                            const t = (s.type || '').toUpperCase();
-                            let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-                            const dt = (meta.day_type || s.trigger || '').toUpperCase();
-                            const bias = (meta.opening_bias || meta.c1 || meta.bias || meta.opening_print || '').toUpperCase();
-                            if (catId === 'FIRE_ALERT') return isFireAlertSignal(s);
-                            if (catId === 'MISSILE') return t.includes('MISSILE');
-                            if (catId === 'SCALP') return t.includes('SCALP');
-                            if (catId === 'LIGHTNING') return t.includes('LIGHTNING');
-                            if (catId === 'EXTREME_REVERSAL') return t.includes('EXTREME') && t.includes('REVERSAL');
-                            if (catId === 'DIVERGENCE') {
-                                if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
-                                return (t.includes('DIVERGENCE') && !t.includes('HIDDEN')) || (!t.includes('HIDDEN') && (meta.divergence_type === 'REGULAR' || meta.confluence_type === 'REGULAR_DIV' || meta.confluence_type === 'DIVERGENCE'));
-                            }
-                            if (catId === 'HIDDEN_DIVERGENCE') {
-                                if (t.includes('MISSILE') || t.includes('SCALP') || t.includes('LIGHTNING') || t.includes('EXTREME')) return false;
-                                return (t.includes('HIDDEN') && (t.includes('DIVERGENCE') || t.includes('DIV'))) || meta.divergence_type === 'HIDDEN' || meta.confluence_type === 'HIDDEN_DIV' || meta.confluence_type === 'HIDDEN_DIVERGENCE';
-                            }
-                            if (catId === 'REJECTED_BULLISH') return isRejectedBullishSignal(s);
-                            if (catId === 'REJECTED_BEARISH') return isRejectedBearishSignal(s);
-                            if (catId === 'BULLISH_CONTINUATION') return isBullishContinuationSignal(s);
-                            if (catId === 'BEARISH_CONTINUATION') return isBearishContinuationSignal(s);
-                            if (catId === 'VIRGIN_CPR') return t.includes('VIRGIN') || t.includes('VCPR');
-                            if (catId === 'REJECTION') return isRejectedSignal(s) || dt.includes('REJECTION') || bias.includes('REJECTION');
-                            if (catId === 'ABSORPTION') return dt.includes('ABSORPTION');
-                            if (catId === 'FAILED_NEW_LOW') return dt.includes('FAILED');
-                            if (catId === 'OUTSIDE_DAY') return dt.includes('OUTSIDE');
-                            if (catId === 'STOP_RUN') return dt.includes('STOP RUN') && !dt.includes('SEQ');
-                            if (catId === 'STOP_RUN_SEQ') return dt.includes('STOP RUN') && dt.includes('SEQ');
-                            if (catId === 'ACCUMULATION') return dt.includes('ACCUMULATION') || dt.includes('ACC/DIST');
-                            if (catId === 'INSIDE_DAY') {
-                              const isExplicit = meta.is_inside_cpr === true || meta.two_day_relationship === 'INSIDE' || dt.includes('INSIDE');
-                              if (isExplicit) return true;
-                              const dtc = Number(meta.dtc || meta.cpr?.tc || meta.cpr_tc || meta.tc || 0);
-                              const dbc = Number(meta.dbc || meta.cpr?.bc || meta.cpr_bc || meta.bc || 0);
-                              const ytc = Number(meta.ytc || meta.prev_tc || meta.prev_cpr_top || meta.prev_cpr?.tc || 0);
-                              const ybc = Number(meta.ybc || meta.prev_bc || meta.prev_cpr_bottom || meta.prev_cpr?.bc || 0);
-                              const top = Math.max(dtc, dbc);
-                              const bottom = Math.min(dtc, dbc);
-                              const yTop = Math.max(ytc, ybc);
-                              const yBottom = Math.min(ytc, ybc);
-                              return top > 0 && bottom > 0 && yTop > 0 && yBottom > 0 && (top < yTop) && (bottom > yBottom);
-                            }
-                            if (catId === 'NCPR') {
-                              return isNcprSignal(s);
-                            }
-                            return false;
-                        };
+                        // Gracefully fallback to 'ALL' if the currently selected Blueprint tab has zero signals
+                        const effectiveHubBlueprintTab = (
+                            (hubBlueprintTab === 'REJECTED' && bpRejectedCountInScan === 0) ||
+                            (hubBlueprintTab === 'CONTINUATION' && bpContinuationCountInScan === 0) ||
+                            (hubBlueprintTab === 'ABSORPTION' && bpAbsorptionCountInScan === 0) ||
+                            (hubBlueprintTab === 'FAILED_NEW' && bpFailedNewCountInScan === 0) ||
+                            (hubBlueprintTab === 'OUTSIDE' && bpOutsideDayCountInScan === 0) ||
+                            (hubBlueprintTab === 'STOP_RUN' && bpStopRunCountInScan === 0) ||
+                            (hubBlueprintTab === 'ACCUMULATION' && bpAccumulationCountInScan === 0)
+                        ) ? 'ALL' : hubBlueprintTab;
+
+                        const displayedBlueprintCategories = effectiveHubBlueprintTab === 'REJECTED'
+                            ? blueprintParameterCategories.filter(cat => cat.id === 'REJECTED_BULLISH' || cat.id === 'REJECTED_BEARISH' || cat.id === 'REJECTION')
+                            : effectiveHubBlueprintTab === 'CONTINUATION'
+                            ? blueprintParameterCategories.filter(cat => cat.id === 'BULLISH_CONTINUATION' || cat.id === 'BEARISH_CONTINUATION')
+                            : effectiveHubBlueprintTab === 'ABSORPTION'
+                            ? blueprintParameterCategories.filter(cat => cat.id === 'ABSORPTION')
+                            : effectiveHubBlueprintTab === 'FAILED_NEW'
+                            ? blueprintParameterCategories.filter(cat => cat.id === 'FAILED_NEW_LOW')
+                            : effectiveHubBlueprintTab === 'OUTSIDE'
+                            ? blueprintParameterCategories.filter(cat => cat.id === 'OUTSIDE_DAY')
+                            : effectiveHubBlueprintTab === 'STOP_RUN'
+                            ? blueprintParameterCategories.filter(cat => cat.id === 'STOP_RUN' || cat.id === 'STOP_RUN_SEQ')
+                            : effectiveHubBlueprintTab === 'ACCUMULATION'
+                            ? blueprintParameterCategories.filter(cat => cat.id === 'ACCUMULATION')
+                            : blueprintParameterCategories;
 
                         const cleanSym = (sym: string) => (sym || '').replace(/^(NSE_DLY|NSE|MCX|NYMEX|COMEX|BINANCE|TVC):/i, '').replace(/1!$/, '');
 
@@ -12458,7 +12552,7 @@ function MobileScreensaver() {
                             const bearSyms = Array.from(new Set(bears.map(b => cleanSym(b.symbol))));
                             
                             if (bullSyms.length === 0 && bearSyms.length === 0) return null;
-                            
+
                             const isFireRow = cat.id === 'FIRE_ALERT';
                             const isDivergenceRow = cat.id === 'DIVERGENCE' || cat.id === 'HIDDEN_DIVERGENCE';
                             const isLightningRow = cat.id === 'LIGHTNING';
@@ -12468,6 +12562,9 @@ function MobileScreensaver() {
                             const isInsideDayRow = cat.id === 'INSIDE_DAY';
                             const isNcprRow = cat.id === 'NCPR';
                             const isVcprRow = cat.id === 'VIRGIN_CPR';
+                            const isOorRow = cat.id === 'OOR';
+                            const isNvaRow = cat.id === 'NVA';
+                            const isBigMoveRow = cat.id === 'BIG_MOVE';
                             
                             return (
                                 <tr key={cat.id} className="hover:bg-rose-500/[0.03] dark:hover:bg-rose-500/[0.05] transition-colors">
@@ -12496,12 +12593,12 @@ function MobileScreensaver() {
                                                 {isExtRevRow && (
                                                     <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(244,63,94,0.25)] flex items-center gap-1">
                                                         <span className="text-[7.5px]">⚡</span>
-                                                        <span>EXTREME REVERSAL</span>
+                                                        <span>EXT REV</span>
                                                     </span>
                                                 )}
                                                 {isRejectionRow && (
                                                     <span className={`px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black uppercase tracking-wider flex items-center gap-1 ${
-                                                        isWatchlistMode 
+                                                        isWatchlistMode
                                                             ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
                                                             : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/35 shadow-[0_0_8px_rgba(245,158,11,0.25)]'
                                                     }`}>
@@ -12537,6 +12634,24 @@ function MobileScreensaver() {
                                                         <span>VIRGIN CPR</span>
                                                     </span>
                                                 )}
+                                                {isOorRow && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(244,63,94,0.25)] flex items-center gap-1">
+                                                        <span className="text-[7.5px]">⚡</span>
+                                                        <span>OOR</span>
+                                                    </span>
+                                                )}
+                                                {isNvaRow && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-teal-500/20 text-teal-600 dark:text-teal-400 border border-teal-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(20,184,166,0.25)] flex items-center gap-1">
+                                                        <span className="text-[7.5px]">📊</span>
+                                                        <span>NVAL</span>
+                                                    </span>
+                                                )}
+                                                {isBigMoveRow && (
+                                                    <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/35 uppercase tracking-wider shadow-[0_0_8px_rgba(245,158,11,0.25)] flex items-center gap-1">
+                                                        <span className="text-[7.5px]">💥</span>
+                                                        <span>BIG MOVE</span>
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </td>
@@ -12551,7 +12666,11 @@ function MobileScreensaver() {
                                                     }).filter((v, i, a) => a.indexOf(v) === i).map(sym => (
                                                         <span 
                                                             key={sym} 
-                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none shadow-none"
+                                                            onClick={() => {
+                                                                const found = bulls.find(b => cleanSym(b.symbol) === sym);
+                                                                if (found) setSelectedDhanOorAsset(found);
+                                                            }}
+                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none shadow-none cursor-pointer hover:scale-105 active:scale-95 transition-all"
                                                         >
                                                             <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
                                                             <span>{sym}</span>
@@ -12595,7 +12714,11 @@ function MobileScreensaver() {
                                                     }).filter((v, i, a) => a.indexOf(v) === i).map(sym => (
                                                         <span 
                                                             key={sym} 
-                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none shadow-none"
+                                                            onClick={() => {
+                                                                const found = bears.find(b => cleanSym(b.symbol) === sym);
+                                                                if (found) setSelectedDhanOorAsset(found);
+                                                            }}
+                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none shadow-none cursor-pointer hover:scale-105 active:scale-95 transition-all"
                                                         >
                                                             <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
                                                             <span>{sym}</span>
@@ -12636,11 +12759,133 @@ function MobileScreensaver() {
                             );
                         };
 
+                        // ── 2-Column Detailed List Renderer (Zero Outcome/Return Clutter) ──
+                        const renderTwoColumnList = (categoryList: { id: string; label: string }[], emptyText: string, sectionType: 'LIVE' | 'WATCHLIST' | 'BLUEPRINT') => {
+                            const matchingSignals: any[] = [];
+                            const seenSigIds = new Set<string>();
+
+                            for (const cat of categoryList) {
+                                const matches = filteredSigs.filter(s => matchSignalToCategory(cat.id, s));
+                                for (const s of matches) {
+                                    const k = s.id || `${s.symbol}_${s.signal_ts || s.created_at}_${cat.id}`;
+                                    if (!seenSigIds.has(k)) {
+                                        seenSigIds.add(k);
+                                        matchingSignals.push({ ...s, _hubCatLabel: cat.label });
+                                    }
+                                }
+                            }
+
+                            if (matchingSignals.length === 0) {
+                                return (
+                                    <div className="py-8 text-center">
+                                        <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.03] border border-black/10 dark:border-white/10 font-mono text-xs text-dim">
+                                            <span className="font-bold">{emptyText}</span>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div className="w-full overflow-x-auto hide-scrollbar table-scroll-container rounded-2xl wc-table-card border border-black/10 dark:border-white/10">
+                                    <table className="w-full text-left text-xs sm:text-sm border-collapse">
+                                        <thead className="wc-table-thead text-primary font-black text-xs uppercase tracking-wider bg-black/[0.02] dark:bg-white/[0.02] border-b border-black/10 dark:border-white/10">
+                                            <tr>
+                                                <th className="py-2.5 px-3 text-left w-[46%] sm:w-[42%]">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className={`w-1.5 h-3.5 rounded-full shrink-0 ${sectionType === 'LIVE' ? 'bg-rose-500' : sectionType === 'WATCHLIST' ? 'bg-cyan-500' : 'bg-amber-500'}`}></span>
+                                                        <span className="font-black tracking-wider">SYMBOL &amp; TIME</span>
+                                                    </div>
+                                                </th>
+                                                <th className="py-2.5 px-3 text-right w-[54%] sm:w-[58%]">
+                                                    <span className="font-black tracking-wider">SETUP &amp; STATUS</span>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                                            {matchingSignals.map((s: any, idx: number) => {
+                                                const sym = cleanSym(s.symbol);
+                                                const meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+                                                const t = (s.type || '').toUpperCase();
+                                                const dt = (meta.day_type || s.trigger || '').toUpperCase();
+                                                const isBull = t.includes('LONG') || t.includes('BUY') || isRejectedBullishSignal(s) || isBullishContinuationSignal(s);
+                                                const market = getMarket(s).toUpperCase();
+                                                const timeStr = meta.entry_time || meta.timeIST || (s.signal_ts ? new Date(s.signal_ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' IST' : 'Today');
+                                                const isLive = isExecutedTrade(s);
+                                                const setupName = (s._hubCatLabel || s.trigger || s.type || 'SIGNAL').replace(' Blueprint', '').replace(' Sequence', '');
+
+                                                const mktBg = market === 'FOREX' ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
+                                                            : market === 'MCX' ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                                                            : market === 'NYMEX' ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400 border-yellow-500/30'
+                                                            : market === 'CRYPTO' ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                                                            : market === 'NIFTY' ? 'bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30'
+                                                            : 'bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30';
+
+                                                return (
+                                                    <tr 
+                                                        key={`${sym}-${idx}`}
+                                                        onClick={() => setSelectedDhanOorAsset(s)}
+                                                        className="hover:bg-primary/[0.04] cursor-pointer transition-colors"
+                                                    >
+                                                        <td className="py-2.5 px-3 w-[46%] sm:w-[42%]">
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className={`px-1.5 py-0.2 rounded text-[8px] sm:text-[8.5px] font-mono font-bold uppercase border ${mktBg}`}>
+                                                                        {market}
+                                                                    </span>
+                                                                    <span className="font-mono font-black text-xs sm:text-[13px] text-primary">{sym}</span>
+                                                                </div>
+                                                                <span className="text-[10px] font-mono text-dim">{timeStr}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-2.5 px-3 text-right w-[54%] sm:w-[58%]">
+                                                            <div className="flex flex-col items-end gap-1">
+                                                                <span className={`px-2 py-0.5 rounded-lg text-[9px] sm:text-[10px] font-mono font-black uppercase flex items-center gap-1 border ${
+                                                                    isBull 
+                                                                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/35'
+                                                                        : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/35'
+                                                                }`}>
+                                                                    <span>{isBull ? '▲' : '▼'}</span>
+                                                                    <span>{setupName}</span>
+                                                                </span>
+                                                                {sectionType === 'LIVE' ? (
+                                                                    isLive ? (
+                                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[8px] font-mono font-black uppercase bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40">
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                                                            LIVE TRADE
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[8px] font-mono font-black uppercase bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40">
+                                                                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                                                                            ACTIVE LIMIT
+                                                                        </span>
+                                                                    )
+                                                                ) : sectionType === 'WATCHLIST' ? (
+                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[8px] font-mono font-bold uppercase bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30">
+                                                                        WATCHLIST
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[8px] font-mono font-bold uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                                                                        BLUEPRINT
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            );
+                        };
+
                         const liveSignalRows = displayedLiveCategories.map(cat => renderCategoryRow(cat, false)).filter(Boolean);
                         const watchlistSignalRows = displayedWatchlistCategories.map(cat => renderCategoryRow(cat, true)).filter(Boolean);
+                        const blueprintSignalRows = displayedBlueprintCategories.map(cat => renderCategoryRow(cat, true)).filter(Boolean);
 
                         const hasLiveSignals = liveSignalRows.length > 0;
                         const hasWatchlistSignals = watchlistSignalRows.length > 0;
+                        const hasBlueprintSignals = blueprintSignalRows.length > 0;
 
                         return (
                             <div className="mb-4 space-y-4">
@@ -12657,7 +12902,7 @@ function MobileScreensaver() {
                                     >
                                         <span>🌐 ALL SECTIONS</span>
                                         <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'ALL' ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'}`}>
-                                            {liveSignalRows.length + watchlistSignalRows.length}
+                                            {liveSignalRows.length + watchlistSignalRows.length + blueprintSignalRows.length}
                                         </span>
                                     </button>
                                     <button
@@ -12694,6 +12939,23 @@ function MobileScreensaver() {
                                             {watchlistSignalRows.length}
                                         </span>
                                     </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setHubSectionView('BLUEPRINT');
+                                            setIsHubBlueprintMasterExpanded(true);
+                                        }}
+                                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                                            hubSectionView === 'BLUEPRINT'
+                                                ? 'bg-amber-600 text-white border-amber-500 shadow-sm shadow-amber-500/20'
+                                                : 'bg-white/60 dark:bg-slate-800/60 text-amber-600 dark:text-amber-400 border-transparent hover:bg-amber-500/10'
+                                        }`}
+                                    >
+                                        <span>📐 BLUEPRINTS</span>
+                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'BLUEPRINT' ? 'bg-white/25 text-white' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'}`}>
+                                            {blueprintSignalRows.length}
+                                        </span>
+                                    </button>
                                 </div>
 
                                 {/* SECTION 1: LIVE SIGNALS TABLE */}
@@ -12711,6 +12973,34 @@ function MobileScreensaver() {
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                                                {/* View Mode Toggle: Matrix vs List */}
+                                                <div className="flex items-center p-0.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHubLiveViewMode('MATRIX')}
+                                                        className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold transition-all ${
+                                                            hubLiveViewMode === 'MATRIX'
+                                                                ? 'bg-rose-600 text-white shadow-sm'
+                                                                : 'text-dim hover:text-primary'
+                                                        }`}
+                                                        title="Compact Matrix View (Chips)"
+                                                    >
+                                                        ⊞ MATRIX
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHubLiveViewMode('LIST')}
+                                                        className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold transition-all ${
+                                                            hubLiveViewMode === 'LIST'
+                                                                ? 'bg-rose-600 text-white shadow-sm'
+                                                                : 'text-dim hover:text-primary'
+                                                        }`}
+                                                        title="2-Column Detailed List View (Zero Outcome Clutter)"
+                                                    >
+                                                        ☰ LIST
+                                                    </button>
+                                                </div>
+
                                                 {liveSignalRows.length > 0 && (
                                                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-accent/10 border border-accent/25">
                                                         <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"/>
@@ -12927,38 +13217,41 @@ function MobileScreensaver() {
                                                         </div>
                                                     )}
 
-                                                    <table className="w-full min-w-[340px] text-left text-xs sm:text-sm border-collapse">
-                                                        {hasLiveSignals && (
-                                                            <thead className="wc-table-thead text-primary font-black text-xs sm:text-sm uppercase tracking-wider bg-rose-500/[0.04] dark:bg-rose-500/[0.08] border-b border-rose-500/20">
-                                                                <tr>
-                                                                    <th className="py-2.5 px-3 text-left border-r border-black/5 dark:border-white/5 min-w-[130px] whitespace-nowrap">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className="w-1.5 h-3.5 rounded-full bg-rose-500 shrink-0"></span>
-                                                                            <span className="font-black text-slate-800 dark:text-slate-200 text-xs sm:text-sm tracking-wider">
-                                                                                STRATEGY
-                                                                            </span>
-                                                                        </div>
-                                                                    </th>
-                                                                    <th className="py-2.5 px-3 text-center min-w-[180px] whitespace-nowrap">
-                                                                        <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/15 dark:bg-rose-500/25 border border-rose-500/40">
-                                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600 dark:bg-rose-400 shrink-0"></span>
-                                                                            <span className="text-xs sm:text-sm font-black tracking-widest uppercase text-rose-700 dark:text-rose-300">
-                                                                                LIVE SIGNALS
-                                                                            </span>
-                                                                            <span className="text-xs">⚡</span>
-                                                                        </div>
-                                                                    </th>
-                                                                </tr>
-                                                            </thead>
-                                                        )}
-                                                        <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                                                            {hasLiveSignals ? (
-                                                                liveSignalRows
-                                                            ) : (
-                                                                <tr>
-                                                                    <td colSpan={2} className="py-6 text-center">
-                                                                        <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-500/[0.05] border border-rose-500/20 font-mono text-xs text-dim">
-                                                                            <div className="flex items-center gap-2">
+                                                    {hubLiveViewMode === 'LIST' ? (
+                                                        renderTwoColumnList(displayedLiveCategories, 'No Live Execution Signals Active', 'LIVE')
+                                                    ) : (
+                                                        <table className="w-full min-w-[340px] text-left text-xs sm:text-sm border-collapse">
+                                                            {hasLiveSignals && (
+                                                                <thead className="wc-table-thead text-primary font-black text-xs sm:text-sm uppercase tracking-wider bg-rose-500/[0.04] dark:bg-rose-500/[0.08] border-b border-rose-500/20">
+                                                                    <tr>
+                                                                        <th className="py-2.5 px-3 text-left border-r border-black/5 dark:border-white/5 min-w-[130px] whitespace-nowrap">
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="w-1.5 h-3.5 rounded-full bg-rose-500 shrink-0"></span>
+                                                                                <span className="font-black text-slate-800 dark:text-slate-200 text-xs sm:text-sm tracking-wider">
+                                                                                    STRATEGY
+                                                                                </span>
+                                                                            </div>
+                                                                        </th>
+                                                                        <th className="py-2.5 px-3 text-center min-w-[180px] whitespace-nowrap">
+                                                                            <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/15 dark:bg-rose-500/25 border border-rose-500/40">
+                                                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600 dark:bg-rose-400 shrink-0"></span>
+                                                                                <span className="text-xs sm:text-sm font-black tracking-widest uppercase text-rose-700 dark:text-rose-300">
+                                                                                    LIVE SIGNALS
+                                                                                </span>
+                                                                                <span className="text-xs">⚡</span>
+                                                                            </div>
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                            )}
+                                                            <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                                                                {hasLiveSignals ? (
+                                                                    liveSignalRows
+                                                                ) : (
+                                                                    <tr>
+                                                                        <td colSpan={2} className="py-6 text-center">
+                                                                            <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-500/[0.05] border border-rose-500/20 font-mono text-xs text-dim">
+                                                                                <div className="flex items-center gap-2">
                                                                                 <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
                                                                                 <span className="font-black text-rose-600 dark:text-rose-400 tracking-wider uppercase">No Live Execution Signals Active</span>
                                                                             </div>
@@ -12969,6 +13262,7 @@ function MobileScreensaver() {
                                                             )}
                                                         </tbody>
                                                     </table>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}
@@ -12990,6 +13284,36 @@ function MobileScreensaver() {
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                                                {/* View Mode Toggle: Matrix vs List */}
+                                                <div className="flex items-center gap-1 bg-black/10 dark:bg-white/10 p-0.5 rounded-lg border border-black/10 dark:border-white/10 shrink-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHubWatchlistViewMode('MATRIX')}
+                                                        className={`px-2 py-0.5 rounded text-[9.5px] font-mono font-bold tracking-wider transition-all select-none cursor-pointer flex items-center gap-1 ${
+                                                            hubWatchlistViewMode === 'MATRIX'
+                                                                ? 'bg-cyan-600 text-white shadow-sm'
+                                                                : 'text-dim hover:text-primary'
+                                                        }`}
+                                                        title="Matrix View (Grouped by Category)"
+                                                    >
+                                                        <span className="text-[10px]">⊞</span>
+                                                        <span>MATRIX</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHubWatchlistViewMode('LIST')}
+                                                        className={`px-2 py-0.5 rounded text-[9.5px] font-mono font-bold tracking-wider transition-all select-none cursor-pointer flex items-center gap-1 ${
+                                                            hubWatchlistViewMode === 'LIST'
+                                                                ? 'bg-cyan-600 text-white shadow-sm'
+                                                                : 'text-dim hover:text-primary'
+                                                        }`}
+                                                        title="List View (2-Column Assets)"
+                                                    >
+                                                        <span className="text-[10px]">☰</span>
+                                                        <span>LIST</span>
+                                                    </button>
+                                                </div>
+
                                                 {watchlistSignalRows.length > 0 && (
                                                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/10 border border-cyan-500/25">
                                                         <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"/>
@@ -13043,7 +13367,7 @@ function MobileScreensaver() {
                                                     {/* Tab Filter Switcher for Watchlist Candidates */}
                                                     {isHubWatchlistButtonsExpanded && (
                                                         <div className="p-2 sm:p-2.5 bg-black/5 dark:bg-white/[0.03] border-b border-black/5 dark:border-white/5 w-full transition-all duration-300">
-                                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2 w-full">
+                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 w-full">
                                                                 {/* ALL WATCHLIST */}
                                                                 <button
                                                                     type="button"
@@ -13065,48 +13389,25 @@ function MobileScreensaver() {
                                                                     </span>
                                                                 </button>
 
-                                                                {/* REJECTIONS */}
-                                                                {watchlistRejectedCountInScan > 0 && (
+                                                                {/* OUT OF RANGE */}
+                                                                {watchlistOorCountInScan > 0 && (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => setHubWatchlistTab(prev => prev === 'REJECTED' ? 'ALL' : 'REJECTED')}
+                                                                        onClick={() => setHubWatchlistTab(prev => prev === 'OOR' ? 'ALL' : 'OOR')}
                                                                         className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
-                                                                            effectiveHubWatchlistTab === 'REJECTED'
-                                                                                ? 'bg-amber-600 text-white border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
-                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/10'
+                                                                            effectiveHubWatchlistTab === 'OOR'
+                                                                                ? 'bg-cyan-600 text-white border-cyan-500 shadow-[0_0_12px_rgba(6,182,212,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/10'
                                                                         }`}
                                                                     >
                                                                         <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                                            <span className="shrink-0 text-xs">🛡️</span>
-                                                                            <span className="truncate">REJECTIONS</span>
+                                                                            <span className="shrink-0 text-xs">🌐</span>
+                                                                            <span className="truncate">OUT OF RANGE</span>
                                                                         </span>
                                                                         <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
-                                                                            effectiveHubWatchlistTab === 'REJECTED' ? 'bg-white/25 text-white' : 'bg-amber-500/20 text-amber-700 dark:text-amber-200'
+                                                                            effectiveHubWatchlistTab === 'OOR' ? 'bg-white/25 text-white' : 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-200'
                                                                         }`}>
-                                                                            {watchlistRejectedCountInScan}
-                                                                        </span>
-                                                                    </button>
-                                                                )}
-
-                                                                {/* CONTINUATIONS */}
-                                                                {watchlistContinuationCountInScan > 0 && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setHubWatchlistTab(prev => prev === 'CONTINUATION' ? 'ALL' : 'CONTINUATION')}
-                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
-                                                                            effectiveHubWatchlistTab === 'CONTINUATION'
-                                                                                ? 'bg-teal-600 text-white border-teal-500 shadow-[0_0_12px_rgba(20,184,166,0.4)]'
-                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/10'
-                                                                        }`}
-                                                                    >
-                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                                            <span className="shrink-0 text-xs">🚀</span>
-                                                                            <span className="truncate">CONTINUATIONS</span>
-                                                                        </span>
-                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
-                                                                            effectiveHubWatchlistTab === 'CONTINUATION' ? 'bg-white/25 text-white' : 'bg-teal-500/20 text-teal-700 dark:text-teal-200'
-                                                                        }`}>
-                                                                            {watchlistContinuationCountInScan}
+                                                                            {watchlistOorCountInScan}
                                                                         </span>
                                                                     </button>
                                                                 )}
@@ -13157,6 +13458,52 @@ function MobileScreensaver() {
                                                                     </button>
                                                                 )}
 
+                                                                {/* NVA */}
+                                                                {watchlistNvaCountInScan > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setHubWatchlistTab(prev => prev === 'NVA' ? 'ALL' : 'NVA')}
+                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                            effectiveHubWatchlistTab === 'NVA'
+                                                                                ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-blue-700 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/10'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                            <span className="shrink-0 text-xs">📊</span>
+                                                                            <span className="truncate">NVA</span>
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                            effectiveHubWatchlistTab === 'NVA' ? 'bg-white/25 text-white' : 'bg-blue-500/20 text-blue-700 dark:text-blue-200'
+                                                                        }`}>
+                                                                            {watchlistNvaCountInScan}
+                                                                        </span>
+                                                                    </button>
+                                                                )}
+
+                                                                {/* BIG MOVE */}
+                                                                {watchlistBigMoveCountInScan > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setHubWatchlistTab(prev => prev === 'BIG_MOVE' ? 'ALL' : 'BIG_MOVE')}
+                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                            effectiveHubWatchlistTab === 'BIG_MOVE'
+                                                                                ? 'bg-amber-600 text-white border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/10'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                            <span className="shrink-0 text-xs">💥</span>
+                                                                            <span className="truncate">BIG MOVE</span>
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                            effectiveHubWatchlistTab === 'BIG_MOVE' ? 'bg-white/25 text-white' : 'bg-amber-500/20 text-amber-700 dark:text-amber-200'
+                                                                        }`}>
+                                                                            {watchlistBigMoveCountInScan}
+                                                                        </span>
+                                                                    </button>
+                                                                )}
+
                                                                 {/* VIRGIN CPR */}
                                                                 {watchlistVcprCountInScan > 0 && (
                                                                     <button
@@ -13179,26 +13526,340 @@ function MobileScreensaver() {
                                                                         </span>
                                                                     </button>
                                                                 )}
+                                                            </div>
+                                                        </div>
+                                                    )}
 
-                                                                {/* BLUEPRINTS & SEQUENCES */}
-                                                                {watchlistBlueprintCountInScan > 0 && (
+                                                    {/* View Mode Conditional Rendering */}
+                                                    {hubWatchlistViewMode === 'LIST' ? (
+                                                        renderTwoColumnList(displayedWatchlistCategories, 'No Watchlist Candidates Active', 'WATCHLIST')
+                                                    ) : (
+                                                        <table className="w-full min-w-[340px] text-left text-xs sm:text-sm border-collapse">
+                                                            {hasWatchlistSignals && (
+                                                                <thead className="wc-table-thead text-primary font-black text-xs sm:text-sm uppercase tracking-wider bg-cyan-500/[0.04] dark:bg-cyan-500/[0.08] border-b border-cyan-500/20">
+                                                                    <tr>
+                                                                        <th className="py-2.5 px-3 text-left border-r border-black/5 dark:border-white/5 min-w-[130px] whitespace-nowrap">
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="w-1.5 h-3.5 rounded-full bg-cyan-500 shrink-0"></span>
+                                                                                <span className="font-black text-slate-800 dark:text-slate-200 text-xs sm:text-sm tracking-wider">
+                                                                                    SETUP / DAY TYPE
+                                                                                </span>
+                                                                            </div>
+                                                                        </th>
+                                                                        <th className="py-2.5 px-3 text-center min-w-[180px] whitespace-nowrap">
+                                                                            <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 dark:bg-cyan-500/25 border border-cyan-500/40">
+                                                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500 shrink-0"></span>
+                                                                                <span className="text-xs sm:text-sm font-black tracking-widest uppercase text-cyan-700 dark:text-cyan-300">
+                                                                                    WATCHLIST CANDIDATES
+                                                                                </span>
+                                                                                <span className="text-xs">📋</span>
+                                                                            </div>
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
+                                                            )}
+                                                            <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                                                                {hasWatchlistSignals ? (
+                                                                    watchlistSignalRows
+                                                                ) : (
+                                                                    <tr>
+                                                                        <td colSpan={2} className="py-6 text-center">
+                                                                            <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-cyan-500/[0.05] border border-cyan-500/20 font-mono text-xs text-dim">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0"></span>
+                                                                                    <span className="font-black text-cyan-600 dark:text-cyan-400 tracking-wider uppercase">No Watchlist Candidates Active</span>
+                                                                                </div>
+                                                                                <span className="text-[10px] text-dim font-medium">Scanning all active markets for Out of Range, Inside CPR, NCPR, NVA, Big Move, and Virgin CPR setups</span>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
+                                                            </tbody>
+                                                        </table>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* SECTION 3: SEPARATE PIVOTBOSS BLUEPRINTS SECTION */}
+                                {(hubSectionView === 'ALL' || hubSectionView === 'BLUEPRINT') && (
+                                    <div className={`shiny-card rounded-3xl p-4 sm:p-5 relative overflow-hidden ${theme === 'lion' ? 'lion-card-gold' : (theme === 'goldengate' || theme === 'goldengate-light') ? 'gg-card-sunset' : ''}`}>
+                                        {/* Section Header */}
+                                        <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 ${isHubBlueprintMasterExpanded ? 'mb-4 border-b border-primary/20 dark:border-primary/30 pb-3' : ''}`}>
+                                            <div className="min-w-0">
+                                                <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-primary mt-1 flex items-center gap-2">
+                                                    <span className="text-amber-500 shrink-0 text-xl">📐</span>
+                                                    <span>BLUEPRINTS</span>
+                                                </h2>
+                                                <span className="text-[10px] sm:text-[10.5px] font-mono font-bold text-dim uppercase tracking-wider whitespace-nowrap block mt-0.5">
+                                                    PIVOTBOSS STP 2.0 DAY TYPES &amp; TRADE SEQUENCES
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                                                {/* View Mode Toggle: Matrix vs List */}
+                                                <div className="flex items-center gap-1 bg-black/10 dark:bg-white/10 p-0.5 rounded-lg border border-black/10 dark:border-white/10 shrink-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHubBlueprintViewMode('MATRIX')}
+                                                        className={`px-2 py-0.5 rounded text-[9.5px] font-mono font-bold tracking-wider transition-all select-none cursor-pointer flex items-center gap-1 ${
+                                                            hubBlueprintViewMode === 'MATRIX'
+                                                                ? 'bg-amber-600 text-white shadow-sm'
+                                                                : 'text-dim hover:text-primary'
+                                                        }`}
+                                                        title="Matrix View (Grouped by Category)"
+                                                    >
+                                                        <span className="text-[10px]">⊞</span>
+                                                        <span>MATRIX</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setHubBlueprintViewMode('LIST')}
+                                                        className={`px-2 py-0.5 rounded text-[9.5px] font-mono font-bold tracking-wider transition-all select-none cursor-pointer flex items-center gap-1 ${
+                                                            hubBlueprintViewMode === 'LIST'
+                                                                ? 'bg-amber-600 text-white shadow-sm'
+                                                                : 'text-dim hover:text-primary'
+                                                        }`}
+                                                        title="List View (2-Column Assets)"
+                                                    >
+                                                        <span className="text-[10px]">☰</span>
+                                                        <span>LIST</span>
+                                                    </button>
+                                                </div>
+
+                                                {blueprintSignalRows.length > 0 && (
+                                                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"/>
+                                                        <span className="text-[10px] font-mono font-black text-amber-500 uppercase">
+                                                            {blueprintSignalRows.length} CANDIDATES
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsHubBlueprintMasterExpanded(!isHubBlueprintMasterExpanded)}
+                                                    className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all select-none cursor-pointer flex items-center gap-1"
+                                                >
+                                                    <span>{isHubBlueprintMasterExpanded ? 'COLLAPSE' : 'EXPAND'}</span>
+                                                    {isHubBlueprintMasterExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {isHubBlueprintMasterExpanded && (
+                                            <div className="w-full">
+                                                <div 
+                                                    className="w-full overflow-x-auto hide-scrollbar table-scroll-container rounded-2xl wc-table-card border border-amber-500/30 dark:border-amber-500/30 shadow-[0_4px_25px_rgba(245,158,11,0.12)]"
+                                                    onScroll={(e) => { if (e.currentTarget.scrollLeft > 6) e.currentTarget.classList.add('table-is-scrolled'); else e.currentTarget.classList.remove('table-is-scrolled'); }}
+                                                >
+                                                    {/* Blueprint Banner Strip */}
+                                                    <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white rounded-t-2xl shadow-sm border-b border-white/10 overflow-hidden">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="inline-flex rounded-full h-2.5 w-2.5 bg-amber-300 shrink-0 animate-pulse"></span>
+                                                            <span className="font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-widest flex items-center gap-1.5 drop-shadow-sm">
+                                                                <span>📐 PIVOTBOSS STP 2.0 BLUEPRINTS</span>
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setIsHubBlueprintButtonsExpanded(prev => !prev)}
+                                                                className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/20 hover:bg-black/35 text-white font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 border border-white/20 select-none cursor-pointer"
+                                                                title={isHubBlueprintButtonsExpanded ? 'Collapse filter buttons' : 'Expand filter buttons'}
+                                                            >
+                                                                <span>{isHubBlueprintButtonsExpanded ? 'COLLAPSE' : 'EXPAND'}</span>
+                                                                {isHubBlueprintButtonsExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                                            </button>
+                                                            <div className="flex items-center gap-1.5 font-mono text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white/95">
+                                                                <span className="inline-block w-2 h-2 rounded-full bg-amber-300 shrink-0"></span>
+                                                                <span>DAY-TYPE CANDIDATES</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Tab Filter Switcher for Blueprint Candidates */}
+                                                    {isHubBlueprintButtonsExpanded && (
+                                                        <div className="p-2 sm:p-2.5 bg-black/5 dark:bg-white/[0.03] border-b border-black/5 dark:border-white/5 w-full transition-all duration-300">
+                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 w-full">
+                                                                {/* ALL BLUEPRINTS */}
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setHubBlueprintTab('ALL')}
+                                                                    className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                        effectiveHubBlueprintTab === 'ALL'
+                                                                            ? 'bg-amber-600 text-white border-amber-500 shadow-sm'
+                                                                            : 'bg-white/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/60 hover:border-amber-400'
+                                                                    }`}
+                                                                >
+                                                                    <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                        <span className="shrink-0 text-xs">📐</span>
+                                                                        <span className="truncate">ALL BLUEPRINTS</span>
+                                                                    </span>
+                                                                    <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                        effectiveHubBlueprintTab === 'ALL' ? 'bg-white/25 text-white' : 'bg-black/5 dark:bg-white/10 text-slate-800 dark:text-slate-200'
+                                                                    }`}>
+                                                                        {blueprintSignalRows.length}
+                                                                    </span>
+                                                                </button>
+
+                                                                {/* REJECTIONS */}
+                                                                {bpRejectedCountInScan > 0 && (
                                                                     <button
                                                                         type="button"
-                                                                        onClick={() => setHubWatchlistTab(prev => prev === 'BLUEPRINT' ? 'ALL' : 'BLUEPRINT')}
+                                                                        onClick={() => setHubBlueprintTab(prev => prev === 'REJECTED' ? 'ALL' : 'REJECTED')}
                                                                         className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
-                                                                            effectiveHubWatchlistTab === 'BLUEPRINT'
+                                                                            effectiveHubBlueprintTab === 'REJECTED'
+                                                                                ? 'bg-amber-600 text-white border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-amber-700 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/10'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                            <span className="shrink-0 text-xs">🛡️</span>
+                                                                            <span className="truncate">REJECTIONS</span>
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                            effectiveHubBlueprintTab === 'REJECTED' ? 'bg-white/25 text-white' : 'bg-amber-500/20 text-amber-700 dark:text-amber-200'
+                                                                        }`}>
+                                                                            {bpRejectedCountInScan}
+                                                                        </span>
+                                                                    </button>
+                                                                )}
+
+                                                                {/* CONTINUATIONS */}
+                                                                {bpContinuationCountInScan > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setHubBlueprintTab(prev => prev === 'CONTINUATION' ? 'ALL' : 'CONTINUATION')}
+                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                            effectiveHubBlueprintTab === 'CONTINUATION'
+                                                                                ? 'bg-teal-600 text-white border-teal-500 shadow-[0_0_12px_rgba(20,184,166,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/10'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                            <span className="shrink-0 text-xs">🚀</span>
+                                                                            <span className="truncate">CONTINUATIONS</span>
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                            effectiveHubBlueprintTab === 'CONTINUATION' ? 'bg-white/25 text-white' : 'bg-teal-500/20 text-teal-700 dark:text-teal-200'
+                                                                        }`}>
+                                                                            {bpContinuationCountInScan}
+                                                                        </span>
+                                                                    </button>
+                                                                )}
+
+                                                                {/* ABSORPTION */}
+                                                                {bpAbsorptionCountInScan > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setHubBlueprintTab(prev => prev === 'ABSORPTION' ? 'ALL' : 'ABSORPTION')}
+                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                            effectiveHubBlueprintTab === 'ABSORPTION'
                                                                                 ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.4)]'
                                                                                 : 'bg-white/60 dark:bg-slate-800/60 text-blue-700 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/10'
                                                                         }`}
                                                                     >
                                                                         <span className="flex items-center gap-1.5 min-w-0 truncate">
-                                                                            <span className="shrink-0 text-xs">🏛️</span>
-                                                                            <span className="truncate">BLUEPRINTS</span>
+                                                                            <span className="shrink-0 text-xs">🧲</span>
+                                                                            <span className="truncate">ABSORPTION</span>
                                                                         </span>
                                                                         <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
-                                                                            effectiveHubWatchlistTab === 'BLUEPRINT' ? 'bg-white/25 text-white' : 'bg-blue-500/20 text-blue-700 dark:text-blue-200'
+                                                                            effectiveHubBlueprintTab === 'ABSORPTION' ? 'bg-white/25 text-white' : 'bg-blue-500/20 text-blue-700 dark:text-blue-200'
                                                                         }`}>
-                                                                            {watchlistBlueprintCountInScan}
+                                                                            {bpAbsorptionCountInScan}
+                                                                        </span>
+                                                                    </button>
+                                                                )}
+
+                                                                {/* FAILED NEW LOW/HIGH */}
+                                                                {bpFailedNewCountInScan > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setHubBlueprintTab(prev => prev === 'FAILED_NEW' ? 'ALL' : 'FAILED_NEW')}
+                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                            effectiveHubBlueprintTab === 'FAILED_NEW'
+                                                                                ? 'bg-purple-600 text-white border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-purple-700 dark:text-purple-300 border-purple-500/30 hover:bg-purple-500/10'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                            <span className="shrink-0 text-xs">⚡</span>
+                                                                            <span className="truncate">FAILED NEW</span>
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                            effectiveHubBlueprintTab === 'FAILED_NEW' ? 'bg-white/25 text-white' : 'bg-purple-500/20 text-purple-700 dark:text-purple-200'
+                                                                        }`}>
+                                                                            {bpFailedNewCountInScan}
+                                                                        </span>
+                                                                    </button>
+                                                                )}
+
+                                                                {/* OUTSIDE DAY */}
+                                                                {bpOutsideDayCountInScan > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setHubBlueprintTab(prev => prev === 'OUTSIDE' ? 'ALL' : 'OUTSIDE')}
+                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                            effectiveHubBlueprintTab === 'OUTSIDE'
+                                                                                ? 'bg-indigo-600 text-white border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-indigo-700 dark:text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/10'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                            <span className="shrink-0 text-xs">📦</span>
+                                                                            <span className="truncate">OUTSIDE DAY</span>
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                            effectiveHubBlueprintTab === 'OUTSIDE' ? 'bg-white/25 text-white' : 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-200'
+                                                                        }`}>
+                                                                            {bpOutsideDayCountInScan}
+                                                                        </span>
+                                                                    </button>
+                                                                )}
+
+                                                                {/* STOP RUN */}
+                                                                {bpStopRunCountInScan > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setHubBlueprintTab(prev => prev === 'STOP_RUN' ? 'ALL' : 'STOP_RUN')}
+                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                            effectiveHubBlueprintTab === 'STOP_RUN'
+                                                                                ? 'bg-rose-600 text-white border-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-rose-700 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/10'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                            <span className="shrink-0 text-xs">🎯</span>
+                                                                            <span className="truncate">STOP RUN</span>
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                            effectiveHubBlueprintTab === 'STOP_RUN' ? 'bg-white/25 text-white' : 'bg-rose-500/20 text-rose-700 dark:text-rose-200'
+                                                                        }`}>
+                                                                            {bpStopRunCountInScan}
+                                                                        </span>
+                                                                    </button>
+                                                                )}
+
+                                                                {/* ACCUMULATION */}
+                                                                {bpAccumulationCountInScan > 0 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setHubBlueprintTab(prev => prev === 'ACCUMULATION' ? 'ALL' : 'ACCUMULATION')}
+                                                                        className={`w-full min-w-0 px-2.5 py-1.5 rounded-xl text-[9.5px] sm:text-[10.5px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between border cursor-pointer select-none active:scale-95 ${
+                                                                            effectiveHubBlueprintTab === 'ACCUMULATION'
+                                                                                ? 'bg-emerald-600 text-white border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]'
+                                                                                : 'bg-white/60 dark:bg-slate-800/60 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/10'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="flex items-center gap-1.5 min-w-0 truncate">
+                                                                            <span className="shrink-0 text-xs">🔋</span>
+                                                                            <span className="truncate">ACCUMULATION</span>
+                                                                        </span>
+                                                                        <span className={`px-1.5 py-0.5 rounded text-[8.5px] font-bold shrink-0 ml-1.5 ${
+                                                                            effectiveHubBlueprintTab === 'ACCUMULATION' ? 'bg-white/25 text-white' : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-200'
+                                                                        }`}>
+                                                                            {bpAccumulationCountInScan}
                                                                         </span>
                                                                     </button>
                                                                 )}
@@ -13206,48 +13867,53 @@ function MobileScreensaver() {
                                                         </div>
                                                     )}
 
-                                                    <table className="w-full min-w-[340px] text-left text-xs sm:text-sm border-collapse">
-                                                        {hasWatchlistSignals && (
-                                                            <thead className="wc-table-thead text-primary font-black text-xs sm:text-sm uppercase tracking-wider bg-cyan-500/[0.04] dark:bg-cyan-500/[0.08] border-b border-cyan-500/20">
-                                                                <tr>
-                                                                    <th className="py-2.5 px-3 text-left border-r border-black/5 dark:border-white/5 min-w-[130px] whitespace-nowrap">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <span className="w-1.5 h-3.5 rounded-full bg-cyan-500 shrink-0"></span>
-                                                                            <span className="font-black text-slate-800 dark:text-slate-200 text-xs sm:text-sm tracking-wider">
-                                                                                SETUP / DAY TYPE
-                                                                            </span>
-                                                                        </div>
-                                                                    </th>
-                                                                    <th className="py-2.5 px-3 text-center min-w-[180px] whitespace-nowrap">
-                                                                        <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 dark:bg-cyan-500/25 border border-cyan-500/40">
-                                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500 shrink-0"></span>
-                                                                            <span className="text-xs sm:text-sm font-black tracking-widest uppercase text-cyan-700 dark:text-cyan-300">
-                                                                                WATCHLIST CANDIDATES
-                                                                            </span>
-                                                                            <span className="text-xs">📋</span>
-                                                                        </div>
-                                                                    </th>
-                                                                </tr>
-                                                            </thead>
-                                                        )}
-                                                        <tbody className="divide-y divide-black/5 dark:divide-white/5">
-                                                            {hasWatchlistSignals ? (
-                                                                watchlistSignalRows
-                                                            ) : (
-                                                                <tr>
-                                                                    <td colSpan={2} className="py-6 text-center">
-                                                                        <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-cyan-500/[0.05] border border-cyan-500/20 font-mono text-xs text-dim">
-                                                                            <div className="flex items-center gap-2">
-                                                                                <span className="w-2 h-2 rounded-full bg-cyan-500 shrink-0"></span>
-                                                                                <span className="font-black text-cyan-600 dark:text-cyan-400 tracking-wider uppercase">No Watchlist Candidates Active</span>
+                                                    {/* View Mode Conditional Rendering */}
+                                                    {hubBlueprintViewMode === 'LIST' ? (
+                                                        renderTwoColumnList(displayedBlueprintCategories, 'No Blueprint Candidates Active', 'BLUEPRINT')
+                                                    ) : (
+                                                        <table className="w-full min-w-[340px] text-left text-xs sm:text-sm border-collapse">
+                                                            {hasBlueprintSignals && (
+                                                                <thead className="wc-table-thead text-primary font-black text-xs sm:text-sm uppercase tracking-wider bg-amber-500/[0.04] dark:bg-amber-500/[0.08] border-b border-amber-500/20">
+                                                                    <tr>
+                                                                        <th className="py-2.5 px-3 text-left border-r border-black/5 dark:border-white/5 min-w-[130px] whitespace-nowrap">
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className="w-1.5 h-3.5 rounded-full bg-amber-500 shrink-0"></span>
+                                                                                <span className="font-black text-slate-800 dark:text-slate-200 text-xs sm:text-sm tracking-wider">
+                                                                                    BLUEPRINT / DAY TYPE
+                                                                                </span>
                                                                             </div>
-                                                                            <span className="text-[10px] text-dim font-medium">Scanning all active markets for Rejection, Continuation, Inside Day CPR, NCPR, and Pivot Boss Day-Type qualifying regimes</span>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
+                                                                        </th>
+                                                                        <th className="py-2.5 px-3 text-center min-w-[180px] whitespace-nowrap">
+                                                                            <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 dark:bg-amber-500/25 border border-amber-500/40">
+                                                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500 shrink-0"></span>
+                                                                                <span className="text-xs sm:text-sm font-black tracking-widest uppercase text-amber-700 dark:text-amber-300">
+                                                                                    BLUEPRINT CANDIDATES
+                                                                                </span>
+                                                                                <span className="text-xs">📐</span>
+                                                                            </div>
+                                                                        </th>
+                                                                    </tr>
+                                                                </thead>
                                                             )}
-                                                        </tbody>
-                                                    </table>
+                                                            <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                                                                {hasBlueprintSignals ? (
+                                                                    blueprintSignalRows
+                                                                ) : (
+                                                                    <tr>
+                                                                        <td colSpan={2} className="py-6 text-center">
+                                                                            <div className="inline-flex flex-col items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500/[0.05] border border-amber-500/20 font-mono text-xs text-dim">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                                                                                    <span className="font-black text-amber-600 dark:text-amber-400 tracking-wider uppercase">No Blueprint Candidates Active</span>
+                                                                                </div>
+                                                                                <span className="text-[10px] text-dim font-medium">Scanning all active markets for PivotBoss STP 2.0 Rejection, Continuation, Absorption, FNL/H, Outside Day, Stop Run, and Accumulation</span>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                )}
+                                                            </tbody>
+                                                        </table>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}
@@ -13259,22 +13925,122 @@ function MobileScreensaver() {
 
 
 
-                    {/* --- TODAY'S SIGNAL PERFORMANCE SECTION --- */}
-                    <div className="flex justify-between items-start mb-4 sm:mb-6 gap-2">
-                      <h2 className="text-xl sm:text-2xl font-bold italic tracking-tighter uppercase leading-[1.1]">
-                        <span className="shiny-text pr-2">TLCS AI </span> <span className="text-[10px] sm:text-base font-bold not-italic text-dim block sm:inline mt-2.5 sm:mt-0 sm:ml-1.5">(ALERTS INTELLIGENCE)</span>
-                        <span className="flex items-center gap-2 mt-1 sm:mt-1.5 text-blue-600 dark:text-blue-400 theme-gray:text-blue-700">
-                          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] shrink-0 animate-pulse"></span>
-                          <LayoutGrid className="text-accent shrink-0" size={22} />
-                          <span>TODAY&apos;S SIGNAL PERFORMANCE</span>
+                    {/* --- LOWER HUB MASTER VIEW SWITCHER BAR (Performance, F&O Buildup, Option Chain) --- */}
+                    <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/5 dark:border-white/5 w-fit overflow-x-auto hide-scrollbar mb-4 mt-6">
+                      <button
+                        type="button"
+                        onClick={() => setHubLowerSectionView('ALL')}
+                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                          hubLowerSectionView === 'ALL'
+                            ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-500/20'
+                            : 'bg-white/60 dark:bg-slate-800/60 text-blue-600 dark:text-blue-400 border-transparent hover:bg-blue-500/10'
+                        }`}
+                      >
+                        <span>🌐 ALL SECTIONS</span>
+                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${
+                          hubLowerSectionView === 'ALL' ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                        }`}>
+                          3
                         </span>
-                      </h2>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-[10px] sm:text-[11px] font-black text-blue-500 bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 rounded-full uppercase tracking-widest">
-                          {activeAlertLogs.length} MATCH{activeAlertLogs.length !== 1 ? 'ES' : ''}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setHubLowerSectionView('PERFORMANCE');
+                          setIsHubPerfExpanded(true);
+                        }}
+                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                          hubLowerSectionView === 'PERFORMANCE'
+                            ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-500/20'
+                            : 'bg-white/60 dark:bg-slate-800/60 text-blue-600 dark:text-blue-400 border-transparent hover:bg-blue-500/10'
+                        }`}
+                      >
+                        <span>📊 PERFORMANCE</span>
+                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${
+                          hubLowerSectionView === 'PERFORMANCE' ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                        }`}>
+                          {activeAlertLogs.length}
                         </span>
-                      </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setHubLowerSectionView('FNO')}
+                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                          hubLowerSectionView === 'FNO'
+                            ? 'bg-purple-600 text-white border-purple-500 shadow-sm shadow-purple-500/20'
+                            : 'bg-white/60 dark:bg-slate-800/60 text-purple-600 dark:text-purple-400 border-transparent hover:bg-purple-500/10'
+                        }`}
+                      >
+                        <span>⚡ F&amp;O BUILDUP</span>
+                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${
+                          hubLowerSectionView === 'FNO' ? 'bg-white/25 text-white' : 'bg-purple-500/15 text-purple-600 dark:text-purple-400'
+                        }`}>
+                          F&amp;O
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setHubLowerSectionView('OPTION_CHAIN')}
+                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                          hubLowerSectionView === 'OPTION_CHAIN'
+                            ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-500/20'
+                            : 'bg-white/60 dark:bg-slate-800/60 text-indigo-600 dark:text-indigo-400 border-transparent hover:bg-indigo-500/10'
+                        }`}
+                      >
+                        <span>⛓️ OPTION CHAIN</span>
+                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${
+                          hubLowerSectionView === 'OPTION_CHAIN' ? 'bg-white/25 text-white' : 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400'
+                        }`}>
+                          LIVE
+                        </span>
+                      </button>
                     </div>
+
+                    {/* --- PERFORMANCE SECTION (Signal and Normalized Trade) --- */}
+                    {(hubLowerSectionView === 'ALL' || hubLowerSectionView === 'PERFORMANCE') && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-start mb-4 sm:mb-6 gap-2">
+                          <h2 className="text-xl sm:text-2xl font-bold italic tracking-tighter uppercase leading-[1.1]">
+                            <span className="shiny-text pr-2">TLCS AI </span> <span className="text-[10px] sm:text-base font-bold not-italic text-dim block sm:inline mt-2.5 sm:mt-0 sm:ml-1.5">(ALERTS INTELLIGENCE)</span>
+                            <span className="flex items-center gap-2 mt-1 sm:mt-1.5 text-blue-600 dark:text-blue-400 theme-gray:text-blue-700">
+                              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)] shrink-0 animate-pulse"></span>
+                              <LayoutGrid className="text-accent shrink-0" size={22} />
+                              <span>TODAY&apos;S SIGNAL PERFORMANCE</span>
+                            </span>
+                          </h2>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] sm:text-[11px] font-black text-blue-500 bg-blue-500/10 border border-blue-500/30 px-2.5 py-1 rounded-full uppercase tracking-widest">
+                              {activeAlertLogs.length} MATCH{activeAlertLogs.length !== 1 ? 'ES' : ''}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setIsHubPerfExpanded(prev => !prev)}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl font-mono font-black text-[10px] sm:text-[11px] uppercase tracking-wider transition-all border shadow-xs cursor-pointer select-none active:scale-[0.98] ${
+                                isHubPerfExpanded
+                                  ? 'bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
+                                  : 'bg-blue-600 text-white border-blue-500 hover:bg-blue-700 shadow-blue-500/20'
+                              }`}
+                            >
+                              {isHubPerfExpanded ? (
+                                <>
+                                  <ChevronUp size={12} className="stroke-[3]" />
+                                  <span>COLLAPSE</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown size={12} className="stroke-[3]" />
+                                  <span>EXPAND</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+
+                        {isHubPerfExpanded && (
+                          <>
 
                     {/* Stats Section: Bifurcated into 2 rows */}
                     <div className="space-y-2 mb-4">
@@ -14025,14 +14791,20 @@ function MobileScreensaver() {
                         );
                       })()}
                     </div>
-                    
+                          </>
+                        )}
+                      </div>
+                    )}
 
-
-                      {/* F&O STOCK BUILDUPS (Dhan F&O Position Accretion & Unwinding Engine) */}
+                    {/* F&O STOCK BUILDUPS (Dhan F&O Position Accretion & Unwinding Engine) */}
+                    {(hubLowerSectionView === 'ALL' || hubLowerSectionView === 'FNO') && (
                       <HubFnoBuildups />
+                    )}
 
-                      {/* OPTION CHAIN */}
+                    {/* OPTION CHAIN */}
+                    {(hubLowerSectionView === 'ALL' || hubLowerSectionView === 'OPTION_CHAIN') && (
                       <HubOptionChain />
+                    )}
 
                       {/* Educational Disclaimer */}
                       <div className="mt-8 pt-6 border-t border-primary/20">
@@ -16145,10 +16917,10 @@ function MobileScreensaver() {
                     <div className="flex items-center justify-between mb-1 mt-0.5">
                       <div className="flex items-center gap-2">
                         <Target className="text-accent" size={20} />
-                        <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary">Signal Insights</h2>
+                        <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary">Daily Signal Insights</h2>
                       </div>
                       <span className={`text-[10px] sm:text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${engineSource === 'SHADOW' ? 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30' : 'bg-accent/15 text-accent border-accent/30'}`}>
-                        {engineSource === 'SHADOW' ? '⚡ BLACK BOX' : 'Strategy Edge'}
+                        {engineSource === 'SHADOW' ? '⚡ BLACK BOX (1D)' : '1D SWING STRATEGY EDGE'}
                       </span>
                     </div>
 
@@ -20518,7 +21290,7 @@ function MobileScreensaver() {
                   <section className="bg-secondary/40 border border-primary/20 p-5 rounded-3xl space-y-3">
                     <div className="text-xs font-mono text-accent uppercase tracking-widest font-black flex items-center justify-between">
                       <span>Legal & Compliance</span>
-                      <span className="text-[9px] font-mono font-bold text-dim">Store Ready v4.0</span>
+                      <span className="text-[9px] font-mono font-bold text-dim">Store Ready v5.0</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
                       <a
