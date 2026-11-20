@@ -6487,6 +6487,7 @@ function MobileScreensaver() {
       const sDate = (s.signal_ts || s.created_at || '').split('T')[0];
       const ts = new Date(s.signal_ts || s.created_at || '').getTime();
       const isToday = !isNaN(ts) && ts >= startOfToday;
+      const sigTimeframe = String(meta.timeframe || meta.interval || (s as any).timeframe || (s as any).interval || '15m').toUpperCase();
 
       // Extract accurate trade signal timestamps for precise chart candle location
       const rawSigTs = s.signal_ts || s.created_at || meta.entry_time || meta.entryDate || '';
@@ -6918,6 +6919,7 @@ function MobileScreensaver() {
           timeSpentStr,
           holdMins,
           tradeLifecycle,
+          timeframe: sigTimeframe,
         });
       } else {
         const existing = assetMap.get(key)!;
@@ -6934,6 +6936,7 @@ function MobileScreensaver() {
           existing.latestTimestamp = ts;
           existing.latestStatus = s.status || 'ACTIVE';
           existing.latestOutcome = resolveOutcome(s);
+          existing.timeframe = sigTimeframe;
           if (timeIST) {
             existing.timeIST = timeIST;
             existing.dateIST = dateIST;
@@ -7158,7 +7161,16 @@ function MobileScreensaver() {
       false
     );
 
-    const combined = [...assets];
+    // Timeframe separation: On INSIGHTS tab, exclusively retain Daily (1D Swing) execution signals.
+    // On HUB and other tabs, retain intraday & real-time signals.
+    const filteredByTabTf = activeTab === 'INSIGHTS'
+      ? assets.filter(a => a.timeframe === '1D' || a.timeframe === 'D' || a.timeframe === 'DAILY' || a.signals?.some((s: any) => {
+          const m = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+          return m.timeframe === '1D' || m.timeframe === 'D' || m.interval === '1D' || s.timeframe === '1D' || s.timeframe === 'D';
+        }))
+      : assets;
+
+    const combined = [...filteredByTabTf];
 
     combined.sort((a, b) => {
       const orderA = a.tradeLifecycle === 'LIVE' ? 0 : 1;
@@ -7196,7 +7208,7 @@ function MobileScreensaver() {
         vcprTouchCount,
       }
     };
-  }, [extractDhanScreenerAssets, liveSignalsMarketFilter, liveSignalsDirectionFilter, liveSignalsSessionFilter]);
+  }, [extractDhanScreenerAssets, liveSignalsMarketFilter, liveSignalsDirectionFilter, liveSignalsSessionFilter, activeTab]);
 
   const filteredLiveSignals = useMemo(() => {
     return liveSignalsAssets.filter(a => {
@@ -11244,14 +11256,18 @@ function MobileScreensaver() {
             {/* 3-Column Data Table */}
             {filteredLiveSignals.length === 0 ? (
               <div className="p-4 text-center text-dim font-mono text-xs bg-black/5 dark:bg-white/5 rounded-2xl flex flex-col items-center gap-1.5 border border-primary/10">
-                <span>No active live signals or limit orders detected{liveSignalsSessionFilter === 'TODAY' ? " for today's session." : " across recent sessions."}</span>
+                <span>
+                  {activeTab === 'INSIGHTS'
+                    ? `No active 1D Daily swing signals or limit orders detected${liveSignalsSessionFilter === 'TODAY' ? " for today's session." : " across recent sessions."}`
+                    : `No active live signals or limit orders detected${liveSignalsSessionFilter === 'TODAY' ? " for today's session." : " across recent sessions."}`}
+                </span>
                 {liveSignalsSessionFilter === 'TODAY' && (
                   <button
                     type="button"
                     onClick={() => setLiveSignalsSessionFilter('ALL')}
                     className="text-[11px] font-bold text-blue-600 dark:text-blue-400 underline cursor-pointer"
                   >
-                    View signals from recent previous sessions →
+                    View swing signals from recent previous sessions →
                   </button>
                 )}
               </div>
