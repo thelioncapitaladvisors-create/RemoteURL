@@ -6,6 +6,16 @@
   - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
   - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
   - Gating must NEVER rely on `close` for limit entry qualification.
+## Version 5.0: INSIGHTS Daily Timeframe Live Signals & Redundant Watchlist Removal Mandate (Effective November 20, 2026)
+- **INSIGHTS TAB DEDICATED DAILY TIMEFRAME LIVE SIGNALS MANDATE**:
+  - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
+    1. **Dedicated Daily Swing Live Signals Engine**: The Live Signals matrix on INSIGHTS is dedicated exclusively to **Daily Timeframe (1D Swing) execution signals** (`🚨 DAILY LIVE SIGNALS (1D SWING)`). Sub-header explicitly renders `ACTIVE 1D LIMIT ORDERS & DAILY SWING EXECUTION SIGNALS`.
+    2. **Redundant Watchlist Removal from INSIGHTS**: `renderDhanWatchlistSection()` is completely decoupled and removed from `renderDhanUnifiedBiasScreener()` on the INSIGHTS tab, permanently eliminating duplicate watchlist tables and mobile viewport scroll friction. The canonical Day Type Watchlist is housed exclusively in its dedicated section on the HUB tab.
+    3. **Timeframe-Agnostic BlackBox Engine Extensibility**: Signal evaluation logic across `algo_engine/` and `dhan-scanner-background.js` executes identically on Daily OHLC candles as on 15m intraday candles, generating authentic Daily Lightning, Extreme Reversal, Divergence (Regular & Hidden), and Missile/Scalp signals without requiring new Pine Script indicator code.
+- **SYSTEM-WIDE VERSION 5.0 SUCCESSOR DECLARATION**:
+  - The application version is officially designated **Version 5.0 (`v5.0`)** across `Tv-Alert-Mobile/package.json` (`"version": "5.0.0"`), terminal headers (`TLCS TERMINAL v5.0`), verification daemons (`Active Daemon v5.0`), and legal footers (`Store Ready v5.0`).
+  - Zero unilateral modifications may be made to Pine Script indicators, BlackBox entry triggers, or trade management rules.
+
 ## Version 4.0: Universal Live Signals & Day Type Watchlist Architecture, Ungated Strategies & Zero-Collision Mandate (Effective November 19, 2026)
 - **HUB TAB BIFURCATED LIVE SIGNALS & DEDICATED WATCHLIST ARCHITECTURE MANDATE**:
   - Across the HUB tab (`activeTab === 'DASHBOARD'`) in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
