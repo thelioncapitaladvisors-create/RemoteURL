@@ -2760,7 +2760,7 @@ function HubOptionChain() {
 // ─────────────────────────────────────────────────────────────────────────────
 function HubFnoBuildups() {
   const [expandedFilter, setExpandedFilter] = useState<'LONG_BUILDUP' | 'SHORT_BUILDUP' | 'LONG_UNWINDING' | 'SHORT_UNWINDING' | null>(null);
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<string>('');
@@ -3605,14 +3605,14 @@ function MobileScreensaver() {
   const [hubLiveViewMode, setHubLiveViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
   const [hubWatchlistViewMode, setHubWatchlistViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
   const [hubBlueprintViewMode, setHubBlueprintViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
-  const [isHubLiveMasterExpanded, setIsHubLiveMasterExpanded] = useState<boolean>(true);
-  const [isHubWatchlistMasterExpanded, setIsHubWatchlistMasterExpanded] = useState<boolean>(true);
-  const [isHubBlueprintMasterExpanded, setIsHubBlueprintMasterExpanded] = useState<boolean>(true);
-  const [isHubLiveButtonsExpanded, setIsHubLiveButtonsExpanded] = useState<boolean>(true);
-  const [isHubWatchlistButtonsExpanded, setIsHubWatchlistButtonsExpanded] = useState<boolean>(true);
-  const [isHubBlueprintButtonsExpanded, setIsHubBlueprintButtonsExpanded] = useState<boolean>(true);
+  const [isHubLiveMasterExpanded, setIsHubLiveMasterExpanded] = useState<boolean>(false);
+  const [isHubWatchlistMasterExpanded, setIsHubWatchlistMasterExpanded] = useState<boolean>(false);
+  const [isHubBlueprintMasterExpanded, setIsHubBlueprintMasterExpanded] = useState<boolean>(false);
+  const [isHubLiveButtonsExpanded, setIsHubLiveButtonsExpanded] = useState<boolean>(false);
+  const [isHubWatchlistButtonsExpanded, setIsHubWatchlistButtonsExpanded] = useState<boolean>(false);
+  const [isHubBlueprintButtonsExpanded, setIsHubBlueprintButtonsExpanded] = useState<boolean>(false);
   const [hubLowerSectionView, setHubLowerSectionView] = useState<'ALL' | 'PERFORMANCE' | 'FNO' | 'OPTION_CHAIN'>('ALL');
-  const [isHubPerfExpanded, setIsHubPerfExpanded] = useState<boolean>(true);
+  const [isHubPerfExpanded, setIsHubPerfExpanded] = useState<boolean>(false);
 
   // ── AUTONOMOUS AUDIT & RESOLUTION AGENT STATE ────────────────────────
   const [auditStatus, setAuditStatus] = useState<'HEALTHY' | 'DESYNC' | 'CHECKING'>('CHECKING');
