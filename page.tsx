@@ -3950,6 +3950,9 @@ function MobileScreensaver() {
   const [isDhanLiveActionOnly, setIsDhanLiveActionOnly] = useState<boolean>(true);
   const [isDhanWatchlistOnly, setIsDhanWatchlistOnly] = useState<boolean>(false);
 
+  // ── INSIGHTS TAB ENGINE SWITCHER EXPAND/COLLAPSE STATE ──
+  const [isInsightsEngineExpanded, setIsInsightsEngineExpanded] = useState<boolean>(true);
+
   // ── SEPARATED LIVE SIGNALS SECTION STATE (LOGS-TAB DESIGN LANGUAGE) ──
   const [isLiveSignalsMasterExpanded, setIsLiveSignalsMasterExpanded] = useState<boolean>(true);
   const [liveSignalsActiveFilter, setLiveSignalsActiveFilter] = useState<'ALL' | 'ACTIVE_LIMITS' | 'LIVE' | 'FIRE' | 'LIGHTNING' | 'EXT_REV' | 'MISSILE' | 'SCALP' | 'DIV' | 'REJ' | 'CONT' | 'VCPR_TOUCH'>('ALL');
@@ -17026,17 +17029,29 @@ function MobileScreensaver() {
 
                 {activeTab === 'INSIGHTS' && (
                   <motion.div key="insights" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 max-w-4xl mx-auto px-2 sm:px-3 pb-28">
-                    <div className="flex items-center justify-between mb-1 mt-0.5">
-                      <div className="flex items-center gap-2">
-                        <Target className="text-accent" size={20} />
-                        <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary">Daily Signal Insights</h2>
+                    <div className="flex items-center justify-between gap-2 mb-2 mt-0.5">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Target className="text-accent shrink-0" size={20} />
+                        <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary truncate">Daily Signal Insights</h2>
                       </div>
-                      <span className={`text-[10px] sm:text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${engineSource === 'SHADOW' ? 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30' : 'bg-accent/15 text-accent border-accent/30'}`}>
-                        {engineSource === 'SHADOW' ? '⚡ BLACK BOX (1D)' : '1D SWING STRATEGY EDGE'}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`text-[10px] sm:text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${engineSource === 'SHADOW' ? 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30' : 'bg-accent/15 text-accent border-accent/30'}`}>
+                          {engineSource === 'SHADOW' ? '⚡ BLACK BOX (1D)' : '1D SWING STRATEGY EDGE'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsInsightsEngineExpanded(!isInsightsEngineExpanded)}
+                          className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all select-none cursor-pointer flex items-center gap-1"
+                          title={isInsightsEngineExpanded ? 'Collapse engine switcher' : 'Expand engine switcher'}
+                        >
+                          <span>{isInsightsEngineExpanded ? 'COLLAPSE' : 'EXPAND'}</span>
+                          {isInsightsEngineExpanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                        </button>
+                      </div>
                     </div>
 
-                      {/* Filter Toggle Button: Webhook Alerts vs Standalone DhanHQ Top 100 Mini-Project */}
+                    {/* Filter Toggle Button: Webhook Alerts vs Standalone DhanHQ Top 100 Mini-Project */}
+                    {isInsightsEngineExpanded && (
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-1.5 rounded-2xl bg-card border border-border/80 shadow-sm mb-4">
                         <div className="flex items-center gap-1 p-0.5 rounded-xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-[10px] sm:text-xs font-bold w-full sm:w-auto">
                           <button
@@ -17090,6 +17105,7 @@ function MobileScreensaver() {
                           )}
                         </div>
                       </div>
+                    )}
 
                     <div className="space-y-3">
                       {/* ── UNIFIED DHANHQ BLACKBOX PIVOT REGIME & COMPRESSION SCREENER ── */}
