@@ -15,7 +15,7 @@ Approved Markets:
 Mandate Compliance:
     - Timeframe-Agnostic BlackBox Engine Extensibility (Version 5.0 Mandate)
     - Strict Fact-Backed Verification & Zero Unilateral Strategy Modification
-    - H4/L4 Touch-Point Limit Gating (Ungated for Lightning & Extreme Reversal)
+    - H4/L4 Touch-Point Limit Gating: Omitted for Daily (1D) Timeframe (User Mandate Nov 21, 2026)
     - Symmetrical DMI Directional Momentum Gating for Divergences
 """
 
@@ -209,7 +209,8 @@ class DailyBlackboxScanner:
             minus=minus_di[i] if i < len(minus_di) else 0.0,
             m0=m0_series[i] if i < len(m0_series) else 0.0,
             m10=m10_series[i] if i < len(m10_series) else 0.0,
-            virgin_cpr_zones=vcpr_zones
+            virgin_cpr_zones=vcpr_zones,
+            timeframe='1D'
         )
 
         strat_sigs = self.strategy_engine.evaluate(ctx)

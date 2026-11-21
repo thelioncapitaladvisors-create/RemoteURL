@@ -33,7 +33,7 @@ Under Platform Version 5.0, three key directives have been fully executed:
     - **Extreme Reversal**: Bollinger Band exhaustion reversals.
     - **Divergence**: RSI Regular and Hidden divergences with symmetrical DMI momentum gating.
     - **Virgin CPR**: Touch tests of unbreached CPR zones.
-  - Strict $H_4/L_4$ limit touch-point gating: Long entries require `low < H4`; Short entries require `high > L4`.
+  - $H_4/L_4$ touch-point qualification: Strict `low < H4` (Long) / `high > L4` (Short) applies to 15m intraday execution signals, but is **explicitly omitted on Daily (1D Swing) timeframe** per user mandate.
 
 ### 2.2 Supabase Shadow Pipeline Ingestion Parity
 - **Schema Alignment**:

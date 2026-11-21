@@ -191,6 +191,9 @@ class MarketContext:
     # Virgin CPR Zones (active untouched zones over past 1 month)
     virgin_cpr_zones: List[VirginCPRZone] = field(default_factory=list)
 
+    # Timeframe (default '15m'; on '1D'/'Daily', H4/L4 limit touch-point qualification is omitted)
+    timeframe: str = "15m"
+
 
 # ════════════════════════════════════════════════════════════════════
 # CORE STRATEGY ENGINE
@@ -258,10 +261,16 @@ class StrategyEngine:
         # ═══════════════════════════════════════════════════════
         # H4/L4 TOUCH-POINT GATING (CRITICAL — lines 3071-3072)
         # ═══════════════════════════════════════════════════════
-        # MUST use low < H4 for longs, high > L4 for shorts
-        # NEVER use close for limit entry qualification
-        long_allowed = bar.low < ctx.H4
-        short_allowed = bar.high > ctx.L4
+        # MUST use low < H4 for longs, high > L4 for shorts on intraday.
+        # User Mandate (Nov 21, 2026): H4/L4 limit touch-point qualification is NOT considered
+        # for Daily timeframe (1D Swing) based signal generation through BlackBox.
+        is_daily_timeframe = getattr(ctx, "timeframe", "15m").upper() in ("1D", "D", "DAILY")
+        if is_daily_timeframe:
+            long_allowed = True
+            short_allowed = True
+        else:
+            long_allowed = bar.low < ctx.H4
+            short_allowed = bar.high > ctx.L4
 
         # ═══════════════════════════════════════════════════════
         # ZONE/TREND DETECTION (lines 895-899, 2995-3010)
