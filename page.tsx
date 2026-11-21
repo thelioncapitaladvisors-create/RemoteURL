@@ -18159,7 +18159,7 @@ function MobileScreensaver() {
                         ? signals
                         : signals.filter(s => getMarket(s) === analyticsMarket);
 
-                      // Section 1: TLCS SIGNALS (Daily Timeframe)
+                      // Section 1: TLCS INTRADAY TRADE SIGNALS (Daily Timeframe)
                       const signalCategories = [
                         { id: 'MISSILE', label: 'Missile', icon: '🚀', check: (s: any) => (s.type || '').toUpperCase().includes('MISSILE'), scanKey: (r: any) => r.missile || (r.bMiss ? 'Bullish' : r.sMiss ? 'Bearish' : 'NONE') },
                         { id: 'PRICE_DIV', label: 'Price Divergences', icon: '🎯', check: (s: any) => (s.type || '').toUpperCase().includes('DIV') || (s.trigger || '').toUpperCase().includes('DIV'), scanKey: (r: any) => r.div || (r.bD ? 'Bullish' : r.sD ? 'Bearish' : 'NONE') },
@@ -18446,7 +18446,7 @@ function MobileScreensaver() {
                                 <tr className="bg-gradient-to-r from-sky-600/90 to-blue-600/90 dark:from-sky-700/80 dark:to-blue-700/80 theme-gray:from-slate-700/90 theme-gray:to-slate-800/90 text-white text-center font-black tracking-widest text-xs sm:text-sm uppercase shadow-sm border-b border-white/10">
                                   <th colSpan={8} className="py-2 px-3 matrix-section-banner">
                                     <div className="matrix-section-sticky-wrapper">
-                                      <span>TLCS SIGNALS</span>
+                                      <span>TLCS INTRADAY TRADE SIGNALS</span>
                                       <span className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-400/20 text-sky-100 border border-sky-300/30 uppercase tracking-wider">
                                         7-Day Matrix
                                       </span>
