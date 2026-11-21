@@ -11029,6 +11029,10 @@ function MobileScreensaver() {
 
   // ── SEPARATED LIVE SIGNALS SECTION (LOGS-TAB DESIGN LANGUAGE) ──
   const renderDhanLiveSignalsSection = () => {
+    // Hide completely when no live signals or active limits exist (collapsed and hidden for nil signals)
+    const hasLiveSignals = (liveSignalsStats?.total || 0) > 0;
+    if (!hasLiveSignals) return null;
+
     const liveFilterOptions = [
       { value: 'ALL', label: 'ALL', count: liveSignalsStats.total },
       ...(liveSignalsStats.activeLimitsCount > 0 ? [{ value: 'ACTIVE_LIMITS', label: '⏳ ACTIVE LIMITS', count: liveSignalsStats.activeLimitsCount }] : []),
@@ -11748,9 +11752,11 @@ function MobileScreensaver() {
   };
 
   const renderDhanUnifiedBiasScreener = () => {
+    const liveSection = renderDhanLiveSignalsSection();
+    if (!liveSection) return null;
     return (
       <div className="flex flex-col gap-4 w-full">
-        {renderDhanLiveSignalsSection()}
+        {liveSection}
       </div>
     );
   };
