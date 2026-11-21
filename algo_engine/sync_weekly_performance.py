@@ -138,10 +138,27 @@ def sweep_unclosed_trades(sb):
                 try: meta = json.loads(meta)
                 except: meta = {}
                 
-            has_real_entry = bool(meta.get('real_entry_time'))
-            is_limit = (not has_real_entry and ('LIMIT' in st or 'OPEN' in st or s.get('trigger') == 'TradeOpen')) or (('LIMIT' in st or 'OPEN' in st) and not s.get('updated_at'))
+            has_real_entry = bool(meta.get('real_entry_time')) and meta.get('real_entry_time') != s.get('created_at')
+            is_limit = ('LIMIT' in st or 'OPEN' in st) and (not has_real_entry or s.get('trigger') == 'TradeOpen')
+            
+            # Determine authentic historical session exit timestamp (prevent stamping weekend runner time)
+            exit_ts_str = meta.get('closeDate') or meta.get('close_date')
+            if exit_ts_str:
+                try:
+                    clean_ts = exit_ts_str.replace(' ', 'T')
+                    if not clean_ts.endswith('Z') and '+' not in clean_ts:
+                        clean_ts += '+00:00'
+                    exit_dt = datetime.fromisoformat(clean_ts).astimezone(ist_tz)
+                    exit_iso = exit_dt.isoformat()
+                except Exception:
+                    exit_iso = ts_dt.isoformat()
+            elif is_weekend:
+                exit_iso = ts_dt.isoformat()
+            else:
+                exit_iso = now_ist.isoformat()
+
             if is_limit:
-                print(f"[SWEEP] Cancelling unexecuted limit order: {sym} ({s.get('id')})")
+                print(f"[SWEEP] Cancelling unexecuted limit / pending open order: {sym} ({s.get('id')})")
                 meta['exit_reason'] = 'EXPIRED_LIMIT'
                 sb.table('signals').update({
                     'status': 'CANCELLED',
@@ -151,23 +168,23 @@ def sweep_unclosed_trades(sb):
                 }).eq('id', s.get('id')).execute()
                 swept_count += 1
             else:
-                # Active position closed at EOD
+                # Active position closed at EOD (Strict rule: NEVER fallback to stop loss!)
                 entry = float(s.get('entry') or 0)
-                exit_p = float(s.get('current_price') or s.get('stop') or entry)
+                exit_p = float(s.get('current_price') or entry)
                 is_long = 'SHORT' not in (s.get('type') or '').upper()
                 exact_pct = ((exit_p - entry) / entry * 100.0) if is_long else ((entry - exit_p) / entry * 100.0) if entry else 0.0
                 
                 final_out = 'WIN' if exact_pct > 0.005 else ('LOSS' if exact_pct < -0.005 else 'BREAKEVEN')
-                status_lbl = 'EOD Exit (TP1)' if final_out == 'WIN' else ('EOD Exit (SL)' if final_out == 'LOSS' else 'EOD Exit')
+                status_lbl = 'EOD Exit (TP1)' if final_out == 'WIN' else ('EOD Exit (SL)' if final_out == 'LOSS' else 'EOD Exit (B/E)')
                 
                 meta['exact_pct'] = round(exact_pct, 2)
                 meta['exit_reason'] = 'WEEKEND_EOD_CLOSE'
-                print(f"[SWEEP] Force-closing stale active trade at session close: {sym} ({s.get('id')}) -> {final_out} ({exact_pct:.2f}%)")
+                print(f"[SWEEP] Resolving stale active trade at session close: {sym} ({s.get('id')}) -> {final_out} ({exact_pct:.2f}%) at {exit_iso}")
                 sb.table('signals').update({
                     'status': status_lbl,
                     'outcome': final_out,
                     'exit_price': exit_p,
-                    'exit_at': now_ist.isoformat(),
+                    'exit_at': exit_iso,
                     'metadata': meta,
                     'updated_at': now_ist.isoformat()
                 }).eq('id', s.get('id')).execute()
