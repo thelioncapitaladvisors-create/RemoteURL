@@ -1,0 +1,704 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TheLionCapitalsolutions.com and market-store.online
+// ====================================================================
+// TLCS Daily Timeframe Swing Indicator — Version 5.0 (Production Release)
+// Canonical Weekly CPR & Value Area Framework with Daily Swing Execution
+// ====================================================================
+
+//@version=6
+indicator('TLCS Daily Timeframe Indicator', shorttitle = 'TLCS Daily TF v5.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
+
+// ──── 1. INPUTS & CONFIGURATION ──────────────────────────────────────
+group_gen   = 'General & Webhook'
+webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret', group = group_gen)
+enable_alert   = input.bool(true, 'Enable Webhook Alerts', group = group_gen)
+
+group_piv   = 'Weekly Pivot Levels (Chart Framework)'
+show_wcpr   = input.bool(true, 'Show Weekly CPR (WP, WTC, WBC)', group = group_piv)
+show_wva    = input.bool(true, 'Show Weekly Value Area (W-VAH, W-VAL)', group = group_piv)
+show_wcam     = input.bool(false, 'Show Weekly Camarilla (WH4, WL4)', group = group_piv)
+show_wrange   = input.bool(true, 'Show Prior Week High/Low (PWH, PWL)', group = group_piv)
+show_cpr_box  = input.bool(true, 'Show Weekly CPR Zone (Current Week)', group = group_piv)
+show_labels   = input.bool(true, 'Show Right Margin Price Labels', group = group_piv)
+
+group_osc   = 'Oscillator & Divergence Engine'
+oscillatorType = input.string('rsi', 'Oscillator', ['rsi', 'cci', 'cmo', 'cog', 'mfi', 'roc', 'stoch', 'wpr'], group = group_osc)
+oscLength      = input.int(14, 'Oscillator Length', group = group_osc)
+zigzagLength   = input.int(7, 'Zigzag Swing Length (Daily TF)', minval = 3, maxval = 20, group = group_osc)
+
+group_sigs  = 'Execution Signals'
+show_div       = input.bool(true, 'Show Divergences (Regular D & Hidden H)', group = group_sigs)
+show_lightning = input.bool(true, 'Show Lightning (★ ⚡)', group = group_sigs)
+show_ext_rev   = input.bool(true, 'Show Extreme Reversal (EXT REV)', group = group_sigs)
+show_missile   = input.bool(true, 'Show Missile (▲ / ▼)', group = group_sigs)
+show_scalp     = input.bool(true, 'Show Scalp (◆)', group = group_sigs)
+
+group_risk  = 'Trade Management (ATR Multipliers)'
+slAtrMultInput  = input.float(1.5, 'Stop Loss ATR Multiplier', group = group_risk)
+tp1AtrMultInput = input.float(2.0, 'TP1 ATR Multiplier', group = group_risk)
+tp2AtrMultInput = input.float(3.0, 'TP2 ATR Multiplier', group = group_risk)
+
+// ──── 2. WEEKLY PIVOT LEVELS (MTF Framework for Daily Charts) ────────
+// Prior Week Historical OHLC
+[wHigh1, wLow1, wClose1] = request.security(syminfo.tickerid, 'W', [high[1], low[1], close[1]], lookahead = barmerge.lookahead_off, gaps = barmerge.gaps_off)
+
+// Weekly Central Pivot Range (CPR)
+float wP  = (wHigh1 + wLow1 + wClose1) / 3.0
+float wBC = (wHigh1 + wLow1) / 2.0
+float wTC = (wP - wBC) + wP
+
+float wTopCPR = math.max(wTC, wBC)
+float wBotCPR = math.min(wTC, wBC)
+float wCprWidth = math.abs(wTC - wBC)
+
+// Weekly Camarilla Levels
+float wRange = wHigh1 - wLow1
+float wH4 = wClose1 + wRange * 1.1 / 2.0
+float wL4 = wClose1 - wRange * 1.1 / 2.0
+float wH3 = wClose1 + wRange * 1.1 / 4.0
+float wL3 = wClose1 - wRange * 1.1 / 4.0
+
+// Weekly Value Area (PivotBoss 68% Price-Weighted Volume/TPO Model)
+float wVaHalfWidth = wRange * 0.68 / 2.0
+float wVAH = math.min(wP + wVaHalfWidth, wHigh1)
+float wVAL = math.max(wP - wVaHalfWidth, wLow1)
+
+// ──── 3. PLOTTING WEEKLY LEVELS (Current Week Only — Zero Squashing) ──
+// Detect Start of Current Week on Daily TF
+isNewWeek = ta.change(time('W')) != 0
+int weekStartBar = ta.valuewhen(isNewWeek, bar_index, 0)
+int weekEndBar   = bar_index + 3
+
+var line l_wtc  = na
+var line l_wp   = na
+var line l_wbc  = na
+var box  b_wcpr = na
+
+var line l_wvah = na
+var line l_wval = na
+var line l_wh4  = na
+var line l_wl4  = na
+var line l_wh3  = na
+var line l_wl3  = na
+var line l_wpwh = na
+var line l_wpwl = na
+
+var label lb_wtc  = na
+var label lb_wp   = na
+var label lb_wbc  = na
+var label lb_wvah = na
+var label lb_wval = na
+var label lb_wh4  = na
+var label lb_wl4  = na
+var label lb_wh3  = na
+var label lb_wl3  = na
+var label lb_wpwh = na
+var label lb_wpwl = na
+
+if barstate.islast
+    // Cleanup previous tick lines, box and labels
+    line.delete(l_wtc)
+    line.delete(l_wp)
+    line.delete(l_wbc)
+    box.delete(b_wcpr)
+    line.delete(l_wvah)
+    line.delete(l_wval)
+    line.delete(l_wh4)
+    line.delete(l_wl4)
+    line.delete(l_wh3)
+    line.delete(l_wl3)
+    line.delete(l_wpwh)
+    line.delete(l_wpwl)
+
+    label.delete(lb_wtc)
+    label.delete(lb_wp)
+    label.delete(lb_wbc)
+    label.delete(lb_wvah)
+    label.delete(lb_wval)
+    label.delete(lb_wh4)
+    label.delete(lb_wl4)
+    label.delete(lb_wh3)
+    label.delete(lb_wl3)
+    label.delete(lb_wpwh)
+    label.delete(lb_wpwl)
+
+    v = not na(weekStartBar) ? weekStartBar : bar_index
+    m = weekEndBar
+
+    // ── Weekly CPR Lines & Zone (Current Week Only) ──
+    if show_wcpr
+        l_wtc := line.new(v, wTopCPR, m, wTopCPR, width = 2, color = color.rgb(24, 106, 229), style = line.style_dotted)
+        l_wp  := line.new(v, wP,      m, wP,      width = 2, color = color.rgb(173, 20, 196), style = line.style_dotted)
+        l_wbc := line.new(v, wBotCPR, m, wBotCPR, width = 2, color = color.rgb(24, 106, 229), style = line.style_dotted)
+        if show_cpr_box
+            b_wcpr := box.new(v, wTopCPR, m, wBotCPR, bgcolor = color.new(#06b6d4, 88), border_color = color.new(#06b6d4, 70), border_style = line.style_dotted)
+        
+        if show_labels
+            lb_wtc := label.new(m, wTopCPR, 'W-TC: ' + str.tostring(wTopCPR, '#.##'), xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.white, color = color.rgb(24, 106, 229), size = size.tiny)
+            lb_wp  := label.new(m, wP,      'W-P: '  + str.tostring(wP, '#.##'),      xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.white, color = color.rgb(173, 20, 196), size = size.tiny)
+            lb_wbc := label.new(m, wBotCPR, 'W-BC: ' + str.tostring(wBotCPR, '#.##'), xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.white, color = color.rgb(24, 106, 229), size = size.tiny)
+
+    // ── Weekly Value Area Lines (Current Week Only) ──
+    if show_wva
+        l_wvah := line.new(v, wVAH, m, wVAH, width = 1, color = color.new(#10b981, 0), style = line.style_solid)
+        l_wval := line.new(v, wVAL, m, wVAL, width = 1, color = color.new(#ef4444, 0), style = line.style_solid)
+        if show_labels
+            lb_wvah := label.new(m, wVAH, 'W-VAH: ' + str.tostring(wVAH, '#.##'), xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.white, color = color.new(#10b981, 20), size = size.tiny)
+            lb_wval := label.new(m, wVAL, 'W-VAL: ' + str.tostring(wVAL, '#.##'), xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.white, color = color.new(#ef4444, 20), size = size.tiny)
+
+    // ── Weekly Camarilla Levels (Current Week Only) ──
+    if show_wcam
+        l_wh4 := line.new(v, wH4, m, wH4, width = 2, color = color.new(#f59e0b, 0), style = line.style_dotted)
+        l_wl4 := line.new(v, wL4, m, wL4, width = 2, color = color.new(#f59e0b, 0), style = line.style_dotted)
+        l_wh3 := line.new(v, wH3, m, wH3, width = 1, color = color.new(#ef4444, 20), style = line.style_solid)
+        l_wl3 := line.new(v, wL3, m, wL3, width = 1, color = color.new(#10b981, 20), style = line.style_solid)
+        if show_labels
+            lb_wh4 := label.new(m, wH4, 'W-H4: ' + str.tostring(wH4, '#.##'), xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.black, color = color.new(#f59e0b, 0), size = size.tiny)
+            lb_wl4 := label.new(m, wL4, 'W-L4: ' + str.tostring(wL4, '#.##'), xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.black, color = color.new(#f59e0b, 0), size = size.tiny)
+            lb_wh3 := label.new(m, wH3, 'W-H3: ' + str.tostring(wH3, '#.##'), xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.white, color = color.new(#ef4444, 20), size = size.tiny)
+            lb_wl3 := label.new(m, wL3, 'W-L3: ' + str.tostring(wL3, '#.##'), xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.white, color = color.new(#10b981, 20), size = size.tiny)
+
+    // ── Prior Week High & Low (PWH / PWL) ──
+    if show_wrange
+        l_wpwh := line.new(v, wHigh1, m, wHigh1, width = 1, color = color.new(#facc15, 0), style = line.style_solid)
+        l_wpwl := line.new(v, wLow1,  m, wLow1,  width = 1, color = color.new(#facc15, 0), style = line.style_solid)
+        if show_labels
+            lb_wpwh := label.new(m, wHigh1, 'PWH: ' + str.tostring(wHigh1, '#.##'), xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.black, color = color.new(#facc15, 0), size = size.tiny)
+            lb_wpwl := label.new(m, wLow1,  'PWL: ' + str.tostring(wLow1,  '#.##'), xloc = xloc.bar_index, yloc = yloc.price, style = label.style_label_left, textcolor = color.black, color = color.new(#facc15, 0), size = size.tiny)
+
+// ──── 4. DAILY TECHNICAL INDICATORS (DMI, EMA, BB, ATR) ──────────────
+// DMI (14) for Symmetrical Directional Momentum Gating
+[diplus, diminus, adx] = ta.dmi(14, 14)
+plus  = diplus
+minus = diminus
+
+// EMAs for Trend Alignment
+emaFast = ta.ema(close, 8)
+emaMed  = ta.ema(close, 21)
+emaSlow = ta.ema(close, 50)
+emaCanBuy  = close > emaFast or emaFast > emaMed
+emaCanSell = close < emaFast or emaFast < emaMed
+
+// Bollinger Bands (20, 2) for Extreme Reversal
+[bbMid, bbUpper, bbLower] = ta.bb(close, 20, 2)
+atrValue = ta.atr(14)
+
+// ──── 5. OSCILLATOR COMPUTATION ──────────────────────────────────────
+f_oscillator(simple string oscType, simple int len) =>
+    switch oscType
+        'cci'   => ta.cci(close, len)
+        'cmo'   => ta.cmo(close, len)
+        'cog'   => ta.cog(close, len)
+        'mfi'   => ta.mfi(close, len)
+        'roc'   => ta.roc(close, len)
+        'stoch' => ta.stoch(close, high, low, len)
+        'wpr'   => ta.wpr(len)
+        => ta.rsi(close, len)
+
+oscValue = f_oscillator(oscillatorType, oscLength)
+
+// ──── 6. INLINED ZIGZAG OOP ENGINE (Full Slope & Barrier Validation) ──
+type Indicator
+    float indicatorHigh
+    float indicatorLow
+
+type PivotCandle
+    float _high = high
+    float _low = low
+    int length = 5
+    int pHighBar = 0
+    int pLowBar = 0
+    float pHigh = 0.0
+    float pLow = 0.0
+    array<Indicator> indicators
+
+type Pivot
+    chart.point point
+    int dir
+    int level = 0
+    int componentIndex = 0
+    int subComponents = 0
+    int microComponents = 1
+    float ratio = 1.0
+    float sizeRatio = 1.0
+    float barRatio = 1.0
+    array<Pivot> subPivots
+    array<Pivot> micropivots
+    array<string> indicatorNames
+    array<float> indicatorValues
+    array<float> indicatorRatios
+
+type ZigzagFlags
+    bool newPivot = false
+    bool doublePivot = false
+    bool updateLastPivot = false
+
+type Zigzag
+    int length = 5
+    int numberOfPivots = 20
+    int offset = 0
+    int level = 0
+    array<Pivot> zigzagPivots
+    ZigzagFlags flags
+
+method init(array<Indicator> indicators, matrix<float> indicatorValues) =>
+    for i = 0 to na(indicatorValues) or indicatorValues.rows() == 0 ? na : indicatorValues.rows() - 1 by 1
+        iRow = indicatorValues.row(i)
+        Indicator indicator = Indicator.new(iRow.first(), iRow.last())
+        indicators.push(indicator)
+    indicators
+
+method init(PivotCandle candle, matrix<float> indicators = na) =>
+    candle.pHighBar := ta.highestbars(candle._high, candle.length)
+    candle.pLowBar  := ta.lowestbars(candle._low, candle.length)
+    candle.pHigh    := ta.highest(candle._high, candle.length)
+    candle.pLow     := ta.lowest(candle._low, candle.length)
+    candle.indicators := array.new<Indicator>()
+    candle.indicators.init(indicators)
+    candle
+
+method unshift(array<Pivot> arr, Pivot val, int maxItems) =>
+    arr.unshift(val)
+    if arr.size() > maxItems
+        arr.pop()
+
+method update(Pivot this, PivotCandle candle, array<string> indicatorNames) =>
+    dir = math.sign(this.dir)
+    array<float> _indicators = array.new<float>()
+    for indicator in candle.indicators
+        indicatorValue = dir > 0 ? indicator.indicatorHigh : indicator.indicatorLow
+        _indicators.push(indicatorValue)
+    this.indicatorNames := indicatorNames
+    this.indicatorValues := _indicators
+    this.indicatorRatios := array.new<float>()
+    this
+
+method init(Zigzag this) =>
+    if na(this.zigzagPivots)
+        this.zigzagPivots := array.new<Pivot>()
+        this.flags := ZigzagFlags.new()
+        this.flags
+    this
+
+method addnewpivot(Zigzag this, Pivot pivot, array<Pivot> components = na) =>
+    dir = math.sign(pivot.dir)
+    if this.zigzagPivots.size() >= 1
+        lastPivot = this.zigzagPivots.get(0)
+        lastValue = lastPivot.point.price
+        pivot.subComponents := lastPivot.componentIndex - pivot.componentIndex
+        if math.sign(lastPivot.dir) == math.sign(dir)
+            runtime.error('Direction mismatch')
+        if this.zigzagPivots.size() >= 2
+            llastPivot = this.zigzagPivots.get(1)
+            value = pivot.point.price
+            llastValue = llastPivot.point.price
+            newDir = dir * value > dir * llastValue ? dir * 2 : dir
+            pivot.dir := int(newDir)
+            pivot.ratio := math.round(math.abs(lastValue - value) / math.abs(llastValue - lastValue), 3)
+            pivot.barRatio := math.round(math.abs(lastPivot.point.index - pivot.point.index) / math.abs(llastPivot.point.index - lastPivot.point.index), 3)
+
+            llastIndicators = llastPivot.indicatorValues
+            indicators = pivot.indicatorValues
+            lastIndicators = lastPivot.indicatorValues
+            pivot.indicatorRatios.clear()
+            for [index, indicatorValue] in indicators
+                lastIndicatorValue = lastIndicators.get(index)
+                llastIndicatorValue = llastIndicators.get(index)
+                indicatorRatio = math.round(math.abs(lastIndicatorValue - indicatorValue) / math.abs(llastIndicatorValue - lastIndicatorValue), 3)
+                pivot.indicatorRatios.push(indicatorRatio)
+    this.zigzagPivots.unshift(pivot, this.numberOfPivots)
+    this
+
+method addnewpivot(Zigzag this, Pivot pivot, PivotCandle candle, array<string> indicatorNames, array<Pivot> components = na) =>
+    pivot.update(candle, indicatorNames)
+    this.addnewpivot(pivot, components)
+
+method calculate(Zigzag this, array<float> ohlc, matrix<float> indicators, array<string> indicatorNames, int ltfHighTime = time, int ltfLowTime = time) =>
+    _ohlc = na(ohlc[this.offset]) ? ohlc : ohlc[this.offset]
+    _indicators = na(indicators[this.offset]) ? indicators : indicators[this.offset]
+    this.init()
+    PivotCandle candle = PivotCandle.new(_ohlc.max(), _ohlc.min(), this.length)
+    candle.init(_indicators)
+    pDir = 1
+    Pivot lastPivot = na
+    this.flags.updateLastPivot := false
+    this.flags.newPivot := false
+    this.flags.doublePivot := false
+    newBar = bar_index - this.offset
+    newbartime = time[this.offset]
+    distanceFromLastPivot = 0
+    forceDoublePivot = false
+
+    if this.zigzagPivots.size() > 0
+        lastPivot := this.zigzagPivots.get(0)
+        pDir := int(math.sign(lastPivot.dir))
+        distanceFromLastPivot := newBar - lastPivot.point.index
+
+    if this.zigzagPivots.size() > 1
+        llastPivot = this.zigzagPivots.get(1)
+        forceDoublePivot := pDir == 1 and candle.pLowBar == 0 ? candle.pLow < llastPivot.point.price : pDir == -1 and candle.pHighBar == 0 ? candle.pHigh > llastPivot.point.price : false
+
+    overflow = distanceFromLastPivot >= this.length
+
+    if (pDir == 1 and candle.pHighBar == 0 or pDir == -1 and candle.pLowBar == 0) and this.zigzagPivots.size() >= 1
+        value = pDir == 1 ? candle.pHigh : candle.pLow
+        inewbartime = pDir == 1 ? ltfHighTime[this.offset] : ltfLowTime[this.offset]
+        removeOld = value * lastPivot.dir >= lastPivot.point.price * lastPivot.dir
+        if removeOld
+            this.flags.updateLastPivot := true
+            this.flags.newPivot := true
+            this.zigzagPivots.shift()
+            newPivotObject = Pivot.new(chart.point.from_index(newBar, value), pDir, micropivots = array.new<Pivot>())
+            newPivotObject.point.time := inewbartime
+            this.addnewpivot(newPivotObject, candle, indicatorNames)
+
+    if pDir == 1 and candle.pLowBar == 0 or pDir == -1 and candle.pHighBar == 0 and (not this.flags.newPivot or forceDoublePivot)
+        value = pDir == 1 ? candle.pLow : candle.pHigh
+        inewbartime = pDir == 1 ? ltfLowTime[this.offset] : ltfHighTime[this.offset]
+        newPivotObject = Pivot.new(chart.point.from_index(newBar, value), -pDir, micropivots = array.new<Pivot>())
+        newPivotObject.point.time := inewbartime
+        this.addnewpivot(newPivotObject, candle, indicatorNames)
+        this.flags.doublePivot := this.flags.newPivot
+        this.flags.newPivot := true
+
+    if overflow and not this.flags.newPivot
+        ipivot = pDir == 1 ? candle.pLow : candle.pHigh
+        ipivotbar = pDir == 1 ? newBar + candle.pLowBar : newBar + candle.pHighBar
+        ipivottime = pDir == 1 ? ltfLowTime[newBar - ipivotbar + this.offset] : ltfHighTime[newBar - ipivotbar + this.offset]
+        iCandle = candle[newBar - ipivotbar]
+        newPivotObject = Pivot.new(chart.point.from_index(ipivotbar, ipivot), -pDir, micropivots = array.new<Pivot>())
+        newPivotObject.point.time := ipivottime
+        this.addnewpivot(newPivotObject, iCandle, indicatorNames)
+        this.flags.newPivot := true
+    this
+
+enum DivergenceType
+    BullishDivergence = "Bullish Divergence"
+    BearishDivergence = "Bearish Divergence"
+    BullishHiddenDivergence = "Bullish Hidden Divergence"
+    BearishHiddenDivergence = "Bearish Hidden Divergence"
+    None = "None"
+
+type DivergenceObject
+    line priceLine
+    line oscillatorLine
+    label priceLabel
+    label oscillatorLabel
+    int startBarIndex
+    int endBarIndex
+    chart.point pricePoint
+    DivergenceType divergenceType
+    bool broken = false
+
+type ZigzagProperties
+    int trendMethod = 1
+    bool repaint = false
+
+enum PivotDirection
+    HH = "Higher High"
+    LH = "Lower High"
+    HL = "Higher Low"
+    LL = "Lower Low"
+
+getPivotDirection(dir, ratio) =>
+    dir > 0 ? (ratio > 1 ? PivotDirection.HH : PivotDirection.LH) : ratio > 1 ? PivotDirection.LL : PivotDirection.HL
+
+getDivergenceType(direction, divergence) =>
+    direction > 0 ?
+         (divergence > 0 ? DivergenceType.BearishDivergence : DivergenceType.BearishHiddenDivergence) :
+         (divergence > 0 ? DivergenceType.BullishDivergence : DivergenceType.BullishHiddenDivergence)
+
+var map<int, float> priceMap = map.new<int, float>()
+var map<int, float> oscillatorMap = map.new<int, float>()
+priceMap.put(bar_index, close)
+oscillatorMap.put(bar_index, oscValue)
+
+method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, ZigzagProperties properties, float topCPR, float botCPR, float vah, float val) =>
+    startIndex = 1
+    DivergenceType divergenceType = DivergenceType.None
+    if this.zigzagPivots.size() > 2 + startIndex
+        lastPivot = this.zigzagPivots.get(startIndex)
+        llastPivot = this.zigzagPivots.get(startIndex + 2)
+        skip = false
+
+        if this.flags.newPivot and not skip
+            dir = math.sign(lastPivot.dir)
+            lastPrice = lastPivot.indicatorValues.get(0)
+            oscRatio = lastPivot.ratio
+            priceRatio = lastPivot.indicatorRatios.get(0)
+
+            priceDirection = getPivotDirection(lastPivot.dir, priceRatio)
+            oscillatorDirection = getPivotDirection(lastPivot.dir, oscRatio)
+
+            pricePoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPrice)
+            oscillatorPoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPivot.point.price)
+
+            if priceDirection != oscillatorDirection and llastPivot.indicatorRatios.size() > 0
+                llastPrice = llastPivot.indicatorValues.get(0)
+                llastRatio = llastPivot.indicatorRatios.get(0)
+                lastPricePoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPrice)
+                llastOscillatorPoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPivot.point.price)
+
+                sentiment = math.sign(oscRatio - priceRatio)
+                trend = math.sign(dir * (llastRatio - 1))
+                divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
+
+                if divergence != 0
+                    divergenceType := getDivergenceType(dir, divergence)
+                    validDivergence = true
+
+                    // ── HIDDEN DIVERGENCE SPATIAL GATING (PivotBoss Standard) ──
+                    // Hidden divergence must form touching CPR or within Value Area (VAH/VAL)
+                    bool isHidden = (divergenceType == DivergenceType.BullishHiddenDivergence or divergenceType == DivergenceType.BearishHiddenDivergence)
+                    if isHidden
+                        float cprTop = math.max(topCPR, botCPR)
+                        float cprBot = math.min(topCPR, botCPR)
+                        float vahLvl = math.max(vah, val)
+                        float valLvl = math.min(vah, val)
+                        bool formedWithCPR = (pricePoint.price >= cprBot and pricePoint.price <= cprTop) or (lastPricePoint.price >= cprBot and lastPricePoint.price <= cprTop) or (high >= cprBot and low <= cprTop) or (close >= cprBot and close <= cprTop)
+                        bool formedWithinVAHVAL = (pricePoint.price >= valLvl and pricePoint.price <= vahLvl) or (lastPricePoint.price >= valLvl and lastPricePoint.price <= vahLvl) or (high >= valLvl and low <= vahLvl) or (close >= valLvl and close <= vahLvl)
+                        if not (formedWithCPR or formedWithinVAHVAL)
+                            validDivergence := false
+
+                    // ── INTERMEDIATE SLOPE BARRIER VALIDATION ──
+                    // Invalidates setup if price or oscillator penetrates the trendline
+                    if validDivergence
+                        for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
+                            priceAtBar = priceMap.get(bar)
+                            oscillatorAtBar = oscillatorMap.get(bar)
+
+                            px1 = lastPricePoint.index
+                            py1 = lastPricePoint.price
+                            px2 = pricePoint.index
+                            py2 = pricePoint.price
+                            priceTheoPrice = py1 + ((py2 - py1) / (px2 - px1)) * (bar - px1)
+
+                            x1 = llastOscillatorPoint.index
+                            y1 = llastOscillatorPoint.price
+                            x2 = oscillatorPoint.index
+                            y2 = oscillatorPoint.price
+                            oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
+
+                            if (not na(priceAtBar) and priceAtBar * dir > priceTheoPrice * dir) or (not na(oscillatorAtBar) and oscillatorAtBar * dir > oscTheoPrice * dir)
+                                validDivergence := false
+                                break
+
+                    if not validDivergence
+                        divergenceType := DivergenceType.None
+
+    divergenceType
+
+// Setup Zigzag Execution
+indicatorsMatrix = matrix.new<float>()
+indicatorNamesArr = array.from('Price', 'MA', 'Trend')
+ma200 = ta.sma(close, 200)
+indicatorsMatrix.add_row(0, array.from(close, close, close))
+indicatorsMatrix.add_row(1, array.from(ma200, ma200, ma200))
+indicatorsMatrix.add_row(2, array.from(close, close, close))
+
+var Zigzag zigzag = Zigzag.new(zigzagLength, 100, 0)
+var ZigzagProperties zigzagProps = ZigzagProperties.new(1, false)
+var divergenceObjects = array.new<DivergenceObject>()
+
+zigzag.calculate(array.from(oscValue), indicatorsMatrix, indicatorNamesArr)
+currentDivergence = zigzag.divergence(divergenceObjects, zigzagProps, wTopCPR, wBotCPR, wVAH, wVAL)
+
+// Raw Divergence Detection Signals
+bool rawBullishDiv       = (currentDivergence == DivergenceType.BullishDivergence)
+bool rawBearishDiv       = (currentDivergence == DivergenceType.BearishDivergence)
+bool rawBullishHiddenDiv = (currentDivergence == DivergenceType.BullishHiddenDivergence)
+bool rawBearishHiddenDiv = (currentDivergence == DivergenceType.BearishHiddenDivergence)
+
+// ──── 7. MULTI-BAR CONFIRMATION STATE MACHINE (Bars 1 to 5) ──────────
+var int lastRegBullDivBar    = na
+var int lastRegBearDivBar    = na
+var int lastHiddenBullDivBar = na
+var int lastHiddenBearDivBar = na
+
+var float lastRegBullDivLow  = na
+var float lastRegBearDivHigh = na
+var float lastHiddenBullDivLow  = na
+var float lastHiddenBearDivHigh = na
+
+var int lastFiredRegBullBar    = na
+var int lastFiredRegBearBar    = na
+var int lastFiredHiddenBullBar = na
+var int lastFiredHiddenBearBar = na
+
+// Record fresh divergence occurrences
+if rawBullishDiv
+    lastRegBullDivBar  := bar_index
+    lastRegBullDivLow  := low
+if rawBearishDiv
+    lastRegBearDivBar  := bar_index
+    lastRegBearDivHigh := high
+if rawBullishHiddenDiv
+    lastHiddenBullDivBar := bar_index
+    lastHiddenBullDivLow := low
+if rawBearishHiddenDiv
+    lastHiddenBearDivBar  := bar_index
+    lastHiddenBearDivHigh := high
+
+// Directional Confirmation Candle:
+bool isBullishConfirmCandle = (close > open) and (close > close[1])
+bool isBearishConfirmCandle = (close < open) and (close < close[1])
+
+// Structural Extreme Invalidation: if price breaches divergence extreme, invalidate!
+if not na(lastRegBullDivBar) and (low < lastRegBullDivLow or close < lastRegBullDivLow)
+    lastRegBullDivBar := na
+if not na(lastRegBearDivBar) and (high > lastRegBearDivHigh or close > lastRegBearDivHigh)
+    lastRegBearDivBar := na
+if not na(lastHiddenBullDivBar) and (low < lastHiddenBullDivLow or close < lastHiddenBullDivLow)
+    lastHiddenBullDivBar := na
+if not na(lastHiddenBearDivBar) and (high > lastHiddenBearDivHigh or close > lastHiddenBearDivHigh)
+    lastHiddenBearDivBar := na
+
+// Window Checks: 1 to 5 bars
+int barsSinceRegBull    = not na(lastRegBullDivBar)    ? (bar_index - lastRegBullDivBar)    : na
+int barsSinceRegBear    = not na(lastRegBearDivBar)    ? (bar_index - lastRegBearDivBar)    : na
+int barsSinceHiddenBull = not na(lastHiddenBullDivBar) ? (bar_index - lastHiddenBullDivBar) : na
+int barsSinceHiddenBear = not na(lastHiddenBearDivBar) ? (bar_index - lastHiddenBearDivBar) : na
+
+if not na(barsSinceRegBull) and barsSinceRegBull > 5
+    lastRegBullDivBar := na
+if not na(barsSinceRegBear) and barsSinceRegBear > 5
+    lastRegBearDivBar := na
+if not na(barsSinceHiddenBull) and barsSinceHiddenBull > 5
+    lastHiddenBullDivBar := na
+if not na(barsSinceHiddenBear) and barsSinceHiddenBear > 5
+    lastHiddenBearDivBar := na
+
+bool inWindowRegBull    = not na(barsSinceRegBull)    and barsSinceRegBull >= 1    and barsSinceRegBull <= 5
+bool inWindowRegBear    = not na(barsSinceRegBear)    and barsSinceRegBear >= 1    and barsSinceRegBear <= 5
+bool inWindowHiddenBull = not na(barsSinceHiddenBull) and barsSinceHiddenBull >= 1 and barsSinceHiddenBull <= 5
+bool inWindowHiddenBear = not na(barsSinceHiddenBear) and barsSinceHiddenBear >= 1 and barsSinceHiddenBear <= 5
+
+// Symmetrical DMI Directional Momentum Gating
+bool DivergenceBuy  = inWindowRegBull and isBullishConfirmCandle and not (minus > plus) and (na(lastFiredRegBullBar) or lastFiredRegBullBar < lastRegBullDivBar)
+bool DivergenceSell = inWindowRegBear and isBearishConfirmCandle and not (plus > minus) and (na(lastFiredRegBearBar) or lastFiredRegBearBar < lastRegBearDivBar)
+
+bool HiddenDivBuy   = inWindowHiddenBull and isBullishConfirmCandle and not (minus > plus) and (na(lastFiredHiddenBullBar) or lastFiredHiddenBullBar < lastHiddenBullDivBar)
+bool HiddenDivSell  = inWindowHiddenBear and isBearishConfirmCandle and not (plus > minus) and (na(lastFiredHiddenBearBar) or lastFiredHiddenBearBar < lastHiddenBearDivBar)
+
+if DivergenceBuy
+    lastFiredRegBullBar := lastRegBullDivBar
+if DivergenceSell
+    lastFiredRegBearBar := lastRegBearDivBar
+if HiddenDivBuy
+    lastFiredHiddenBullBar := lastHiddenBullDivBar
+if HiddenDivSell
+    lastFiredHiddenBearBar := lastHiddenBearDivBar
+
+// ──── 8. LIGHTNING, EXTREME REVERSAL, MISSILE & SCALP SIGNALS ────────
+// Extreme Reversal: Bollinger Band extreme rejection
+bool ExtremeReversalBuy  = low < bbLower and close > open and close > bbLower and not (minus > plus)
+bool ExtremeReversalSell = high > bbUpper and close < open and close < bbUpper and not (plus > minus)
+
+// Missile: Breakout / Momentum through key Weekly Pivot thresholds
+bool MissileBuy  = close > open and low < wTopCPR and close > wTopCPR and emaCanBuy and (plus >= minus)
+bool MissileSell = close < open and high > wBotCPR and close < wBotCPR and emaCanSell and (minus >= plus)
+
+// Scalp: Pullback bounce retest
+bool ScalpBuy  = close > open and low <= wP and close > wP and emaCanBuy and (plus >= minus)
+bool ScalpSell = close < open and high >= wP and close < wP and emaCanSell and (minus >= plus)
+
+// Lightning: Confluence of Missile + Scalp
+bool LightningBuy  = MissileBuy and ScalpBuy
+bool LightningSell = MissileSell and ScalpSell
+
+// Ungated execution flags
+bool JustMissileBuy  = MissileBuy and not LightningBuy and not DivergenceBuy and not HiddenDivBuy and not ExtremeReversalBuy
+bool JustMissileSell = MissileSell and not LightningSell and not DivergenceSell and not HiddenDivSell and not ExtremeReversalSell
+
+bool JustScalpBuy    = ScalpBuy and not LightningBuy and not DivergenceBuy and not HiddenDivBuy and not ExtremeReversalBuy
+bool JustScalpSell   = ScalpSell and not LightningSell and not DivergenceSell and not HiddenDivSell and not ExtremeReversalSell
+
+// ──── 9. ON-CHART VISUAL PLOTTINGS (Zero Squashing Mandate) ──────────
+// Regular Divergence (D)
+plotshape(show_div and DivergenceBuy,  title = 'Bullish Regular Divergence (D)', style = shape.labelup,   location = location.belowbar, color = color.lime,   text = 'D', textcolor = color.black, size = size.small)
+plotshape(show_div and DivergenceSell, title = 'Bearish Regular Divergence (D)', style = shape.labeldown, location = location.abovebar, color = color.maroon, text = 'D', textcolor = color.white, size = size.small)
+
+// Hidden Divergence (H)
+plotshape(show_div and HiddenDivBuy,   title = 'Bullish Hidden Divergence (H)',  style = shape.labelup,   location = location.belowbar, color = color.teal,   text = 'H', textcolor = color.white, size = size.small)
+plotshape(show_div and HiddenDivSell,  title = 'Bearish Hidden Divergence (H)',  style = shape.labeldown, location = location.abovebar, color = color.orange, text = 'H', textcolor = color.black, size = size.small)
+
+// Lightning (★ ⚡)
+plotchar(show_lightning and LightningBuy,  title = 'Lightning Buy (★)',  char = '★', location = location.belowbar, color = color.teal,   size = size.normal)
+plotchar(show_lightning and LightningSell, title = 'Lightning Sell (★)', char = '★', location = location.abovebar, color = color.maroon, size = size.normal)
+plotchar(show_lightning and LightningBuy,  title = 'Lightning Buy (⚡)',  char = '⚡', location = location.belowbar, color = color.lime,   size = size.normal)
+plotchar(show_lightning and LightningSell, title = 'Lightning Sell (⚡)', char = '⚡', location = location.abovebar, color = color.lime,   size = size.normal)
+
+// Extreme Reversal (EXT REV)
+plotshape(show_ext_rev and ExtremeReversalBuy,  title = 'Bullish Extreme Reversal', style = shape.arrowup,   location = location.belowbar, color = color.aqua,    text = 'EXT REV', textcolor = color.aqua,    size = size.normal)
+plotshape(show_ext_rev and ExtremeReversalSell, title = 'Bearish Extreme Reversal', style = shape.arrowdown, location = location.abovebar, color = color.fuchsia, text = 'EXT REV', textcolor = color.fuchsia, size = size.normal)
+
+// Missile (▲ / ▼)
+plotshape(show_missile and JustMissileBuy,  title = 'Long Missile',  style = shape.triangleup,   location = location.belowbar, color = color.green, size = size.small)
+plotshape(show_missile and JustMissileSell, title = 'Short Missile', style = shape.triangledown, location = location.abovebar, color = color.red,   size = size.small)
+
+// Scalp (◆)
+plotshape(show_scalp and JustScalpBuy,  title = 'Long Scalp',  style = shape.diamond, location = location.belowbar, color = color.green, size = size.small)
+plotshape(show_scalp and JustScalpSell, title = 'Short Scalp', style = shape.diamond, location = location.abovebar, color = color.red,   size = size.small)
+
+// ──── 10. WEBHOOK ALERT DISPATCHER (1D Swing Signals for INSIGHTS) ────
+f_dispatch_alert(string sigName, string sigDir, float entryP, float slP, float tpP, string setupId) =>
+    string timeUTCStr = str.format_time(time, 'yyyy-MM-dd HH:mm:ss', 'UTC')
+    string alertPayload = '{' +
+         '"secret":"' + webhook_secret + '",' +
+         '"symbol":"' + syminfo.ticker + '",' +
+         '"type":"' + sigDir + '",' +
+         '"signal":"' + sigName + '",' +
+         '"status":"LIVE",' +
+         '"timeframe":"1D",' +
+         '"interval":"1D",' +
+         '"price":' + str.tostring(entryP, '#.##') + ',' +
+         '"entryPrice":' + str.tostring(entryP, '#.##') + ',' +
+         '"slLevel":' + str.tostring(slP, '#.##') + ',' +
+         '"tpLevel":' + str.tostring(tpP, '#.##') + ',' +
+         '"wp":' + str.tostring(wP, '#.##') + ',' +
+         '"wtc":' + str.tostring(wTopCPR, '#.##') + ',' +
+         '"wbc":' + str.tostring(wBotCPR, '#.##') + ',' +
+         '"wvah":' + str.tostring(wVAH, '#.##') + ',' +
+         '"wval":' + str.tostring(wVAL, '#.##') + ',' +
+         '"timeUTC":"' + timeUTCStr + '",' +
+         '"setupId":"' + setupId + '",' +
+         '"marketType":"SWING_1D"' +
+         '}'
+    alert(alertPayload, alert.freq_once_per_bar_close)
+
+if enable_alert
+    // Regular Divergence
+    if DivergenceBuy
+        f_dispatch_alert('REGULAR DIVERGENCE', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'REGULAR_DIV')
+    if DivergenceSell
+        f_dispatch_alert('REGULAR DIVERGENCE', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'REGULAR_DIV')
+
+    // Hidden Divergence
+    if HiddenDivBuy
+        f_dispatch_alert('HIDDEN DIVERGENCE', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'HIDDEN_DIV')
+    if HiddenDivSell
+        f_dispatch_alert('HIDDEN DIVERGENCE', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'HIDDEN_DIV')
+
+    // Lightning
+    if LightningBuy
+        f_dispatch_alert('LIGHTNING', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'LIGHTNING')
+    if LightningSell
+        f_dispatch_alert('LIGHTNING', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'LIGHTNING')
+
+    // Extreme Reversal
+    if ExtremeReversalBuy
+        f_dispatch_alert('EXTREME REVERSAL', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'EXTREME_REVERSAL')
+    if ExtremeReversalSell
+        f_dispatch_alert('EXTREME REVERSAL', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'EXTREME_REVERSAL')
+
+    // Missile
+    if JustMissileBuy
+        f_dispatch_alert('MISSILE', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'MISSILE')
+    if JustMissileSell
+        f_dispatch_alert('MISSILE', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'MISSILE')
+
+    // Scalp
+    if JustScalpBuy
+        f_dispatch_alert('SCALP', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'SCALP')
+    if JustScalpSell
+        f_dispatch_alert('SCALP', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'SCALP')
