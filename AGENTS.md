@@ -6,6 +6,17 @@
   - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
   - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
   - Gating must NEVER rely on `close` for limit entry qualification.
+## Version 5.0: Daily Timeframe (1D Swing) BlackBox Live Signals, Nil-Signal Gating & Screener Header Standardization Mandate (Effective November 21, 2026)
+- **DAILY TIMEFRAME (1D SWING) BLACKBOX EXECUTION ENGINE**:
+  - Across `algo_engine/feeds/dhan_feed.py`, `algo_engine/shadow_pipeline.py`, `algo_engine/run_daily_scanner.py`, and `Tv-Alert-Mobile/src/app/page.tsx`:
+    1. **Authentic 1D Swing Execution Signals**: `run_daily_scanner.py` autonomous daily scanner scans all approved universe markets (NIFTY Indices, NSE Top 100 Equities, and MCX Commodities) using DhanHQ daily historical candles and canonical `StrategyEngine` (Missile, Scalp, Lightning, Extreme Reversal, Divergence, Virgin CPR) with strict $H_4/L_4$ limit touch-point qualification.
+    2. **Supabase Shadow Pipeline Parity**: Ingests 1D signals into Supabase `shadow_signals` with `status: 'ACTIVE LIMIT'` and `timeframe: '1D'` in JSONB `metadata`, eliminating schema errors and ensuring zero-phantom execution fidelity.
+    3. **Session-Resilient Swing Order Retention**: In `extractDhanScreenerAssets()`, active 1D swing limits and live trades (`tradeLifecycle === 'ACTIVE LIMIT' | 'LIVE'`) are strictly preserved across session transitions (`sessionFilter === 'TODAY'`), guaranteeing ongoing orders are never dropped due to calendar boundaries or non-trading sessions.
+    4. **Nil-Signal Clean Hiding**: When `liveSignalsStats.total === 0` on the INSIGHTS tab, `renderDhanLiveSignalsSection()` and `renderDhanUnifiedBiasScreener()` return `null`, keeping the card completely collapsed and hidden until authentic signals qualify.
+- **SCREENER 7-DAY MATRIX INTRADAY TRADE SIGNALS HEADER STANDARDIZATION**:
+  - In `renderDhanUnifiedBiasScreener()` across `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
+    - Sticky banner `TLCS SIGNALS` in the 7-Day Matrix is officially renamed to **`TLCS INTRADAY TRADE SIGNALS`**, clearly demarcating 15m intraday execution signals from 1D swing signals on the INSIGHTS tab.
+
 ## Version 5.0: INSIGHTS Daily Timeframe Live Signals & Redundant Watchlist Removal Mandate (Effective November 20, 2026)
 - **INSIGHTS TAB DEDICATED DAILY TIMEFRAME LIVE SIGNALS MANDATE**:
   - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
