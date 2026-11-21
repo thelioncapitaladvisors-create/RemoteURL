@@ -17029,19 +17029,19 @@ function MobileScreensaver() {
 
                 {activeTab === 'INSIGHTS' && (
                   <motion.div key="insights" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3 max-w-4xl mx-auto px-2 sm:px-3 pb-28">
-                    <div className="flex items-center justify-between gap-2 mb-2 mt-0.5">
-                      <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 mt-0.5">
+                      <div className="flex items-center gap-2">
                         <Target className="text-accent shrink-0" size={20} />
-                        <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary truncate">Daily Signal Insights</h2>
+                        <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary whitespace-nowrap">Daily Signal Insights</h2>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
                         <span className={`text-[10px] sm:text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${engineSource === 'SHADOW' ? 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30' : 'bg-accent/15 text-accent border-accent/30'}`}>
                           {engineSource === 'SHADOW' ? '⚡ BLACK BOX (1D)' : '1D SWING STRATEGY EDGE'}
                         </span>
                         <button
                           type="button"
                           onClick={() => setIsInsightsEngineExpanded(!isInsightsEngineExpanded)}
-                          className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all select-none cursor-pointer flex items-center gap-1"
+                          className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all select-none cursor-pointer flex items-center gap-1 shrink-0"
                           title={isInsightsEngineExpanded ? 'Collapse engine switcher' : 'Expand engine switcher'}
                         >
                           <span>{isInsightsEngineExpanded ? 'COLLAPSE' : 'EXPAND'}</span>
