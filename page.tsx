@@ -3601,13 +3601,13 @@ function MobileScreensaver() {
   const [hubLiveTab, setHubLiveTab] = useState<'ALL' | 'FIRE_ALERT' | 'LIGHTNING' | 'EXTREME_REVERSAL' | 'DIVERGENCE' | 'MISSILE' | 'SCALP'>('ALL');
   const [hubWatchlistTab, setHubWatchlistTab] = useState<'ALL' | 'OOR' | 'INSIDE_DAY' | 'NCPR' | 'NVA' | 'BIG_MOVE' | 'VCPR'>('ALL');
   const [hubBlueprintTab, setHubBlueprintTab] = useState<'ALL' | 'REJECTED' | 'CONTINUATION' | 'ABSORPTION' | 'FAILED_NEW' | 'OUTSIDE' | 'STOP_RUN' | 'ACCUMULATION'>('ALL');
-  const [hubSectionView, setHubSectionView] = useState<'ALL' | 'LIVE' | 'WATCHLIST' | 'BLUEPRINT' | 'NONE'>('NONE');
+  const [hubSectionView, setHubSectionView] = useState<'ALL' | 'LIVE' | 'WATCHLIST' | 'BLUEPRINT' | 'NONE'>('ALL');
   const [hubLiveViewMode, setHubLiveViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
   const [hubWatchlistViewMode, setHubWatchlistViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
   const [hubBlueprintViewMode, setHubBlueprintViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
-  const [isHubLiveMasterExpanded, setIsHubLiveMasterExpanded] = useState<boolean>(false);
-  const [isHubWatchlistMasterExpanded, setIsHubWatchlistMasterExpanded] = useState<boolean>(false);
-  const [isHubBlueprintMasterExpanded, setIsHubBlueprintMasterExpanded] = useState<boolean>(false);
+  const [isHubLiveMasterExpanded, setIsHubLiveMasterExpanded] = useState<boolean>(true);
+  const [isHubWatchlistMasterExpanded, setIsHubWatchlistMasterExpanded] = useState<boolean>(true);
+  const [isHubBlueprintMasterExpanded, setIsHubBlueprintMasterExpanded] = useState<boolean>(true);
   const [isHubLiveButtonsExpanded, setIsHubLiveButtonsExpanded] = useState<boolean>(false);
   const [isHubWatchlistButtonsExpanded, setIsHubWatchlistButtonsExpanded] = useState<boolean>(false);
   const [isHubBlueprintButtonsExpanded, setIsHubBlueprintButtonsExpanded] = useState<boolean>(false);
@@ -13008,7 +13008,7 @@ function MobileScreensaver() {
                                 </div>
 
                                 {/* SECTION 1: LIVE SIGNALS TABLE */}
-                                {(hubSectionView === 'ALL' || hubSectionView === 'LIVE') && (
+                                {(hubSectionView === 'ALL' || hubSectionView === 'LIVE') && hasLiveSignals && (
                                     <div className={`shiny-card rounded-3xl p-4 sm:p-5 relative overflow-hidden ${theme === 'lion' ? 'lion-card-gold' : (theme === 'goldengate' || theme === 'goldengate-light') ? 'gg-card-sunset' : ''}`}>
                                         {/* Section Header */}
                                         <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 ${isHubLiveMasterExpanded ? 'mb-4 border-b border-primary/20 dark:border-primary/30 pb-3' : ''}`}>
@@ -13316,9 +13316,20 @@ function MobileScreensaver() {
                                         )}
                                     </div>
                                 )}
+                                {hubSectionView === 'LIVE' && !hasLiveSignals && (
+                                    <div className="shiny-card rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center text-center bg-rose-500/[0.03] dark:bg-rose-500/[0.05] border border-rose-500/20">
+                                        <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs sm:text-sm font-mono font-bold">
+                                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                                            <span>No Live Execution Signals Active at Present Time</span>
+                                        </div>
+                                        <span className="text-[10px] text-dim font-mono mt-1">
+                                            Active limit orders &amp; executing trades will appear here automatically upon trigger
+                                        </span>
+                                    </div>
+                                )}
 
                                 {/* SECTION 2: SEPARATE WATCHLIST SECTION BELOW IT */}
-                                {(hubSectionView === 'ALL' || hubSectionView === 'WATCHLIST') && (
+                                {(hubSectionView === 'ALL' || hubSectionView === 'WATCHLIST') && hasWatchlistSignals && (
                                     <div className={`shiny-card rounded-3xl p-4 sm:p-5 relative overflow-hidden ${theme === 'lion' ? 'lion-card-gold' : (theme === 'goldengate' || theme === 'goldengate-light') ? 'gg-card-sunset' : ''}`}>
                                         {/* Section Header */}
                                         <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 ${isHubWatchlistMasterExpanded ? 'mb-4 border-b border-primary/20 dark:border-primary/30 pb-3' : ''}`}>
@@ -13629,9 +13640,20 @@ function MobileScreensaver() {
                                         )}
                                     </div>
                                 )}
+                                {hubSectionView === 'WATCHLIST' && !hasWatchlistSignals && (
+                                    <div className="shiny-card rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center text-center bg-cyan-500/[0.03] dark:bg-cyan-500/[0.05] border border-cyan-500/20">
+                                        <div className="flex items-center gap-2 text-cyan-600 dark:text-cyan-400 text-xs sm:text-sm font-mono font-bold">
+                                            <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse"></span>
+                                            <span>No Day-Type Watchlist Candidates Active at Present Time</span>
+                                        </div>
+                                        <span className="text-[10px] text-dim font-mono mt-1">
+                                            Qualifying CPR &amp; pivot regime candidates will appear here automatically upon scan
+                                        </span>
+                                    </div>
+                                )}
 
                                 {/* SECTION 3: SEPARATE PIVOTBOSS BLUEPRINTS SECTION */}
-                                {(hubSectionView === 'ALL' || hubSectionView === 'BLUEPRINT') && (
+                                {(hubSectionView === 'ALL' || hubSectionView === 'BLUEPRINT') && hasBlueprintSignals && (
                                     <div className={`shiny-card rounded-3xl p-4 sm:p-5 relative overflow-hidden ${theme === 'lion' ? 'lion-card-gold' : (theme === 'goldengate' || theme === 'goldengate-light') ? 'gg-card-sunset' : ''}`}>
                                         {/* Section Header */}
                                         <div className={`flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2.5 ${isHubBlueprintMasterExpanded ? 'mb-4 border-b border-primary/20 dark:border-primary/30 pb-3' : ''}`}>
@@ -13963,6 +13985,28 @@ function MobileScreensaver() {
                                                 </div>
                                             </div>
                                         )}
+                                    </div>
+                                )}
+                                {hubSectionView === 'BLUEPRINT' && !hasBlueprintSignals && (
+                                    <div className="shiny-card rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center text-center bg-amber-500/[0.03] dark:bg-amber-500/[0.05] border border-amber-500/20">
+                                        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 text-xs sm:text-sm font-mono font-bold">
+                                            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                            <span>No PivotBoss Blueprint Candidates Active at Present Time</span>
+                                        </div>
+                                        <span className="text-[10px] text-dim font-mono mt-1">
+                                            Rejection, Continuation &amp; Absorption setups will appear here automatically upon scan
+                                        </span>
+                                    </div>
+                                )}
+                                {hubSectionView === 'ALL' && !hasLiveSignals && !hasWatchlistSignals && !hasBlueprintSignals && (
+                                    <div className="shiny-card rounded-2xl p-4 sm:p-5 flex flex-col items-center justify-center text-center bg-black/[0.02] dark:bg-white/[0.02] border border-black/5 dark:border-white/5">
+                                        <div className="flex items-center gap-2 text-dim text-xs sm:text-sm font-mono font-bold">
+                                            <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                                            <span>No Active Signals Available at Present Time</span>
+                                        </div>
+                                        <span className="text-[10px] text-dim/80 font-mono mt-1">
+                                            Real-time scanner is active • Cards appear automatically when execution signals qualify
+                                        </span>
                                     </div>
                                 )}
                             </div>
