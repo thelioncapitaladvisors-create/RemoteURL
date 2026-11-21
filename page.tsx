@@ -3601,7 +3601,7 @@ function MobileScreensaver() {
   const [hubLiveTab, setHubLiveTab] = useState<'ALL' | 'FIRE_ALERT' | 'LIGHTNING' | 'EXTREME_REVERSAL' | 'DIVERGENCE' | 'MISSILE' | 'SCALP'>('ALL');
   const [hubWatchlistTab, setHubWatchlistTab] = useState<'ALL' | 'OOR' | 'INSIDE_DAY' | 'NCPR' | 'NVA' | 'BIG_MOVE' | 'VCPR'>('ALL');
   const [hubBlueprintTab, setHubBlueprintTab] = useState<'ALL' | 'REJECTED' | 'CONTINUATION' | 'ABSORPTION' | 'FAILED_NEW' | 'OUTSIDE' | 'STOP_RUN' | 'ACCUMULATION'>('ALL');
-  const [hubSectionView, setHubSectionView] = useState<'ALL' | 'LIVE' | 'WATCHLIST' | 'BLUEPRINT'>('ALL');
+  const [hubSectionView, setHubSectionView] = useState<'ALL' | 'LIVE' | 'WATCHLIST' | 'BLUEPRINT' | 'NONE'>('NONE');
   const [hubLiveViewMode, setHubLiveViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
   const [hubWatchlistViewMode, setHubWatchlistViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
   const [hubBlueprintViewMode, setHubBlueprintViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
@@ -12141,7 +12141,7 @@ function MobileScreensaver() {
               ) : (
                 <AnimatePresence mode="wait">
                   {activeTab === 'DASHBOARD' && (
-                  <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                  <motion.div key="dashboard" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 hub-tab-content">
                      {/* Uniform Tab Header */}
                      <div className="flex items-center justify-between mb-1.5 mt-0.5 px-1">
                        <div className="flex items-center gap-2">
@@ -12802,7 +12802,7 @@ function MobileScreensaver() {
                             }
 
                             return (
-                                <div className="w-full overflow-x-auto hide-scrollbar table-scroll-container rounded-2xl wc-table-card border border-black/10 dark:border-white/10">
+                                <div className="w-full overflow-x-auto hide-scrollbar table-scroll-container no-sticky-collapse rounded-2xl wc-table-card border border-black/10 dark:border-white/10">
                                     <table className="w-full text-left text-xs sm:text-sm border-collapse">
                                         <thead className="wc-table-thead text-primary font-black text-xs uppercase tracking-wider bg-black/[0.02] dark:bg-white/[0.02] border-b border-black/10 dark:border-white/10">
                                             <tr>
@@ -12906,69 +12906,102 @@ function MobileScreensaver() {
                         return (
                             <div className="mb-4 space-y-4">
                                 {/* Top-Level Matrix View Switcher */}
-                                <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/5 dark:border-white/5 w-fit overflow-x-auto hide-scrollbar">
+                                <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/5 dark:border-white/5 w-full sm:w-fit">
                                     <button
                                         type="button"
-                                        onClick={() => setHubSectionView('ALL')}
-                                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                                        onClick={() => {
+                                            if (hubSectionView === 'ALL') {
+                                                setHubSectionView('NONE');
+                                            } else {
+                                                setHubSectionView('ALL');
+                                                setIsHubLiveMasterExpanded(true);
+                                                setIsHubWatchlistMasterExpanded(true);
+                                                setIsHubBlueprintMasterExpanded(true);
+                                            }
+                                        }}
+                                        className={`w-full sm:w-auto min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between sm:justify-start gap-1.5 border select-none cursor-pointer active:scale-95 ${
                                             hubSectionView === 'ALL'
                                                 ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-500/20'
                                                 : 'bg-white/60 dark:bg-slate-800/60 text-blue-600 dark:text-blue-400 border-transparent hover:bg-blue-500/10'
                                         }`}
                                     >
-                                        <span>🌐 ALL SECTIONS</span>
-                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'ALL' ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'}`}>
+                                        <span className="flex items-center gap-1 min-w-0 truncate">
+                                            <span className="shrink-0 text-xs">🌐</span>
+                                            <span className="truncate">ALL SECTIONS</span>
+                                        </span>
+                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold shrink-0 ${hubSectionView === 'ALL' ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'}`}>
                                             {liveSignalRows.length + watchlistSignalRows.length + blueprintSignalRows.length}
                                         </span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setHubSectionView('LIVE');
-                                            setIsHubLiveMasterExpanded(true);
+                                            if (hubSectionView === 'LIVE') {
+                                                setHubSectionView('NONE');
+                                            } else {
+                                                setHubSectionView('LIVE');
+                                                setIsHubLiveMasterExpanded(true);
+                                            }
                                         }}
-                                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                                        className={`w-full sm:w-auto min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between sm:justify-start gap-1.5 border select-none cursor-pointer active:scale-95 ${
                                             hubSectionView === 'LIVE'
                                                 ? 'bg-rose-600 text-white border-rose-500 shadow-sm shadow-rose-500/20'
                                                 : 'bg-white/60 dark:bg-slate-800/60 text-rose-600 dark:text-rose-400 border-transparent hover:bg-rose-500/10'
                                         }`}
                                     >
-                                        <span>🚨 LIVE SIGNALS</span>
-                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'LIVE' ? 'bg-white/25 text-white' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'}`}>
+                                        <span className="flex items-center gap-1 min-w-0 truncate">
+                                            <span className="shrink-0 text-xs">🚨</span>
+                                            <span className="truncate">LIVE SIGNALS</span>
+                                        </span>
+                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold shrink-0 ${hubSectionView === 'LIVE' ? 'bg-white/25 text-white' : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'}`}>
                                             {liveSignalRows.length}
                                         </span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setHubSectionView('WATCHLIST');
-                                            setIsHubWatchlistMasterExpanded(true);
+                                            if (hubSectionView === 'WATCHLIST') {
+                                                setHubSectionView('NONE');
+                                            } else {
+                                                setHubSectionView('WATCHLIST');
+                                                setIsHubWatchlistMasterExpanded(true);
+                                            }
                                         }}
-                                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                                        className={`w-full sm:w-auto min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between sm:justify-start gap-1.5 border select-none cursor-pointer active:scale-95 ${
                                             hubSectionView === 'WATCHLIST'
                                                 ? 'bg-cyan-600 text-white border-cyan-500 shadow-sm shadow-cyan-500/20'
                                                 : 'bg-white/60 dark:bg-slate-800/60 text-cyan-600 dark:text-cyan-400 border-transparent hover:bg-cyan-500/10'
                                         }`}
                                     >
-                                        <span>📋 WATCHLIST</span>
-                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'WATCHLIST' ? 'bg-white/25 text-white' : 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400'}`}>
+                                        <span className="flex items-center gap-1 min-w-0 truncate">
+                                            <span className="shrink-0 text-xs">📋</span>
+                                            <span className="truncate">WATCHLIST</span>
+                                        </span>
+                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold shrink-0 ${hubSectionView === 'WATCHLIST' ? 'bg-white/25 text-white' : 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400'}`}>
                                             {watchlistSignalRows.length}
                                         </span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setHubSectionView('BLUEPRINT');
-                                            setIsHubBlueprintMasterExpanded(true);
+                                            if (hubSectionView === 'BLUEPRINT') {
+                                                setHubSectionView('NONE');
+                                            } else {
+                                                setHubSectionView('BLUEPRINT');
+                                                setIsHubBlueprintMasterExpanded(true);
+                                            }
                                         }}
-                                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                                        className={`w-full sm:w-auto min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between sm:justify-start gap-1.5 border select-none cursor-pointer active:scale-95 ${
                                             hubSectionView === 'BLUEPRINT'
                                                 ? 'bg-amber-600 text-white border-amber-500 shadow-sm shadow-amber-500/20'
                                                 : 'bg-white/60 dark:bg-slate-800/60 text-amber-600 dark:text-amber-400 border-transparent hover:bg-amber-500/10'
                                         }`}
                                     >
-                                        <span>📐 BLUEPRINTS</span>
-                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${hubSectionView === 'BLUEPRINT' ? 'bg-white/25 text-white' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'}`}>
+                                        <span className="flex items-center gap-1 min-w-0 truncate">
+                                            <span className="shrink-0 text-xs">📐</span>
+                                            <span className="truncate">BLUEPRINTS</span>
+                                        </span>
+                                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold shrink-0 ${hubSectionView === 'BLUEPRINT' ? 'bg-white/25 text-white' : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'}`}>
                                             {blueprintSignalRows.length}
                                         </span>
                                     </button>
@@ -13039,8 +13072,7 @@ function MobileScreensaver() {
                                         {isHubLiveMasterExpanded && (
                                             <div className="w-full">
                                                 <div 
-                                                    className="w-full overflow-x-auto hide-scrollbar table-scroll-container rounded-2xl wc-table-card border border-rose-500/30 dark:border-rose-500/30 shadow-[0_4px_25px_rgba(244,63,94,0.12)]"
-                                                    onScroll={(e) => { if (e.currentTarget.scrollLeft > 6) e.currentTarget.classList.add('table-is-scrolled'); else e.currentTarget.classList.remove('table-is-scrolled'); }}
+                                                    className="w-full overflow-x-auto hide-scrollbar table-scroll-container no-sticky-collapse rounded-2xl wc-table-card border border-rose-500/30 dark:border-rose-500/30 shadow-[0_4px_25px_rgba(244,63,94,0.12)]"
                                                 >
                                                     {/* Breaking News Banner Strip */}
                                                     <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-rose-600 via-red-600 to-amber-500 text-white rounded-t-2xl shadow-sm border-b border-white/10 overflow-hidden">
@@ -13352,8 +13384,7 @@ function MobileScreensaver() {
                                         {isHubWatchlistMasterExpanded && (
                                             <div className="w-full">
                                                 <div 
-                                                    className="w-full overflow-x-auto hide-scrollbar table-scroll-container rounded-2xl wc-table-card border border-cyan-500/30 dark:border-cyan-500/30 shadow-[0_4px_25px_rgba(6,182,212,0.12)]"
-                                                    onScroll={(e) => { if (e.currentTarget.scrollLeft > 6) e.currentTarget.classList.add('table-is-scrolled'); else e.currentTarget.classList.remove('table-is-scrolled'); }}
+                                                    className="w-full overflow-x-auto hide-scrollbar table-scroll-container no-sticky-collapse rounded-2xl wc-table-card border border-cyan-500/30 dark:border-cyan-500/30 shadow-[0_4px_25px_rgba(6,182,212,0.12)]"
                                                 >
                                                     {/* Watchlist Banner Strip */}
                                                     <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-cyan-600 via-sky-600 to-indigo-600 text-white rounded-t-2xl shadow-sm border-b border-white/10 overflow-hidden">
@@ -13666,8 +13697,7 @@ function MobileScreensaver() {
                                         {isHubBlueprintMasterExpanded && (
                                             <div className="w-full">
                                                 <div 
-                                                    className="w-full overflow-x-auto hide-scrollbar table-scroll-container rounded-2xl wc-table-card border border-amber-500/30 dark:border-amber-500/30 shadow-[0_4px_25px_rgba(245,158,11,0.12)]"
-                                                    onScroll={(e) => { if (e.currentTarget.scrollLeft > 6) e.currentTarget.classList.add('table-is-scrolled'); else e.currentTarget.classList.remove('table-is-scrolled'); }}
+                                                    className="w-full overflow-x-auto hide-scrollbar table-scroll-container no-sticky-collapse rounded-2xl wc-table-card border border-amber-500/30 dark:border-amber-500/30 shadow-[0_4px_25px_rgba(245,158,11,0.12)]"
                                                 >
                                                     {/* Blueprint Banner Strip */}
                                                     <div className="flex items-center justify-between px-3 py-1.5 bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white rounded-t-2xl shadow-sm border-b border-white/10 overflow-hidden">
@@ -13942,18 +13972,21 @@ function MobileScreensaver() {
 
 
                     {/* --- LOWER HUB MASTER VIEW SWITCHER BAR (Performance, F&O Buildup, Option Chain) --- */}
-                    <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/5 dark:border-white/5 w-fit overflow-x-auto hide-scrollbar mb-4 mt-6">
+                    <div className="grid grid-cols-2 sm:flex sm:items-center gap-1.5 p-1 rounded-2xl bg-black/5 dark:bg-white/[0.04] border border-black/5 dark:border-white/5 w-full sm:w-fit mb-4 mt-6">
                       <button
                         type="button"
                         onClick={() => setHubLowerSectionView('ALL')}
-                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                        className={`w-full sm:w-auto min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between sm:justify-start gap-1.5 border select-none cursor-pointer active:scale-95 ${
                           hubLowerSectionView === 'ALL'
                             ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-500/20'
                             : 'bg-white/60 dark:bg-slate-800/60 text-blue-600 dark:text-blue-400 border-transparent hover:bg-blue-500/10'
                         }`}
                       >
-                        <span>🌐 ALL SECTIONS</span>
-                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${
+                        <span className="flex items-center gap-1 min-w-0 truncate">
+                          <span className="shrink-0 text-xs">🌐</span>
+                          <span className="truncate">ALL SECTIONS</span>
+                        </span>
+                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold shrink-0 ${
                           hubLowerSectionView === 'ALL' ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
                         }`}>
                           3
@@ -13966,14 +13999,17 @@ function MobileScreensaver() {
                           setHubLowerSectionView('PERFORMANCE');
                           setIsHubPerfExpanded(true);
                         }}
-                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                        className={`w-full sm:w-auto min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between sm:justify-start gap-1.5 border select-none cursor-pointer active:scale-95 ${
                           hubLowerSectionView === 'PERFORMANCE'
                             ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-500/20'
                             : 'bg-white/60 dark:bg-slate-800/60 text-blue-600 dark:text-blue-400 border-transparent hover:bg-blue-500/10'
                         }`}
                       >
-                        <span>📊 PERFORMANCE</span>
-                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${
+                        <span className="flex items-center gap-1 min-w-0 truncate">
+                          <span className="shrink-0 text-xs">📊</span>
+                          <span className="truncate">PERFORMANCE</span>
+                        </span>
+                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold shrink-0 ${
                           hubLowerSectionView === 'PERFORMANCE' ? 'bg-white/25 text-white' : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
                         }`}>
                           {activeAlertLogs.length}
@@ -13983,14 +14019,17 @@ function MobileScreensaver() {
                       <button
                         type="button"
                         onClick={() => setHubLowerSectionView('FNO')}
-                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                        className={`w-full sm:w-auto min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between sm:justify-start gap-1.5 border select-none cursor-pointer active:scale-95 ${
                           hubLowerSectionView === 'FNO'
                             ? 'bg-purple-600 text-white border-purple-500 shadow-sm shadow-purple-500/20'
                             : 'bg-white/60 dark:bg-slate-800/60 text-purple-600 dark:text-purple-400 border-transparent hover:bg-purple-500/10'
                         }`}
                       >
-                        <span>⚡ F&amp;O BUILDUP</span>
-                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${
+                        <span className="flex items-center gap-1 min-w-0 truncate">
+                          <span className="shrink-0 text-xs">⚡</span>
+                          <span className="truncate">F&amp;O BUILDUP</span>
+                        </span>
+                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold shrink-0 ${
                           hubLowerSectionView === 'FNO' ? 'bg-white/25 text-white' : 'bg-purple-500/15 text-purple-600 dark:text-purple-400'
                         }`}>
                           F&amp;O
@@ -14000,14 +14039,17 @@ function MobileScreensaver() {
                       <button
                         type="button"
                         onClick={() => setHubLowerSectionView('OPTION_CHAIN')}
-                        className={`px-3 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center gap-1.5 border select-none cursor-pointer active:scale-95 ${
+                        className={`w-full sm:w-auto min-w-0 px-2.5 py-1.5 sm:px-3 sm:py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider transition-all flex items-center justify-between sm:justify-start gap-1.5 border select-none cursor-pointer active:scale-95 ${
                           hubLowerSectionView === 'OPTION_CHAIN'
                             ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm shadow-indigo-500/20'
                             : 'bg-white/60 dark:bg-slate-800/60 text-indigo-600 dark:text-indigo-400 border-transparent hover:bg-indigo-500/10'
                         }`}
                       >
-                        <span>⛓️ OPTION CHAIN</span>
-                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold ${
+                        <span className="flex items-center gap-1 min-w-0 truncate">
+                          <span className="shrink-0 text-xs">⛓️</span>
+                          <span className="truncate">OPTION CHAIN</span>
+                        </span>
+                        <span className={`px-1.5 py-0.2 rounded text-[8.5px] font-bold shrink-0 ${
                           hubLowerSectionView === 'OPTION_CHAIN' ? 'bg-white/25 text-white' : 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-400'
                         }`}>
                           LIVE
