@@ -207,16 +207,21 @@ class ShadowPipeline:
         entry_date_str = ist_dt.strftime("%Y-%m-%d")
         entry_datetime_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
 
+        entry_p = sig.get("entry_price") if sig.get("entry_price") is not None else sig.get("entry")
+        stop_p = sig.get("stop_loss") if sig.get("stop_loss") is not None else sig.get("stop")
+        target_p = sig.get("tp1") if sig.get("tp1") is not None else sig.get("target")
+        sig_tf = sig.get("timeframe") or (sig.get("metadata", {}).get("timeframe", "15m"))
+
         payload = {
             "symbol": sym,
             "type": sig.get("type", "ACTIVE"),
-            "entry": round(float(sig.get("entry_price", 0.0)), 4) if sig.get("entry_price") else None,
-            "stop": round(float(sig.get("stop_loss", 0.0)), 4) if sig.get("stop_loss") else None,
-            "target": round(float(sig.get("tp1", 0.0)), 4) if sig.get("tp1") else None,
+            "entry": round(float(entry_p), 4) if entry_p is not None else None,
+            "stop": round(float(stop_p), 4) if stop_p is not None else None,
+            "target": round(float(target_p), 4) if target_p is not None else None,
             "tp2": round(float(sig.get("tp2", 0.0)), 4) if sig.get("tp2") else None,
             "tp3": round(float(sig.get("tp3", 0.0)), 4) if sig.get("tp3") else None,
             "tp4": round(float(sig.get("tp4", 0.0)), 4) if sig.get("tp4") else None,
-            "status": "ACTIVE",
+            "status": sig.get("status", "ACTIVE LIMIT"),
             "outcome": "OPEN",
             "trigger": sig.get("trigger", "ScannerAlert"),
             "pricing_type": "SHADOW",
@@ -227,13 +232,15 @@ class ShadowPipeline:
             "updated_at": now_iso,
             "metadata": {
                 "trade_id": trade_id,
+                "timeframe": sig_tf,
+                "interval": sig_tf,
                 "entry_date": entry_date_str,
                 "entryDate": entry_datetime_str,
                 "entry_time": sig.get("created_at", now_iso),
                 "fire_alert": sig.get("fire_alert", False),
                 "fire_zone": sig.get("fire_zone", ""),
                 **(sig.get("metadata") or {}),
-                "engine_version": "4.0.0"
+                "engine_version": "5.0.0"
             }
         }
         self._execute_insert(trade_id, payload)

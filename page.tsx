@@ -6587,7 +6587,7 @@ function MobileScreensaver() {
           stUpper.includes('TRADE ACTIVE') || 
           stUpper.includes('⚡') || 
           stUpper.includes('LIVE') ||
-          Boolean(s.updated_at);
+          (Boolean(s.updated_at) && !stUpper.includes('LIMIT') && stUpper !== 'OPEN');
         tradeLifecycle = hasEntered ? 'LIVE' : 'ACTIVE LIMIT';
       }
 
@@ -6603,13 +6603,17 @@ function MobileScreensaver() {
       // Session Filtering Rule:
       // 1. If sessionFilter === 'ALL': allow all recent signals.
       // 2. If sessionFilter === 'TODAY':
-      //    a) If today is an active trading session (hasAnySignalToday === true):
+      //    a) If liveActionOnly is true and trade is ACTIVE LIMIT or LIVE (especially 1D Swing trades):
+      //       Strictly retain active orders across sessions until filled or closed.
+      //    b) If today is an active trading session (hasAnySignalToday === true):
       //       Strictly require isToday === true. If this setup has 0 signals today, it displays 0!
       //       Never silently fall back to an older date for an individual setup category!
-      //    b) If today is NOT an active trading session (hasAnySignalToday === false, e.g. weekend/holiday):
+      //    c) If today is NOT an active trading session (hasAnySignalToday === false, e.g. weekend/holiday):
       //       Fall back to the latest active market session date across the system.
       if (sessionFilter === 'ALL') {
         // Allow all recent historical signals
+      } else if (liveActionOnly && (tradeLifecycle === 'ACTIVE LIMIT' || tradeLifecycle === 'LIVE')) {
+        // Retain currently active 1D swing limits and live execution trades across session boundaries
       } else {
         if (hasAnySignalToday) {
           if (!isToday) return;
@@ -6741,7 +6745,7 @@ function MobileScreensaver() {
         if (!sym.toUpperCase().includes(q) && !cSym.toUpperCase().includes(q)) return;
       }
 
-      const isVcprTouchSignal = setupType === 'VCPR' && Boolean(
+      const isVcprTouchSignal = (setupType === 'VCPR' || setupType === 'ALL_LIVE') && Boolean(
         meta.is_vcpr_touch === true || 
         (s.type || '').toUpperCase().includes('VIRGIN') || 
         (s.trigger || '').toUpperCase().includes('VIRGIN') ||
@@ -6858,7 +6862,7 @@ function MobileScreensaver() {
       const prevHigh = rawPrevHigh > 0 ? rawPrevHigh : null;
       const prevLow = rawPrevLow > 0 ? rawPrevLow : null;
 
-      const key = `${cSym}_${sDate}`;
+      const key = setupType === 'ALL_LIVE' ? `${cSym}_${s.id || s.type || relBadge}` : `${cSym}_${sDate}`;
       if (!assetMap.has(key)) {
         assetMap.set(key, {
           symbol: sym,

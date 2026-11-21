@@ -387,6 +387,79 @@ class DhanFeed(BaseFeed):
             return self._generate_mock_candles(clean, interval=interval)
         return []
 
+    def fetch_daily_candles(self, symbol: str, days: int = 60) -> List[dict]:
+        """
+        Fetch Daily (1D) historical OHLC candles from DhanHQ API (/v2/charts/historical).
+        Used for Daily Swing strategy evaluation.
+        """
+        clean = self._clean_symbol(symbol)
+        sec_info = self.symbol_map.get(clean)
+        if not sec_info:
+            return []
+
+        exch_seg, sec_id = sec_info
+        if self.client_id and self.access_token and not self.mock_mode:
+            try:
+                import requests
+                from datetime import date, timedelta
+                today = date.today()
+                from_date = (today - timedelta(days=days)).strftime("%Y-%m-%d")
+                to_date = today.strftime("%Y-%m-%d")
+                url = "https://api.dhan.co/v2/charts/historical"
+                headers = {
+                    "Content-Type": "application/json",
+                    "client-id": self.client_id,
+                    "access-token": self.access_token
+                }
+                payload = {
+                    "securityId": str(sec_id),
+                    "exchangeSegment": "NSE_EQ" if exch_seg == EXCHANGE_NSE else "MCX_COMM",
+                    "instrument": "EQUITY" if exch_seg == EXCHANGE_NSE else "FUTCOM",
+                    "expiryCode": 0,
+                    "fromDate": from_date,
+                    "toDate": to_date
+                }
+                resp = requests.post(url, json=payload, headers=headers, timeout=5)
+                time.sleep(0.05)  # Throttle to avoid rate limits
+                if resp.status_code == 401:
+                    logger.warning(f"[DhanFeed] 401 Unauthorized for {symbol} daily candles. Refreshing token and retrying...")
+                    self._refresh_token()
+                    headers["access-token"] = self.access_token
+                    resp = requests.post(url, json=payload, headers=headers, timeout=5)
+                    time.sleep(0.05)
+
+                if resp.status_code == 200:
+                    raw = resp.json()
+                    data = raw.get("data") if isinstance(raw.get("data"), dict) and "close" in raw.get("data") else raw
+                    closes = data.get("close", [])
+                    highs = data.get("high", [])
+                    lows = data.get("low", [])
+                    opens = data.get("open", [])
+                    volumes = data.get("volume", [])
+                    timestamps = data.get("timestamp") or data.get("start_Time") or data.get("time") or []
+
+                    candles = []
+                    for i in range(len(closes)):
+                        ts_val = timestamps[i] if i < len(timestamps) else time.time()
+                        if ts_val > 1e11:
+                            ts_val = ts_val / 1000.0
+                        candles.append({
+                            "open": float(opens[i]) if i < len(opens) else float(closes[i]),
+                            "high": float(highs[i]) if i < len(highs) else float(closes[i]),
+                            "low": float(lows[i]) if i < len(lows) else float(closes[i]),
+                            "close": float(closes[i]),
+                            "volume": float(volumes[i]) if i < len(volumes) else 0.0,
+                            "timestamp": float(ts_val)
+                        })
+                    if candles:
+                        return candles
+            except Exception as e:
+                logger.warning(f"[DhanFeed] Failed to fetch daily candles for {symbol}: {e}")
+
+        if self.mock_mode:
+            return self._generate_mock_candles(clean, interval=1440)
+        return []
+
     def fetch_daily_levels(self, symbol: str) -> Optional[dict]:
         """
         Fetch previous day High, Low, Close for daily Camarilla and CPR calculation.
