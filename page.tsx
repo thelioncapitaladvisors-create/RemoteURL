@@ -3959,6 +3959,7 @@ function MobileScreensaver() {
   const [liveSignalsMarketFilter, setLiveSignalsMarketFilter] = useState<ScreenerMarketCategory>('ALL');
   const [liveSignalsDirectionFilter, setLiveSignalsDirectionFilter] = useState<'ALL' | 'BULLISH' | 'BEARISH'>('ALL');
   const [liveSignalsSessionFilter, setLiveSignalsSessionFilter] = useState<'TODAY' | 'ALL'>('TODAY');
+  const [liveSignalsViewMode, setLiveSignalsViewMode] = useState<'MATRIX' | 'LIST'>('MATRIX');
 
   // ── SEPARATED WATCHLIST SECTION STATE (LOGS-TAB DESIGN LANGUAGE) ──
   const [isWatchlistMasterExpanded, setIsWatchlistMasterExpanded] = useState<boolean>(true);
@@ -11052,7 +11053,6 @@ function MobileScreensaver() {
       ...(liveSignalsStats.divCount > 0 ? [{ value: 'DIV', label: '🎯 DIVERGENCE', count: liveSignalsStats.divCount }] : []),
       ...(liveSignalsStats.rejCount > 0 ? [{ value: 'REJ', label: '🛡️ REJECTIONS', count: liveSignalsStats.rejCount }] : []),
       ...(liveSignalsStats.contCount > 0 ? [{ value: 'CONT', label: '🚀 CONTINUATIONS', count: liveSignalsStats.contCount }] : []),
-      ...(liveSignalsStats.vcprTouchCount > 0 ? [{ value: 'VCPR_TOUCH', label: '⚡ VCPR TOUCH', count: liveSignalsStats.vcprTouchCount }] : []),
     ];
 
     const marketChips: { id: ScreenerMarketCategory; label: string }[] = [
@@ -11072,6 +11072,30 @@ function MobileScreensaver() {
       ? filteredLiveSignals.reduce((acc, a) => acc + (a.dayMovePct || 0), 0) / filteredLiveSignals.length
       : 0;
 
+    const liveMatrixCategories: { id: string; label: string; badge: string; icon: string; badgeStyle: string }[] = [
+      { id: 'FIRE', label: 'Confluence', badge: 'CONFLUENCE', icon: '⚡', badgeStyle: 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/35' },
+      { id: 'LIGHTNING', label: 'Lightning', badge: 'LIGHTNING', icon: '⚡', badgeStyle: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/35' },
+      { id: 'EXT_REV', label: 'Extreme Reversal', badge: 'EXT REV', icon: '🔥', badgeStyle: 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/35' },
+      { id: 'MISSILE', label: 'Missile', badge: 'MISSILE', icon: '🚀', badgeStyle: 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/35' },
+      { id: 'SCALP', label: 'Scalp', badge: 'SCALP', icon: '💎', badgeStyle: 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/35' },
+      { id: 'DIV', label: 'Divergence', badge: 'LIVE DIVERGENCE', icon: '🎯', badgeStyle: 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/35' },
+      { id: 'REJ', label: 'Rejection', badge: 'LIVE REJECTION', icon: '🛡️', badgeStyle: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/35' },
+      { id: 'CONT', label: 'Continuation', badge: 'LIVE CONTINUATION', icon: '🚀', badgeStyle: 'bg-teal-500/20 text-teal-600 dark:text-teal-400 border-teal-500/35' },
+    ];
+
+    const matchLiveAssetToCategory = (catId: string, a: any) => {
+      if (catId === 'FIRE') return a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE';
+      if (catId === 'LIGHTNING') return a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING';
+      if (catId === 'EXT_REV') return a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV';
+      if (catId === 'MISSILE') return a.relationshipBadge?.includes('MISSILE') || a.relationshipType === 'MISSILE';
+      if (catId === 'SCALP') return a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP';
+      if (catId === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
+      if (catId === 'VCPR_TOUCH') return a.isVcprTouch || a.relationshipBadge?.includes('VCPR') || a.relationshipType === 'VCPR_TOUCH';
+      if (catId === 'REJ') return a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ';
+      if (catId === 'CONT') return a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT';
+      return false;
+    };
+
     return (
       <div className={`shiny-card rounded-3xl p-4 sm:p-5 relative overflow-hidden ${theme === 'lion' ? 'lion-card-gold' : (theme === 'goldengate' || theme === 'goldengate-light') ? 'gg-card-sunset' : ''}`}>
         {/* Section Header */}
@@ -11079,13 +11103,41 @@ function MobileScreensaver() {
           <div className="min-w-0">
             <h2 className="text-xl sm:text-2xl font-black italic tracking-tighter uppercase text-primary mt-1 flex items-center gap-2">
               <Zap className="text-accent shrink-0" size={22} />
-              <span>{activeTab === 'INSIGHTS' ? 'DAILY LIVE SIGNALS (1D SWING)' : 'LIVE SIGNALS'}</span>
+              <span>{activeTab === 'INSIGHTS' ? "Daily TF Signals ( '1D' Time Frame)" : 'LIVE SIGNALS'}</span>
             </h2>
             <span className="text-[10px] sm:text-[10.5px] font-mono font-bold text-dim uppercase tracking-wider whitespace-nowrap block mt-0.5">
               {activeTab === 'INSIGHTS' ? 'ACTIVE 1D LIMIT ORDERS & DAILY SWING EXECUTION SIGNALS' : 'ACTIVE LIMIT ORDERS & EXECUTING TRADES'}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            {/* View Mode Toggle: Matrix vs List */}
+            <div className="flex items-center p-0.5 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => setLiveSignalsViewMode('MATRIX')}
+                className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold transition-all cursor-pointer ${
+                  liveSignalsViewMode === 'MATRIX'
+                    ? 'bg-rose-600 text-white shadow-sm'
+                    : 'text-dim hover:text-primary'
+                }`}
+                title="Compact Matrix View (Chips)"
+              >
+                ⊞ MATRIX
+              </button>
+              <button
+                type="button"
+                onClick={() => setLiveSignalsViewMode('LIST')}
+                className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-bold transition-all cursor-pointer ${
+                  liveSignalsViewMode === 'LIST'
+                    ? 'bg-rose-600 text-white shadow-sm'
+                    : 'text-dim hover:text-primary'
+                }`}
+                title="Detailed List View"
+              >
+                ☰ LIST
+              </button>
+            </div>
+
             {liveSignalsStats.total > 0 && (
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-accent/10 border border-accent/25">
                 <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"/>
@@ -11264,7 +11316,7 @@ function MobileScreensaver() {
               </div>
             </div>
 
-            {/* 3-Column Data Table */}
+            {/* View Mode Switching: Matrix vs List */}
             {filteredLiveSignals.length === 0 ? (
               <div className="p-4 text-center text-dim font-mono text-xs bg-black/5 dark:bg-white/5 rounded-2xl flex flex-col items-center gap-1.5 border border-primary/10">
                 <span>
@@ -11281,6 +11333,231 @@ function MobileScreensaver() {
                     View swing signals from recent previous sessions →
                   </button>
                 )}
+              </div>
+            ) : liveSignalsViewMode === 'MATRIX' ? (
+              <div className="w-full overflow-x-auto hide-scrollbar table-scroll-container no-sticky-collapse rounded-2xl wc-table-card border border-black/10 dark:border-white/10">
+                <table className="w-full min-w-[340px] text-left text-xs sm:text-sm border-collapse">
+                  <thead className="wc-table-thead text-primary font-black text-xs sm:text-sm uppercase tracking-wider bg-rose-500/[0.04] dark:bg-rose-500/[0.08] border-b border-rose-500/20">
+                    <tr>
+                      <th className="py-2.5 px-3 text-left border-r border-black/5 dark:border-white/5 min-w-[130px] whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-3.5 rounded-full bg-rose-500 shrink-0"></span>
+                          <span className="font-black text-slate-800 dark:text-slate-200 text-xs sm:text-sm tracking-wider">
+                            STRATEGY
+                          </span>
+                        </div>
+                      </th>
+                      <th className="py-2.5 px-3 text-center min-w-[180px] whitespace-nowrap">
+                        <div className="inline-flex items-center justify-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/15 dark:bg-rose-500/25 border border-rose-500/40">
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-600 dark:bg-rose-400 shrink-0"></span>
+                          <span className="text-xs sm:text-sm font-black tracking-widest uppercase text-rose-700 dark:text-rose-300">
+                            {activeTab === 'INSIGHTS' ? 'DAILY SIGNALS' : 'LIVE SIGNALS'}
+                          </span>
+                          <span className="text-xs">⚡</span>
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5 dark:divide-white/5">
+                    {(() => {
+                      const renderedRows = liveMatrixCategories.map(cat => {
+                        const matching = filteredLiveSignals.filter(a => matchLiveAssetToCategory(cat.id, a));
+                        const bulls = matching.filter(a => a.direction === 'BULLISH');
+                        const bears = matching.filter(a => a.direction === 'BEARISH');
+                        if (bulls.length === 0 && bears.length === 0) return null;
+
+                        return (
+                          <tr key={cat.id} className="hover:bg-rose-500/[0.03] dark:hover:bg-rose-500/[0.05] transition-colors">
+                            <td className="py-3 px-3 font-extrabold text-slate-900 dark:text-slate-100 border-r border-black/5 dark:border-white/5 text-xs sm:text-sm whitespace-normal break-words leading-tight" title={cat.label}>
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span>{cat.label}</span>
+                                  <span className={`px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black uppercase tracking-wider flex items-center gap-1 ${cat.badgeStyle}`}>
+                                    <span>{cat.icon}</span>
+                                    <span>{cat.badge}</span>
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <div className="flex flex-col gap-2">
+                                {bulls.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 items-center justify-center">
+                                    {bulls.map((asset: any) => {
+                                      const sym = asset.cleanSym || asset.symbol;
+                                      const isLimit = asset.tradeLifecycle === 'ACTIVE LIMIT';
+                                      const isLive = asset.tradeLifecycle === 'LIVE';
+                                      const mkt = asset.marketCategory === 'MCX COMMODITIES' ? 'MCX' :
+                                                  asset.marketCategory === 'NYMEX COMMODITIES' ? 'NYMEX' :
+                                                  asset.marketCategory === 'NSE STOCKS' ? 'NSE' :
+                                                  asset.marketCategory === 'NIFTY' ? 'NIFTY' :
+                                                  asset.marketCategory === 'CRYPTO' ? 'CRYPTO' :
+                                                  asset.marketCategory === 'FOREX' ? 'FOREX' :
+                                                  asset.marketCategory === 'WORLD' ? 'WORLD' : '';
+                                      return (
+                                        <span
+                                          key={`bull-matrix-${sym}-${asset.sessionDate}-${asset.relationshipType}-${asset.tradeLifecycle}`}
+                                          onClick={() => setSelectedDhanOorAsset(asset)}
+                                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none shadow-none cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                                        >
+                                          <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
+                                          {mkt && (
+                                            <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black uppercase bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                                              {mkt}
+                                            </span>
+                                          )}
+                                          <span>{sym}</span>
+                                          {isLive && (
+                                            <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-emerald-200 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 ml-0.5 animate-pulse">
+                                              ⚡ LIVE
+                                            </span>
+                                          )}
+                                          {isLimit && (
+                                            <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 ml-0.5">
+                                              ⏳ LIMIT
+                                            </span>
+                                          )}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                {bears.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 items-center justify-center">
+                                    {bears.map((asset: any) => {
+                                      const sym = asset.cleanSym || asset.symbol;
+                                      const isLimit = asset.tradeLifecycle === 'ACTIVE LIMIT';
+                                      const isLive = asset.tradeLifecycle === 'LIVE';
+                                      const mkt = asset.marketCategory === 'MCX COMMODITIES' ? 'MCX' :
+                                                  asset.marketCategory === 'NYMEX COMMODITIES' ? 'NYMEX' :
+                                                  asset.marketCategory === 'NSE STOCKS' ? 'NSE' :
+                                                  asset.marketCategory === 'NIFTY' ? 'NIFTY' :
+                                                  asset.marketCategory === 'CRYPTO' ? 'CRYPTO' :
+                                                  asset.marketCategory === 'FOREX' ? 'FOREX' :
+                                                  asset.marketCategory === 'WORLD' ? 'WORLD' : '';
+                                      return (
+                                        <span
+                                          key={`bear-matrix-${sym}-${asset.sessionDate}-${asset.relationshipType}-${asset.tradeLifecycle}`}
+                                          onClick={() => setSelectedDhanOorAsset(asset)}
+                                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none shadow-none cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                                        >
+                                          <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
+                                          {mkt && (
+                                            <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black uppercase bg-rose-500/20 text-rose-700 dark:text-rose-300">
+                                              {mkt}
+                                            </span>
+                                          )}
+                                          <span>{sym}</span>
+                                          {isLive && (
+                                            <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 ml-0.5 animate-pulse">
+                                              ⚡ LIVE
+                                            </span>
+                                          )}
+                                          {isLimit && (
+                                            <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 ml-0.5">
+                                              ⏳ LIMIT
+                                            </span>
+                                          )}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      }).filter(Boolean);
+
+                      // Check for any unmatched signals
+                      const matchedAssetKeys = new Set<string>();
+                      liveMatrixCategories.forEach(cat => {
+                        filteredLiveSignals.forEach(a => {
+                          if (matchLiveAssetToCategory(cat.id, a)) {
+                            matchedAssetKeys.add(`${a.symbol}_${a.sessionDate}_${a.relationshipType}_${a.tradeLifecycle}`);
+                          }
+                        });
+                      });
+                      const unmatchedAssets = filteredLiveSignals.filter(a => !matchedAssetKeys.has(`${a.symbol}_${a.sessionDate}_${a.relationshipType}_${a.tradeLifecycle}`));
+                      const unmatchedBulls = unmatchedAssets.filter(a => a.direction === 'BULLISH');
+                      const unmatchedBears = unmatchedAssets.filter(a => a.direction === 'BEARISH');
+
+                      return (
+                        <>
+                          {renderedRows}
+                          {unmatchedAssets.length > 0 && (
+                            <tr key="other-signals" className="hover:bg-rose-500/[0.03] dark:hover:bg-rose-500/[0.05] transition-colors">
+                              <td className="py-3 px-3 font-extrabold text-slate-900 dark:text-slate-100 border-r border-black/5 dark:border-white/5 text-xs sm:text-sm whitespace-normal break-words leading-tight">
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span>Other Live Signals</span>
+                                    <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black uppercase tracking-wider flex items-center gap-1 bg-slate-500/20 text-slate-600 dark:text-slate-400 border border-slate-500/35">
+                                      <span>⚡</span>
+                                      <span>SIGNAL</span>
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="flex flex-col gap-2">
+                                  {unmatchedBulls.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 items-center justify-center">
+                                      {unmatchedBulls.map((asset: any) => {
+                                        const sym = asset.cleanSym || asset.symbol;
+                                        const isLimit = asset.tradeLifecycle === 'ACTIVE LIMIT';
+                                        const isLive = asset.tradeLifecycle === 'LIVE';
+                                        return (
+                                          <span
+                                            key={`unmatched-bull-${sym}-${asset.sessionDate}-${asset.relationshipType}-${asset.tradeLifecycle}`}
+                                            onClick={() => setSelectedDhanOorAsset(asset)}
+                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none shadow-none cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                                          >
+                                            <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
+                                            <span>{sym}</span>
+                                            {isLive && <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-emerald-200 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 ml-0.5 animate-pulse">⚡ LIVE</span>}
+                                            {isLimit && <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 ml-0.5">⏳ LIMIT</span>}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                  {unmatchedBears.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 items-center justify-center">
+                                      {unmatchedBears.map((asset: any) => {
+                                        const sym = asset.cleanSym || asset.symbol;
+                                        const isLimit = asset.tradeLifecycle === 'ACTIVE LIMIT';
+                                        const isLive = asset.tradeLifecycle === 'LIVE';
+                                        return (
+                                          <span
+                                            key={`unmatched-bear-${sym}-${asset.sessionDate}-${asset.relationshipType}-${asset.tradeLifecycle}`}
+                                            onClick={() => setSelectedDhanOorAsset(asset)}
+                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none shadow-none cursor-pointer hover:scale-105 active:scale-95 transition-all"
+                                          >
+                                            <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
+                                            <span>{sym}</span>
+                                            {isLive && <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 ml-0.5 animate-pulse">⚡ LIVE</span>}
+                                            {isLimit && <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 ml-0.5">⏳ LIMIT</span>}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          {renderedRows.length === 0 && unmatchedAssets.length === 0 && (
+                            <tr>
+                              <td colSpan={2} className="py-6 text-center text-dim font-mono text-xs">
+                                No signals match current matrix filters
+                              </td>
+                            </tr>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <div className="w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c121e] overflow-hidden shadow-2xs">
@@ -12508,6 +12785,31 @@ function MobileScreensaver() {
 
                         const cleanSym = (sym: string) => (sym || '').replace(/^(NSE_DLY|NSE|MCX|NYMEX|COMEX|BINANCE|TVC):/i, '').replace(/1!$/, '');
 
+                        // Precompute distinct filter setup appearances per symbol on this day (>= 2 filters triggers flashing theme)
+                        const symbolFilterCountMap = new Map<string, Set<string>>();
+                        const allHubCategories = [
+                            ...liveParameterCategories,
+                            ...watchlistParameterCategories,
+                            ...blueprintParameterCategories
+                        ];
+
+                        allHubCategories.forEach(cat => {
+                            const filterKey = (cat.id === 'REJECTED_BULLISH' || cat.id === 'REJECTED_BEARISH' || cat.id === 'REJECTION') ? 'REJECTION'
+                                : (cat.id === 'BULLISH_CONTINUATION' || cat.id === 'BEARISH_CONTINUATION') ? 'CONTINUATION'
+                                : (cat.id === 'DIVERGENCE' || cat.id === 'HIDDEN_DIVERGENCE') ? 'DIVERGENCE'
+                                : (cat.id === 'STOP_RUN' || cat.id === 'STOP_RUN_SEQ') ? 'STOP_RUN'
+                                : cat.id;
+
+                            const matching = filteredSigs.filter(s => matchSignalToCategory(cat.id, s));
+                            matching.forEach(s => {
+                                const sym = cleanSym(s.symbol);
+                                if (!symbolFilterCountMap.has(sym)) {
+                                    symbolFilterCountMap.set(sym, new Set());
+                                }
+                                symbolFilterCountMap.get(sym)!.add(filterKey);
+                            });
+                        });
+
                         const renderCategoryRow = (cat: { id: string; label: string }, isWatchlistMode: boolean = false) => {
                             const matching = filteredSigs.filter(s => matchSignalToCategory(cat.id, s));
                             
@@ -12692,46 +12994,54 @@ function MobileScreensaver() {
                                                         const sClean = cleanSym(b.symbol);
                                                         const isBB = (b.source || '').toLowerCase().includes('blackbox');
                                                         return (isBB && isExecutedTrade(b)) ? `${sClean}⚡` : sClean;
-                                                    }).filter((v, i, a) => a.indexOf(v) === i).map(sym => (
-                                                        <span 
-                                                            key={sym} 
-                                                            onClick={() => {
-                                                                const found = bulls.find(b => cleanSym(b.symbol) === sym);
-                                                                if (found) setSelectedDhanOorAsset(found);
-                                                            }}
-                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none shadow-none cursor-pointer hover:scale-105 active:scale-95 transition-all"
-                                                        >
-                                                            <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
-                                                            <span>{sym}</span>
-                                                            {isFireRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">CONF</span>
-                                                            )}
-                                                            {isDivergenceRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-purple-200 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700 ml-0.5">DIV</span>
-                                                            )}
-                                                            {isLightningRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">LTG</span>
-                                                            )}
-                                                            {isExtRevRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">EXT</span>
-                                                            )}
-                                                            {isRejectionRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">REJ</span>
-                                                            )}
-                                                            {isContinuationRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-teal-200 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700 ml-0.5">CONT</span>
-                                                            )}
-                                                            {isInsideDayRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-sky-200 dark:bg-sky-900/60 text-sky-800 dark:text-sky-200 border border-sky-300 dark:border-sky-700 ml-0.5">INSIDE</span>
-                                                            )}
-                                                            {isNcprRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 ml-0.5">NCPR</span>
-                                                            )}
-                                                            {isVcprRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-fuchsia-200 dark:bg-fuchsia-900/60 text-fuchsia-800 dark:text-fuchsia-200 border border-fuchsia-300 dark:border-fuchsia-700 ml-0.5">VCPR</span>
-                                                            )}
-                                                        </span>
-                                                    ))}
+                                                    }).filter((v, i, a) => a.indexOf(v) === i).map(sym => {
+                                                        const symBase = sym.replace(/⚡$/, '');
+                                                        const filterCount = symbolFilterCountMap.get(symBase)?.size || 0;
+                                                        const isMultiFilter = filterCount >= 2;
+
+                                                        return (
+                                                            <span 
+                                                                key={sym} 
+                                                                onClick={() => {
+                                                                    const found = bulls.find(b => cleanSym(b.symbol) === sym);
+                                                                    if (found) setSelectedDhanOorAsset(found);
+                                                                }}
+                                                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none cursor-pointer hover:scale-105 active:scale-95 transition-all ${
+                                                                    isMultiFilter
+                                                                        ? 'flashing-pill-bull shadow-[0_0_8px_rgba(16,185,129,0.5)] ring-1 ring-emerald-400/80'
+                                                                        : 'shadow-none'
+                                                                }`}
+                                                                title={isMultiFilter ? `${symBase}: Active in ${filterCount} filters today (High Confluence!)` : undefined}
+                                                            >
+                                                                <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
+                                                                <span className={isMultiFilter ? 'flashing-name-theme font-black text-emerald-950 dark:text-emerald-100' : ''}>{sym}</span>
+                                                                {isFireRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">CONF</span>
+                                                                )}
+                                                                {isDivergenceRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-purple-200 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700 ml-0.5">DIV</span>
+                                                                )}
+                                                                {isLightningRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">LTG</span>
+                                                                )}
+                                                                {isExtRevRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">EXT</span>
+                                                                )}
+                                                                {isRejectionRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">REJ</span>
+                                                                )}
+                                                                {isContinuationRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-teal-200 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700 ml-0.5">CONT</span>
+                                                                )}
+                                                                {isInsideDayRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-sky-200 dark:bg-sky-900/60 text-sky-800 dark:text-sky-200 border border-sky-300 dark:border-sky-700 ml-0.5">INSIDE</span>
+                                                                )}
+                                                                {isNcprRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 ml-0.5">NCPR</span>
+                                                                )}
+                                                            </span>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                             {bearSyms.length > 0 && (
@@ -12740,46 +13050,54 @@ function MobileScreensaver() {
                                                         const sClean = cleanSym(b.symbol);
                                                         const isBB = (b.source || '').toLowerCase().includes('blackbox');
                                                         return (isBB && isExecutedTrade(b)) ? `${sClean}⚡` : sClean;
-                                                    }).filter((v, i, a) => a.indexOf(v) === i).map(sym => (
-                                                        <span 
-                                                            key={sym} 
-                                                            onClick={() => {
-                                                                const found = bears.find(b => cleanSym(b.symbol) === sym);
-                                                                if (found) setSelectedDhanOorAsset(found);
-                                                            }}
-                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none shadow-none cursor-pointer hover:scale-105 active:scale-95 transition-all"
-                                                        >
-                                                            <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
-                                                            <span>{sym}</span>
-                                                            {isFireRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">CONF</span>
-                                                            )}
-                                                            {isDivergenceRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-purple-200 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700 ml-0.5">DIV</span>
-                                                            )}
-                                                            {isLightningRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">LTG</span>
-                                                            )}
-                                                            {isExtRevRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">EXT</span>
-                                                            )}
-                                                            {isRejectionRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">REJ</span>
-                                                            )}
-                                                            {isContinuationRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-teal-200 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700 ml-0.5">CONT</span>
-                                                            )}
-                                                            {isInsideDayRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-sky-200 dark:bg-sky-900/60 text-sky-800 dark:text-sky-200 border border-sky-300 dark:border-sky-700 ml-0.5">INSIDE</span>
-                                                            )}
-                                                            {isNcprRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 ml-0.5">NCPR</span>
-                                                            )}
-                                                            {isVcprRow && (
-                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-fuchsia-200 dark:bg-fuchsia-900/60 text-fuchsia-800 dark:text-fuchsia-200 border border-fuchsia-300 dark:border-fuchsia-700 ml-0.5">VCPR</span>
-                                                            )}
-                                                        </span>
-                                                    ))}
+                                                    }).filter((v, i, a) => a.indexOf(v) === i).map(sym => {
+                                                        const symBase = sym.replace(/⚡$/, '');
+                                                        const filterCount = symbolFilterCountMap.get(symBase)?.size || 0;
+                                                        const isMultiFilter = filterCount >= 2;
+
+                                                        return (
+                                                            <span 
+                                                                key={sym} 
+                                                                onClick={() => {
+                                                                    const found = bears.find(b => cleanSym(b.symbol) === sym);
+                                                                    if (found) setSelectedDhanOorAsset(found);
+                                                                }}
+                                                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none cursor-pointer hover:scale-105 active:scale-95 transition-all ${
+                                                                    isMultiFilter
+                                                                        ? 'flashing-pill-bear shadow-[0_0_8px_rgba(244,63,94,0.5)] ring-1 ring-rose-400/80'
+                                                                        : 'shadow-none'
+                                                                }`}
+                                                                title={isMultiFilter ? `${symBase}: Active in ${filterCount} filters today (High Confluence!)` : undefined}
+                                                            >
+                                                                <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
+                                                                <span className={isMultiFilter ? 'flashing-name-theme font-black text-rose-950 dark:text-rose-100' : ''}>{sym}</span>
+                                                                {isFireRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">CONF</span>
+                                                                )}
+                                                                {isDivergenceRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-purple-200 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700 ml-0.5">DIV</span>
+                                                                )}
+                                                                {isLightningRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">LTG</span>
+                                                                )}
+                                                                {isExtRevRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">EXT</span>
+                                                                )}
+                                                                {isRejectionRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">REJ</span>
+                                                                )}
+                                                                {isContinuationRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-teal-200 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700 ml-0.5">CONT</span>
+                                                                )}
+                                                                {isInsideDayRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-sky-200 dark:bg-sky-900/60 text-sky-800 dark:text-sky-200 border border-sky-300 dark:border-sky-700 ml-0.5">INSIDE</span>
+                                                                )}
+                                                                {isNcprRow && (
+                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 ml-0.5">NCPR</span>
+                                                                )}
+                                                            </span>
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </div>
@@ -17032,10 +17350,10 @@ function MobileScreensaver() {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2 mt-0.5">
                       <div className="flex items-center gap-2">
                         <Target className="text-accent shrink-0" size={20} />
-                        <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary whitespace-nowrap">Daily Signal Insights</h2>
+                        <h2 className="text-lg sm:text-xl font-black italic tracking-tighter uppercase text-primary whitespace-nowrap">Swing Trading Opportunities</h2>
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-                        <span className={`text-[10px] sm:text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${engineSource === 'SHADOW' ? 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30' : 'bg-accent/15 text-accent border-accent/30'}`}>
+                        <span className={`text-[10px] sm:text-[11px] font-mono font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${engineSource === 'SHADOW' ? 'bg-fuchsia-500/15 text-fuchsia-400 border-fuchsia-500/30' : 'bg-accent/15 text-accent border-accent/30'}`}>
                           {engineSource === 'SHADOW' ? '⚡ BLACK BOX (1D)' : '1D SWING STRATEGY EDGE'}
                         </span>
                         <button
@@ -18209,6 +18527,87 @@ function MobileScreensaver() {
                         { id: 'ACC_DIST_SEQ', label: 'Accumulation / Distribution Sequence', icon: '💎', scanKey: (r: any) => r.acc || 'NONE', dtMatch: (dt: string) => dt.includes('ACCUMULATION') || dt.includes('ACC/DIST') }
                       ];
 
+                      // Precompute filter appearances per symbol per day for 7-Day Matrix (>= 2 filters triggers flashing theme)
+                      const matrixDayFilterMap = new Map<number, Map<string, Set<string>>>();
+                      days.forEach(d => {
+                        const symCatMap = new Map<string, Set<string>>();
+                        matrixDayFilterMap.set(d.dayNum, symCatMap);
+
+                        const addSymCat = (sym: string, catId: string) => {
+                          const s = cleanSym(sym);
+                          if (!s) return;
+                          if (!symCatMap.has(s)) symCatMap.set(s, new Set());
+                          symCatMap.get(s)!.add(catId);
+                        };
+
+                        signalCategories.forEach(cat => {
+                          if (pivotBossLoaded && !screenerSignalsResetTs) {
+                            pivotBossScans.forEach((row: any) => {
+                              const rowOffset = row.dayOffset != null ? row.dayOffset : 0;
+                              if (rowOffset !== d.offset) return;
+                              const val = (cat.scanKey ? (cat.scanKey(row) || '') : '').toString();
+                              if (!val || val === 'NONE' || val === '--' || val === '0') return;
+                              const sym = cleanSym(row.sym);
+                              if (analyticsMarket !== 'ALL' && getMarket({ symbol: sym } as any) !== analyticsMarket) return;
+                              addSymCat(sym, cat.id);
+                            });
+                          }
+                          const daySigs = filteredSigs.filter(s => {
+                            const sigTs = new Date(s.signal_ts || s.created_at).getTime();
+                            if (screenerSignalsResetTs && sigTs < screenerSignalsResetTs) return false;
+                            const sKey = getDailyCandleSessionKey(s.signal_ts || s.created_at);
+                            return sKey === d.sessionKey && cat.check(s);
+                          });
+                          daySigs.forEach(s => addSymCat(s.symbol, cat.id));
+                        });
+
+                        blueprintCategories.forEach(cat => {
+                          if (pivotBossLoaded && !screenerSignalsResetTs) {
+                            pivotBossScans.forEach((row: any) => {
+                              const rowOffset = row.dayOffset != null ? row.dayOffset : 0;
+                              if (rowOffset !== d.offset) return;
+                              const val = (cat.scanKey ? (cat.scanKey(row) || '') : '').toString();
+                              if (!val || val === 'NONE' || val === '--' || val === '0') return;
+                              const sym = cleanSym(row.sym);
+                              if (analyticsMarket !== 'ALL' && getMarket({ symbol: sym } as any) !== analyticsMarket) return;
+                              addSymCat(sym, cat.id);
+                            });
+                          }
+                          const daySigs = filteredSigs.filter(s => {
+                            const sigTs = new Date(s.signal_ts || s.created_at).getTime();
+                            if (screenerSignalsResetTs && sigTs < screenerSignalsResetTs) return false;
+                            const sKey = getDailyCandleSessionKey(s.signal_ts || s.created_at);
+                            let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+                            const dt = String(meta.day_type || meta.dt || s.type || '').toUpperCase();
+                            return sKey === d.sessionKey && (cat.dtMatch ? cat.dtMatch(dt) : false);
+                          });
+                          daySigs.forEach(s => addSymCat(s.symbol, cat.id));
+                        });
+
+                        sequenceCategories.forEach(cat => {
+                          if (pivotBossLoaded && !screenerSignalsResetTs) {
+                            pivotBossScans.forEach((row: any) => {
+                              const rowOffset = row.dayOffset != null ? row.dayOffset : 0;
+                              if (rowOffset !== d.offset) return;
+                              const val = (cat.scanKey ? (cat.scanKey(row) || '') : '').toString();
+                              if (!val || val === 'NONE' || val === '--' || val === '0') return;
+                              const sym = cleanSym(row.sym);
+                              if (analyticsMarket !== 'ALL' && getMarket({ symbol: sym } as any) !== analyticsMarket) return;
+                              addSymCat(sym, cat.id);
+                            });
+                          }
+                          const daySigs = filteredSigs.filter(s => {
+                            const sigTs = new Date(s.signal_ts || s.created_at).getTime();
+                            if (screenerSignalsResetTs && sigTs < screenerSignalsResetTs) return false;
+                            const sKey = getDailyCandleSessionKey(s.signal_ts || s.created_at);
+                            let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+                            const dt = String(meta.day_type || meta.dt || s.type || '').toUpperCase();
+                            return sKey === d.sessionKey && (cat.dtMatch ? cat.dtMatch(dt) : false);
+                          });
+                          daySigs.forEach(s => addSymCat(s.symbol, cat.id));
+                        });
+                      });
+
                       const renderCellContent = (
                         bulls: string[],
                         bears: string[],
@@ -18237,6 +18636,11 @@ function MobileScreensaver() {
                           });
                         };
 
+                        const isMultiFilterSym = (sym: string) => {
+                          const count = matrixDayFilterMap.get(dayNum)?.get(sym)?.size || 0;
+                          return count >= 2;
+                        };
+
                         if (screenerDensityMode === 'DETAILED') {
                           return (
                             <div 
@@ -18246,26 +18650,46 @@ function MobileScreensaver() {
                             >
                               {hasBull && (
                                 <div className="flex flex-wrap gap-1 items-center justify-center w-full">
-                                  {bulls.map(b => (
-                                    <span
-                                      key={'bull-' + b}
-                                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none shadow-none"
-                                    >
-                                      <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span> {b}
-                                    </span>
-                                  ))}
+                                  {bulls.map(b => {
+                                    const isMulti = isMultiFilterSym(b);
+                                    const filterCount = matrixDayFilterMap.get(dayNum)?.get(b)?.size || 0;
+                                    return (
+                                      <span
+                                        key={'bull-' + b}
+                                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none transition-all ${
+                                          isMulti
+                                            ? 'flashing-pill-bull shadow-[0_0_8px_rgba(16,185,129,0.5)] ring-1 ring-emerald-400/80'
+                                            : 'shadow-none'
+                                        }`}
+                                        title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
+                                      >
+                                        <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
+                                        <span className={isMulti ? 'flashing-name-theme font-black text-emerald-950 dark:text-emerald-100' : ''}>{b}</span>
+                                      </span>
+                                    );
+                                  })}
                                 </div>
                               )}
                               {hasBear && (
                                 <div className="flex flex-wrap gap-1 items-center justify-center w-full">
-                                  {bears.map(b => (
-                                    <span
-                                      key={'bear-' + b}
-                                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none shadow-none"
-                                    >
-                                      <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span> {b}
-                                    </span>
-                                  ))}
+                                  {bears.map(b => {
+                                    const isMulti = isMultiFilterSym(b);
+                                    const filterCount = matrixDayFilterMap.get(dayNum)?.get(b)?.size || 0;
+                                    return (
+                                      <span
+                                        key={'bear-' + b}
+                                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none transition-all ${
+                                          isMulti
+                                            ? 'flashing-pill-bear shadow-[0_0_8px_rgba(244,63,94,0.5)] ring-1 ring-rose-400/80'
+                                            : 'shadow-none'
+                                        }`}
+                                        title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
+                                      >
+                                        <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
+                                        <span className={isMulti ? 'flashing-name-theme font-black text-rose-950 dark:text-rose-100' : ''}>{b}</span>
+                                      </span>
+                                    );
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -18281,22 +18705,42 @@ function MobileScreensaver() {
                               className="flex flex-col gap-0.5 items-center justify-center p-0.5 w-full hover:opacity-80 transition-opacity active:scale-95"
                               title="Tap to inspect"
                             >
-                              {bulls.map(b => (
-                                <span
-                                  key={'bull-' + b}
-                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none shadow-none"
-                                >
-                                  <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span> {b}
-                                </span>
-                              ))}
-                              {bears.map(b => (
-                                <span
-                                  key={'bear-' + b}
-                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none shadow-none"
-                                >
-                                  <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span> {b}
-                                </span>
-                              ))}
+                              {bulls.map(b => {
+                                const isMulti = isMultiFilterSym(b);
+                                const filterCount = matrixDayFilterMap.get(dayNum)?.get(b)?.size || 0;
+                                return (
+                                  <span
+                                    key={'bull-' + b}
+                                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none transition-all ${
+                                      isMulti
+                                        ? 'flashing-pill-bull shadow-[0_0_8px_rgba(16,185,129,0.5)] ring-1 ring-emerald-400/80'
+                                        : 'shadow-none'
+                                    }`}
+                                    title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
+                                  >
+                                    <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
+                                    <span className={isMulti ? 'flashing-name-theme font-black text-emerald-950 dark:text-emerald-100' : ''}>{b}</span>
+                                  </span>
+                                );
+                              })}
+                              {bears.map(b => {
+                                const isMulti = isMultiFilterSym(b);
+                                const filterCount = matrixDayFilterMap.get(dayNum)?.get(b)?.size || 0;
+                                return (
+                                  <span
+                                    key={'bear-' + b}
+                                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none transition-all ${
+                                      isMulti
+                                        ? 'flashing-pill-bear shadow-[0_0_8px_rgba(244,63,94,0.5)] ring-1 ring-rose-400/80'
+                                        : 'shadow-none'
+                                    }`}
+                                    title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
+                                  >
+                                    <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
+                                    <span className={isMulti ? 'flashing-name-theme font-black text-rose-950 dark:text-rose-100' : ''}>{b}</span>
+                                  </span>
+                                );
+                              })}
                             </button>
                           );
                         }
