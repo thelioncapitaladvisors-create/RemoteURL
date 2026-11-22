@@ -57,6 +57,7 @@ from algo_engine.pivots import (
     detect_virgin_cpr_zones, detect_virgin_cpr_touches
 )
 from algo_engine.strategies import StrategyEngine, MarketContext, StrategySignal
+from algo_engine.telegram_dispatcher import TelegramDispatcher
 
 
 class DailyBlackboxScanner:
@@ -66,9 +67,12 @@ class DailyBlackboxScanner:
                  dhan_feed: Optional[DhanFeed] = None,
                  shadow_pipeline: Optional[ShadowPipeline] = None,
                  mock_mode: bool = False,
-                 market: str = "all"):
+                 market: str = "all",
+                 enable_telegram: bool = True,
+                 telegram_dispatcher: Optional[TelegramDispatcher] = None):
         self.dhan_feed = dhan_feed or DhanFeed(mock_mode=mock_mode)
         self.shadow_pipeline = shadow_pipeline or ShadowPipeline()
+        self.telegram = telegram_dispatcher or TelegramDispatcher(enabled=enable_telegram)
         self.strategy_engine = StrategyEngine()
         self.mock_mode = mock_mode
         self.market = market.lower()
@@ -343,6 +347,17 @@ class DailyBlackboxScanner:
                     logger.warning(f"[DailyScanner] Error syncing signal for {sig.get('symbol')}: {e}")
             logger.info(f"[DailyScanner] Successfully synced {synced_count} Daily 1D Swing signals to Supabase shadow_signals.")
 
+        # Dispatch alerts to Telegram channel (SCTCS HTF Swing Alerts)
+        if self.telegram and self.telegram.enabled and all_signals:
+            dispatched_count = 0
+            for sig in all_signals:
+                try:
+                    if self.telegram.on_daily_swing_signal(sig):
+                        dispatched_count += 1
+                except Exception as e:
+                    logger.warning(f"[DailyScanner] Error dispatching Telegram alert for {sig.get('symbol')}: {e}")
+            logger.info(f"[DailyScanner] Successfully dispatched {dispatched_count} Daily 1D Swing signals to Telegram channel.")
+
         return all_signals
 
 
@@ -351,9 +366,14 @@ def main():
     parser.add_argument("--market", type=str, default="all", choices=["all", "nse", "mcx"], help="Approved market universe to scan: 'all' (NSE + MCX), 'nse', or 'mcx'")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of symbols to scan")
     parser.add_argument("--mock", action="store_true", help="Force mock data mode without live API calls")
+    parser.add_argument("--no-telegram", action="store_true", help="Disable Telegram alerting")
     args = parser.parse_args()
 
-    scanner = DailyBlackboxScanner(mock_mode=args.mock, market=args.market)
+    scanner = DailyBlackboxScanner(
+        mock_mode=args.mock,
+        market=args.market,
+        enable_telegram=not args.no_telegram
+    )
     signals = scanner.scan_all(limit=args.limit)
     print(f"\n[SUMMARY] Daily 1D Swing BlackBox Scan Complete. Total Signals Detected: {len(signals)}")
 

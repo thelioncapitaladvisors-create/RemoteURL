@@ -208,6 +208,54 @@ class TelegramDispatcher:
         )
         return self.send_message(sym, msg)
 
+    def on_daily_swing_signal(self, sig: dict) -> bool:
+        """
+        Dispatches '🚨 1D SWING SIGNAL' alert for authentic daily swing triggers.
+        Routes to the designated HTF/Swing channel or resolved market channel.
+        """
+        if not self.enabled:
+            return False
+
+        sym = sig.get('symbol', '')
+        setup = sig.get('type', 'SWING SIGNAL')
+        entry = sig.get('entry', 0.0)
+        sl = sig.get('stop', 0.0)
+        tp1 = sig.get('target', 0.0)
+        tp2 = sig.get('tp2', 0.0)
+        tp3 = sig.get('tp3', 0.0)
+        tp4 = sig.get('tp4', 0.0)
+        meta = sig.get('metadata', {})
+        mkt = meta.get('market_category') or get_market_category(sym)
+        day_type = meta.get('day_type', '')
+        opening_bias = meta.get('opening_bias', '')
+
+        is_long = 'BUY' in setup.upper() or 'LONG' in setup.upper()
+        direction_emoji = "🟢 ▲" if is_long else "🔴 ▼"
+        fire_badge = " | 🔥 <b>CONFLUENCE</b>" if sig.get('fire_alert') else ""
+
+        bias_str = f"• <b>Opening Bias:</b> <code>{opening_bias}</code>\n" if opening_bias else ""
+        day_str = f"• <b>Day Type:</b> <code>{day_type}</code>\n" if day_type else ""
+
+        msg = (
+            f"<b>🚨 1D SWING SIGNAL ({mkt})</b>{fire_badge}\n\n"
+            f"• <b>Symbol:</b> <code>{sym}</code>\n"
+            f"• <b>Setup:</b> {direction_emoji} <b>{setup}</b>\n"
+            f"• <b>Entry Price:</b> <code>{entry}</code>\n"
+            f"• <b>Stop Loss:</b> <code>{sl}</code>\n"
+            f"• <b>Target 1:</b> <code>{tp1}</code>\n"
+            f"• <b>Target 2:</b> <code>{tp2}</code>\n"
+            f"• <b>Target 3:</b> <code>{tp3}</code>\n"
+            f"• <b>Target 4:</b> <code>{tp4}</code>\n"
+            f"{bias_str}{day_str}"
+            f"• <b>Timeframe:</b> <code>Daily (1D Swing)</code>\n\n"
+            f"<i>Engine: SCTCS HTF Swing BlackBox v5.0 (Autonomous Execution)</i>"
+        )
+
+        target_chat = os.getenv("TELEGRAM_CHAT_ID_SWING") or os.getenv("TELEGRAM_CHAT_ID_HTF") or self.get_chat_id(sym)
+        if target_chat:
+            return self.send_raw_message(target_chat, msg)
+        return False
+
     def send_raw_message(self, chat_id: str, html_text: str) -> bool:
         """
         Send formatted message directly to a specified Telegram chat ID.
