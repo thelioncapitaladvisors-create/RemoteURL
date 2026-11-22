@@ -311,7 +311,7 @@ class EngineDaemon:
 
         for sig in new_signals:
             self._signals_generated += 1
-            fire_badge = f" | ⚡ CONFLUENCE_ALERT ({sig.fire_zone})" if sig.fire_alert else ""
+            fire_badge = f" | ⚡ CONFLUENCE ({sig.fire_zone})" if sig.fire_alert else ""
             logger.info(
                 f"[EngineDaemon] 🚀 SIGNAL TRIGGERED: {sig.name} for {symbol} | "
                 f"Entry={sig.entry_price}, SL={sig.stop_loss}, TP1={sig.tp1}{fire_badge}"

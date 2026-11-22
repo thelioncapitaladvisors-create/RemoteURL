@@ -6794,7 +6794,7 @@ function MobileScreensaver() {
         } else if (isFireAlertSignal(s)) {
           relType = 'FIRE';
           relBadge = '⚡ CONFLUENCE';
-          relBias = 'CANONICAL CONFLUENCE (FIRE ALERT)';
+          relBias = 'CANONICAL CONFLUENCE';
         } else if (isRejectedSignal(s)) {
           relType = 'REJ';
           relBadge = isRejectedBullishSignal(s) ? '🛡️ BULLISH REJ' : '🛡️ BEARISH REJ';
@@ -11063,7 +11063,7 @@ function MobileScreensaver() {
       { value: 'ALL', label: 'ALL', count: liveSignalsStats.total },
       ...(liveSignalsStats.activeLimitsCount > 0 ? [{ value: 'ACTIVE_LIMITS', label: '⏳ ACTIVE LIMITS', count: liveSignalsStats.activeLimitsCount }] : []),
       ...(liveSignalsStats.liveCount > 0 ? [{ value: 'LIVE', label: '⚡ LIVE TRADES', count: liveSignalsStats.liveCount }] : []),
-      ...(liveSignalsStats.fireCount > 0 ? [{ value: 'FIRE', label: '🔥 CONFLUENCE', count: liveSignalsStats.fireCount }] : []),
+      ...(liveSignalsStats.fireCount > 0 ? [{ value: 'FIRE', label: '⚡ CONFLUENCE', count: liveSignalsStats.fireCount }] : []),
       ...(liveSignalsStats.lightningCount > 0 ? [{ value: 'LIGHTNING', label: '⚡ LIGHTNING', count: liveSignalsStats.lightningCount }] : []),
       ...(liveSignalsStats.extRevCount > 0 ? [{ value: 'EXT_REV', label: '🔥 EXT REV', count: liveSignalsStats.extRevCount }] : []),
       ...(liveSignalsStats.missileCount > 0 ? [{ value: 'MISSILE', label: '🚀 MISSILE', count: liveSignalsStats.missileCount }] : []),
@@ -22034,7 +22034,7 @@ function MobileScreensaver() {
                     ? 'bg-rose-500/15 border-rose-500/30 text-rose-500'
                     : 'bg-indigo-500/15 border-indigo-500/30 text-indigo-500'
                 }`}>
-                  {selectedDhanOorAsset.relationshipType === 'OOR' ? <Sunrise size={18} /> : selectedDhanOorAsset.relationshipType === 'INSIDE' ? <Maximize2 size={18} /> : selectedDhanOorAsset.relationshipType === 'NCPR' ? <SlidersHorizontal size={18} /> : selectedDhanOorAsset.relationshipType === 'NVA' ? <Layers size={18} /> : selectedDhanOorAsset.relationshipType === 'DIV' ? <Target size={18} /> : selectedDhanOorAsset.relationshipType === 'REJ' ? <Shield size={18} /> : selectedDhanOorAsset.relationshipType === 'CONT' ? <Zap size={18} /> : selectedDhanOorAsset.relationshipType === 'FIRE' ? <Flame size={18} /> : <Crosshair size={18} />}
+                  {selectedDhanOorAsset.relationshipType === 'OOR' ? <Sunrise size={18} /> : selectedDhanOorAsset.relationshipType === 'INSIDE' ? <Maximize2 size={18} /> : selectedDhanOorAsset.relationshipType === 'NCPR' ? <SlidersHorizontal size={18} /> : selectedDhanOorAsset.relationshipType === 'NVA' ? <Layers size={18} /> : selectedDhanOorAsset.relationshipType === 'DIV' ? <Target size={18} /> : selectedDhanOorAsset.relationshipType === 'REJ' ? <Shield size={18} /> : selectedDhanOorAsset.relationshipType === 'CONT' ? <Zap size={18} /> : selectedDhanOorAsset.relationshipType === 'FIRE' ? <Zap size={18} /> : <Crosshair size={18} />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">

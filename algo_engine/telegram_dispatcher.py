@@ -89,7 +89,7 @@ class TelegramDispatcher:
         direction_emoji = "🟢" if trade.is_long else "🔴"
         sym = trade.symbol
         mkt = get_market_category(sym)
-        fire_badge = " | 🔥 <b>FIRE ALERT</b>" if getattr(trade, 'fire_alert', False) else ""
+        fire_badge = " | ⚡ <b>CONFLUENCE</b>" if getattr(trade, 'fire_alert', False) else ""
 
         msg = (
             f"<b>⚡ TRADE ACTIVE ({mkt})</b>{fire_badge}\n\n"
@@ -108,7 +108,7 @@ class TelegramDispatcher:
 
     def on_fire_alert(self, signal_or_trade, symbol: str = "") -> bool:
         """
-        Dispatches dedicated '🔥 TLCS FIRE ALERT' alert.
+        Dispatches dedicated '⚡ TLCS CONFLUENCE ALERT' alert.
         Routes to the market channel and dedicated fire channel if configured.
         """
         if not self.enabled:
