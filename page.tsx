@@ -13006,15 +13006,15 @@ function MobileScreensaver() {
                                                                     const found = bulls.find(b => cleanSym(b.symbol) === sym);
                                                                     if (found) setSelectedDhanOorAsset(found);
                                                                 }}
-                                                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none cursor-pointer hover:scale-105 active:scale-95 transition-all ${
+                                                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none cursor-pointer hover:scale-105 active:scale-95 transition-all ${
                                                                     isMultiFilter
-                                                                        ? 'flashing-pill-bull shadow-[0_0_8px_rgba(16,185,129,0.5)] ring-1 ring-emerald-400/80'
-                                                                        : 'shadow-none'
+                                                                        ? 'shiny-pill-bull shadow-xs'
+                                                                        : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 shadow-none'
                                                                 }`}
                                                                 title={isMultiFilter ? `${symBase}: Active in ${filterCount} filters today (High Confluence!)` : undefined}
                                                             >
-                                                                <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
-                                                                <span className={isMultiFilter ? 'flashing-name-theme font-black text-emerald-950 dark:text-emerald-100' : ''}>{sym}</span>
+                                                                <span className={isMultiFilter ? 'text-emerald-200 text-[9px]' : 'text-emerald-600 dark:text-emerald-400 text-[9px]'}>▲</span>
+                                                                <span className={isMultiFilter ? 'shiny-name-theme' : ''}>{sym}</span>
                                                                 {isFireRow && (
                                                                     <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">CONF</span>
                                                                 )}
@@ -13062,15 +13062,15 @@ function MobileScreensaver() {
                                                                     const found = bears.find(b => cleanSym(b.symbol) === sym);
                                                                     if (found) setSelectedDhanOorAsset(found);
                                                                 }}
-                                                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none cursor-pointer hover:scale-105 active:scale-95 transition-all ${
+                                                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none cursor-pointer hover:scale-105 active:scale-95 transition-all ${
                                                                     isMultiFilter
-                                                                        ? 'flashing-pill-bear shadow-[0_0_8px_rgba(244,63,94,0.5)] ring-1 ring-rose-400/80'
-                                                                        : 'shadow-none'
+                                                                        ? 'shiny-pill-bear shadow-xs'
+                                                                        : 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 shadow-none'
                                                                 }`}
                                                                 title={isMultiFilter ? `${symBase}: Active in ${filterCount} filters today (High Confluence!)` : undefined}
                                                             >
-                                                                <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
-                                                                <span className={isMultiFilter ? 'flashing-name-theme font-black text-rose-950 dark:text-rose-100' : ''}>{sym}</span>
+                                                                <span className={isMultiFilter ? 'text-rose-200 text-[9px]' : 'text-rose-600 dark:text-rose-400 text-[9px]'}>▼</span>
+                                                                <span className={isMultiFilter ? 'shiny-name-theme' : ''}>{sym}</span>
                                                                 {isFireRow && (
                                                                     <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">CONF</span>
                                                                 )}
@@ -18656,15 +18656,15 @@ function MobileScreensaver() {
                                     return (
                                       <span
                                         key={'bull-' + b}
-                                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none transition-all ${
+                                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none transition-all ${
                                           isMulti
-                                            ? 'flashing-pill-bull shadow-[0_0_8px_rgba(16,185,129,0.5)] ring-1 ring-emerald-400/80'
-                                            : 'shadow-none'
+                                            ? 'shiny-pill-bull shadow-xs'
+                                            : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 shadow-none'
                                         }`}
                                         title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
                                       >
-                                        <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
-                                        <span className={isMulti ? 'flashing-name-theme font-black text-emerald-950 dark:text-emerald-100' : ''}>{b}</span>
+                                        <span className={isMulti ? 'text-emerald-200 text-[9px]' : 'text-emerald-600 dark:text-emerald-400 text-[9px]'}>▲</span>
+                                        <span className={isMulti ? 'shiny-name-theme' : ''}>{b}</span>
                                       </span>
                                     );
                                   })}
@@ -18678,15 +18678,15 @@ function MobileScreensaver() {
                                     return (
                                       <span
                                         key={'bear-' + b}
-                                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none transition-all ${
+                                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none transition-all ${
                                           isMulti
-                                            ? 'flashing-pill-bear shadow-[0_0_8px_rgba(244,63,94,0.5)] ring-1 ring-rose-400/80'
-                                            : 'shadow-none'
+                                            ? 'shiny-pill-bear shadow-xs'
+                                            : 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 shadow-none'
                                         }`}
                                         title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
                                       >
-                                        <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
-                                        <span className={isMulti ? 'flashing-name-theme font-black text-rose-950 dark:text-rose-100' : ''}>{b}</span>
+                                        <span className={isMulti ? 'text-rose-200 text-[9px]' : 'text-rose-600 dark:text-rose-400 text-[9px]'}>▼</span>
+                                        <span className={isMulti ? 'shiny-name-theme' : ''}>{b}</span>
                                       </span>
                                     );
                                   })}
@@ -18711,15 +18711,15 @@ function MobileScreensaver() {
                                 return (
                                   <span
                                     key={'bull-' + b}
-                                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none transition-all ${
+                                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none transition-all ${
                                       isMulti
-                                        ? 'flashing-pill-bull shadow-[0_0_8px_rgba(16,185,129,0.5)] ring-1 ring-emerald-400/80'
-                                        : 'shadow-none'
+                                        ? 'shiny-pill-bull shadow-xs'
+                                        : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 shadow-none'
                                     }`}
                                     title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
                                   >
-                                    <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
-                                    <span className={isMulti ? 'flashing-name-theme font-black text-emerald-950 dark:text-emerald-100' : ''}>{b}</span>
+                                    <span className={isMulti ? 'text-emerald-200 text-[9px]' : 'text-emerald-600 dark:text-emerald-400 text-[9px]'}>▲</span>
+                                    <span className={isMulti ? 'shiny-name-theme' : ''}>{b}</span>
                                   </span>
                                 );
                               })}
@@ -18729,15 +18729,15 @@ function MobileScreensaver() {
                                 return (
                                   <span
                                     key={'bear-' + b}
-                                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none transition-all ${
+                                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none transition-all ${
                                       isMulti
-                                        ? 'flashing-pill-bear shadow-[0_0_8px_rgba(244,63,94,0.5)] ring-1 ring-rose-400/80'
-                                        : 'shadow-none'
+                                        ? 'shiny-pill-bear shadow-xs'
+                                        : 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 shadow-none'
                                     }`}
                                     title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
                                   >
-                                    <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
-                                    <span className={isMulti ? 'flashing-name-theme font-black text-rose-950 dark:text-rose-100' : ''}>{b}</span>
+                                    <span className={isMulti ? 'text-rose-200 text-[9px]' : 'text-rose-600 dark:text-rose-400 text-[9px]'}>▼</span>
+                                    <span className={isMulti ? 'shiny-name-theme' : ''}>{b}</span>
                                   </span>
                                 );
                               })}
