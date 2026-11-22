@@ -7170,12 +7170,32 @@ function MobileScreensaver() {
     );
 
     // Timeframe separation: On INSIGHTS tab, exclusively retain Daily (1D Swing) execution signals.
+    // Strictly exclude VCPR signals and retain only approved execution filters (Confluence, Lightning, Ext Rev, Missile, Scalp, Divergence, Rejections, Continuations).
     // On HUB and other tabs, retain intraday & real-time signals.
     const filteredByTabTf = activeTab === 'INSIGHTS'
-      ? assets.filter(a => a.timeframe === '1D' || a.timeframe === 'D' || a.timeframe === 'DAILY' || a.signals?.some((s: any) => {
-          const m = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-          return m.timeframe === '1D' || m.timeframe === 'D' || m.interval === '1D' || s.timeframe === '1D' || s.timeframe === 'D';
-        }))
+      ? assets.filter(a => {
+          const is1D = a.timeframe === '1D' || a.timeframe === 'D' || a.timeframe === 'DAILY' || a.signals?.some((s: any) => {
+            const m = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+            return m.timeframe === '1D' || m.timeframe === 'D' || m.interval === '1D' || s.timeframe === '1D' || s.timeframe === 'D';
+          });
+          if (!is1D) return false;
+
+          // Strictly exclude VCPR signals for Swing Trading Opportunities per user instruction
+          const isVcpr = a.isVcprTouch || a.relationshipType === 'VCPR' || a.relationshipBadge?.includes('VCPR') || a.signals?.some((s: any) => (s.type || '').toUpperCase().includes('VIRGIN'));
+          if (isVcpr) return false;
+
+          // Exclusively retain approved execution strategies
+          const matchesApproved = 
+            Boolean(a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE') ||
+            Boolean(a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING') ||
+            Boolean(a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV') ||
+            Boolean(a.relationshipBadge?.includes('MISSILE') || a.relationshipType === 'MISSILE') ||
+            Boolean(a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP') ||
+            Boolean(a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV') ||
+            Boolean(a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ') ||
+            Boolean(a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT');
+          return matchesApproved;
+        })
       : assets;
 
     const combined = [...filteredByTabTf];
@@ -11090,7 +11110,6 @@ function MobileScreensaver() {
       if (catId === 'MISSILE') return a.relationshipBadge?.includes('MISSILE') || a.relationshipType === 'MISSILE';
       if (catId === 'SCALP') return a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP';
       if (catId === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
-      if (catId === 'VCPR_TOUCH') return a.isVcprTouch || a.relationshipBadge?.includes('VCPR') || a.relationshipType === 'VCPR_TOUCH';
       if (catId === 'REJ') return a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ';
       if (catId === 'CONT') return a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT';
       return false;
@@ -11469,84 +11488,10 @@ function MobileScreensaver() {
                         );
                       }).filter(Boolean);
 
-                      // Check for any unmatched signals
-                      const matchedAssetKeys = new Set<string>();
-                      liveMatrixCategories.forEach(cat => {
-                        filteredLiveSignals.forEach(a => {
-                          if (matchLiveAssetToCategory(cat.id, a)) {
-                            matchedAssetKeys.add(`${a.symbol}_${a.sessionDate}_${a.relationshipType}_${a.tradeLifecycle}`);
-                          }
-                        });
-                      });
-                      const unmatchedAssets = filteredLiveSignals.filter(a => !matchedAssetKeys.has(`${a.symbol}_${a.sessionDate}_${a.relationshipType}_${a.tradeLifecycle}`));
-                      const unmatchedBulls = unmatchedAssets.filter(a => a.direction === 'BULLISH');
-                      const unmatchedBears = unmatchedAssets.filter(a => a.direction === 'BEARISH');
-
                       return (
                         <>
                           {renderedRows}
-                          {unmatchedAssets.length > 0 && (
-                            <tr key="other-signals" className="hover:bg-rose-500/[0.03] dark:hover:bg-rose-500/[0.05] transition-colors">
-                              <td className="py-3 px-3 font-extrabold text-slate-900 dark:text-slate-100 border-r border-black/5 dark:border-white/5 text-xs sm:text-sm whitespace-normal break-words leading-tight">
-                                <div className="flex flex-col gap-1">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <span>Other Live Signals</span>
-                                    <span className="px-1.5 py-0.5 rounded text-[8px] sm:text-[8.5px] font-mono font-black uppercase tracking-wider flex items-center gap-1 bg-slate-500/20 text-slate-600 dark:text-slate-400 border border-slate-500/35">
-                                      <span>⚡</span>
-                                      <span>SIGNAL</span>
-                                    </span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="py-2.5 px-3">
-                                <div className="flex flex-col gap-2">
-                                  {unmatchedBulls.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 items-center justify-center">
-                                      {unmatchedBulls.map((asset: any) => {
-                                        const sym = asset.cleanSym || asset.symbol;
-                                        const isLimit = asset.tradeLifecycle === 'ACTIVE LIMIT';
-                                        const isLive = asset.tradeLifecycle === 'LIVE';
-                                        return (
-                                          <span
-                                            key={`unmatched-bull-${sym}-${asset.sessionDate}-${asset.relationshipType}-${asset.tradeLifecycle}`}
-                                            onClick={() => setSelectedDhanOorAsset(asset)}
-                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none shadow-none cursor-pointer hover:scale-105 active:scale-95 transition-all"
-                                          >
-                                            <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
-                                            <span>{sym}</span>
-                                            {isLive && <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-emerald-200 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 ml-0.5 animate-pulse">⚡ LIVE</span>}
-                                            {isLimit && <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 ml-0.5">⏳ LIMIT</span>}
-                                          </span>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                  {unmatchedBears.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 items-center justify-center">
-                                      {unmatchedBears.map((asset: any) => {
-                                        const sym = asset.cleanSym || asset.symbol;
-                                        const isLimit = asset.tradeLifecycle === 'ACTIVE LIMIT';
-                                        const isLive = asset.tradeLifecycle === 'LIVE';
-                                        return (
-                                          <span
-                                            key={`unmatched-bear-${sym}-${asset.sessionDate}-${asset.relationshipType}-${asset.tradeLifecycle}`}
-                                            onClick={() => setSelectedDhanOorAsset(asset)}
-                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none shadow-none cursor-pointer hover:scale-105 active:scale-95 transition-all"
-                                          >
-                                            <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
-                                            <span>{sym}</span>
-                                            {isLive && <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 ml-0.5 animate-pulse">⚡ LIVE</span>}
-                                            {isLimit && <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 ml-0.5">⏳ LIMIT</span>}
-                                          </span>
-                                        );
-                                      })}
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                          {renderedRows.length === 0 && unmatchedAssets.length === 0 && (
+                          {renderedRows.length === 0 && (
                             <tr>
                               <td colSpan={2} className="py-6 text-center text-dim font-mono text-xs">
                                 No signals match current matrix filters
