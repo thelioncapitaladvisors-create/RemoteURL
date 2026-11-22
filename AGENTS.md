@@ -9,17 +9,14 @@
     - Gating must NEVER rely on `close` for limit entry qualification.
   - For Daily Timeframe (1D Swing) BlackBox signals:
     - Strict $H_4/L_4$ limit touch-point qualification is **NOT considered** (ungated per direct user instruction), evaluating pure structural patterns on daily OHLC candles.
-## Version 5.0: Virgin CPR Suffix Removal & Multi-Filter (>= 2) Dark & Shiny Confluence Theme Mandate (Effective November 22, 2026)
+## Version 5.0: Virgin CPR Suffix Removal & Clean Uniform Screener Aesthetics (Effective November 22, 2026)
 - **VIRGIN CPR SUFFIX REMOVAL**:
   - Across the HUB tab (`activeTab === 'DASHBOARD'`) and screener displays in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
     - The redundant pink `VCPR` badge suffix (`<span ...>VCPR</span>`) adjacent to symbol names in the Virgin CPR filter row has been permanently removed, maintaining clean symbol name presentation.
-- **HIGH-CONFLUENCE MULTI-FILTER (>= 2) DARK & SHINY CONFLUENCE THEME MANDATE**:
+- **ZERO-FLASHING CLEAN UNIFORM SCREENER PILL AESTHETICS MANDATE**:
   - Across daily screener signals, watchlist candidate rows, and the 7-day matrix:
-    1. **Dynamic Precomputation**: For each trading day, every asset's distinct normalized filter setup appearances are precomputed. If an asset qualifies on **2 or more distinct filter setups on any day** (`filterCount >= 2`), it qualifies as an institutional High-Confluence asset.
-    2. **Dark & Shiny Jewel Aesthetics (Zero-Blur / Zero-Flash Mandate)**: High-confluence assets automatically receive:
-       - Asset pill container: `.shiny-pill-bull` (deep forest green `#064e3b` to `#047857` with top bevel sheen `inset 0 1px 0 rgba(255,255,255,0.4)` and `@keyframes shiny-pill-sweep`) for bullish assets or `.shiny-pill-bear` (deep ruby `#881337` to `#be123c`) for bearish assets. Outer blurry glowing halos and scale pulsing are strictly eliminated.
-       - Symbol name text: `.shiny-name-theme` with crisp high-contrast white text (`#ffffff`), `font-black`, and subtle drop-shadow (`0 1px 2px rgba(0,0,0,0.6)`), completely static without distracting blinking or text distortion.
-       - Tooltip inspection: Explicit title tooltip indicating the exact filter count (e.g. `SYMBOL: Active in 2 filters today (High Confluence!)`).
+    - All flashing, pulsating, glowing halos, and metallic sweep animations have been completely removed per direct user instruction.
+    - Symbol pills strictly adhere to clean, uniform, theme-matched styles (`bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80` for Bullish; `bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80` for Bearish) with crisp directional triangles (`▲` and `▼`), zero outer shadow clutter, and optimal mobile readability.
 
 ## Version 5.0: Swing Trading Opportunities & Daily TF Signals Header Standardization & VCPR Touch Tab Removal (Effective November 22, 2026)
 - **SWING TRADING OPPORTUNITIES & DAILY TF SIGNALS HEADER & FILTER MANDATE**:
