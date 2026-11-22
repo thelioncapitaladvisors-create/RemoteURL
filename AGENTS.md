@@ -8,7 +8,23 @@
     - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
     - Gating must NEVER rely on `close` for limit entry qualification.
   - For Daily Timeframe (1D Swing) BlackBox signals:
-    - Strict $H_4/L_4$ limit touch-point qualification is **NOT considered** (ungated per direct user instruction), evaluating pure structural patterns on daily OHLC candles.
+## Version 5.0: Other Live Signals Removal & Daily TF Swing Approved Execution Filters Mandate (Effective November 22, 2026)
+- **OTHER LIVE SIGNALS ROW PERMANENT REMOVAL**:
+  - Across `renderDhanLiveSignalsSection()` in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
+    - The `Other Live Signals` fallback table row and its underlying `unmatchedAssets` precomputation have been permanently excised from the Live Signals matrix across all views and tabs.
+- **DAILY TF SWING SIGNALS VCPR EXCLUSION & APPROVED EXECUTION FILTERS ENFORCEMENT**:
+  - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) under `🎯 SWING TRADING OPPORTUNITIES` / `⚡ DAILY TF SIGNALS ( '1D' TIME FRAME)`:
+    - All Virgin CPR (`VCPR`) signals (including VCPR touch points, VCPR magnets, and Virgin CPR scanner outputs) are strictly excluded from Live Signals ingestion.
+    - Filtering and matrix display strictly retain only approved core execution strategies:
+      1. Confluence (`FIRE`)
+      2. Lightning (`LIGHTNING`)
+      3. Extreme Reversal (`EXT_REV`)
+      4. Missile (`MISSILE`)
+      5. Scalp (`SCALP`)
+      6. Divergence (`DIV`)
+      7. Rejection (`REJ`)
+      8. Continuation (`CONT`)
+
 ## Version 5.0: Virgin CPR Suffix Removal & Clean Uniform Screener Aesthetics (Effective November 22, 2026)
 - **VIRGIN CPR SUFFIX REMOVAL**:
   - Across the HUB tab (`activeTab === 'DASHBOARD'`) and screener displays in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
