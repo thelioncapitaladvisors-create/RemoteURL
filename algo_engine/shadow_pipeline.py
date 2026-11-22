@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 from .strategies import StrategySignal
 from .trade_manager import Trade, TradeStatus, TradeOutcome
-from .feeds import normalize_symbol, get_market_category
+from .feeds import normalize_symbol, get_market_category, is_approved_asset
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +119,11 @@ class ShadowPipeline:
             Generated trade_id
         """
         clean_sym = normalize_symbol(symbol)
+        mkt = get_market_category(clean_sym)
+        if mkt in ("OTHER", "UNKNOWN", "other") or not is_approved_asset(clean_sym):
+            logger.warning(f"[ShadowPipeline] Suppressed unverified/other asset ab-initio: {clean_sym} (market={mkt})")
+            return None
+
         if signal.name not in CANONICAL_EXECUTION_TRIGGERS and signal.name not in ("FIRE_ALERT", "FIREALERT", "CONFLUENCE_ALERT", "CONFLUENCE"):
             logger.warning(f"[ShadowPipeline] Rejected non-canonical signal type: {signal.name} for {clean_sym}")
             return None
@@ -174,6 +179,11 @@ class ShadowPipeline:
         Record a scanner-detected active signal into shadow_signals.
         """
         sym = normalize_symbol(sig.get("symbol", ""))
+        mkt = get_market_category(sym)
+        if mkt in ("OTHER", "UNKNOWN", "other") or not is_approved_asset(sym):
+            logger.warning(f"[ShadowPipeline] Suppressed unverified/other asset ab-initio: {sym} (market={mkt})")
+            return
+
         sig_type = sig.get("type", "ACTIVE")
 
         # Zero Speculation Mandate: reject any blueprint/sequence or non-canonical trigger

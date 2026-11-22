@@ -16,7 +16,7 @@ from .aggregator import CandleAggregator
 from .dhan_feed import DhanFeed
 from .binance_feed import BinanceFeed
 from .global_feed import GlobalFeed
-from .feed_manager import FeedManager, normalize_symbol, get_market_category, is_market_open
+from .feed_manager import FeedManager, normalize_symbol, get_market_category, is_market_open, is_approved_asset
 from .bootstrapper import HistoricalBootstrapper
 
 __all__ = [
@@ -31,5 +31,6 @@ __all__ = [
     "normalize_symbol",
     "get_market_category",
     "is_market_open",
+    "is_approved_asset",
     "HistoricalBootstrapper",
 ]

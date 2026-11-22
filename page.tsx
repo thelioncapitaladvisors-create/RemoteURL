@@ -7184,16 +7184,14 @@ function MobileScreensaver() {
           const isVcpr = a.isVcprTouch || a.relationshipType === 'VCPR' || a.relationshipBadge?.includes('VCPR') || a.signals?.some((s: any) => (s.type || '').toUpperCase().includes('VIRGIN'));
           if (isVcpr) return false;
 
-          // Exclusively retain approved execution strategies
+          // Exclusively retain approved execution strategies (Confluence, Lightning, Ext Rev, Missile, Scalp, Divergence)
           const matchesApproved = 
             Boolean(a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE') ||
             Boolean(a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING') ||
             Boolean(a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV') ||
             Boolean(a.relationshipBadge?.includes('MISSILE') || a.relationshipType === 'MISSILE') ||
             Boolean(a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP') ||
-            Boolean(a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV') ||
-            Boolean(a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ') ||
-            Boolean(a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT');
+            Boolean(a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV');
           return matchesApproved;
         })
       : assets;
@@ -11071,8 +11069,6 @@ function MobileScreensaver() {
       ...(liveSignalsStats.missileCount > 0 ? [{ value: 'MISSILE', label: '🚀 MISSILE', count: liveSignalsStats.missileCount }] : []),
       ...(liveSignalsStats.scalpCount > 0 ? [{ value: 'SCALP', label: '💎 SCALP', count: liveSignalsStats.scalpCount }] : []),
       ...(liveSignalsStats.divCount > 0 ? [{ value: 'DIV', label: '🎯 DIVERGENCE', count: liveSignalsStats.divCount }] : []),
-      ...(liveSignalsStats.rejCount > 0 ? [{ value: 'REJ', label: '🛡️ REJECTIONS', count: liveSignalsStats.rejCount }] : []),
-      ...(liveSignalsStats.contCount > 0 ? [{ value: 'CONT', label: '🚀 CONTINUATIONS', count: liveSignalsStats.contCount }] : []),
     ];
 
     const marketChips: { id: ScreenerMarketCategory; label: string }[] = [
@@ -11099,8 +11095,6 @@ function MobileScreensaver() {
       { id: 'MISSILE', label: 'Missile', badge: 'MISSILE', icon: '🚀', badgeStyle: 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/35' },
       { id: 'SCALP', label: 'Scalp', badge: 'SCALP', icon: '💎', badgeStyle: 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/35' },
       { id: 'DIV', label: 'Divergence', badge: 'LIVE DIVERGENCE', icon: '🎯', badgeStyle: 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/35' },
-      { id: 'REJ', label: 'Rejection', badge: 'LIVE REJECTION', icon: '🛡️', badgeStyle: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/35' },
-      { id: 'CONT', label: 'Continuation', badge: 'LIVE CONTINUATION', icon: '🚀', badgeStyle: 'bg-teal-500/20 text-teal-600 dark:text-teal-400 border-teal-500/35' },
     ];
 
     const matchLiveAssetToCategory = (catId: string, a: any) => {
@@ -11110,8 +11104,6 @@ function MobileScreensaver() {
       if (catId === 'MISSILE') return a.relationshipBadge?.includes('MISSILE') || a.relationshipType === 'MISSILE';
       if (catId === 'SCALP') return a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP';
       if (catId === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
-      if (catId === 'REJ') return a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ';
-      if (catId === 'CONT') return a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT';
       return false;
     };
 

@@ -32,7 +32,7 @@ from .strategies import StrategyEngine, StrategySignal, MarketContext
 from .trade_manager import TradeManager, Trade, TradeStatus
 from .feeds import (
     FeedManager, CandleAggregator, Tick, normalize_symbol,
-    get_market_category, is_market_open, HistoricalBootstrapper
+    get_market_category, is_market_open, is_approved_asset, HistoricalBootstrapper
 )
 from .shadow_pipeline import ShadowPipeline
 from .telegram_dispatcher import TelegramDispatcher
@@ -150,6 +150,11 @@ class EngineDaemon:
         Handle finalized candle event.
         Executes indicators, Day Types, and 12 Strategy Triggers.
         """
+        mkt = get_market_category(symbol)
+        if mkt in ("OTHER", "UNKNOWN", "other") or not is_approved_asset(symbol):
+            logger.warning(f"[EngineDaemon] Suppressed unverified/other asset ab-initio: {symbol} (market={mkt})")
+            return
+
         if timeframe == "1d":
             self._handle_daily_bar_close(symbol, bar)
         elif timeframe == "15m":

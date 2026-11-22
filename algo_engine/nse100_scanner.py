@@ -26,6 +26,7 @@ from .pivots import (
 from .day_types import DayTypeClassifier
 from .strategies import StrategyEngine, StrategySignal, MarketContext
 from .shadow_pipeline import ShadowPipeline
+from .feeds import get_market_category, is_approved_asset
 
 logger = logging.getLogger('NSE100Scanner')
 
@@ -207,6 +208,11 @@ class NSE100Scanner:
         Scan an individual symbol on 15m timeframe against all 13 strategies and day types.
         """
         clean = clean_symbol(sym)
+        mkt = get_market_category(clean)
+        if mkt in ("OTHER", "UNKNOWN", "other") or not is_approved_asset(clean):
+            logger.warning(f"[NSE100Scanner] Suppressed unverified/other asset ab-initio: {clean} (market={mkt})")
+            return []
+
         daily = self.dhan_feed.fetch_daily_levels(clean)
         if not daily:
             return []

@@ -47,9 +47,20 @@ logging.basicConfig(
 logger = logging.getLogger("DailyScanner")
 
 from algo_engine.feeds.dhan_feed import DhanFeed, EXCHANGE_NSE, EXCHANGE_MCX
+from algo_engine.feeds import get_market_category, is_approved_asset
 from algo_engine.shadow_pipeline import ShadowPipeline
 from algo_engine.data.nse_top100_master import NIFTY_100_SYMBOLS, clean_symbol
-from algo_engine.nse100_scanner import MCX_COMMODITIES, CANONICAL_EXECUTION_TRIGGERS, is_mcx_symbol
+from algo_engine.nse100_scanner import MCX_COMMODITIES, is_mcx_symbol
+
+# Approved 1D Swing Execution Triggers (Zero Speculation: VCPR and Day Types strictly omitted ab-initio)
+CANONICAL_SWING_TRIGGERS = {
+    'LONG MISSILE', 'SHORT MISSILE',
+    'LONG SCALP', 'SHORT SCALP',
+    'LONG LIGHTNING', 'SHORT LIGHTNING',
+    'LONG DIVERGENCE', 'SHORT DIVERGENCE',
+    'LONG HIDDEN DIVERGENCE', 'SHORT HIDDEN DIVERGENCE',
+    'LONG EXTREME REVERSAL', 'SHORT EXTREME REVERSAL'
+}
 from algo_engine.pivots import (
     OHLC, compute_daily_levels, compute_emas_from_bars, compute_pivot_trend_emas,
     compute_atr, compute_dmi, compute_m0_m10, compute_rsi, ValueArea, compute_opening_bias,
@@ -98,6 +109,11 @@ class DailyBlackboxScanner:
         Scan an individual symbol on Daily (1D) timeframe against all 14 canonical strategies.
         """
         clean = clean_symbol(sym)
+        mkt = get_market_category(clean)
+        if mkt in ("OTHER", "UNKNOWN", "other") or not is_approved_asset(clean):
+            logger.warning(f"[DailyScanner] Suppressed unverified/other asset ab-initio: {clean} (market={mkt})")
+            return []
+
         daily_candles = self.dhan_feed.fetch_daily_candles(clean, days=90)
         if not daily_candles or len(daily_candles) < 15:
             return []
@@ -219,41 +235,6 @@ class DailyBlackboxScanner:
 
         strat_sigs = self.strategy_engine.evaluate(ctx)
 
-        # Detect direct Virgin CPR touch on daily bar
-        vcpr_touches = detect_virgin_cpr_touches(
-            history_bars,
-            current_price=cur_bar.close,
-            high_price=cur_bar.high,
-            low_price=cur_bar.low,
-            prev_close=prev_b.close,
-            max_lookback_days=30
-        )
-        for touch in vcpr_touches:
-            is_long = touch['is_support']
-            sig_name = 'LONG VIRGIN CPR' if is_long else 'SHORT VIRGIN CPR'
-            if not any(s.name == sig_name for s in strat_sigs):
-                entry_p = touch['entry_price']
-                atr_v = atr_vals[i] if i < len(atr_vals) else 1.0
-                sl_p = entry_p - 0.75 * atr_v if is_long else entry_p + 0.75 * atr_v
-                tp1_p = entry_p + 2.5 * atr_v if is_long else entry_p - 2.5 * atr_v
-                tp2_p = entry_p + 4.0 * atr_v if is_long else entry_p - 4.0 * atr_v
-                tp3_p = entry_p + 6.5 * atr_v if is_long else entry_p - 6.5 * atr_v
-                tp4_p = entry_p + 8.0 * atr_v if is_long else entry_p - 8.0 * atr_v
-
-                touch_sig = StrategySignal(
-                    name=sig_name,
-                    direction='LONG' if is_long else 'SHORT',
-                    entry_price=entry_p,
-                    stop_loss=sl_p,
-                    tp1=tp1_p, tp2=tp2_p, tp3=tp3_p, tp4=tp4_p,
-                    bar_index=i,
-                    timestamp=cur_bar.timestamp,
-                    zone='LONG ZONE' if is_long else 'SHORT ZONE',
-                    opening_bias='BULLISH' if cur_bar.open > levels.pivot else 'BEARISH',
-                    day_type=mx_type
-                )
-                strat_sigs.append(touch_sig)
-
         signals: List[dict] = []
         now_utc = datetime.now(timezone.utc)
         now_iso = now_utc.isoformat()
@@ -261,7 +242,7 @@ class DailyBlackboxScanner:
         entry_day_str = bar_date_ist.strftime("%Y-%m-%d")
 
         for sig in strat_sigs:
-            if sig.name not in CANONICAL_EXECUTION_TRIGGERS:
+            if sig.name not in CANONICAL_SWING_TRIGGERS:
                 continue
 
             trade_id = f"DHAN_{market_category}_{clean}_{entry_day_str}_{sig.name.replace(' ', '_')}_1D"
@@ -307,8 +288,8 @@ class DailyBlackboxScanner:
                     'cmp': round(float(cur_bar.close), 2),
                     'entry_time': now_iso,
                     'entryDate': bar_date_ist.strftime("%d %b, %H:%M IST"),
-                    'is_vcpr': is_vcpr or len(vcpr_touches) > 0,
-                    'is_vcpr_touch': bool(sig.name in ('LONG VIRGIN CPR', 'SHORT VIRGIN CPR') or len(vcpr_touches) > 0),
+                    'is_vcpr': False,
+                    'is_vcpr_touch': False,
                     'engine_version': '5.0.0'
                 }
             })

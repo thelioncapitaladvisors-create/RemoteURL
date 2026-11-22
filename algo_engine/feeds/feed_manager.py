@@ -62,29 +62,44 @@ def normalize_symbol(symbol: str) -> str:
     return s
 
 
+from ..data.nse_top100_master import NIFTY_100_SYMBOLS
+
+# Canonical Index Symbols for NIFTY Market Category
+NIFTY_INDEX_SYMBOLS = [
+    "NIFTY", "BANKNIFTY", "FINNIFTY", "MIDCPNIFTY", "SENSEX", "BANKEX", "GIFTNIFTY"
+]
+
 def get_market_category(symbol: str) -> str:
     """
-    Resolve a symbol to its single canonical market category.
+    Resolve a symbol to its single canonical institutional market category.
     
     Follows AGENTS.md definitive truth:
-        NIFTY -> MCX -> NYMEX -> CRYPTO -> FOREX -> WORLD
+        NIFTY -> STOCKS -> MCX -> NYMEX -> CRYPTO -> FOREX -> WORLD
+    Returns "OTHER" for any unverified or non-canonical symbol.
     """
     sym = normalize_symbol(symbol)
 
-    if sym in NIFTY_SYMBOLS:
+    if sym in NIFTY_INDEX_SYMBOLS:
         return "NIFTY"
-    if sym in MCX_SYMBOLS:
+    if sym in NIFTY_100_SYMBOLS or sym in NIFTY_SYMBOLS:
+        return "STOCKS"
+    if sym in MCX_SYMBOLS or sym.startswith("ALUMINI") or sym.startswith("ZINC"):
         return "MCX"
     if sym in NYMEX_SYMBOLS:
         return "NYMEX"
-    if sym in CANONICAL_CRYPTO_SYMBOLS or sym.endswith("USDT"):
+    if sym in CANONICAL_CRYPTO_SYMBOLS or sym.endswith("USDT") or sym.endswith("BTC"):
         return "CRYPTO"
     if sym in FOREX_SYMBOLS:
         return "FOREX"
     if sym in WORLD_INDICES:
         return "WORLD"
 
-    return "UNKNOWN"
+    return "OTHER"
+
+
+def is_approved_asset(symbol: str) -> bool:
+    """Check if an asset belongs to the 7 canonical institutional markets."""
+    return get_market_category(symbol) in ("NIFTY", "STOCKS", "MCX", "NYMEX", "CRYPTO", "FOREX", "WORLD")
 
 
 def is_market_open(symbol: str, dt: Optional[datetime] = None) -> bool:
