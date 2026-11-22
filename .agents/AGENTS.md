@@ -8,22 +8,24 @@
     - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
     - Gating must NEVER rely on `close` for limit entry qualification.
   - For Daily Timeframe (1D Swing) BlackBox signals:
-## Version 5.0: Other Live Signals Removal & Daily TF Swing Approved Execution Filters Mandate (Effective November 22, 2026)
-- **OTHER LIVE SIGNALS ROW PERMANENT REMOVAL**:
-  - Across `renderDhanLiveSignalsSection()` in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
-    - The `Other Live Signals` fallback table row and its underlying `unmatchedAssets` precomputation have been permanently excised from the Live Signals matrix across all views and tabs.
-- **DAILY TF SWING SIGNALS VCPR EXCLUSION & APPROVED EXECUTION FILTERS ENFORCEMENT**:
+## Version 5.0: Stop Generation of Unverified/Other Signals Ab-Initio & 6 Core Swing Strategies Mandate (Effective November 22, 2026)
+- **UNVERIFIED / OTHER SIGNALS AB-INITIO BLACKBOX SUPPRESSION**:
+  - Across the entire BlackBox quantitative signal engine (`algo_engine/feeds/feed_manager.py`, `algo_engine/shadow_pipeline.py`, `algo_engine/run_daily_scanner.py`, `algo_engine/nse100_scanner.py`, `algo_engine/engine_daemon.py`):
+    - Any asset not categorized within the 7 canonical institutional markets (`NIFTY`, `STOCKS`, `MCX`, `NYMEX`, `CRYPTO`, `FOREX`, `WORLD`), or flagged as `OTHER` / `UNKNOWN`, is strictly suppressed ab-initio before evaluating strategies or creating shadow orders.
+    - Zero unverified or orphan signals may ever be generated, dispatched, or logged to Supabase.
+- **6 CORE SWING TRADING EXECUTION STRATEGIES & VCPR / REJ / CONT EXCLUSION**:
   - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) under `🎯 SWING TRADING OPPORTUNITIES` / `⚡ DAILY TF SIGNALS ( '1D' TIME FRAME)`:
-    - All Virgin CPR (`VCPR`) signals (including VCPR touch points, VCPR magnets, and Virgin CPR scanner outputs) are strictly excluded from Live Signals ingestion.
-    - Filtering and matrix display strictly retain only approved core execution strategies:
+    - Rejections (`REJ`) and Continuations (`CONT`) are removed from Swing Live Signals, keeping strictly the 6 core execution strategies:
       1. Confluence (`FIRE`)
       2. Lightning (`LIGHTNING`)
       3. Extreme Reversal (`EXT_REV`)
       4. Missile (`MISSILE`)
       5. Scalp (`SCALP`)
       6. Divergence (`DIV`)
-      7. Rejection (`REJ`)
-      8. Continuation (`CONT`)
+    - Virgin CPR (`VCPR`) touches, magnets, and scanner outputs are completely halted ab-initio in `run_daily_scanner.py`.
+- **OTHER LIVE SIGNALS ROW PERMANENT REMOVAL**:
+  - Across `renderDhanLiveSignalsSection()` in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
+    - The `Other Live Signals` fallback table row and its underlying `unmatchedAssets` precomputation have been permanently excised from the Live Signals matrix across all views and tabs.
 
 ## Version 5.0: Virgin CPR Suffix Removal & Clean Uniform Screener Aesthetics (Effective November 22, 2026)
 - **VIRGIN CPR SUFFIX REMOVAL**:
