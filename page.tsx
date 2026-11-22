@@ -17478,20 +17478,38 @@ function MobileScreensaver() {
                               </span>
                             </div>
                             <div className="grid grid-cols-3 gap-2 pt-2.5 text-center">
-                              <div className="flex flex-col">
-                                <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Profit Factor</span>
-                                <span className="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 font-mono">1.31 - 1.48</span>
-                                <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold">+23% to +45% Edge</span>
+                              <div className="flex flex-col justify-between h-full">
+                                <div className="min-h-[26px] sm:min-h-[28px] flex items-end justify-center">
+                                  <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase leading-tight">Profit Factor</span>
+                                </div>
+                                <div className="my-0.5 flex items-center justify-center">
+                                  <span className="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 font-mono leading-tight">1.31 - 1.48</span>
+                                </div>
+                                <div className="min-h-[28px] sm:min-h-[30px] flex items-start justify-center">
+                                  <span className="text-[8.5px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold leading-tight break-words">+23% to +45% Edge</span>
+                                </div>
                               </div>
-                              <div className="flex flex-col">
-                                <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Win Rate</span>
-                                <span className="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 font-mono">26.1% - 38.9%</span>
-                                <span className="text-[9.5px] text-slate-500 font-medium">Asymmetric 1:3 RR</span>
+                              <div className="flex flex-col justify-between h-full">
+                                <div className="min-h-[26px] sm:min-h-[28px] flex items-end justify-center">
+                                  <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase leading-tight">Win Rate</span>
+                                </div>
+                                <div className="my-0.5 flex items-center justify-center">
+                                  <span className="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 font-mono leading-tight">26.1% - 38.9%</span>
+                                </div>
+                                <div className="min-h-[28px] sm:min-h-[30px] flex items-start justify-center">
+                                  <span className="text-[8.5px] sm:text-[9.5px] text-slate-500 font-medium leading-tight break-words">Asymmetric 1:3 RR</span>
+                                </div>
                               </div>
-                              <div className="flex flex-col">
-                                <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Max Drawdown</span>
-                                <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">1.5% - 6.2%</span>
-                                <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold">-41% to -85% Cut</span>
+                              <div className="flex flex-col justify-between h-full">
+                                <div className="min-h-[26px] sm:min-h-[28px] flex items-end justify-center">
+                                  <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase leading-tight">Max Drawdown</span>
+                                </div>
+                                <div className="my-0.5 flex items-center justify-center">
+                                  <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono leading-tight">1.5% - 6.2%</span>
+                                </div>
+                                <div className="min-h-[28px] sm:min-h-[30px] flex items-start justify-center">
+                                  <span className="text-[8.5px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold leading-tight break-words">-41% to -85% Cut</span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -17510,41 +17528,65 @@ function MobileScreensaver() {
                               </span>
                             </div>
                             <div className="grid grid-cols-4 gap-1.5 sm:gap-2 pt-2.5 text-center">
-                              <div className="flex flex-col">
-                                <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight">Actual PF</span>
-                                <span className={`text-xs sm:text-sm font-black font-mono ${confluenceBenchmarkStats.summary.profitFactor >= 1.0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                                  {confluenceBenchmarkStats.summary.profitFactorText}
-                                </span>
-                                <span className="text-[9px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold truncate">
-                                  {confluenceBenchmarkStats.summary.profitFactor >= 1.3 ? '▲ BEATING BENCHMARK' : (confluenceBenchmarkStats.summary.totalTrades > 0 ? 'LIVE REALIZED' : 'AWAITING TRIGGERS')}
-                                </span>
+                              <div className="flex flex-col justify-between h-full">
+                                <div className="min-h-[26px] sm:min-h-[28px] flex items-end justify-center">
+                                  <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight leading-tight">Actual PF</span>
+                                </div>
+                                <div className="my-0.5 flex items-center justify-center">
+                                  <span className={`text-xs sm:text-sm font-black font-mono leading-tight ${confluenceBenchmarkStats.summary.profitFactor >= 1.0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                    {confluenceBenchmarkStats.summary.profitFactorText}
+                                  </span>
+                                </div>
+                                <div className="min-h-[28px] sm:min-h-[30px] flex items-start justify-center">
+                                  <span className="text-[8.5px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold leading-tight break-words">
+                                    {confluenceBenchmarkStats.summary.profitFactor >= 1.3 ? '▲ BEATING BENCHMARK' : (confluenceBenchmarkStats.summary.totalTrades > 0 ? 'LIVE REALIZED' : 'AWAITING TRIGGERS')}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex flex-col">
-                                <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight">Actual Win Rate</span>
-                                <span className={`text-xs sm:text-sm font-black font-mono ${confluenceBenchmarkStats.summary.winRate >= 50 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                                  {confluenceBenchmarkStats.summary.totalTrades > 0 ? `${confluenceBenchmarkStats.summary.winRate.toFixed(1)}%` : '--'}
-                                </span>
-                                <span className="text-[9px] sm:text-[9.5px] text-slate-500 font-medium truncate">
-                                  {confluenceBenchmarkStats.summary.winCount}W / {confluenceBenchmarkStats.summary.lossCount}L{confluenceBenchmarkStats.summary.beCount > 0 ? ` (${confluenceBenchmarkStats.summary.beCount} BE)` : ' / 0BE'}
-                                </span>
+                              <div className="flex flex-col justify-between h-full">
+                                <div className="min-h-[26px] sm:min-h-[28px] flex items-end justify-center">
+                                  <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight leading-tight">Actual Win Rate</span>
+                                </div>
+                                <div className="my-0.5 flex items-center justify-center">
+                                  <span className={`text-xs sm:text-sm font-black font-mono leading-tight ${confluenceBenchmarkStats.summary.winRate >= 50 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                                    {confluenceBenchmarkStats.summary.totalTrades > 0 ? `${confluenceBenchmarkStats.summary.winRate.toFixed(1)}%` : '--'}
+                                  </span>
+                                </div>
+                                <div className="min-h-[28px] sm:min-h-[30px] flex items-start justify-center">
+                                  <span className="text-[8.5px] sm:text-[9.5px] text-slate-500 font-medium leading-tight break-words">
+                                    {confluenceBenchmarkStats.summary.winCount}W / {confluenceBenchmarkStats.summary.lossCount}L{confluenceBenchmarkStats.summary.beCount > 0 ? ` (${confluenceBenchmarkStats.summary.beCount} BE)` : ' / 0BE'}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex flex-col">
-                                <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight">Actual Drawdown</span>
-                                <span className={`text-xs sm:text-sm font-black font-mono ${confluenceBenchmarkStats.summary.isBeatingMaxDD ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                                  {confluenceBenchmarkStats.summary.maxDD}
-                                </span>
-                                <span className="text-[9px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold truncate">
-                                  {confluenceBenchmarkStats.summary.isBeatingMaxDD ? '▲ BEATING BENCHMARK' : (confluenceBenchmarkStats.summary.totalTrades > 0 ? 'PEAK-TO-VALLEY' : 'AWAITING TRIGGERS')}
-                                </span>
+                              <div className="flex flex-col justify-between h-full">
+                                <div className="min-h-[26px] sm:min-h-[28px] flex items-end justify-center">
+                                  <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight leading-tight">Actual Drawdown</span>
+                                </div>
+                                <div className="my-0.5 flex items-center justify-center">
+                                  <span className={`text-xs sm:text-sm font-black font-mono leading-tight ${confluenceBenchmarkStats.summary.isBeatingMaxDD ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                                    {confluenceBenchmarkStats.summary.maxDD}
+                                  </span>
+                                </div>
+                                <div className="min-h-[28px] sm:min-h-[30px] flex items-start justify-center">
+                                  <span className="text-[8.5px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold leading-tight break-words">
+                                    {confluenceBenchmarkStats.summary.isBeatingMaxDD ? '▲ BEATING BENCHMARK' : (confluenceBenchmarkStats.summary.totalTrades > 0 ? 'PEAK-TO-VALLEY' : 'AWAITING TRIGGERS')}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex flex-col">
-                                <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight">Net Return</span>
-                                <span className={`text-xs sm:text-sm font-black font-mono ${confluenceBenchmarkStats.summary.netReturn >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                                  {confluenceBenchmarkStats.summary.totalTrades > 0 ? `${confluenceBenchmarkStats.summary.netReturn > 0 ? '+' : ''}${confluenceBenchmarkStats.summary.netReturn.toFixed(2)}%` : '0.00%'}
-                                </span>
-                                <span className="text-[9px] sm:text-[9.5px] text-slate-500 font-medium truncate">
-                                  Exp: {confluenceBenchmarkStats.summary.expectancy > 0 ? '+' : ''}{confluenceBenchmarkStats.summary.expectancy.toFixed(2)}%
-                                </span>
+                              <div className="flex flex-col justify-between h-full">
+                                <div className="min-h-[26px] sm:min-h-[28px] flex items-end justify-center">
+                                  <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight leading-tight">Net Return</span>
+                                </div>
+                                <div className="my-0.5 flex items-center justify-center">
+                                  <span className={`text-xs sm:text-sm font-black font-mono leading-tight ${confluenceBenchmarkStats.summary.netReturn >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                    {confluenceBenchmarkStats.summary.totalTrades > 0 ? `${confluenceBenchmarkStats.summary.netReturn > 0 ? '+' : ''}${confluenceBenchmarkStats.summary.netReturn.toFixed(2)}%` : '0.00%'}
+                                  </span>
+                                </div>
+                                <div className="min-h-[28px] sm:min-h-[30px] flex items-start justify-center">
+                                  <span className="text-[8.5px] sm:text-[9.5px] text-slate-500 font-medium leading-tight break-words">
+                                    Exp: {confluenceBenchmarkStats.summary.expectancy > 0 ? '+' : ''}{confluenceBenchmarkStats.summary.expectancy.toFixed(2)}%
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
