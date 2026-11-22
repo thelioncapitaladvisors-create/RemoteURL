@@ -12785,31 +12785,6 @@ function MobileScreensaver() {
 
                         const cleanSym = (sym: string) => (sym || '').replace(/^(NSE_DLY|NSE|MCX|NYMEX|COMEX|BINANCE|TVC):/i, '').replace(/1!$/, '');
 
-                        // Precompute distinct filter setup appearances per symbol on this day (>= 2 filters triggers flashing theme)
-                        const symbolFilterCountMap = new Map<string, Set<string>>();
-                        const allHubCategories = [
-                            ...liveParameterCategories,
-                            ...watchlistParameterCategories,
-                            ...blueprintParameterCategories
-                        ];
-
-                        allHubCategories.forEach(cat => {
-                            const filterKey = (cat.id === 'REJECTED_BULLISH' || cat.id === 'REJECTED_BEARISH' || cat.id === 'REJECTION') ? 'REJECTION'
-                                : (cat.id === 'BULLISH_CONTINUATION' || cat.id === 'BEARISH_CONTINUATION') ? 'CONTINUATION'
-                                : (cat.id === 'DIVERGENCE' || cat.id === 'HIDDEN_DIVERGENCE') ? 'DIVERGENCE'
-                                : (cat.id === 'STOP_RUN' || cat.id === 'STOP_RUN_SEQ') ? 'STOP_RUN'
-                                : cat.id;
-
-                            const matching = filteredSigs.filter(s => matchSignalToCategory(cat.id, s));
-                            matching.forEach(s => {
-                                const sym = cleanSym(s.symbol);
-                                if (!symbolFilterCountMap.has(sym)) {
-                                    symbolFilterCountMap.set(sym, new Set());
-                                }
-                                symbolFilterCountMap.get(sym)!.add(filterKey);
-                            });
-                        });
-
                         const renderCategoryRow = (cat: { id: string; label: string }, isWatchlistMode: boolean = false) => {
                             const matching = filteredSigs.filter(s => matchSignalToCategory(cat.id, s));
                             
@@ -12994,54 +12969,43 @@ function MobileScreensaver() {
                                                         const sClean = cleanSym(b.symbol);
                                                         const isBB = (b.source || '').toLowerCase().includes('blackbox');
                                                         return (isBB && isExecutedTrade(b)) ? `${sClean}⚡` : sClean;
-                                                    }).filter((v, i, a) => a.indexOf(v) === i).map(sym => {
-                                                        const symBase = sym.replace(/⚡$/, '');
-                                                        const filterCount = symbolFilterCountMap.get(symBase)?.size || 0;
-                                                        const isMultiFilter = filterCount >= 2;
-
-                                                        return (
-                                                            <span 
-                                                                key={sym} 
-                                                                onClick={() => {
-                                                                    const found = bulls.find(b => cleanSym(b.symbol) === sym);
-                                                                    if (found) setSelectedDhanOorAsset(found);
-                                                                }}
-                                                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none cursor-pointer hover:scale-105 active:scale-95 transition-all ${
-                                                                    isMultiFilter
-                                                                        ? 'shiny-pill-bull shadow-xs'
-                                                                        : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 shadow-none'
-                                                                }`}
-                                                                title={isMultiFilter ? `${symBase}: Active in ${filterCount} filters today (High Confluence!)` : undefined}
-                                                            >
-                                                                <span className={isMultiFilter ? 'text-emerald-200 text-[9px]' : 'text-emerald-600 dark:text-emerald-400 text-[9px]'}>▲</span>
-                                                                <span className={isMultiFilter ? 'shiny-name-theme' : ''}>{sym}</span>
-                                                                {isFireRow && (
-                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">CONF</span>
-                                                                )}
-                                                                {isDivergenceRow && (
-                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-purple-200 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700 ml-0.5">DIV</span>
-                                                                )}
-                                                                {isLightningRow && (
-                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">LTG</span>
-                                                                )}
-                                                                {isExtRevRow && (
-                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">EXT</span>
-                                                                )}
-                                                                {isRejectionRow && (
-                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">REJ</span>
-                                                                )}
-                                                                {isContinuationRow && (
-                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-teal-200 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700 ml-0.5">CONT</span>
-                                                                )}
-                                                                {isInsideDayRow && (
-                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-sky-200 dark:bg-sky-900/60 text-sky-800 dark:text-sky-200 border border-sky-300 dark:border-sky-700 ml-0.5">INSIDE</span>
-                                                                )}
-                                                                {isNcprRow && (
-                                                                    <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 ml-0.5">NCPR</span>
-                                                                )}
-                                                            </span>
-                                                        );
-                                                    })}
+                                                    }).filter((v, i, a) => a.indexOf(v) === i).map(sym => (
+                                                        <span 
+                                                            key={sym} 
+                                                            onClick={() => {
+                                                                const found = bulls.find(b => cleanSym(b.symbol) === sym);
+                                                                if (found) setSelectedDhanOorAsset(found);
+                                                            }}
+                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-none"
+                                                        >
+                                                            <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
+                                                            <span>{sym}</span>
+                                                            {isFireRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">CONF</span>
+                                                            )}
+                                                            {isDivergenceRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-purple-200 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 border border-purple-300 dark:border-purple-700 ml-0.5">DIV</span>
+                                                            )}
+                                                            {isLightningRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">LTG</span>
+                                                            )}
+                                                            {isExtRevRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">EXT</span>
+                                                            )}
+                                                            {isRejectionRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 ml-0.5">REJ</span>
+                                                            )}
+                                                            {isContinuationRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-teal-200 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 border border-teal-300 dark:border-teal-700 ml-0.5">CONT</span>
+                                                            )}
+                                                            {isInsideDayRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-sky-200 dark:bg-sky-900/60 text-sky-800 dark:text-sky-200 border border-sky-300 dark:border-sky-700 ml-0.5">INSIDE</span>
+                                                            )}
+                                                            {isNcprRow && (
+                                                                <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 ml-0.5">NCPR</span>
+                                                            )}
+                                                        </span>
+                                                    ))}
                                                 </div>
                                             )}
                                             {bearSyms.length > 0 && (
@@ -13050,27 +13014,17 @@ function MobileScreensaver() {
                                                         const sClean = cleanSym(b.symbol);
                                                         const isBB = (b.source || '').toLowerCase().includes('blackbox');
                                                         return (isBB && isExecutedTrade(b)) ? `${sClean}⚡` : sClean;
-                                                    }).filter((v, i, a) => a.indexOf(v) === i).map(sym => {
-                                                        const symBase = sym.replace(/⚡$/, '');
-                                                        const filterCount = symbolFilterCountMap.get(symBase)?.size || 0;
-                                                        const isMultiFilter = filterCount >= 2;
-
-                                                        return (
-                                                            <span 
-                                                                key={sym} 
-                                                                onClick={() => {
-                                                                    const found = bears.find(b => cleanSym(b.symbol) === sym);
-                                                                    if (found) setSelectedDhanOorAsset(found);
-                                                                }}
-                                                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none cursor-pointer hover:scale-105 active:scale-95 transition-all ${
-                                                                    isMultiFilter
-                                                                        ? 'shiny-pill-bear shadow-xs'
-                                                                        : 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 shadow-none'
-                                                                }`}
-                                                                title={isMultiFilter ? `${symBase}: Active in ${filterCount} filters today (High Confluence!)` : undefined}
-                                                            >
-                                                                <span className={isMultiFilter ? 'text-rose-200 text-[9px]' : 'text-rose-600 dark:text-rose-400 text-[9px]'}>▼</span>
-                                                                <span className={isMultiFilter ? 'shiny-name-theme' : ''}>{sym}</span>
+                                                    }).filter((v, i, a) => a.indexOf(v) === i).map(sym => (
+                                                        <span 
+                                                            key={sym} 
+                                                            onClick={() => {
+                                                                const found = bears.find(b => cleanSym(b.symbol) === sym);
+                                                                if (found) setSelectedDhanOorAsset(found);
+                                                            }}
+                                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-none"
+                                                        >
+                                                            <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
+                                                            <span>{sym}</span>
                                                                 {isFireRow && (
                                                                     <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 ml-0.5">CONF</span>
                                                                 )}
@@ -13096,8 +13050,7 @@ function MobileScreensaver() {
                                                                     <span className="text-[8.5px] px-1 py-0.2 rounded font-mono font-bold bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700 ml-0.5">NCPR</span>
                                                                 )}
                                                             </span>
-                                                        );
-                                                    })}
+                                                    ))}
                                                 </div>
                                             )}
                                         </div>
@@ -18527,87 +18480,6 @@ function MobileScreensaver() {
                         { id: 'ACC_DIST_SEQ', label: 'Accumulation / Distribution Sequence', icon: '💎', scanKey: (r: any) => r.acc || 'NONE', dtMatch: (dt: string) => dt.includes('ACCUMULATION') || dt.includes('ACC/DIST') }
                       ];
 
-                      // Precompute filter appearances per symbol per day for 7-Day Matrix (>= 2 filters triggers flashing theme)
-                      const matrixDayFilterMap = new Map<number, Map<string, Set<string>>>();
-                      days.forEach(d => {
-                        const symCatMap = new Map<string, Set<string>>();
-                        matrixDayFilterMap.set(d.dayNum, symCatMap);
-
-                        const addSymCat = (sym: string, catId: string) => {
-                          const s = cleanSym(sym);
-                          if (!s) return;
-                          if (!symCatMap.has(s)) symCatMap.set(s, new Set());
-                          symCatMap.get(s)!.add(catId);
-                        };
-
-                        signalCategories.forEach(cat => {
-                          if (pivotBossLoaded && !screenerSignalsResetTs) {
-                            pivotBossScans.forEach((row: any) => {
-                              const rowOffset = row.dayOffset != null ? row.dayOffset : 0;
-                              if (rowOffset !== d.offset) return;
-                              const val = (cat.scanKey ? (cat.scanKey(row) || '') : '').toString();
-                              if (!val || val === 'NONE' || val === '--' || val === '0') return;
-                              const sym = cleanSym(row.sym);
-                              if (analyticsMarket !== 'ALL' && getMarket({ symbol: sym } as any) !== analyticsMarket) return;
-                              addSymCat(sym, cat.id);
-                            });
-                          }
-                          const daySigs = filteredSigs.filter(s => {
-                            const sigTs = new Date(s.signal_ts || s.created_at).getTime();
-                            if (screenerSignalsResetTs && sigTs < screenerSignalsResetTs) return false;
-                            const sKey = getDailyCandleSessionKey(s.signal_ts || s.created_at);
-                            return sKey === d.sessionKey && cat.check(s);
-                          });
-                          daySigs.forEach(s => addSymCat(s.symbol, cat.id));
-                        });
-
-                        blueprintCategories.forEach(cat => {
-                          if (pivotBossLoaded && !screenerSignalsResetTs) {
-                            pivotBossScans.forEach((row: any) => {
-                              const rowOffset = row.dayOffset != null ? row.dayOffset : 0;
-                              if (rowOffset !== d.offset) return;
-                              const val = (cat.scanKey ? (cat.scanKey(row) || '') : '').toString();
-                              if (!val || val === 'NONE' || val === '--' || val === '0') return;
-                              const sym = cleanSym(row.sym);
-                              if (analyticsMarket !== 'ALL' && getMarket({ symbol: sym } as any) !== analyticsMarket) return;
-                              addSymCat(sym, cat.id);
-                            });
-                          }
-                          const daySigs = filteredSigs.filter(s => {
-                            const sigTs = new Date(s.signal_ts || s.created_at).getTime();
-                            if (screenerSignalsResetTs && sigTs < screenerSignalsResetTs) return false;
-                            const sKey = getDailyCandleSessionKey(s.signal_ts || s.created_at);
-                            let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-                            const dt = String(meta.day_type || meta.dt || s.type || '').toUpperCase();
-                            return sKey === d.sessionKey && (cat.dtMatch ? cat.dtMatch(dt) : false);
-                          });
-                          daySigs.forEach(s => addSymCat(s.symbol, cat.id));
-                        });
-
-                        sequenceCategories.forEach(cat => {
-                          if (pivotBossLoaded && !screenerSignalsResetTs) {
-                            pivotBossScans.forEach((row: any) => {
-                              const rowOffset = row.dayOffset != null ? row.dayOffset : 0;
-                              if (rowOffset !== d.offset) return;
-                              const val = (cat.scanKey ? (cat.scanKey(row) || '') : '').toString();
-                              if (!val || val === 'NONE' || val === '--' || val === '0') return;
-                              const sym = cleanSym(row.sym);
-                              if (analyticsMarket !== 'ALL' && getMarket({ symbol: sym } as any) !== analyticsMarket) return;
-                              addSymCat(sym, cat.id);
-                            });
-                          }
-                          const daySigs = filteredSigs.filter(s => {
-                            const sigTs = new Date(s.signal_ts || s.created_at).getTime();
-                            if (screenerSignalsResetTs && sigTs < screenerSignalsResetTs) return false;
-                            const sKey = getDailyCandleSessionKey(s.signal_ts || s.created_at);
-                            let meta = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-                            const dt = String(meta.day_type || meta.dt || s.type || '').toUpperCase();
-                            return sKey === d.sessionKey && (cat.dtMatch ? cat.dtMatch(dt) : false);
-                          });
-                          daySigs.forEach(s => addSymCat(s.symbol, cat.id));
-                        });
-                      });
-
                       const renderCellContent = (
                         bulls: string[],
                         bears: string[],
@@ -18636,11 +18508,6 @@ function MobileScreensaver() {
                           });
                         };
 
-                        const isMultiFilterSym = (sym: string) => {
-                          const count = matrixDayFilterMap.get(dayNum)?.get(sym)?.size || 0;
-                          return count >= 2;
-                        };
-
                         if (screenerDensityMode === 'DETAILED') {
                           return (
                             <div 
@@ -18650,46 +18517,28 @@ function MobileScreensaver() {
                             >
                               {hasBull && (
                                 <div className="flex flex-wrap gap-1 items-center justify-center w-full">
-                                  {bulls.map(b => {
-                                    const isMulti = isMultiFilterSym(b);
-                                    const filterCount = matrixDayFilterMap.get(dayNum)?.get(b)?.size || 0;
-                                    return (
-                                      <span
-                                        key={'bull-' + b}
-                                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none transition-all ${
-                                          isMulti
-                                            ? 'shiny-pill-bull shadow-xs'
-                                            : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 shadow-none'
-                                        }`}
-                                        title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
-                                      >
-                                        <span className={isMulti ? 'text-emerald-200 text-[9px]' : 'text-emerald-600 dark:text-emerald-400 text-[9px]'}>▲</span>
-                                        <span className={isMulti ? 'shiny-name-theme' : ''}>{b}</span>
-                                      </span>
-                                    );
-                                  })}
+                                  {bulls.map(b => (
+                                    <span
+                                      key={'bull-' + b}
+                                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none transition-all shadow-none"
+                                    >
+                                      <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
+                                      <span>{b}</span>
+                                    </span>
+                                  ))}
                                 </div>
                               )}
                               {hasBear && (
                                 <div className="flex flex-wrap gap-1 items-center justify-center w-full">
-                                  {bears.map(b => {
-                                    const isMulti = isMultiFilterSym(b);
-                                    const filterCount = matrixDayFilterMap.get(dayNum)?.get(b)?.size || 0;
-                                    return (
-                                      <span
-                                        key={'bear-' + b}
-                                        className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none transition-all ${
-                                          isMulti
-                                            ? 'shiny-pill-bear shadow-xs'
-                                            : 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 shadow-none'
-                                        }`}
-                                        title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
-                                      >
-                                        <span className={isMulti ? 'text-rose-200 text-[9px]' : 'text-rose-600 dark:text-rose-400 text-[9px]'}>▼</span>
-                                        <span className={isMulti ? 'shiny-name-theme' : ''}>{b}</span>
-                                      </span>
-                                    );
-                                  })}
+                                  {bears.map(b => (
+                                    <span
+                                      key={'bear-' + b}
+                                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none transition-all shadow-none"
+                                    >
+                                      <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
+                                      <span>{b}</span>
+                                    </span>
+                                  ))}
                                 </div>
                               )}
                             </div>
@@ -18705,42 +18554,24 @@ function MobileScreensaver() {
                               className="flex flex-col gap-0.5 items-center justify-center p-0.5 w-full hover:opacity-80 transition-opacity active:scale-95"
                               title="Tap to inspect"
                             >
-                              {bulls.map(b => {
-                                const isMulti = isMultiFilterSym(b);
-                                const filterCount = matrixDayFilterMap.get(dayNum)?.get(b)?.size || 0;
-                                return (
-                                  <span
-                                    key={'bull-' + b}
-                                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none transition-all ${
-                                      isMulti
-                                        ? 'shiny-pill-bull shadow-xs'
-                                        : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 shadow-none'
-                                    }`}
-                                    title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
-                                  >
-                                    <span className={isMulti ? 'text-emerald-200 text-[9px]' : 'text-emerald-600 dark:text-emerald-400 text-[9px]'}>▲</span>
-                                    <span className={isMulti ? 'shiny-name-theme' : ''}>{b}</span>
-                                  </span>
-                                );
-                              })}
-                              {bears.map(b => {
-                                const isMulti = isMultiFilterSym(b);
-                                const filterCount = matrixDayFilterMap.get(dayNum)?.get(b)?.size || 0;
-                                return (
-                                  <span
-                                    key={'bear-' + b}
-                                    className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] leading-none transition-all ${
-                                      isMulti
-                                        ? 'shiny-pill-bear shadow-xs'
-                                        : 'bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 shadow-none'
-                                    }`}
-                                    title={isMulti ? `${b}: Active in ${filterCount} filters on Day ${dayNum} (High Confluence!)` : undefined}
-                                  >
-                                    <span className={isMulti ? 'text-rose-200 text-[9px]' : 'text-rose-600 dark:text-rose-400 text-[9px]'}>▼</span>
-                                    <span className={isMulti ? 'shiny-name-theme' : ''}>{b}</span>
-                                  </span>
-                                );
-                              })}
+                              {bulls.map(b => (
+                                <span
+                                  key={'bull-' + b}
+                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/80 leading-none transition-all shadow-none"
+                                >
+                                  <span className="text-emerald-600 dark:text-emerald-400 text-[9px]">▲</span>
+                                  <span>{b}</span>
+                                </span>
+                              ))}
+                              {bears.map(b => (
+                                <span
+                                  key={'bear-' + b}
+                                  className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded font-mono font-bold text-[10px] sm:text-[11px] bg-rose-100 dark:bg-rose-950/80 text-rose-800 dark:text-rose-300 border border-rose-300/80 dark:border-rose-700/80 leading-none transition-all shadow-none"
+                                >
+                                  <span className="text-rose-600 dark:text-rose-400 text-[9px]">▼</span>
+                                  <span>{b}</span>
+                                </span>
+                              ))}
                             </button>
                           );
                         }
