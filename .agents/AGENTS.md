@@ -9,6 +9,25 @@
     - Gating must NEVER rely on `close` for limit entry qualification.
   - For Daily Timeframe (1D Swing) BlackBox signals:
     - Strict $H_4/L_4$ limit touch-point qualification is **NOT considered** (ungated per direct user instruction), evaluating pure structural patterns on daily OHLC candles.
+## Version 5.0: Virgin CPR Suffix Removal & Multi-Filter (>= 2) Confluence Flashing Name Theme Mandate (Effective November 22, 2026)
+- **VIRGIN CPR SUFFIX REMOVAL**:
+  - Across the HUB tab (`activeTab === 'DASHBOARD'`) and screener displays in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
+    - The redundant pink `VCPR` badge suffix (`<span ...>VCPR</span>`) adjacent to symbol names in the Virgin CPR filter row has been permanently removed, maintaining clean symbol name presentation.
+- **HIGH-CONFLUENCE MULTI-FILTER (>= 2) FLASHING NAME THEME MANDATE**:
+  - Across daily screener signals, watchlist candidate rows, and the 7-day matrix:
+    1. **Dynamic Precomputation**: For each trading day, every asset's distinct normalized filter setup appearances are precomputed. If an asset qualifies on **2 or more distinct filter setups on any day** (`filterCount >= 2`), it qualifies as an institutional High-Confluence asset.
+    2. **Flashing Name & Glowing Pill Aesthetics**: High-confluence assets automatically receive:
+       - Symbol name text: `.flashing-name-theme` with smooth rhythmic pulse and glowing drop-shadow (`@keyframes flashing-name-glow`).
+       - Asset pill container: `.flashing-pill-bull` (emerald green glow) for bullish assets or `.flashing-pill-bear` (rose red glow) for bearish assets.
+       - Tooltip inspection: Explicit title tooltip indicating the exact filter count (e.g. `SYMBOL: Active in 2 filters today (High Confluence!)`).
+
+## Version 5.0: Swing Trading Opportunities & Daily TF Signals Header Standardization & VCPR Touch Tab Removal (Effective November 22, 2026)
+- **SWING TRADING OPPORTUNITIES & DAILY TF SIGNALS HEADER & FILTER MANDATE**:
+  - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
+    1. **Tab Title Standardization**: Main tab title is officially designated **`Swing Trading Opportunities`** (rendered uppercase `🎯 SWING TRADING OPPORTUNITIES`).
+    2. **Section Header Standardization**: Live Signals matrix card title is officially designated **`Daily TF Signals ( '1D' Time Frame)`** (rendered uppercase `⚡ DAILY TF SIGNALS ( '1D' TIME FRAME)`).
+    3. **VCPR Touch Tab Removal**: The `⚡ VCPR TOUCH` tab button is strictly excluded from `liveFilterOptions` and matrix view categories (`liveMatrixCategories`), focusing filter tabs exclusively on core execution strategies (`CONFLUENCE`, `LIGHTNING`, `EXT REV`, `MISSILE`, `SCALP`, `DIVERGENCE`, `REJECTIONS`, `CONTINUATIONS`).
+
 ## Version 5.0: Daily Timeframe (1D Swing) BlackBox Live Signals, Nil-Signal Gating & Screener Header Standardization Mandate (Effective November 21, 2026)
 - **DAILY TIMEFRAME (1D SWING) BLACKBOX EXECUTION ENGINE**:
   - Across `algo_engine/feeds/dhan_feed.py`, `algo_engine/shadow_pipeline.py`, `algo_engine/run_daily_scanner.py`, and `Tv-Alert-Mobile/src/app/page.tsx`:
@@ -23,7 +42,7 @@
 ## Version 5.0: INSIGHTS Daily Timeframe Live Signals & Redundant Watchlist Removal Mandate (Effective November 20, 2026)
 - **INSIGHTS TAB DEDICATED DAILY TIMEFRAME LIVE SIGNALS MANDATE**:
   - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
-    1. **Dedicated Daily Swing Live Signals Engine**: The Live Signals matrix on INSIGHTS is dedicated exclusively to **Daily Timeframe (1D Swing) execution signals** (`🚨 DAILY LIVE SIGNALS (1D SWING)`). Sub-header explicitly renders `ACTIVE 1D LIMIT ORDERS & DAILY SWING EXECUTION SIGNALS`.
+    1. **Dedicated Daily Swing Live Signals Engine**: The Live Signals matrix on INSIGHTS is dedicated exclusively to **Daily Timeframe execution signals** (`🚨 DAILY TF SIGNALS ( '1D' TIME FRAME)`) under the tab header **`SWING TRADING OPPORTUNITIES`**. Sub-header explicitly renders `ACTIVE 1D LIMIT ORDERS & DAILY SWING EXECUTION SIGNALS`. Filter bar presents execution strategies (Confluence, Missile, Scalp, Lightning, Ext Rev, Divergence, Rejections, Continuations) with the VCPR Touch tab removed.
     2. **Redundant Watchlist Removal from INSIGHTS**: `renderDhanWatchlistSection()` is completely decoupled and removed from `renderDhanUnifiedBiasScreener()` on the INSIGHTS tab, permanently eliminating duplicate watchlist tables and mobile viewport scroll friction. The canonical Day Type Watchlist is housed exclusively in its dedicated section on the HUB tab.
     3. **Timeframe-Agnostic BlackBox Engine Extensibility**: Signal evaluation logic across `algo_engine/` and `dhan-scanner-background.js` executes identically on Daily OHLC candles as on 15m intraday candles, generating authentic Daily Lightning, Extreme Reversal, Divergence (Regular & Hidden), and Missile/Scalp signals without requiring new Pine Script indicator code.
 - **SYSTEM-WIDE VERSION 5.0 SUCCESSOR DECLARATION**:
