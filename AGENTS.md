@@ -8,6 +8,21 @@
     - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
     - Gating must NEVER rely on `close` for limit entry qualification.
   - For Daily Timeframe (1D Swing) BlackBox signals:
+## Version 5.0: VectorBT Comparative Analysis Breakeven Trades Exclusion and Actual Drawdown Metric Mandate (Effective November 22, 2026)
+- **BREAKEVEN TRADES EXCLUSION FROM VECTORBT SYSTEM PERFORMANCE**:
+  - Across `confluenceBenchmarkStats` in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx` under the INSIGHTS tab (`activeTab === 'INSIGHTS'`):
+    - All breakeven trades (`resolveOutcome(s) === 'BREAKEVEN'`) are strictly excluded from actual system performance calculations (`actual pf`, `actual win rate`, `net return`, `expectancy`, and `total trades` count divisor).
+    - Win rate is strictly calculated as $\frac{\text{Wins}}{\text{Wins} + \text{Losses}} \times 100$, preventing dilution from breakeven trades.
+    - Total evaluated trades are strictly defined as $\text{Wins} + \text{Losses}$.
+    - Breakeven trade counts (`beCount`) are preserved and displayed transparently in subtitles and table rows (e.g., `3W / 1L / 0BE` or `3W / 1L (1 BE)`).
+    - **Strict Scope Isolation Mandate**: Breakeven exclusion is strictly isolated to the VectorBT comparative analysis on the INSIGHTS tab and is strictly forbidden from being applied or considered at any other locations or metrics across the application.
+- **ACTUAL DRAWDOWN METRIC INTEGRATION**:
+  - In Card 2 (`⚡ OUR ACTUAL SYSTEM PERFORMANCE`), the grid layout is upgraded to 4 symmetrical metrics:
+    1. **Actual PF**: `profitFactorText` with benchmark beating badge.
+    2. **Actual Win Rate**: Win % with $W/L/BE$ breakdown.
+    3. **Actual Drawdown**: Peak-to-valley drawdown percentage of evaluated trades alongside benchmark comparison (`▲ BEATING BENCHMARK` / `PEAK-TO-VALLEY`).
+    4. **Net Return**: Total net return percentage with per-trade expectancy subtitle.
+
 ## Version 5.0: Stop Generation of Unverified/Other Signals Ab-Initio & 6 Core Swing Strategies Mandate (Effective November 22, 2026)
 - **UNVERIFIED / OTHER SIGNALS AB-INITIO BLACKBOX SUPPRESSION**:
   - Across the entire BlackBox quantitative signal engine (`algo_engine/feeds/feed_manager.py`, `algo_engine/shadow_pipeline.py`, `algo_engine/run_daily_scanner.py`, `algo_engine/nse100_scanner.py`, `algo_engine/engine_daemon.py`):

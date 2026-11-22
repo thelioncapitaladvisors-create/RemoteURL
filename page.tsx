@@ -8708,11 +8708,13 @@ function MobileScreensaver() {
     let totalAllNet = 0;
 
     const rows = MODELS.map(m => {
-      const matchingTrades = forwardTrades.filter(m.matcher);
+      const allMatching = forwardTrades.filter(m.matcher);
+      const be = allMatching.filter(s => resolveOutcome(s) === 'BREAKEVEN').length;
+      // Exclude Breakeven trades from actual system performance calculations
+      const matchingTrades = allMatching.filter(s => resolveOutcome(s) !== 'BREAKEVEN');
       const total = matchingTrades.length;
       const wins = matchingTrades.filter(s => resolveOutcome(s) === 'WIN').length;
       const losses = matchingTrades.filter(s => resolveOutcome(s) === 'LOSS').length;
-      const be = matchingTrades.filter(s => resolveOutcome(s) === 'BREAKEVEN').length;
       const realizedWR = total > 0 ? (wins / total) * 100 : null;
       const realizedWRText = realizedWR != null ? `${realizedWR.toFixed(1)}%` : '--';
 
@@ -8744,7 +8746,7 @@ function MobileScreensaver() {
 
       const liveExpectancy = total > 0 ? (netReturn / total) : 0;
 
-      // Drawdown calculation
+      // Drawdown calculation (excluding Breakeven trades)
       const chrono = [...matchingTrades].sort((a, b) => new Date(a.signal_ts || a.created_at).getTime() - new Date(b.signal_ts || b.created_at).getTime());
       let eq = 0, peak = 0, maxDD = 0;
       chrono.forEach(s => {
@@ -8809,8 +8811,8 @@ function MobileScreensaver() {
       compositePFText = '0.00';
     }
 
-    // Composite Drawdown
-    const allMatchingTrades = forwardTrades.filter(s => MODELS.some(m => m.matcher(s)));
+    // Composite Drawdown (excluding Breakeven trades)
+    const allMatchingTrades = forwardTrades.filter(s => MODELS.some(m => m.matcher(s)) && resolveOutcome(s) !== 'BREAKEVEN');
     const allChrono = [...allMatchingTrades].sort((a, b) => new Date(a.signal_ts || a.created_at).getTime() - new Date(b.signal_ts || b.created_at).getTime());
     let cEq = 0, cPeak = 0, cMaxDD = 0;
     allChrono.forEach(s => {
@@ -8825,6 +8827,7 @@ function MobileScreensaver() {
       }
     });
     const compositeMaxDDText = cMaxDD > 0 ? `${cMaxDD.toFixed(2)}%` : (totalAllTrades > 0 ? '0.00%' : '--');
+    const compositeIsBeatingMDD = cMaxDD > 0 ? cMaxDD <= 6.23 : (totalAllTrades > 0);
 
     return {
       rows,
@@ -8838,7 +8841,8 @@ function MobileScreensaver() {
         profitFactorText: compositePFText,
         netReturn: totalAllNet,
         expectancy: compositeExpectancy,
-        maxDD: compositeMaxDDText
+        maxDD: compositeMaxDDText,
+        isBeatingMaxDD: compositeIsBeatingMDD
       }
     };
   }, [engineSource, dhanBlackboxSignals, closedSignals]);
@@ -17505,31 +17509,40 @@ function MobileScreensaver() {
                                 {confluenceBenchmarkStats.summary.totalTrades} TRADES
                               </span>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 pt-2.5 text-center">
+                            <div className="grid grid-cols-4 gap-1.5 sm:gap-2 pt-2.5 text-center">
                               <div className="flex flex-col">
-                                <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Actual PF</span>
+                                <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight">Actual PF</span>
                                 <span className={`text-xs sm:text-sm font-black font-mono ${confluenceBenchmarkStats.summary.profitFactor >= 1.0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                                   {confluenceBenchmarkStats.summary.profitFactorText}
                                 </span>
-                                <span className="text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold">
+                                <span className="text-[9px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold truncate">
                                   {confluenceBenchmarkStats.summary.profitFactor >= 1.3 ? '▲ BEATING BENCHMARK' : (confluenceBenchmarkStats.summary.totalTrades > 0 ? 'LIVE REALIZED' : 'AWAITING TRIGGERS')}
                                 </span>
                               </div>
                               <div className="flex flex-col">
-                                <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Actual Win Rate</span>
+                                <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight">Actual Win Rate</span>
                                 <span className={`text-xs sm:text-sm font-black font-mono ${confluenceBenchmarkStats.summary.winRate >= 50 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
                                   {confluenceBenchmarkStats.summary.totalTrades > 0 ? `${confluenceBenchmarkStats.summary.winRate.toFixed(1)}%` : '--'}
                                 </span>
-                                <span className="text-[9.5px] text-slate-500 font-medium">
-                                  {confluenceBenchmarkStats.summary.winCount}W / {confluenceBenchmarkStats.summary.lossCount}L / {confluenceBenchmarkStats.summary.beCount}BE
+                                <span className="text-[9px] sm:text-[9.5px] text-slate-500 font-medium truncate">
+                                  {confluenceBenchmarkStats.summary.winCount}W / {confluenceBenchmarkStats.summary.lossCount}L{confluenceBenchmarkStats.summary.beCount > 0 ? ` (${confluenceBenchmarkStats.summary.beCount} BE)` : ' / 0BE'}
                                 </span>
                               </div>
                               <div className="flex flex-col">
-                                <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase">Net Return</span>
+                                <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight">Actual Drawdown</span>
+                                <span className={`text-xs sm:text-sm font-black font-mono ${confluenceBenchmarkStats.summary.isBeatingMaxDD ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
+                                  {confluenceBenchmarkStats.summary.maxDD}
+                                </span>
+                                <span className="text-[9px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold truncate">
+                                  {confluenceBenchmarkStats.summary.isBeatingMaxDD ? '▲ BEATING BENCHMARK' : (confluenceBenchmarkStats.summary.totalTrades > 0 ? 'PEAK-TO-VALLEY' : 'AWAITING TRIGGERS')}
+                                </span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[9.5px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-tight">Net Return</span>
                                 <span className={`text-xs sm:text-sm font-black font-mono ${confluenceBenchmarkStats.summary.netReturn >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                                   {confluenceBenchmarkStats.summary.totalTrades > 0 ? `${confluenceBenchmarkStats.summary.netReturn > 0 ? '+' : ''}${confluenceBenchmarkStats.summary.netReturn.toFixed(2)}%` : '0.00%'}
                                 </span>
-                                <span className="text-[9.5px] text-slate-500 font-medium">
+                                <span className="text-[9px] sm:text-[9.5px] text-slate-500 font-medium truncate">
                                   Exp: {confluenceBenchmarkStats.summary.expectancy > 0 ? '+' : ''}{confluenceBenchmarkStats.summary.expectancy.toFixed(2)}%
                                 </span>
                               </div>
@@ -17653,7 +17666,7 @@ function MobileScreensaver() {
                                     {row.liveTotal > 0 ? (
                                       <div className="flex flex-col items-center">
                                         <span className="text-slate-900 dark:text-slate-100 theme-gray:text-slate-900 font-black text-xs sm:text-sm">
-                                          {row.liveWins}W / {row.liveLosses}L / {row.liveBE}BE
+                                          {row.liveWins}W / {row.liveLosses}L{row.liveBE > 0 ? ` (${row.liveBE} BE)` : ' / 0BE'}
                                         </span>
                                         <span className="text-[10px] text-slate-500 font-semibold">
                                           {row.liveTotal}T • Exp: {row.liveExpectancy > 0 ? '+' : ''}{row.liveExpectancy.toFixed(2)}%
@@ -17706,7 +17719,7 @@ function MobileScreensaver() {
                                 </td>
                                 <td className="py-2.5 px-2.5 text-center text-slate-900 dark:text-slate-100 font-black text-xs sm:text-sm whitespace-nowrap">
                                   {confluenceBenchmarkStats.summary.totalTrades > 0 ? (
-                                    `${confluenceBenchmarkStats.summary.winCount}W / ${confluenceBenchmarkStats.summary.lossCount}L / ${confluenceBenchmarkStats.summary.beCount}BE`
+                                    `${confluenceBenchmarkStats.summary.winCount}W / ${confluenceBenchmarkStats.summary.lossCount}L${confluenceBenchmarkStats.summary.beCount > 0 ? ` (${confluenceBenchmarkStats.summary.beCount} BE)` : ' / 0BE'}`
                                   ) : (
                                     'Awaiting triggers'
                                   )}
