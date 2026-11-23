@@ -2850,8 +2850,7 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
 
                 sentiment = math.sign(oscRatio - priceRatio)
                 trend = properties.trendMethod == 3 ? math.sign(lastTrend) : properties.trendMethod == 1 ? math.sign(dir * (llastRatio - 1)) : math.sign(llastMa - lastMa)
-                // Remove trend-direction ternary check for Regular Divergence (D) so D triggers purely on price vs oscillator divergence
-                divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
+                divergence = trend == dir and sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
                 
                 if divergence != 0
                     divergenceType := getDivergenceType(dir, divergence)
@@ -3977,13 +3976,13 @@ processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX
 // 9. ON-CHART PLOTTINGS & VISUAL MARKERS
 // ====================================================================
 
-// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS (Confirmed on candle close; strictly synchronized with trade execution)
-plotshape(DivergenceBuy,  title = "Bullish Regular Divergence (Confirmed)", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
-plotshape(DivergenceSell, title = "Bearish Regular Divergence (Confirmed)", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
+// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS (Rendered natively via pLabel at line 2898 to replicate oscillator plots 1:1 with zero duplicate labels)
+// plotshape(DivergenceBuy,  title = "Bullish Regular Divergence (Confirmed)", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
+// plotshape(DivergenceSell, title = "Bearish Regular Divergence (Confirmed)", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
 
-// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS (Confirmed on candle close; strictly synchronized with trade execution)
-plotshape(HiddenDivBuy,   title = "Bullish Hidden Divergence (Confirmed)",  style = shape.labelup,   location = location.belowbar, color = color.teal,   text = "H", textcolor = color.white, size = size.small)
-plotshape(HiddenDivSell,  title = "Bearish Hidden Divergence (Confirmed)",  style = shape.labeldown, location = location.abovebar, color = color.orange, text = "H", textcolor = color.black, size = size.small)
+// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS (Rendered natively via pLabel at line 2898 to replicate oscillator plots 1:1 with zero duplicate labels)
+// plotshape(HiddenDivBuy,   title = "Bullish Hidden Divergence (Confirmed)",  style = shape.labelup,   location = location.belowbar, color = color.teal,   text = "H", textcolor = color.white, size = size.small)
+// plotshape(HiddenDivSell,  title = "Bearish Hidden Divergence (Confirmed)",  style = shape.labeldown, location = location.abovebar, color = color.orange, text = "H", textcolor = color.black, size = size.small)
 
 
 // ⚡ 3. LIGHTNING PLOTS
