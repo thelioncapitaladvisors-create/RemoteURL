@@ -1,13 +1,13 @@
 // This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
 // © TheLionCapitalsolutions.com and market-store.online
 // ====================================================================
-// TLCS PivotBoss Indicator — Version 4.0 (Master Release)
+// TLCS PivotBoss Indicator — Version 5.0 (Master Release)
 // Canonical Production Indicator & Standalone DhanHQ BlackBox Parity
 // ====================================================================
 
 //@version=6
 
-indicator('TLCS PivotBoss Indicator v4.0', shorttitle = 'TLCS v4.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
+indicator('TLCS PivotBoss Indicator v5.0', shorttitle = 'TLCS v5.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
 // ──── INPUTS ────────────────────────────────────────────────────────
 
 webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
@@ -2901,7 +2901,7 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         pLine = line.new(lastPricePoint.time, lastPricePoint.price, pricePoint.time, pricePoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=1, force_overlay=true)
                         line oLine = na
 
-                        label pLabel = na
+                        pLabel = label.new(pricePoint.time, pricePoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=true)
                         label oLabel = na
                         
                         divergenceObject = DivergenceObject.new(pLine, oLine, pLabel, oLabel, lastPricePoint.index, pricePoint.index, pricePoint, divergenceType)
@@ -3974,13 +3974,13 @@ processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX
 // 9. ON-CHART PLOTTINGS & VISUAL MARKERS
 // ====================================================================
 
-// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS (Confirmed on candle close; strictly synchronized with trade execution)
-plotshape(DivergenceBuy,  title = "Bullish Regular Divergence (Confirmed)", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
-plotshape(DivergenceSell, title = "Bearish Regular Divergence (Confirmed)", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
+// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS (Legacy plotshapes disabled to prevent duplicate/conflicting shapes; rendered natively by Zigzag Divergence Screener label.new at line 2904 for 1:1 oscillator replica)
+// plotshape(DivergenceBuy,  title = "Bullish Regular Divergence (Confirmed)", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
+// plotshape(DivergenceSell, title = "Bearish Regular Divergence (Confirmed)", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
 
-// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS (Confirmed on candle close; strictly synchronized with trade execution)
-plotshape(HiddenDivBuy,   title = "Bullish Hidden Divergence (Confirmed)",  style = shape.labelup,   location = location.belowbar, color = color.teal,   text = "H", textcolor = color.white, size = size.small)
-plotshape(HiddenDivSell,  title = "Bearish Hidden Divergence (Confirmed)",  style = shape.labeldown, location = location.abovebar, color = color.orange, text = "H", textcolor = color.black, size = size.small)
+// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS (Legacy plotshapes disabled to prevent duplicate/conflicting shapes; rendered natively by Zigzag Divergence Screener label.new at line 2904 for 1:1 oscillator replica)
+// plotshape(HiddenDivBuy,   title = "Bullish Hidden Divergence (Confirmed)",  style = shape.labelup,   location = location.belowbar, color = color.teal,   text = "H", textcolor = color.white, size = size.small)
+// plotshape(HiddenDivSell,  title = "Bearish Hidden Divergence (Confirmed)",  style = shape.labeldown, location = location.abovebar, color = color.orange, text = "H", textcolor = color.black, size = size.small)
 
 
 // ⚡ 3. LIGHTNING PLOTS
