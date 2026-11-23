@@ -192,6 +192,8 @@ class NSE100Scanner:
         self.day_type_classifiers: Dict[str, DayTypeClassifier] = {}
         self.mock_mode = mock_mode
         self.market = market.lower()
+        self._last_nse_daily_scan_date: Optional[str] = None
+        self._last_mcx_daily_scan_date: Optional[str] = None
 
         nse_symbols = get_all_nse100_symbols()
         mcx_symbols = list(MCX_COMMODITIES)
@@ -551,6 +553,12 @@ class NSE100Scanner:
                 except Exception:
                     meta = {}
 
+            # Strict Multi-Day Swing Order Protection Mandate:
+            # Multi-day 1D swing limits and trades persist across market closes and must never be swept by intraday EOD sweepers.
+            tf = (r.get("timeframe") or meta.get("timeframe") or meta.get("interval") or "").upper()
+            if tf in ("1D", "DAILY", "D"):
+                continue
+
             sym = r.get("symbol", "")
             clean = clean_symbol(sym)
 
@@ -637,13 +645,39 @@ class NSE100Scanner:
         ist = get_ist_time()
         mins = ist.hour * 60 + ist.minute
 
-        # Check market close exit sweeps
-        if mins >= 930 and mins < 945:
-            # At 15:30 IST: Sweep NSE Equities
+        # Check market close exit sweeps & autonomous 1D Daily Swing scans
+        today_date_str = ist.strftime("%Y-%m-%d")
+
+        if mins >= 930 and mins < 960:
+            # At 15:30 - 16:00 IST: Sweep NSE Equities intraday trades
             self.exit_all_live_trades_at_market_close("NSE")
+            # Autonomous Daily 1D Swing Scan for NSE Equities & Indices at Market Close
+            if self._last_nse_daily_scan_date != today_date_str and ist.weekday() < 5 and today_date_str not in NSE_HOLIDAYS_2026:
+                logger.info(f"[NSE100Scanner] ⚡ Market Close Detected (15:30 IST). Triggering Autonomous 1D Swing Scan for NSE Universe...")
+                try:
+                    from .run_daily_scanner import DailyBlackboxScanner
+                    daily_nse_scanner = DailyBlackboxScanner(dhan_feed=self.dhan_feed, shadow_pipeline=self.shadow_pipeline, mock_mode=self.mock_mode, market="nse")
+                    daily_nse_signals = daily_nse_scanner.scan_all()
+                    self._last_nse_daily_scan_date = today_date_str
+                    logger.info(f"[NSE100Scanner] EOD 1D Swing Scan Complete (NSE). Dispatched {len(daily_nse_signals)} signals.")
+                except Exception as e_nse_daily:
+                    logger.error(f"[NSE100Scanner] Error running EOD 1D Swing Scan for NSE: {e_nse_daily}", exc_info=True)
+
         if mins >= 1410 or ist.weekday() >= 5:
-            # At 23:30 IST or weekend: Sweep MCX Commodities
+            # At 23:30 IST or weekend: Sweep MCX Commodities intraday trades
             self.exit_all_live_trades_at_market_close("MCX")
+            # Autonomous Daily 1D Swing Scan for MCX Commodities at Market Close
+            if self._last_mcx_daily_scan_date != today_date_str and (mins >= 1410 and mins < 1440):
+                logger.info(f"[NSE100Scanner] ⚡ Market Close Detected (23:30 IST). Triggering Autonomous 1D Swing Scan for MCX Universe...")
+                try:
+                    from .run_daily_scanner import DailyBlackboxScanner
+                    daily_mcx_scanner = DailyBlackboxScanner(dhan_feed=self.dhan_feed, shadow_pipeline=self.shadow_pipeline, mock_mode=self.mock_mode, market="mcx")
+                    daily_mcx_signals = daily_mcx_scanner.scan_all()
+                    self._last_mcx_daily_scan_date = today_date_str
+                    logger.info(f"[NSE100Scanner] EOD 1D Swing Scan Complete (MCX). Dispatched {len(daily_mcx_signals)} signals.")
+                except Exception as e_mcx_daily:
+                    logger.error(f"[NSE100Scanner] Error running EOD 1D Swing Scan for MCX: {e_mcx_daily}", exc_info=True)
+
             if ist.weekday() >= 5:
                 logger.info(f'[NSE100Scanner] Weekend detected. Indian markets are closed.')
                 return []

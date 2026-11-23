@@ -161,7 +161,7 @@ class EngineDaemon:
             self._handle_15m_bar_close(symbol, bar)
 
     def _handle_daily_bar_close(self, symbol: str, bar: OHLC) -> None:
-        """Execute Daily Day Type Blueprint & Sequence classifiers."""
+        """Execute Daily Day Type Blueprint & Sequence classifiers and 1D Swing triggers."""
         if symbol not in self.day_type_classifiers:
             self.day_type_classifiers[symbol] = DayTypeClassifier()
 
@@ -172,6 +172,23 @@ class EngineDaemon:
             blueprints = result.get_active_blueprints()
             sequences = result.get_active_sequences()
             logger.info(f"[EngineDaemon] Day Type Update for {symbol}: Blueprints={blueprints}, Sequences={sequences}")
+
+        # Evaluate 1D Swing Execution Signals (Missile, Scalp, Lightning, Ext Rev, Divergence)
+        try:
+            from .run_daily_scanner import DailyBlackboxScanner
+            if not hasattr(self, '_daily_scanner_instance') or self._daily_scanner_instance is None:
+                self._daily_scanner_instance = DailyBlackboxScanner(
+                    shadow_pipeline=self.shadow_pipeline,
+                    mock_mode=self.mock_mode,
+                    enable_telegram=self.enable_telegram
+                )
+            swing_sigs = self._daily_scanner_instance.scan_symbol(symbol)
+            if swing_sigs and self.shadow_pipeline:
+                for s in swing_sigs:
+                    self.shadow_pipeline.sync_signal(s)
+                    logger.info(f"[EngineDaemon] ⚡ 1D SWING SIGNAL SYNCED: {symbol} -> {s['type']} @ {s['entry']}")
+        except Exception as e_swing:
+            logger.debug(f"[EngineDaemon] Error evaluating daily swing for {symbol}: {e_swing}")
 
     def _handle_15m_bar_close(self, symbol: str, bar: OHLC) -> None:
         """Execute 15-minute Strategy Triggers."""

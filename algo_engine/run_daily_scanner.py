@@ -348,6 +348,7 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="Limit number of symbols to scan")
     parser.add_argument("--mock", action="store_true", help="Force mock data mode without live API calls")
     parser.add_argument("--no-telegram", action="store_true", help="Disable Telegram alerting")
+    parser.add_argument("--daemon", action="store_true", help="Run continuously in background daemon mode, automatically triggering scans at market close (15:30 IST for NSE, 23:30 IST for MCX)")
     args = parser.parse_args()
 
     scanner = DailyBlackboxScanner(
@@ -355,8 +356,62 @@ def main():
         market=args.market,
         enable_telegram=not args.no_telegram
     )
-    signals = scanner.scan_all(limit=args.limit)
-    print(f"\n[SUMMARY] Daily 1D Swing BlackBox Scan Complete. Total Signals Detected: {len(signals)}")
+
+    if not args.daemon:
+        signals = scanner.scan_all(limit=args.limit)
+        print(f"\n[SUMMARY] Daily 1D Swing BlackBox Scan Complete. Total Signals Detected: {len(signals)}")
+        return
+
+    logger.info("[DailyScanner] Starting autonomous 1D Swing Scanner Daemon. Monitoring market close times (15:30 IST for NSE, 23:30 IST for MCX)...")
+    last_nse_scan_date = None
+    last_mcx_scan_date = None
+
+    import signal
+    running = True
+
+    def _sig_handler(signum, frame):
+        nonlocal running
+        logger.info(f"[DailyScanner] Received shutdown signal ({signum}). Exiting cleanly...")
+        running = False
+
+    signal.signal(signal.SIGINT, _sig_handler)
+    signal.signal(signal.SIGTERM, _sig_handler)
+
+    while running:
+        try:
+            from algo_engine.nse100_scanner import get_ist_time, NSE_HOLIDAYS_2026
+            ist = get_ist_time()
+            mins = ist.hour * 60 + ist.minute
+            today_str = ist.strftime("%Y-%m-%d")
+
+            # 1. Check NSE Market Close (15:30 IST)
+            if mins >= 930 and mins < 960 and ist.weekday() < 5 and today_str not in NSE_HOLIDAYS_2026:
+                if last_nse_scan_date != today_str and args.market in ("all", "nse"):
+                    logger.info(f"[DailyScanner] ⚡ Market Close Detected (15:30 IST). Triggering Autonomous 1D Swing Scan for NSE...")
+                    nse_scanner = DailyBlackboxScanner(market="nse", mock_mode=args.mock, enable_telegram=not args.no_telegram)
+                    nse_scanner.scan_all(limit=args.limit)
+                    last_nse_scan_date = today_str
+                    logger.info(f"[DailyScanner] NSE EOD 1D Swing Scan Completed for {today_str}.")
+
+            # 2. Check MCX Market Close (23:30 IST)
+            if (mins >= 1410 and mins < 1440) and ist.weekday() < 5:
+                if last_mcx_scan_date != today_str and args.market in ("all", "mcx"):
+                    logger.info(f"[DailyScanner] ⚡ Market Close Detected (23:30 IST). Triggering Autonomous 1D Swing Scan for MCX...")
+                    mcx_scanner = DailyBlackboxScanner(market="mcx", mock_mode=args.mock, enable_telegram=not args.no_telegram)
+                    mcx_scanner.scan_all(limit=args.limit)
+                    last_mcx_scan_date = today_str
+                    logger.info(f"[DailyScanner] MCX EOD 1D Swing Scan Completed for {today_str}.")
+
+        except Exception as e:
+            logger.error(f"[DailyScanner] Daemon error: {e}", exc_info=True)
+
+        # Sleep in small slices to respond quickly to SIGINT
+        for _ in range(30):
+            if not running:
+                break
+            time.sleep(1)
+
+    logger.info("[DailyScanner] Daemon shut down cleanly.")
 
 
 if __name__ == "__main__":

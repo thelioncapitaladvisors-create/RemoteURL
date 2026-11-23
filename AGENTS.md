@@ -10,6 +10,20 @@
     - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
     - Gating must NEVER rely on `close` for limit entry qualification.
   - For Daily Timeframe (1D Swing) BlackBox signals:
+## Version 5.0: Automated Real-Time 1D Timeframe Swing Signal Trigger at Market Close Mandate (Effective November 23, 2026)
+- **AUTONOMOUS 1D SWING SIGNAL TRIGGER AT MARKET CLOSE**:
+  - Across the quantitative BlackBox signal engines (`algo_engine/nse100_scanner.py`, `algo_engine/run_daily_scanner.py`, `algo_engine/engine_daemon.py`):
+    1. **NSE Equities & Indices Market Close Trigger (15:30 IST)**:
+       - Every trading day (Monday through Friday, excluding official exchange holidays) at exactly 15:30 IST (`mins >= 930`), upon completion of the cash market session, the engine autonomously executes `DailyBlackboxScanner(market='nse').scan_all()` across all NIFTY Indices and Top 100 NSE Equities.
+       - Daily OHLC candles from DhanHQ are evaluated against canonical `StrategyEngine` (Missile, Scalp, Lightning, Extreme Reversal, and Divergence).
+       - Qualifying signals (such as AXISBANK and ADANIPORTS Long Missile) are synchronized into Supabase `shadow_signals` with `status: 'ACTIVE LIMIT'` and `timeframe: '1D'` in JSONB `metadata`, and dispatched to Telegram.
+    2. **MCX Commodities Market Close Trigger (23:30 IST)**:
+       - Every trading day at exactly 23:30 IST (`mins >= 1410`), upon completion of the commodity session, the engine autonomously executes `DailyBlackboxScanner(market='mcx').scan_all()` across approved MCX commodities and syncs authentic 1D limit orders to Supabase.
+    3. **Multi-Day Swing Order Retention & Intraday Sweeper Exclusion**:
+       - In `exit_all_live_trades_at_market_close()`, all signals with `timeframe in ('1D', 'DAILY', 'D')` are strictly excluded from market close sweeps. Multi-day swing limits and active live swing trades persist indefinitely across calendar sessions until filled or closed by TP/SL.
+    4. **Dual Runner Mode (Daemon & Background Scheduler)**:
+       - `run_daily_scanner.py` supports both single on-demand scans and continuous background service via `--daemon`. In `NSE100Scanner.run_scan_cycle()`, the 15:30 IST and 23:30 IST market close triggers execute autonomously with day-level deduplication (`_last_nse_daily_scan_date` and `_last_mcx_daily_scan_date`).
+
 ## Version 5.0: VectorBT Comparative Analysis Breakeven Trades Exclusion and Actual Drawdown Metric Mandate (Effective November 22, 2026)
 - **BREAKEVEN TRADES EXCLUSION FROM VECTORBT SYSTEM PERFORMANCE**:
   - Across `confluenceBenchmarkStats` in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx` under the INSIGHTS tab (`activeTab === 'INSIGHTS'`):
