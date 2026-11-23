@@ -1907,8 +1907,21 @@ async function runDhanScan(limitCount = null) {
                     const lowestLow = Math.min(...sessionLows);
                     const trendLine = (highestHigh + lowestLow) / 2.0;
 
-                    const entryPrice = Math.round(trendLine * 100) / 100;
-                    const stopPrice = Math.round((isLong ? entryPrice - 0.75 * atr : entryPrice + 0.75 * atr) * 100) / 100;
+                    const isDivSignal = selectedSignal.type.includes('DIVERGENCE');
+                    const lastCandle = candles[candles.length - 1];
+                    const recent10Candles = candles.slice(-10);
+                    const avgCandleSize10 = recent10Candles.reduce((acc, c) => acc + (c.high - c.low), 0) / (recent10Candles.length || 1);
+
+                    let entryPrice = Math.round(trendLine * 100) / 100;
+                    let stopPrice = Math.round((isLong ? entryPrice - 0.75 * atr : entryPrice + 0.75 * atr) * 100) / 100;
+
+                    if (isDivSignal && lastCandle) {
+                        entryPrice = Math.round(lastCandle.close * 100) / 100;
+                        stopPrice = isLong
+                            ? Math.round((entryPrice - 1.0 * atr) * 100) / 100
+                            : Math.round((entryPrice + 1.0 * atr) * 100) / 100;
+                    }
+
                     const tp1Price = Math.round((isLong ? entryPrice + 2.5 * atr : entryPrice - 2.5 * atr) * 100) / 100;
                     const tp2Price = Math.round((isLong ? entryPrice + 4.0 * atr : entryPrice - 4.0 * atr) * 100) / 100;
                     const tp3Price = Math.round((isLong ? entryPrice + 6.5 * atr : entryPrice - 6.5 * atr) * 100) / 100;

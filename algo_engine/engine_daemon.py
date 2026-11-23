@@ -285,6 +285,7 @@ class EngineDaemon:
             day_type_label=mx_day_type,
             session_highest=max((b.high for b in bars_15m[-10:]), default=bar.high),
             session_lowest=min((b.low for b in bars_15m[-10:]), default=bar.low),
+            avg_candle_size_10=(sum(b.high - b.low for b in bars_15m[-10:]) / len(bars_15m[-10:])) if bars_15m else bar.range,
             prev_bar=bars_15m[-2] if len(bars_15m) >= 2 else None,
             prev_close=bars_15m[-2].close if len(bars_15m) >= 2 else bar.close,
             prev_open=bars_15m[-2].open if len(bars_15m) >= 2 else bar.open,
