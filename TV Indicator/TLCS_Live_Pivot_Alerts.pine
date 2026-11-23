@@ -2856,41 +2856,28 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                 if divergence != 0
                     divergenceType := getDivergenceType(dir, divergence)
 
-                    validDivergence = true
-                    // Gating for Hidden Divergence: Must be formed with CPR or within VAH and VAL levels
-                    bool isHidden = (divergenceType == DivergenceType.BullishHiddenDivergence or divergenceType == DivergenceType.BearishHiddenDivergence)
-                    if isHidden
-                        float cprTop = math.max(DTc, DBc)
-                        float cprBot = math.min(DTc, DBc)
-                        float vahLvl = math.max(VAH, VAL)
-                        float valLvl = math.min(VAH, VAL)
-                        bool formedWithCPR = (pricePoint.price >= cprBot and pricePoint.price <= cprTop) or (lastPricePoint.price >= cprBot and lastPricePoint.price <= cprTop) or (high >= cprBot and low <= cprTop) or (close >= cprBot and close <= cprTop)
-                        bool formedWithinVAHVAL = (pricePoint.price >= valLvl and pricePoint.price <= vahLvl) or (lastPricePoint.price >= valLvl and lastPricePoint.price <= vahLvl) or (high >= valLvl and low <= vahLvl) or (close >= valLvl and close <= vahLvl)
-                        if not (formedWithCPR or formedWithinVAHVAL)
-                            validDivergence := false
+                    validOscDivergence = true
+                    for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
+                        priceAtBar = priceMap.get(bar)
+                        oscillatorAtBar = oscillatorMap.get(bar)
+                        
+                        px1 = lastPricePoint.index
+                        py1 = lastPricePoint.price
+                        px2 = pricePoint.index
+                        py2 = pricePoint.price
+                        priceTheoPrice = py1 + ((py2 - py1) / (px2 - px1)) * (bar - px1)
 
-                    if validDivergence
-                        for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
-                            priceAtBar = priceMap.get(bar)
-                            oscillatorAtBar = oscillatorMap.get(bar)
-                            
-                            px1 = lastPricePoint.index
-                            py1 = lastPricePoint.price
-                            px2 = pricePoint.index
-                            py2 = pricePoint.price
-                            priceTheoPrice = py1 + ((py2 - py1) / (px2 - px1)) * (bar - px1)
+                        x1 = llastOscillatorPoint.index
+                        y1 = llastOscillatorPoint.price
+                        x2 = oscillatorPoint.index
+                        y2 = oscillatorPoint.price
+                        oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
 
-                            x1 = llastOscillatorPoint.index
-                            y1 = llastOscillatorPoint.price
-                            x2 = oscillatorPoint.index
-                            y2 = oscillatorPoint.price
-                            oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
+                        if priceAtBar * dir > priceTheoPrice * dir or oscillatorAtBar * dir > oscTheoPrice * dir
+                            validOscDivergence := false
+                            break
 
-                            if priceAtBar * dir > priceTheoPrice * dir or oscillatorAtBar * dir > oscTheoPrice * dir
-                                validDivergence := false
-                                break
-
-                    if validDivergence
+                    if validOscDivergence
                         priceLabelText = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BearishDivergence ? 'D' : 'H'
                         priceTooltipText = str.tostring(divergenceType) + '\nPrice : ' + str.tostring(lastPrice) + ' ( ' + str.tostring(priceRatio) + ' ) - ' +
                                          str.tostring(priceDirection) + '\n' + 'Oscillator :' + str.tostring(lastMa) + ' ( ' + str.tostring(oscRatio) + ' ) - ' + str.tostring(oscillatorDirection)
@@ -2901,11 +2888,27 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         pLine = line.new(lastPricePoint.time, lastPricePoint.price, pricePoint.time, pricePoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=1, force_overlay=true)
                         line oLine = na
 
-                        label pLabel = na
+                        pLabel = label.new(pricePoint.time, pricePoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=true)
                         label oLabel = na
                         
                         divergenceObject = DivergenceObject.new(pLine, oLine, pLabel, oLabel, lastPricePoint.index, pricePoint.index, pricePoint, divergenceType)
                         divergenceObjects.push(divergenceObject)
+
+                        // Strict Gating for Trade Execution: Hidden Divergence must be formed with CPR or within VAH/VAL levels
+                        bool isHidden = (divergenceType == DivergenceType.BullishHiddenDivergence or divergenceType == DivergenceType.BearishHiddenDivergence)
+                        bool validTradeDivergence = true
+                        if isHidden
+                            float cprTop = math.max(DTc, DBc)
+                            float cprBot = math.min(DTc, DBc)
+                            float vahLvl = math.max(VAH, VAL)
+                            float valLvl = math.min(VAH, VAL)
+                            bool formedWithCPR = (pricePoint.price >= cprBot and pricePoint.price <= cprTop) or (lastPricePoint.price >= cprBot and lastPricePoint.price <= cprTop) or (high >= cprBot and low <= cprTop) or (close >= cprBot and close <= cprTop)
+                            bool formedWithinVAHVAL = (pricePoint.price >= valLvl and pricePoint.price <= vahLvl) or (lastPricePoint.price >= valLvl and lastPricePoint.price <= vahLvl) or (high >= valLvl and low <= vahLvl) or (close >= valLvl and close <= vahLvl)
+                            if not (formedWithCPR or formedWithinVAHVAL)
+                                validTradeDivergence := false
+
+                        if not validTradeDivergence
+                            divergenceType := DivergenceType.None
                         true
                     else
                         divergenceType := DivergenceType.None
@@ -2957,15 +2960,14 @@ firstTradeInput                     = oneYearAgo
 
 // ── ATR-Based SL/TP ──────────────────────────────────────────
 int   atrLengthInput   = input.int(title = 'ATR Length',     defval = 14,  group = 'STOP_LOSS')
-float slAtrMultInput    = input.float(title = 'SL ATR Mult',  defval = 0.75, step = 0.1, group = 'STOP_LOSS')
+float slAtrMultInput   = input.float(title = 'SL ATR Mult',  defval = 0.75, step = 0.1, group = 'STOP_LOSS')
 float divSlAtrMultInput = input.float(title = 'Divergence SL ATR Mult', defval = 1.0, step = 0.1, group = 'STOP_LOSS')
-float tp1AtrMultInput   = input.float(title = 'TP1 ATR Mult', defval = 2.5, step = 0.1, group = 'TAKE_PROFITS')
-float tp2AtrMultInput   = input.float(title = 'TP2 ATR Mult', defval = 4.0, step = 0.1, group = 'TAKE_PROFITS')
-float tp3AtrMultInput   = input.float(title = 'TP3 ATR Mult', defval = 6.5, step = 0.1, group = 'TAKE_PROFITS')
-float tp4AtrMultInput   = input.float(title = 'TP4 ATR Mult', defval = 8.0, step = 0.1, group = 'TAKE_PROFITS')
+float tp1AtrMultInput  = input.float(title = 'TP1 ATR Mult', defval = 2.5, step = 0.1, group = 'TAKE_PROFITS')
+float tp2AtrMultInput  = input.float(title = 'TP2 ATR Mult', defval = 4.0, step = 0.1, group = 'TAKE_PROFITS')
+float tp3AtrMultInput  = input.float(title = 'TP3 ATR Mult', defval = 6.5, step = 0.1, group = 'TAKE_PROFITS')
+float tp4AtrMultInput  = input.float(title = 'TP4 ATR Mult', defval = 8.0, step = 0.1, group = 'TAKE_PROFITS')
 
 float atrValue = ta.atr(atrLengthInput)
-string tfStr = timeframe.isdaily ? "1D" : timeframe.isweekly ? "1W" : timeframe.ismonthly ? "1M" : timeframe.isintraday ? (timeframe.period + "m") : timeframe.period
 
 int     showVisualsDaysInput        = input.int(defval = 15, title = 'Show Signals for Last X Days', group = 'TRADES')
 bool    showTPSLInput               = input.bool(defval = true, title = 'Display TP/SL', group = 'TRADES', inline = 'Display')
@@ -3118,7 +3120,7 @@ sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string
          z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr, isConfStr, conf_type, sigFireZone,
          isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
          isNvaStr, isRejStr, isContStr, _c1, vahStr, valStr, vaWidthStr
-         ) + ',"timeframe":"' + tfStr + '"}'
+         ) + '}'
     alert(_ePay, alert.freq_once_per_bar_close)
 
 sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string mX, string d1_message) =>
@@ -3145,7 +3147,7 @@ sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string 
          z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr,
          isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
          isNvaStr, isRejStr, isContStr, _c1, vahStr, valStr, vaWidthStr
-         ) + ',"timeframe":"' + tfStr + '"}'
+         ) + '}'
     alert(_tPay, alert.freq_once_per_bar_close)
 
 
@@ -3468,7 +3470,7 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
 
     // ✅ Includes "trigger":"TradeClose", entryDate, closeDate, trade_id & mintick price formatting
     string _oPay = '{' + str.format(
-         '"trigger":"TradeClose","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","closePrice":"{5}","slLevel":"{6}","tpLevel":"{7}","pnlAmount":"{8}","pnlPercent":"{9}","rMultiple":"{10}","zone":"{11}","opening_bias":"{12}","day_type":"{13}","dayType":"{12}","marketType":"{13}","tradeMessage":"{14}","entryTime":"{15}","closeTime":"{16}","rawText":"{17}","entryDate":"{18}","closeDate":"{19}","trade_id":"{20}","is_ncpr":{21},"is_inside_cpr":{22},"dtc":"{23}","dbc":"{24}","prev_range":"{25}","cpr_width":"{26}","is_nva":{27},"is_rejection":{28},"is_continuation":{29}',
+         '"trigger":"TradeClose","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","closePrice":"{5}","slLevel":"{6}","tpLevel":"{7}","pnlAmount":"{8}","pnlPercent":"{9}","rMultiple":"{10}","zone":"{11}","opening_bias":"{12}","day_type":"{13}","dayType":"{12}","marketType":"{13}","tradeMessage":"{14}","entryTime":"{15}","closeTime":"{16}","rawText":"{17}","entryDate":"{18}","closeDate":"{19}","trade_id":"{20}","is_ncpr":{21},"is_inside_cpr":{22},"dtc":"{23}","dbc":"{24}","prev_range":"{25}","cpr_width":"{26}","is_nva":{27},"is_rejection":{28},"is_continuation":{29}"',
          webhook_secret, syminfo.ticker, trade.tradeDirection, _outcome, 
          str.tostring(trade.entryLevel, format.mintick), str.tostring(safeClosePrice, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
          str.tostring(trade.profit, '#.##'), str.tostring(exact_pct, '#.##'), str.tostring(rMult, '#.##'), 
@@ -3477,7 +3479,7 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
          entryDateStr, closeDateStr, tradeIdStr,
          isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
          isNvaStr, isRejStr, isContStr
-         ) + ',"timeframe":"' + tfStr + '"}'
+         ) + '}'
          
     alert(_oPay, alert.freq_once_per_bar_close)
     _oPay
@@ -3503,12 +3505,10 @@ initializeTradeSession(Settings settings, string tradeDirection) =>
     trade.hasHitEntry       := isDivTrade ? true : false
     bool isLong = str.contains(str.upper(tradeDirection), 'LONG')
 
-    // 🔥 Dynamic ATR / Divergence SL Levels (1.00x ATR from Entry for Divergences)
-    float defaultSL = isLong ? (trade.entryLevel - slAtrMultInput * atrValue)
-                             : (trade.entryLevel + slAtrMultInput * atrValue)
-    float divSL     = isLong ? (trade.entryLevel - divSlAtrMultInput * atrValue)
-                             : (trade.entryLevel + divSlAtrMultInput * atrValue)
-    trade.slLevel  := math.round_to_mintick(isDivTrade ? divSL : defaultSL)
+    // 🔥 Dynamic ATR TP/SL Levels (1.00x ATR for Divergence Signals)
+    float currentSlMult = isDivTrade ? divSlAtrMultInput : slAtrMultInput
+    trade.slLevel  := isLong ? math.round_to_mintick(trade.entryLevel - currentSlMult * atrValue)
+                             : math.round_to_mintick(trade.entryLevel + currentSlMult * atrValue)
 
     trade.tp1Level := isLong ? math.round_to_mintick(trade.entryLevel + tp1AtrMultInput * atrValue)
                              : math.round_to_mintick(trade.entryLevel - tp1AtrMultInput * atrValue)
@@ -4039,22 +4039,18 @@ string valStr       = str.tostring(VAL, format.mintick)
 string vaWidthStr   = str.tostring(vaWidth, format.mintick)
 
 if Fire_Alert and enable_alerts
-    bool isFireDiv       = str.contains(fireActiveSignal, 'DIVERGENCE')
-    float fireEntryPrice = isFireDiv ? close : trendLine
-    float fireSlPrice    = isFireDiv ? (isFireLong ? (fireEntryPrice - divSlAtrMultInput * atrValue) : (fireEntryPrice + divSlAtrMultInput * atrValue)) : (isFireLong ? trendLine - slAtrMultInput * atrValue : trendLine + slAtrMultInput * atrValue)
-    float fireTpPrice    = isFireDiv ? (isFireLong ? fireEntryPrice + tp1AtrMultInput * atrValue : fireEntryPrice - tp1AtrMultInput * atrValue) : (isFireLong ? trendLine + tp1AtrMultInput * atrValue : trendLine - tp1AtrMultInput * atrValue)
-
+    float fireSlMult = str.contains(fireActiveSignal, 'DIVERGENCE') ? divSlAtrMultInput : slAtrMultInput
     string _firePay = '{' + str.format(
          '"trigger":"FireAlert","secret":"{0}","symbol":"{1}","type":"{2}","status":"OPEN","entryPrice":"{3}","slLevel":"{4}","tpLevel":"{5}","zone":"{6}","opening_bias":"{7}","day_type":"{8}","dayType":"{7}","marketType":"{8}","tradeMessage":"{9}","entryTime":"{10}","fire_zone":"{11}","is_ncpr":{12},"is_inside_cpr":{13},"dtc":"{14}","dbc":"{15}","prev_range":"{16}","cpr_width":"{17}","is_nva":{18},"is_rejection":{19},"is_continuation":{20},"c1":"{21}","vah":"{22}","val":"{23}","va_width":"{24}"',
          webhook_secret, syminfo.ticker, fireActiveSignal, 
-         str.tostring(fireEntryPrice, format.mintick), 
-         str.tostring(fireSlPrice, format.mintick), 
-         str.tostring(fireTpPrice, format.mintick), 
+         str.tostring(trendLine, format.mintick), 
+         str.tostring(isFireLong ? trendLine - fireSlMult * atrValue : trendLine + fireSlMult * atrValue, format.mintick), 
+         str.tostring(isFireLong ? trendLine + tp1AtrMultInput * atrValue : trendLine - tp1AtrMultInput * atrValue, format.mintick), 
          fireZone, dX, mX, 'Confluence_Alert: ' + fireActiveSignal + ' in ' + fireZone, 
          str.tostring(time), fireZone,
          isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
          isNvaStr, isRejStr, isContStr, _c1, vahStr, valStr, vaWidthStr
-         ) + ',"timeframe":"' + tfStr + '"}'
+         ) + '}'
     alert(_firePay, alert.freq_once_per_bar_close)
 
 alertcondition(Fire_Alert, title = 'TLCS Confluence Alert (Any Signal + Zone)', message = '{"trigger":"FireAlert","symbol":"{{ticker}}","price":"{{close}}"}')
@@ -4068,7 +4064,7 @@ if isNewDaySession or isNewRejectionSetup
          webhook_secret, syminfo.ticker, dX, mX, str.tostring(time),
          isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
          isNvaStr, isRejStr, isContStr, _c1, vahStr, valStr, vaWidthStr
-         ) + ',"timeframe":"' + tfStr + '"}'
+         ) + '}'
     alert(_scPay, alert.freq_once_per_bar_close)
 
 alertcondition(isNewDaySession or isNewRejectionSetup, title = 'TLCS Screener Watchlist Update', message = '{"trigger":"ScreenerUpdate","symbol":"{{ticker}}","status":"WATCHLIST"}')

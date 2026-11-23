@@ -84,6 +84,7 @@ class StrategyConfig:
     # ATR-Based SL/TP Multipliers (lines 2360-2365)
     atr_length: int = 14
     sl_atr_mult: float = 0.75      # SL = 0.75 * ATR from entry
+    div_sl_atr_mult: float = 1.00  # Divergence SL = 1.00 * ATR from entry
     tp1_atr_mult: float = 2.5      # TP1 = 2.5 * ATR from entry
     tp2_atr_mult: float = 4.0      # TP2 = 4.0 * ATR from entry
     tp3_atr_mult: float = 6.5      # TP3 = 6.5 * ATR from entry
@@ -110,10 +111,6 @@ class StrategyConfig:
 
     # Divergence lookback window
     div_lookback: int = 6           # Check divergence within last 6 bars
-
-    # Divergence Initial SL parameters (1.00x ATR from Entry)
-    div_sl_atr_mult: float = 1.0
-    div_sl_candle_lookback: int = 10
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -198,9 +195,6 @@ class MarketContext:
     # Timeframe (default '15m'; on '1D'/'Daily', H4/L4 limit touch-point qualification is omitted)
     timeframe: str = "15m"
 
-    # Average candle size over last 10 candles (for Divergence SL calculation)
-    avg_candle_size_10: Optional[float] = None
-
 
 # ════════════════════════════════════════════════════════════════════
 # CORE STRATEGY ENGINE
@@ -251,9 +245,6 @@ class StrategyEngine:
         # Track which bars have already generated signals (tick-spam protection)
         self._last_signal_bar: Dict[str, int] = {}
 
-        # Rolling candle ranges for divergence initial SL calculation (last 10 candles)
-        self._recent_candle_ranges: List[float] = []
-
     def evaluate(self, ctx: MarketContext) -> List[StrategySignal]:
         """
         Evaluate all 12 strategy triggers for the current bar.
@@ -267,21 +258,6 @@ class StrategyEngine:
         signals: List[StrategySignal] = []
         bar = ctx.bar
         cfg = self.config
-
-        # ═══════════════════════════════════════════════════════
-        # CANDLE SIZE TRACKING FOR DIVERGENCE SL (10-bar average)
-        # ═══════════════════════════════════════════════════════
-        bar_range = bar.range
-        self._recent_candle_ranges.append(bar_range)
-        if len(self._recent_candle_ranges) > cfg.div_sl_candle_lookback:
-            self._recent_candle_ranges.pop(0)
-
-        if ctx.avg_candle_size_10 is not None and ctx.avg_candle_size_10 > 0:
-            avg_candle_10 = ctx.avg_candle_size_10
-        elif self._recent_candle_ranges:
-            avg_candle_10 = sum(self._recent_candle_ranges) / len(self._recent_candle_ranges)
-        else:
-            avg_candle_10 = bar_range if bar_range > 0 else (ctx.atr if ctx.atr > 0 else 1.0)
 
         # ═══════════════════════════════════════════════════════
         # H4/L4 TOUCH-POINT GATING (CRITICAL — lines 3071-3072)
@@ -800,14 +776,6 @@ class StrategyEngine:
                 sig_entry = matching_buy_z.top
             elif name == "SHORT VIRGIN CPR" and matching_sell_z:
                 sig_entry = matching_sell_z.bottom
-            elif "DIVERGENCE" in name:
-                sig_entry = bar.close
-
-            # Divergence Initial SL: 1.00x ATR from Entry
-            custom_sl = None
-            if "DIVERGENCE" in name:
-                div_sl_dist = cfg.div_sl_atr_mult * atr_val
-                custom_sl = (sig_entry - div_sl_dist) if is_long else (sig_entry + div_sl_dist)
 
             # Confluence Qualification (Orthogonal Trend + Structural Divergence Confluence)
             is_confluence = False
@@ -856,7 +824,6 @@ class StrategyEngine:
                 confluence_tag=confluence_tag,
                 fire_alert=sig_fire_alert,
                 fire_zone=sig_fire_zone,
-                custom_sl=custom_sl,
             )
             signals.append(signal)
 
@@ -868,8 +835,7 @@ class StrategyEngine:
                       is_confluence: bool = False,
                       confluence_tag: str = "",
                       fire_alert: bool = False,
-                      fire_zone: str = "",
-                      custom_sl: Optional[float] = None) -> StrategySignal:
+                      fire_zone: str = "") -> StrategySignal:
         """
         Build a StrategySignal with computed SL/TP levels.
         
@@ -882,20 +848,16 @@ class StrategyEngine:
         """
         cfg = self.config
         direction = "LONG" if is_long else "SHORT"
-
-        if custom_sl is not None:
-            sl = custom_sl
-        elif is_long:
-            sl  = entry_price - cfg.sl_atr_mult * atr_val
-        else:
-            sl  = entry_price + cfg.sl_atr_mult * atr_val
+        sl_mult = cfg.div_sl_atr_mult if "DIVERGENCE" in name else cfg.sl_atr_mult
 
         if is_long:
+            sl  = entry_price - sl_mult * atr_val
             tp1 = entry_price + cfg.tp1_atr_mult * atr_val
             tp2 = entry_price + cfg.tp2_atr_mult * atr_val
             tp3 = entry_price + cfg.tp3_atr_mult * atr_val
             tp4 = entry_price + cfg.tp4_atr_mult * atr_val
         else:
+            sl  = entry_price + sl_mult * atr_val
             tp1 = entry_price - cfg.tp1_atr_mult * atr_val
             tp2 = entry_price - cfg.tp2_atr_mult * atr_val
             tp3 = entry_price - cfg.tp3_atr_mult * atr_val

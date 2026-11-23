@@ -1,7 +1,9 @@
 ## Strict Fact-Backed Verification Mandate (Zero Speculation & Zero Unilateral Modification Rule)
+- **NEVER MAKE ANY LOGICAL CHANGES WITHOUT PRIOR APPROVAL**: The AI assistant MUST NEVER make ANY logical changes to the codes (Pine Script indicators, Python BlackBox algorithms, TypeScript/Next.js routes, background scanners, or any other codebase component) ever without taking the user's explicit prior approval.
+- **ONLY INSTRUCTED CHANGES & ZERO ADDITIONS EVER**: The AI assistant MUST ONLY perform the exact instructed changes requested by the user and MUST NEVER add anything extra to it ever. No side modifications, no unsolicited logic alterations, and no secondary adjustments without direct permission.
 - **FACT-BACKED VERIFICATION ONLY**: The AI assistant MUST NEVER answer questions, diagnose trades, explain indicators, or evaluate conditions without first backing claims with verifiable facts (exact source code line inspection, live Supabase database queries, or deterministic mathematical proof).
 - **ZERO ASSUMPTIONS & SPECULATION**: Never assume or guess a trade status, concurrency state, day type, or indicator trigger. Every claim must be demonstrated step-by-step with raw data and exact mathematical calculations.
-- **ZERO UNILATERAL LOGIC ALTERATIONS**: The AI assistant is strictly forbidden from modifying, adding, or deleting Pine Script strategy triggers (`CanBuy`, `CanSell`, session arrays, or execution wrappers) without the user's explicit prior permission and direct instruction.
+- **ZERO UNILATERAL LOGIC ALTERATIONS**: The AI assistant is strictly forbidden from modifying, adding, or deleting Pine Script strategy triggers (`CanBuy`, `CanSell`, session arrays, or execution wrappers), signal qualification conditions, or trade management logic without the user's explicit prior permission and direct instruction.
 - **H4 / L4 LIMIT TOUCH-POINT GATING**:
   - For 15m Intraday trades:
     - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).

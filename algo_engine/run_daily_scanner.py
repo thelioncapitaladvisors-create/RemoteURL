@@ -216,7 +216,6 @@ class DailyBlackboxScanner:
             institutional_bias=c1_bias,
             session_highest=max(b.high for b in bars),
             session_lowest=min(b.low for b in bars),
-            avg_candle_size_10=sum(b.high - b.low for b in bars[max(0, i - 9):i + 1]) / len(bars[max(0, i - 9):i + 1]),
             prev_bar=prev_b,
             prev_close=prev_b.close,
             prev_open=prev_b.open,

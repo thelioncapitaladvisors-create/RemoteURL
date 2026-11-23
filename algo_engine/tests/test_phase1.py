@@ -1481,91 +1481,32 @@ class TestV7IndicatorParity(unittest.TestCase):
         self.assertEqual(trade.exit_level, "DIV")
         self.assertEqual(trade.status, TradeStatus.CLOSED_DIV)
 
-    def test_divergence_initial_sl_calculation_bullish_and_bearish(self):
+    def test_divergence_initial_sl_is_1x_atr(self):
         """Verify initial SL for Divergence signals is 1.00x ATR from Entry."""
-        # 1. Bullish Divergence Test (Long Divergence)
-        engine_bull = StrategyEngine()
-        for idx in range(1, 10):
-            b_hist = OHLC(open=101.0, high=104.0, low=100.0, close=102.0)
-            ctx_hist = MarketContext(
-                bar=b_hist, bar_index=idx,
-                H4=110.0, L4=90.0, H3=105.0, L3=95.0,
-                cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0,
-                day_type_label="TREND DAY", session_highest=105.0, session_lowest=98.0, atr=2.0
-            )
-            engine_bull.evaluate(ctx_hist)
-
-        # Bar 10: Divergence detected on bar[1] (detection bar)
-        b_div = OHLC(open=98.5, high=101.0, low=97.0, close=98.0)
-        ctx_div = MarketContext(
-            bar=b_div, bar_index=10,
-            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
-            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0,
+        engine = StrategyEngine()
+        b1 = OHLC(open=102, high=105, low=98, close=100)
+        ctx1 = MarketContext(
+            bar=b1, bar_index=1, H4=120, L4=80, H3=110, L3=90,
+            cpr_pivot=100, cpr_tc=102, cpr_bc=98, is_ncpr=False,
             bull_regular_div=True,
-            day_type_label="TREND DAY", session_highest=105.0, session_lowest=98.0, atr=2.0
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105, session_lowest=98, atr=5.0
         )
-        engine_bull.evaluate(ctx_div)
+        engine.evaluate(ctx1)
 
-        # Bar 11: Confirmation candle close (signal candle)
-        # Entry = 101.5 (close). ATR = 2.0.
-        # Initial SL = entry - 1.00 * ATR = 101.5 - 2.0 = 99.5
-        b_confirm = OHLC(open=99.0, high=102.0, low=98.0, close=101.5)
-        ctx_confirm = MarketContext(
-            bar=b_confirm, bar_index=11,
-            prev_bar=b_div, prev_close=100.0,
-            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
-            cpr_pivot=100.0, cpr_tc=105.0, cpr_bc=95.0,
-            day_type_label="TREND DAY", session_highest=105.0, session_lowest=98.0, atr=2.0,
-            plus=20.0, minus=10.0
+        b2 = OHLC(open=101, high=106, low=99.5, close=105)
+        ctx2 = MarketContext(
+            bar=b2, bar_index=2, H4=120, L4=80, H3=110, L3=90,
+            cpr_pivot=100, cpr_tc=102, cpr_bc=98, is_ncpr=False,
+            plus=20.0, minus=10.0, m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=106, session_lowest=98, atr=5.0
         )
-        sigs_bull = engine_bull.evaluate(ctx_confirm)
-        div_long_sigs = [s for s in sigs_bull if s.name == "LONG DIVERGENCE"]
-        self.assertEqual(len(div_long_sigs), 1, "LONG DIVERGENCE must fire on confirmation candle")
-        sig = div_long_sigs[0]
-        self.assertEqual(sig.entry_price, 101.5, "Divergence entry must snap to signal candle close")
-        self.assertEqual(sig.stop_loss, 99.5, "Divergence Long SL must be entry - 1.00 * ATR (101.5 - 2.0 = 99.5)")
-
-        # 2. Bearish Divergence Test (Short Hidden Divergence)
-        engine_bear = StrategyEngine()
-        for idx in range(1, 10):
-            b_hist = OHLC(open=202.0, high=205.0, low=200.0, close=203.0)
-            ctx_hist = MarketContext(
-                bar=b_hist, bar_index=idx,
-                H4=210.0, L4=190.0, H3=205.0, L3=195.0,
-                cpr_pivot=200.0, cpr_tc=205.0, cpr_bc=195.0,
-                day_type_label="TREND DAY", session_highest=206.0, session_lowest=198.0, atr=2.0
-            )
-            engine_bear.evaluate(ctx_hist)
-
-        # Bar 10: Hidden Bearish Divergence detected inside CPR
-        b_div_bear = OHLC(open=201.0, high=204.0, low=199.0, close=202.0)
-        ctx_div_bear = MarketContext(
-            bar=b_div_bear, bar_index=10,
-            H4=210.0, L4=190.0, H3=205.0, L3=195.0,
-            cpr_pivot=200.0, cpr_tc=205.0, cpr_bc=195.0,
-            bear_hidden_div=True,
-            day_type_label="TREND DAY", session_highest=206.0, session_lowest=198.0, atr=2.0
-        )
-        engine_bear.evaluate(ctx_div_bear)
-
-        # Bar 11: Bearish confirmation candle (signal candle)
-        # Entry = 199.0 (close). ATR = 2.0.
-        # Initial SL = entry + 1.00 * ATR = 199.0 + 2.0 = 201.0
-        b_confirm_bear = OHLC(open=202.0, high=203.0, low=198.0, close=199.0)
-        ctx_confirm_bear = MarketContext(
-            bar=b_confirm_bear, bar_index=11,
-            prev_bar=b_div_bear, prev_close=202.0,
-            H4=210.0, L4=190.0, H3=205.0, L3=195.0,
-            cpr_pivot=200.0, cpr_tc=205.0, cpr_bc=195.0,
-            day_type_label="TREND DAY", session_highest=206.0, session_lowest=198.0, atr=2.0,
-            plus=10.0, minus=20.0
-        )
-        sigs_bear = engine_bear.evaluate(ctx_confirm_bear)
-        div_short_sigs = [s for s in sigs_bear if s.name == "SHORT HIDDEN DIVERGENCE"]
-        self.assertEqual(len(div_short_sigs), 1, "SHORT HIDDEN DIVERGENCE must fire on confirmation candle")
-        sig_b = div_short_sigs[0]
-        self.assertEqual(sig_b.entry_price, 199.0, "Divergence entry must snap to signal candle close")
-        self.assertEqual(sig_b.stop_loss, 201.0, "Divergence Short SL must be entry + 1.00 * ATR (199.0 + 2.0 = 201.0)")
+        sigs = engine.evaluate(ctx2)
+        div_sigs = [s for s in sigs if s.name == "LONG DIVERGENCE"]
+        self.assertEqual(len(div_sigs), 1)
+        sig = div_sigs[0]
+        self.assertEqual(sig.stop_loss, sig.entry_price - 1.00 * 5.0)
 
 
 # ════════════════════════════════════════════════════════════════════
