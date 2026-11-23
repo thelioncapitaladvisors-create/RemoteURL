@@ -835,7 +835,7 @@ function extractRecentPivots(candles, lookbackLen = 10, maxPivots = 15) {
     return { supports, resistances };
 }
 
-function checkDivergences(candles, cpr, lookbackBars = 6, plus = 0, minus = 0) {
+function checkDivergences(candles, cpr, lookbackBars = 6, plus = 0, minus = 0, va = null) {
     if (!candles || candles.length < 15) {
         return { regBullDiv: false, regBearDiv: false, hiddenBullishConfirmed: false, hiddenBearishConfirmed: false };
     }
@@ -930,7 +930,13 @@ function checkDivergences(candles, cpr, lookbackBars = 6, plus = 0, minus = 0) {
             if (!hiddenBullishConfirmed && isPriorSwingLow && curC.low > priorC.low && curOsc < priorOsc && validBullSlope && !bullInvalidated) {
                 const insideCPR = (curC.close >= cprBottom && curC.close <= cprTop) ||
                                   (Math.min(curC.open, curC.close) <= cprTop && Math.max(curC.open, curC.close) >= cprBottom);
-                if (insideCPR && isBullishConfirmCandle && !(minus > plus)) {
+                const vahLevel = va ? Math.max(va.vah || 0, va.val || 0) : 0;
+                const valLevel = va ? Math.min(va.vah || 0, va.val || 0) : 0;
+                const insideVA = (vahLevel > 0 && valLevel > 0) && (
+                    (curC.close >= valLevel && curC.close <= vahLevel) ||
+                    (Math.min(curC.open, curC.close) <= vahLevel && Math.max(curC.open, curC.close) >= valLevel)
+                );
+                if ((insideCPR || insideVA) && isBullishConfirmCandle && !(minus > plus)) {
                     hiddenBullishConfirmed = true;
                 }
             }
@@ -939,7 +945,13 @@ function checkDivergences(candles, cpr, lookbackBars = 6, plus = 0, minus = 0) {
             if (!hiddenBearishConfirmed && isPriorSwingHigh && curC.high < priorC.high && curOsc > priorOsc && validBearSlope && !bearInvalidated) {
                 const insideCPR = (curC.close >= cprBottom && curC.close <= cprTop) ||
                                   (Math.min(curC.open, curC.close) <= cprTop && Math.max(curC.open, curC.close) >= cprBottom);
-                if (insideCPR && isBearishConfirmCandle && !(plus > minus)) {
+                const vahLevel = va ? Math.max(va.vah || 0, va.val || 0) : 0;
+                const valLevel = va ? Math.min(va.vah || 0, va.val || 0) : 0;
+                const insideVA = (vahLevel > 0 && valLevel > 0) && (
+                    (curC.close >= valLevel && curC.close <= vahLevel) ||
+                    (Math.min(curC.open, curC.close) <= vahLevel && Math.max(curC.open, curC.close) >= valLevel)
+                );
+                if ((insideCPR || insideVA) && isBearishConfirmCandle && !(plus > minus)) {
                     hiddenBearishConfirmed = true;
                 }
             }
@@ -1841,7 +1853,7 @@ async function runDhanScan(limitCount = null) {
                 const ScalpSell = emaCanSell && StepDn;
 
                 // 3. Divergence Checks (Lines 3121-3148)
-                const { regBullDiv, regBearDiv, hiddenBullishConfirmed, hiddenBearishConfirmed } = checkDivergences(candles, cpr, 6, plus, minus);
+                const { regBullDiv, regBearDiv, hiddenBullishConfirmed, hiddenBearishConfirmed } = checkDivergences(candles, cpr, 6, plus, minus, va);
 
                 // 4. Strategy Triggers (Lines 3139-3166 - Ungated per v4.0 mandate)
                 const standardLightningBuy = (CanBuy && ScalpBuy);
