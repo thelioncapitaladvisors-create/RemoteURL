@@ -2850,33 +2850,47 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
 
                 sentiment = math.sign(oscRatio - priceRatio)
                 trend = properties.trendMethod == 3 ? math.sign(lastTrend) : properties.trendMethod == 1 ? math.sign(dir * (llastRatio - 1)) : math.sign(llastMa - lastMa)
-                divergence = trend == dir and sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
+                // Remove trend-direction ternary check for Regular Divergence (D) so D triggers purely on price vs oscillator divergence
+                divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
                 
                 if divergence != 0
                     divergenceType := getDivergenceType(dir, divergence)
 
-                    validOscDivergence = true
-                    for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
-                        priceAtBar = priceMap.get(bar)
-                        oscillatorAtBar = oscillatorMap.get(bar)
-                        
-                        px1 = lastPricePoint.index
-                        py1 = lastPricePoint.price
-                        px2 = pricePoint.index
-                        py2 = pricePoint.price
-                        priceTheoPrice = py1 + ((py2 - py1) / (px2 - px1)) * (bar - px1)
+                    validDivergence = true
+                    // Gating for Hidden Divergence: Must be formed with CPR or within VAH and VAL levels
+                    bool isHidden = (divergenceType == DivergenceType.BullishHiddenDivergence or divergenceType == DivergenceType.BearishHiddenDivergence)
+                    if isHidden
+                        float cprTop = math.max(DTc, DBc)
+                        float cprBot = math.min(DTc, DBc)
+                        float vahLvl = math.max(VAH, VAL)
+                        float valLvl = math.min(VAH, VAL)
+                        bool formedWithCPR = (pricePoint.price >= cprBot and pricePoint.price <= cprTop) or (lastPricePoint.price >= cprBot and lastPricePoint.price <= cprTop) or (high >= cprBot and low <= cprTop) or (close >= cprBot and close <= cprTop)
+                        bool formedWithinVAHVAL = (pricePoint.price >= valLvl and pricePoint.price <= vahLvl) or (lastPricePoint.price >= valLvl and lastPricePoint.price <= vahLvl) or (high >= valLvl and low <= vahLvl) or (close >= valLvl and close <= vahLvl)
+                        if not (formedWithCPR or formedWithinVAHVAL)
+                            validDivergence := false
 
-                        x1 = llastOscillatorPoint.index
-                        y1 = llastOscillatorPoint.price
-                        x2 = oscillatorPoint.index
-                        y2 = oscillatorPoint.price
-                        oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
+                    if validDivergence
+                        for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
+                            priceAtBar = priceMap.get(bar)
+                            oscillatorAtBar = oscillatorMap.get(bar)
+                            
+                            px1 = lastPricePoint.index
+                            py1 = lastPricePoint.price
+                            px2 = pricePoint.index
+                            py2 = pricePoint.price
+                            priceTheoPrice = py1 + ((py2 - py1) / (px2 - px1)) * (bar - px1)
 
-                        if priceAtBar * dir > priceTheoPrice * dir or oscillatorAtBar * dir > oscTheoPrice * dir
-                            validOscDivergence := false
-                            break
+                            x1 = llastOscillatorPoint.index
+                            y1 = llastOscillatorPoint.price
+                            x2 = oscillatorPoint.index
+                            y2 = oscillatorPoint.price
+                            oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
 
-                    if validOscDivergence
+                            if priceAtBar * dir > priceTheoPrice * dir or oscillatorAtBar * dir > oscTheoPrice * dir
+                                validDivergence := false
+                                break
+
+                    if validDivergence
                         priceLabelText = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BearishDivergence ? 'D' : 'H'
                         priceTooltipText = str.tostring(divergenceType) + '\nPrice : ' + str.tostring(lastPrice) + ' ( ' + str.tostring(priceRatio) + ' ) - ' +
                                          str.tostring(priceDirection) + '\n' + 'Oscillator :' + str.tostring(lastMa) + ' ( ' + str.tostring(oscRatio) + ' ) - ' + str.tostring(oscillatorDirection)
@@ -2887,27 +2901,11 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                         pLine = line.new(lastPricePoint.time, lastPricePoint.price, pricePoint.time, pricePoint.price, xloc=xloc.bar_time, extend=propLine.extend, color=propLine.color, style=propLine.style, width=1, force_overlay=true)
                         line oLine = na
 
-                        pLabel = label.new(pricePoint.time, pricePoint.price, text=priceLabelText, xloc=xloc.bar_time, yloc=propLabel.yloc, color=propLabel.color, style=propLabel.style, textcolor=propLabel.textcolor, size=propLabel.size, textalign=propLabel.textalign, tooltip=priceTooltipText, force_overlay=true)
+                        label pLabel = na
                         label oLabel = na
                         
                         divergenceObject = DivergenceObject.new(pLine, oLine, pLabel, oLabel, lastPricePoint.index, pricePoint.index, pricePoint, divergenceType)
                         divergenceObjects.push(divergenceObject)
-
-                        // Strict Gating for Trade Execution: Hidden Divergence must be formed with CPR or within VAH/VAL levels
-                        bool isHidden = (divergenceType == DivergenceType.BullishHiddenDivergence or divergenceType == DivergenceType.BearishHiddenDivergence)
-                        bool validTradeDivergence = true
-                        if isHidden
-                            float cprTop = math.max(DTc, DBc)
-                            float cprBot = math.min(DTc, DBc)
-                            float vahLvl = math.max(VAH, VAL)
-                            float valLvl = math.min(VAH, VAL)
-                            bool formedWithCPR = (pricePoint.price >= cprBot and pricePoint.price <= cprTop) or (lastPricePoint.price >= cprBot and lastPricePoint.price <= cprTop) or (high >= cprBot and low <= cprTop) or (close >= cprBot and close <= cprTop)
-                            bool formedWithinVAHVAL = (pricePoint.price >= valLvl and pricePoint.price <= vahLvl) or (lastPricePoint.price >= valLvl and lastPricePoint.price <= vahLvl) or (high >= valLvl and low <= vahLvl) or (close >= valLvl and close <= vahLvl)
-                            if not (formedWithCPR or formedWithinVAHVAL)
-                                validTradeDivergence := false
-
-                        if not validTradeDivergence
-                            divergenceType := DivergenceType.None
                         true
                     else
                         divergenceType := DivergenceType.None
@@ -3976,13 +3974,13 @@ processTradeArray(settings, extremeRevSessions, extremeRevVisualsArr, z1, dX, mX
 // 9. ON-CHART PLOTTINGS & VISUAL MARKERS
 // ====================================================================
 
-// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS (Rendered natively via pLabel at line 2898 to replicate oscillator plots 1:1 with zero duplicate labels)
-// plotshape(DivergenceBuy,  title = "Bullish Regular Divergence (Confirmed)", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
-// plotshape(DivergenceSell, title = "Bearish Regular Divergence (Confirmed)", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
+// 🟢 / 🔴 1. REGULAR DIVERGENCE PLOTS (Confirmed on candle close; strictly synchronized with trade execution)
+plotshape(DivergenceBuy,  title = "Bullish Regular Divergence (Confirmed)", style = shape.labelup,   location = location.belowbar, color = color.new(color.lime, 0), text = "D", textcolor = color.black, size = size.small)
+plotshape(DivergenceSell, title = "Bearish Regular Divergence (Confirmed)", style = shape.labeldown, location = location.abovebar, color = color.new(color.maroon, 0), text = "D", textcolor = color.white, size = size.small)
 
-// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS (Rendered natively via pLabel at line 2898 to replicate oscillator plots 1:1 with zero duplicate labels)
-// plotshape(HiddenDivBuy,   title = "Bullish Hidden Divergence (Confirmed)",  style = shape.labelup,   location = location.belowbar, color = color.teal,   text = "H", textcolor = color.white, size = size.small)
-// plotshape(HiddenDivSell,  title = "Bearish Hidden Divergence (Confirmed)",  style = shape.labeldown, location = location.abovebar, color = color.orange, text = "H", textcolor = color.black, size = size.small)
+// 🔵 / 🟠 2. HIDDEN DIVERGENCE PLOTS (Confirmed on candle close; strictly synchronized with trade execution)
+plotshape(HiddenDivBuy,   title = "Bullish Hidden Divergence (Confirmed)",  style = shape.labelup,   location = location.belowbar, color = color.teal,   text = "H", textcolor = color.white, size = size.small)
+plotshape(HiddenDivSell,  title = "Bearish Hidden Divergence (Confirmed)",  style = shape.labeldown, location = location.abovebar, color = color.orange, text = "H", textcolor = color.black, size = size.small)
 
 
 // ⚡ 3. LIGHTNING PLOTS
