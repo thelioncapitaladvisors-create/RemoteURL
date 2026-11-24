@@ -7229,12 +7229,11 @@ function MobileScreensaver() {
           const isVcpr = a.isVcprTouch || a.relationshipType === 'VCPR' || a.relationshipBadge?.includes('VCPR') || a.signals?.some((s: any) => (s.type || '').toUpperCase().includes('VIRGIN'));
           if (isVcpr) return false;
 
-          // Exclusively retain approved execution strategies (Confluence, Lightning, Ext Rev, Missile, Scalp, Divergence)
+          // Exclusively retain the 5 approved Daily Swing execution strategies (Lightning, Ext Rev, Missile, Scalp, Divergence)
           const matchesApproved = 
-            Boolean(a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE') ||
             Boolean(a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING') ||
             Boolean(a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV') ||
-            Boolean(a.relationshipBadge?.includes('MISSILE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'MISSILE') ||
+            Boolean(a.relationshipBadge?.includes('MISSILE') || a.relationshipType === 'MISSILE' || a.signals?.some((s: any) => ((s.metadata?.strategy || s.type || '').toUpperCase().includes('MISSILE')))) ||
             Boolean(a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP') ||
             Boolean(a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV');
           return matchesApproved;
@@ -11112,7 +11111,7 @@ function MobileScreensaver() {
       { value: 'ALL', label: 'ALL', count: liveSignalsStats.total },
       ...(liveSignalsStats.activeLimitsCount > 0 ? [{ value: 'ACTIVE_LIMITS', label: '⏳ ACTIVE LIMITS', count: liveSignalsStats.activeLimitsCount }] : []),
       ...(liveSignalsStats.liveCount > 0 ? [{ value: 'LIVE', label: '⚡ LIVE TRADES', count: liveSignalsStats.liveCount }] : []),
-      ...(liveSignalsStats.fireCount > 0 ? [{ value: 'FIRE', label: '⚡ CONFLUENCE', count: liveSignalsStats.fireCount }] : []),
+      ...(activeTab !== 'INSIGHTS' && liveSignalsStats.fireCount > 0 ? [{ value: 'FIRE', label: '⚡ CONFLUENCE', count: liveSignalsStats.fireCount }] : []),
       ...(liveSignalsStats.lightningCount > 0 ? [{ value: 'LIGHTNING', label: '⚡ LIGHTNING', count: liveSignalsStats.lightningCount }] : []),
       ...(liveSignalsStats.extRevCount > 0 ? [{ value: 'EXT_REV', label: '🔥 EXT REV', count: liveSignalsStats.extRevCount }] : []),
       ...(liveSignalsStats.missileCount > 0 ? [{ value: 'MISSILE', label: '🚀 MISSILE', count: liveSignalsStats.missileCount }] : []),
@@ -11138,7 +11137,7 @@ function MobileScreensaver() {
       : 0;
 
     const liveMatrixCategories: { id: string; label: string; badge: string; icon: string; badgeStyle: string }[] = [
-      { id: 'FIRE', label: 'Confluence', badge: 'CONFLUENCE', icon: '⚡', badgeStyle: 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/35' },
+      ...(activeTab === 'INSIGHTS' ? [] : [{ id: 'FIRE', label: 'Confluence', badge: 'CONFLUENCE', icon: '⚡', badgeStyle: 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/35' }]),
       { id: 'LIGHTNING', label: 'Lightning', badge: 'LIGHTNING', icon: '⚡', badgeStyle: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/35' },
       { id: 'EXT_REV', label: 'Extreme Reversal', badge: 'EXT REV', icon: '🔥', badgeStyle: 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/35' },
       { id: 'MISSILE', label: 'Missile', badge: 'MISSILE', icon: '🚀', badgeStyle: 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/35' },
