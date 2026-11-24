@@ -17,7 +17,7 @@
     - **Future Candle Touch Execution**: Trade initiates strictly on subsequent future candles when price touches `entryLevel` (`low <= entryLevel` for Long; `high >= entryLevel` for Short).
     - Until touched, the trade is strictly maintained as a pending limit order (`status: 'ACTIVE LIMIT'`, `hasHitEntry = false`) on charts, alerts, and application UI.
 - **INITIAL STOP LOSS (SL) ANCHORED TO D/H CANDLE EXTREMES (DIV_SL_0.5_AVG10 REGIME)**:
-  - The initial Stop Loss level (`slLevel` / `stop_loss`) is strictly anchored above or below the swing extreme of the candle that printed the Divergence (`D` or `H`) with an offset of 0.5 times the average range of the last 10 candles (verified via VectorBT optimization across 72,008 bars for optimum Profit Factor of 1.36 and Net Return of +194.39%):
+  - The initial Stop Loss level (`slLevel` / `stop_loss`) for Divergence signals is strictly anchored above or below the swing extreme of the candle that printed the Divergence (`D` or `H`) with an offset of 0.5 times the average range of the last 10 candles (verified via VectorBT optimization across 72,008 bars delivering maximum Profit Factor of 1.36 and Net Return of +194.39%):
     - Average size of last 10 candles:
       $$\text{AvgCandleSize}_{10} = \frac{1}{10} \sum_{k=0}^{9} (\text{High}_{i-k} - \text{Low}_{i-k}) \quad (\text{Pine: } \text{ta.sma}(\text{high} - \text{low}, 10))$$
     - Offset: $\Delta_{\text{SL}} = 0.5 \times \text{AvgCandleSize}_{10}$
@@ -26,13 +26,44 @@
     - **Short Divergence**: Set strictly above the high of the candle printing the D or H:
       $$\text{slLevel} = \text{divHigh} + 0.5 \times \text{AvgCandleSize}_{10}$$
     - Fallback: In the edge case where divergence extreme is not defined, fall back to entry $\pm 0.5 \times \text{ATR}$.
-- **PROFIT TARGETS & TRAILING SL EXTENSION FROM MIDPOINT ENTRY**:
-  - All profit targets (TP1, TP2, TP3, TP4) and Breakeven / Trailing Stop mechanisms are mathematically extended from the new confirmation candle midpoint `entryLevel`:
+- **CORE STRATEGY INITIAL STOP LOSS ANCHORED TO SIGNAL BAR EXTREME (OPTION B REGIME)**:
+  - For all Core Trend signals (Missile, Scalp, Lightning, Extreme Reversal) across both TradingView Pine Script indicators and Python BlackBox algorithms:
+    - Initial Stop Loss is anchored strictly to the Signal Bar Extreme with a 0.50x ATR buffer (verified via VectorBT optimization across 72,008 bars delivering maximum Net Return of +276.70% and strongest future forward-walk gain of +49.26%):
+      - **Long**: $\text{slLevel} = \text{Low}_{\text{signal}} - 0.50 \times \text{ATR}$
+      - **Short**: $\text{slLevel} = \text{High}_{\text{signal}} + 0.50 \times \text{ATR}$
+- **PROFIT TARGETS & TRAILING SL EXTENSION FROM ENTRY**:
+  - All profit targets (TP1, TP2, TP3, TP4) and Breakeven / Trailing Stop mechanisms are mathematically extended from `entryLevel`:
     - $\text{TP}_k = \text{entryLevel} \pm k \times \text{ATR}$
     - Breakeven moves SL to `entryLevel` when price reaches the 50% midpoint between TP1 and TP2.
 - **PARITY ACROSS ALL INDICATORS & ENGINES**:
   - Pine Script: `TLCS_Live_Pivot_Alerts.pine`, `TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV Indicator/TLCS_Daily_TF_Indicator.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`.
   - Python BlackBox: `algo_engine/strategies.py`, `algo_engine/shadow_pipeline.py`, `algo_engine/trade_manager.py`, `algo_engine/run_daily_scanner.py`, `algo_engine/nse100_scanner.py`.
+
+## Version 5.0: VectorBT Confluence Benchmark Metrics Refresh Post Initial SL & Divergence Midpoint Entry Optimization Mandate (Effective November 24, 2026)
+- **DETERMINISTIC 72,000-BAR EMPIRICAL BENCHMARKS**:
+  - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) under `🔥 VectorBT Confluence Quantitative Benchmark vs Live System` in `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
+    - All empirical benchmarks are deterministically synchronized from 72,008 hourly bars across 17 multi-asset target instruments under Version 5.0 optimized regimes:
+      1. Divergence Signals: `DIV_SL_0.5_AVG10` (Midpoint touch entry, initial SL anchored to D/H candle extreme $\pm 0.5 \times \text{AvgCandleSize}_{10}$).
+      2. Core Trend Signals: `CORE_SL_BAR_EXTREME` (Option B: Signal bar extreme $\pm 0.50 \times \text{ATR}$).
+- **MODEL-LEVEL EMPIRICAL BENCHMARKS (`MODELS` MATRIX)**:
+  - **Missile + Divergence (`MISSILE_DIV`)**: Standalone PF: `1.12`, Confluence PF: `1.22`, Edge Delta: `+8.9%`, Standalone MDD: `40.53%`, Confluence MDD: `35.35%`, MDD Reduction: `-12.8%`, VBT Win Rate (excl. BE): `42.06%`.
+  - **Scalp + Divergence (`SCALP_DIV`)**: Standalone PF: `1.11`, Confluence PF: `1.44`, Edge Delta: `+29.7%`, Standalone MDD: `48.21%`, Confluence MDD: `6.98%`, MDD Reduction: `-85.5%`, VBT Win Rate (excl. BE): `40.91%`.
+  - **Lightning + Divergence Triple (`LIGHTNING_TRIPLE`)**: Standalone PF: `0.95`, Confluence PF: `1.29`, Edge Delta: `+35.8%`, Standalone MDD: `39.96%`, Confluence MDD: `7.68%`, MDD Reduction: `-80.8%`, VBT Win Rate (excl. BE): `66.67%`.
+  - **Regular Divergence (`REGULAR_DIV`)**: Standalone PF: `1.36`, Confluence PF: `1.36`, Edge Delta: `BASELINE`, Standalone MDD: `25.45%`, Confluence MDD: `25.45%`, MDD Reduction: `BASELINE`, VBT Win Rate (excl. BE): `30.20%`.
+  - **Hidden Divergence (`HIDDEN_DIV`)**: Standalone PF: `0.96`, Confluence PF: `1.18`, Edge Delta: `+22.9%`, Standalone MDD: `2.81%`, Confluence MDD: `1.85%`, MDD Reduction: `-34.2%`, VBT Win Rate (excl. BE): `41.67%`.
+- **CARD 1 & COMPOSITE SUMMARY FOOTER SYNCHRONIZATION**:
+  - **Card 1 (`VectorBT Confluence Benchmark`)**:
+    - Sample Badge: `72,000 BARS`
+    - Subtitle: `Empirical 72,000-bar VectorBT backtest benchmarks paired side-by-side with our actual live trading performance statistics.`
+    - Profit Factor: `1.22 - 1.44` (`+9% to +36% Edge`)
+    - Win Rate: `30.2% - 66.7%` (`Asymmetric 1:3 RR`)
+    - Max Drawdown: `1.9% - 35.4%` (`-13% to -86% Cut`)
+  - **Table Composite Footer**:
+    - Benchmark VBT PF: `1.30 Avg`
+    - Benchmark VBT Win Rate: `44.3% Avg`
+    - Confluence Max Drawdown: `15.5% Avg`
+    - Edge Delta: `+19.5% Avg`
+    - Composite Max Drawdown Benchmark Gating: `cMaxDD <= 15.5%`
 
 ## Version 5.0: Purity of Signal Logics & Complete Noise / News Exclusion Mandate (Effective November 24, 2026)
 - **TRADINGVIEW NEWS/EVENT ICONS ARE NOISE, NOT SIGNALS**:

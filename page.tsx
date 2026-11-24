@@ -8650,13 +8650,13 @@ function MobileScreensaver() {
         label: 'MISSILE + DIVERGENCE',
         icon: '🚀🎯',
         desc: 'Breakout confirmed by RSI Divergence',
-        standalonePF: '1.06',
-        confluencePF: '1.31',
-        edgeDelta: '+23.6%',
-        standaloneMDD: '19.46%',
-        confluenceMDD: '6.23%',
-        mddReduction: '-68.0%',
-        vbtWinRate: '33.33%',
+        standalonePF: '1.12',
+        confluencePF: '1.22',
+        edgeDelta: '+8.9%',
+        standaloneMDD: '40.53%',
+        confluenceMDD: '35.35%',
+        mddReduction: '-12.8%',
+        vbtWinRate: '42.06%',
         matcher: (s: any) => {
           const c = isConfluenceSignal(s, src);
           return c.isConfluence && (c.confluenceType === 'MISSILE_DIV' || (s.type || '').toUpperCase().includes('MISSILE'));
@@ -8667,13 +8667,13 @@ function MobileScreensaver() {
         label: 'SCALP + DIVERGENCE',
         icon: '⚡🎯',
         desc: 'S&R Retest confirmed by Divergence',
-        standalonePF: '1.02',
-        confluencePF: '1.48',
-        edgeDelta: '+45.1%',
-        standaloneMDD: '19.09%',
-        confluenceMDD: '2.75%',
-        mddReduction: '-85.6%',
-        vbtWinRate: '32.89%',
+        standalonePF: '1.11',
+        confluencePF: '1.44',
+        edgeDelta: '+29.7%',
+        standaloneMDD: '48.21%',
+        confluenceMDD: '6.98%',
+        mddReduction: '-85.5%',
+        vbtWinRate: '40.91%',
         matcher: (s: any) => {
           const c = isConfluenceSignal(s, src);
           return c.isConfluence && (c.confluenceType === 'SCALP_DIV' || c.confluenceType === 'CONFLUENCE_DIV' || (s.type || '').toUpperCase().includes('SCALP') || (s.type || '').toUpperCase().includes('CONFLUENCE'));
@@ -8684,13 +8684,13 @@ function MobileScreensaver() {
         label: 'LIGHTNING + DIVERGENCE (TRIPLE)',
         icon: '🌩️🎯',
         desc: 'Missile + Scalp + Divergence',
-        standalonePF: '0.98',
-        confluencePF: '1.07',
-        edgeDelta: '+9.2%',
-        standaloneMDD: '7.04%',
-        confluenceMDD: '1.54%',
-        mddReduction: '-78.1%',
-        vbtWinRate: '38.89%',
+        standalonePF: '0.95',
+        confluencePF: '1.29',
+        edgeDelta: '+35.8%',
+        standaloneMDD: '39.96%',
+        confluenceMDD: '7.68%',
+        mddReduction: '-80.8%',
+        vbtWinRate: '66.67%',
         matcher: (s: any) => {
           const c = isConfluenceSignal(s, src);
           return c.isConfluence && (c.confluenceType === 'LIGHTNING_TRIPLE' || (s.type || '').toUpperCase().includes('LIGHTNING'));
@@ -8701,13 +8701,13 @@ function MobileScreensaver() {
         label: 'REGULAR DIVERGENCE (STANDALONE)',
         icon: '🎯',
         desc: 'Mean Reversion RSI Divergence',
-        standalonePF: '1.31',
-        confluencePF: '1.31',
+        standalonePF: '1.36',
+        confluencePF: '1.36',
         edgeDelta: 'BASELINE',
-        standaloneMDD: '10.62%',
-        confluenceMDD: '6.23%',
-        mddReduction: '-41.3%',
-        vbtWinRate: '26.10%',
+        standaloneMDD: '25.45%',
+        confluenceMDD: '25.45%',
+        mddReduction: 'BASELINE',
+        vbtWinRate: '30.20%',
         matcher: (s: any) => {
           const t = (s.type || '').toUpperCase();
           const trig = (s.trigger || '').toUpperCase();
@@ -8730,7 +8730,7 @@ function MobileScreensaver() {
         standaloneMDD: '2.81%',
         confluenceMDD: '1.85%',
         mddReduction: '-34.2%',
-        vbtWinRate: '38.46%',
+        vbtWinRate: '41.67%',
         matcher: (s: any) => {
           const t = (s.type || '').toUpperCase();
           const trig = (s.trigger || '').toUpperCase();
@@ -8871,7 +8871,7 @@ function MobileScreensaver() {
       }
     });
     const compositeMaxDDText = cMaxDD > 0 ? `${cMaxDD.toFixed(2)}%` : (totalAllTrades > 0 ? '0.00%' : '--');
-    const compositeIsBeatingMDD = cMaxDD > 0 ? cMaxDD <= 6.23 : (totalAllTrades > 0);
+    const compositeIsBeatingMDD = cMaxDD > 0 ? cMaxDD <= 15.5 : (totalAllTrades > 0);
 
     return {
       rows,
@@ -17495,7 +17495,7 @@ function MobileScreensaver() {
                               <span>🔥 VectorBT Confluence Quantitative Benchmark vs Live System</span>
                             </h3>
                             <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 theme-gray:text-slate-700 font-semibold leading-snug mt-0.5">
-                              Empirical 78,000-bar VectorBT backtest benchmarks paired side-by-side with our actual live trading performance statistics.
+                              Empirical 72,000-bar VectorBT backtest benchmarks paired side-by-side with our actual live trading performance statistics.
                             </p>
                           </div>
                         </div>
@@ -17512,7 +17512,7 @@ function MobileScreensaver() {
                                 </span>
                               </div>
                               <span className="text-[10px] sm:text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 whitespace-nowrap">
-                                78,000 BARS
+                                72,000 BARS
                               </span>
                             </div>
                             <div className="grid grid-cols-3 gap-2 pt-2.5 text-center">
@@ -17521,10 +17521,10 @@ function MobileScreensaver() {
                                   <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase leading-tight">Profit Factor</span>
                                 </div>
                                 <div className="my-0.5 flex items-center justify-center">
-                                  <span className="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 font-mono leading-tight">1.31 - 1.48</span>
+                                  <span className="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 font-mono leading-tight">1.22 - 1.44</span>
                                 </div>
                                 <div className="min-h-[28px] sm:min-h-[30px] flex items-start justify-center">
-                                  <span className="text-[8.5px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold leading-tight break-words">+23% to +45% Edge</span>
+                                  <span className="text-[8.5px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold leading-tight break-words">+9% to +36% Edge</span>
                                 </div>
                               </div>
                               <div className="flex flex-col justify-between h-full">
@@ -17532,7 +17532,7 @@ function MobileScreensaver() {
                                   <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase leading-tight">Win Rate</span>
                                 </div>
                                 <div className="my-0.5 flex items-center justify-center">
-                                  <span className="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 font-mono leading-tight">26.1% - 38.9%</span>
+                                  <span className="text-xs sm:text-sm font-black text-amber-700 dark:text-amber-300 font-mono leading-tight">30.2% - 66.7%</span>
                                 </div>
                                 <div className="min-h-[28px] sm:min-h-[30px] flex items-start justify-center">
                                   <span className="text-[8.5px] sm:text-[9.5px] text-slate-500 font-medium leading-tight break-words">Asymmetric 1:3 RR</span>
@@ -17543,10 +17543,10 @@ function MobileScreensaver() {
                                   <span className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400 font-semibold uppercase leading-tight">Max Drawdown</span>
                                 </div>
                                 <div className="my-0.5 flex items-center justify-center">
-                                  <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono leading-tight">1.5% - 6.2%</span>
+                                  <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono leading-tight">1.9% - 35.4%</span>
                                 </div>
                                 <div className="min-h-[28px] sm:min-h-[30px] flex items-start justify-center">
-                                  <span className="text-[8.5px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold leading-tight break-words">-41% to -85% Cut</span>
+                                  <span className="text-[8.5px] sm:text-[9.5px] text-emerald-600 dark:text-emerald-400 font-bold leading-tight break-words">-13% to -86% Cut</span>
                                 </div>
                               </div>
                             </div>
@@ -17768,7 +17768,7 @@ function MobileScreensaver() {
                                   <span className="table-row-label">COMPOSITE BENCHMARK VS SYSTEM</span>
                                 </td>
                                 <td className="py-2.5 px-2 text-center text-amber-800 dark:text-amber-300 font-black border-r border-amber-500/15 dark:border-amber-500/25 whitespace-nowrap">
-                                  1.27 Avg
+                                  1.30 Avg
                                 </td>
                                 <td className={`py-2.5 px-2 text-center font-black border-r border-amber-500/20 dark:border-amber-500/30 whitespace-nowrap ${
                                   confluenceBenchmarkStats.summary.profitFactorText === 'MAX' || Number(confluenceBenchmarkStats.summary.profitFactorText) >= 1.0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'
@@ -17776,7 +17776,7 @@ function MobileScreensaver() {
                                   {confluenceBenchmarkStats.summary.profitFactorText}
                                 </td>
                                 <td className="py-2.5 px-2 text-center text-amber-800 dark:text-amber-300 font-black border-r border-amber-500/15 dark:border-amber-500/25 whitespace-nowrap">
-                                  33.9% Avg
+                                  44.3% Avg
                                 </td>
                                 <td className={`py-2.5 px-2 text-center font-black border-r border-amber-500/20 dark:border-amber-500/30 whitespace-nowrap ${
                                   confluenceBenchmarkStats.summary.winRate >= 50 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
@@ -17784,13 +17784,13 @@ function MobileScreensaver() {
                                   {confluenceBenchmarkStats.summary.totalTrades > 0 ? `${confluenceBenchmarkStats.summary.winRate.toFixed(1)}%` : '--'}
                                 </td>
                                 <td className="py-2.5 px-2 text-center text-emerald-700 dark:text-emerald-400 font-black border-r border-amber-500/15 dark:border-amber-500/25 whitespace-nowrap">
-                                  3.72% Avg
+                                  15.5% Avg
                                 </td>
                                 <td className="py-2.5 px-2 text-center text-slate-900 dark:text-slate-100 theme-gray:text-slate-900 font-black border-r border-amber-500/20 dark:border-amber-500/30 whitespace-nowrap">
                                   {confluenceBenchmarkStats.summary.maxDD}
                                 </td>
                                 <td className="py-2.5 px-2 text-center text-emerald-700 dark:text-emerald-400 font-black border-r border-amber-500/15 dark:border-amber-500/25 whitespace-nowrap">
-                                  +20.2% Avg
+                                  +19.5% Avg
                                 </td>
                                 <td className={`py-2.5 px-2 text-center font-black border-r border-amber-500/20 dark:border-amber-500/30 whitespace-nowrap ${
                                   confluenceBenchmarkStats.summary.netReturn > 0 ? 'text-emerald-700 dark:text-emerald-400' : (confluenceBenchmarkStats.summary.netReturn < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100')
