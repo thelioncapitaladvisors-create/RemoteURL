@@ -873,8 +873,8 @@ class StrategyEngine:
         direction = "LONG" if is_long else "SHORT"
 
         if "DIVERGENCE" in name:
-            # User Mandate Nov 24, 2026: Option 1 Initial SL anchored to D or H candle extreme minus/plus 2 * avg of last 10 candles
-            sl_dist = 2.0 * avg_candle_size_10 if avg_candle_size_10 > 0 else 2.0 * atr_val
+            # User Mandate Nov 24, 2026: DIV_SL_0.5_AVG10 regime anchored to D or H candle extreme minus/plus 0.5 * avg of last 10 candles
+            sl_dist = 0.5 * avg_candle_size_10 if avg_candle_size_10 > 0 else 0.5 * atr_val
             if is_long:
                 div_low = self._last_hidden_bull_div_low if "HIDDEN" in name else self._last_reg_bull_div_low
                 sl = round(div_low - sl_dist, 2) if div_low is not None else round(entry_price - sl_dist, 2)
