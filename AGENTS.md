@@ -29,15 +29,17 @@
   - Intraday Day Type classifications (`TYPICAL DAY, TRADING RANGE, SIDEWAYS`, `BIG MOVE`, `OUT OF RANGE OUT OF VALUE`, `IN RANGE IN VALUE`, `REJECTION BLUEPRINT`, `FAILED NEW LOW/HIGH`, `STOP RUN`) are designed to profile intraday 15-minute bar development within a single calendar session.
   - On the Daily Timeframe (`1D`), each bar is already an entire 24-hour day session. Therefore, intraday Day Types are **fundamentally invalid** as signal qualification criteria for Daily Timeframe swing trading.
   - Day Types belong strictly to the **Intraday Day Type Watchlist** on the HUB tab (`activeTab === 'DASHBOARD'`) and must NEVER be used to qualify or trigger Daily Timeframe swing trades.
-- **STANDALONE TOUCH-POINTS (▲ / ▼) ARE NOT SWING EXECUTION SIGNALS**:
-  - Standalone Camarilla or CPR boundary touch-point markers (such as the green triangle `▲` on the NATURALGAS daily chart) are touch interactions, NOT strategy execution triggers.
-  - Daily Timeframe swing trade qualification strictly requires one of the **5 Core Swing Strategies**:
-    1. Missile (`CanBuy` / `CanSell`)
-    2. Scalp (`ScalpBuy` / `ScalpSell`)
-    3. Lightning (`CanBuy and ScalpBuy` / `CanSell and ScalpSell`)
-    4. Extreme Reversal (`Elongsignal` / `Eshortsignal`)
-    5. Divergence (Regular & Hidden RSI/Price Divergence math)
-  - Any asset featuring only an intraday day type or standalone touch-point (such as NATURALGAS) evaluates to `[]` (0 signals) and is completely excluded from Swing Trading Opportunities on the INSIGHTS tab.
+
+## Version 5.0: Weekly Framework (Weekly CPR, Value Areas & Camarilla) for Daily (1D) Swing Execution Mandate (Effective November 24, 2026)
+- **MULTI-TIMEFRAME LEVEL ANCHORING**:
+  - **15m Intraday Execution**: Levels (CPR, Value Area, Camarilla) are anchored to the **Daily (1D)** completed bar.
+  - **Daily (1D) Swing Execution**: Levels (CPR, Value Area, Camarilla) MUST be anchored to the **Weekly (1W)** completed bar. Intraday daily levels are structurally invalid for daily timeframe swing analysis.
+- **ELIGIBILITY OF WEEKLY BOUNDARY INTERACTIONS (▲ / ▼)**:
+  - When CPR, Value Areas, and Camarilla levels are formed on **Weekly timeframe candles** (`Weekly CPR` $WP/WTC/WBC$, `Weekly Value Area` $W\text{-}VAH/W\text{-}VAL$, and `Weekly Camarilla` $W\text{-}H_4/W\text{-}L_4, W\text{-}H_3/W\text{-}L_3$):
+    - Daily candlestick interactions, bounces, and boundary rejections from these Weekly structural levels (such as the green triangle `▲` on the NATURALGAS daily chart testing Weekly $L_3$ at `286.56` and Weekly $VAL$ at `291.74`) **ARE ELIGIBLE AND CONSIDERABLE** as valid swing trading setups.
+    - These boundary interactions represent multi-day institutional support/resistance reactions against the higher-timeframe weekly structural envelope.
+- **ALGO ENGINE & PINE SCRIPT WEEKLY PARITY**:
+  - Both TradingView Pine Script (`TLCS_Daily_TF_Indicator.pine`) and the BlackBox scanning engine (`algo_engine/run_daily_scanner.py`) must calculate CPR, Value Areas, and Camarilla levels from aggregated **Weekly OHLC candles** for all Daily timeframe swing evaluations.
 
 ## Version 5.0: Permanent Removal of Confluence Filter from Swing Trading (Effective November 24, 2026)
 - **5 CORE SWING TRADING EXECUTION STRATEGIES & CONFLUENCE EXCLUSION**:
