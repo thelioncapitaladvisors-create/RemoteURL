@@ -6,7 +6,7 @@
 // ====================================================================
 
 //@version=6
-indicator('TLCS Daily Timeframe Indicator', shorttitle = 'TLCS Daily TF v5.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
+indicator('TLCS Daily TF Signals', shorttitle = 'TLCS DTF v5.0', overlay = true, max_lines_count = 500, max_labels_count = 500, max_bars_back = 500)
 
 // ──── 1. INPUTS & CONFIGURATION ──────────────────────────────────────
 group_gen   = 'General & Webhook'
@@ -14,11 +14,11 @@ webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae
 enable_alert   = input.bool(true, 'Enable Webhook Alerts', group = group_gen)
 
 group_piv   = 'Weekly Pivot Levels (Chart Framework)'
-show_wcpr   = input.bool(true, 'Show Weekly CPR (WP, WTC, WBC)', group = group_piv)
-show_wva    = input.bool(true, 'Show Weekly Value Area (W-VAH, W-VAL)', group = group_piv)
+show_wcpr     = input.bool(false, 'Show Weekly CPR (WP, WTC, WBC)', group = group_piv)
+show_wva      = input.bool(false, 'Show Weekly Value Area (W-VAH, W-VAL)', group = group_piv)
 show_wcam     = input.bool(false, 'Show Weekly Camarilla (WH4, WL4)', group = group_piv)
-show_wrange   = input.bool(true, 'Show Prior Week High/Low (PWH, PWL)', group = group_piv)
-show_cpr_box  = input.bool(true, 'Show Weekly CPR Zone (Current Week)', group = group_piv)
+show_wrange   = input.bool(false, 'Show Prior Week High/Low (PWH, PWL)', group = group_piv)
+show_cpr_box  = input.bool(false, 'Show Weekly CPR Zone (Current Week)', group = group_piv)
 show_labels   = input.bool(true, 'Show Right Margin Price Labels', group = group_piv)
 
 group_osc   = 'Oscillator & Divergence Engine'
