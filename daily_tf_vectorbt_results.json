@@ -1,0 +1,669 @@
+{
+  "total_bars": 22469,
+  "strategies": {
+    "MISSILE_JUST": {
+      "total_trades": 424,
+      "wins": 99,
+      "losses": 244,
+      "breakevens": 81,
+      "win_rate": 23.35,
+      "win_rate_no_be": 28.86,
+      "profit_factor": 1.0,
+      "net_return": -2.64,
+      "max_drawdown": 95.41,
+      "expectancy": -0.01,
+      "avg_duration": 7.6
+    },
+    "MISSILE_ALL": {
+      "total_trades": 1224,
+      "wins": 295,
+      "losses": 667,
+      "breakevens": 262,
+      "win_rate": 24.1,
+      "win_rate_no_be": 30.67,
+      "profit_factor": 0.98,
+      "net_return": -44.47,
+      "max_drawdown": 256.94,
+      "expectancy": -0.04,
+      "avg_duration": 8.2
+    },
+    "SCALP_JUST": {
+      "total_trades": 262,
+      "wins": 64,
+      "losses": 145,
+      "breakevens": 53,
+      "win_rate": 24.43,
+      "win_rate_no_be": 30.62,
+      "profit_factor": 0.81,
+      "net_return": -80.15,
+      "max_drawdown": 108.28,
+      "expectancy": -0.31,
+      "avg_duration": 7.3
+    },
+    "SCALP_ALL": {
+      "total_trades": 1062,
+      "wins": 260,
+      "losses": 568,
+      "breakevens": 234,
+      "win_rate": 24.48,
+      "win_rate_no_be": 31.4,
+      "profit_factor": 0.94,
+      "net_return": -121.98,
+      "max_drawdown": 314.03,
+      "expectancy": -0.11,
+      "avg_duration": 8.3
+    },
+    "LIGHTNING": {
+      "total_trades": 800,
+      "wins": 196,
+      "losses": 423,
+      "breakevens": 181,
+      "win_rate": 24.5,
+      "win_rate_no_be": 31.66,
+      "profit_factor": 0.97,
+      "net_return": -41.82,
+      "max_drawdown": 236.96,
+      "expectancy": -0.05,
+      "avg_duration": 8.6
+    },
+    "EXTREME_REVERSAL": {
+      "total_trades": 56,
+      "wins": 17,
+      "losses": 34,
+      "breakevens": 5,
+      "win_rate": 30.36,
+      "win_rate_no_be": 33.33,
+      "profit_factor": 1.08,
+      "net_return": 10.84,
+      "max_drawdown": 36.4,
+      "expectancy": 0.19,
+      "avg_duration": 8.6
+    },
+    "REGULAR_DIV": {
+      "total_trades": 93,
+      "wins": 27,
+      "losses": 32,
+      "breakevens": 34,
+      "win_rate": 29.03,
+      "win_rate_no_be": 45.76,
+      "profit_factor": 1.19,
+      "net_return": 29.93,
+      "max_drawdown": 40.14,
+      "expectancy": 0.32,
+      "avg_duration": 12.6
+    },
+    "HIDDEN_DIV": {
+      "total_trades": 39,
+      "wins": 13,
+      "losses": 21,
+      "breakevens": 5,
+      "win_rate": 33.33,
+      "win_rate_no_be": 38.24,
+      "profit_factor": 1.75,
+      "net_return": 82.74,
+      "max_drawdown": 38.6,
+      "expectancy": 2.12,
+      "avg_duration": 11.1
+    },
+    "MISSILE_DIV": {
+      "total_trades": 12,
+      "wins": 3,
+      "losses": 7,
+      "breakevens": 2,
+      "win_rate": 25.0,
+      "win_rate_no_be": 30.0,
+      "profit_factor": 0.73,
+      "net_return": -8.28,
+      "max_drawdown": 14.73,
+      "expectancy": -0.69,
+      "avg_duration": 7.8
+    },
+    "SCALP_DIV": {
+      "total_trades": 9,
+      "wins": 4,
+      "losses": 2,
+      "breakevens": 3,
+      "win_rate": 44.44,
+      "win_rate_no_be": 66.67,
+      "profit_factor": 2.54,
+      "net_return": 16.94,
+      "max_drawdown": 6.54,
+      "expectancy": 1.88,
+      "avg_duration": 6.6
+    },
+    "LIGHTNING_TRIPLE": {
+      "total_trades": 37,
+      "wins": 9,
+      "losses": 18,
+      "breakevens": 10,
+      "win_rate": 24.32,
+      "win_rate_no_be": 33.33,
+      "profit_factor": 1.09,
+      "net_return": 8.96,
+      "max_drawdown": 49.42,
+      "expectancy": 0.24,
+      "avg_duration": 9.5
+    }
+  },
+  "robustness": {
+    "MISSILE_JUST": {
+      "past": {
+        "total_trades": 296,
+        "wins": 68,
+        "losses": 176,
+        "breakevens": 52,
+        "win_rate": 22.97,
+        "win_rate_no_be": 27.87,
+        "profit_factor": 1.0,
+        "net_return": 0.98,
+        "max_drawdown": 70.14,
+        "expectancy": 0.0,
+        "avg_duration": 7.7
+      },
+      "future": {
+        "total_trades": 128,
+        "wins": 31,
+        "losses": 68,
+        "breakevens": 29,
+        "win_rate": 24.22,
+        "win_rate_no_be": 31.31,
+        "profit_factor": 0.98,
+        "net_return": -3.62,
+        "max_drawdown": 44.81,
+        "expectancy": -0.03,
+        "avg_duration": 7.3
+      }
+    },
+    "MISSILE_ALL": {
+      "past": {
+        "total_trades": 856,
+        "wins": 204,
+        "losses": 468,
+        "breakevens": 184,
+        "win_rate": 23.83,
+        "win_rate_no_be": 30.36,
+        "profit_factor": 0.96,
+        "net_return": -67.06,
+        "max_drawdown": 256.94,
+        "expectancy": -0.08,
+        "avg_duration": 8.6
+      },
+      "future": {
+        "total_trades": 368,
+        "wins": 91,
+        "losses": 199,
+        "breakevens": 78,
+        "win_rate": 24.73,
+        "win_rate_no_be": 31.38,
+        "profit_factor": 1.03,
+        "net_return": 22.59,
+        "max_drawdown": 239.89,
+        "expectancy": 0.06,
+        "avg_duration": 7.4
+      }
+    },
+    "SCALP_JUST": {
+      "past": {
+        "total_trades": 183,
+        "wins": 42,
+        "losses": 102,
+        "breakevens": 39,
+        "win_rate": 22.95,
+        "win_rate_no_be": 29.17,
+        "profit_factor": 0.72,
+        "net_return": -81.22,
+        "max_drawdown": 99.98,
+        "expectancy": -0.44,
+        "avg_duration": 7.1
+      },
+      "future": {
+        "total_trades": 79,
+        "wins": 22,
+        "losses": 43,
+        "breakevens": 14,
+        "win_rate": 27.85,
+        "win_rate_no_be": 33.85,
+        "profit_factor": 1.01,
+        "net_return": 1.07,
+        "max_drawdown": 47.3,
+        "expectancy": 0.01,
+        "avg_duration": 8.0
+      }
+    },
+    "SCALP_ALL": {
+      "past": {
+        "total_trades": 743,
+        "wins": 179,
+        "losses": 393,
+        "breakevens": 171,
+        "win_rate": 24.09,
+        "win_rate_no_be": 31.29,
+        "profit_factor": 0.89,
+        "net_return": -151.62,
+        "max_drawdown": 314.03,
+        "expectancy": -0.2,
+        "avg_duration": 8.5
+      },
+      "future": {
+        "total_trades": 319,
+        "wins": 81,
+        "losses": 175,
+        "breakevens": 63,
+        "win_rate": 25.39,
+        "win_rate_no_be": 31.64,
+        "profit_factor": 1.05,
+        "net_return": 29.64,
+        "max_drawdown": 242.9,
+        "expectancy": 0.09,
+        "avg_duration": 7.7
+      }
+    },
+    "LIGHTNING": {
+      "past": {
+        "total_trades": 560,
+        "wins": 139,
+        "losses": 288,
+        "breakevens": 133,
+        "win_rate": 24.82,
+        "win_rate_no_be": 32.55,
+        "profit_factor": 0.95,
+        "net_return": -57.52,
+        "max_drawdown": 236.96,
+        "expectancy": -0.1,
+        "avg_duration": 8.9
+      },
+      "future": {
+        "total_trades": 240,
+        "wins": 57,
+        "losses": 135,
+        "breakevens": 48,
+        "win_rate": 23.75,
+        "win_rate_no_be": 29.69,
+        "profit_factor": 1.03,
+        "net_return": 15.69,
+        "max_drawdown": 209.91,
+        "expectancy": 0.07,
+        "avg_duration": 7.7
+      }
+    },
+    "EXTREME_REVERSAL": {
+      "past": {
+        "total_trades": 39,
+        "wins": 11,
+        "losses": 24,
+        "breakevens": 4,
+        "win_rate": 28.21,
+        "win_rate_no_be": 31.43,
+        "profit_factor": 1.08,
+        "net_return": 7.27,
+        "max_drawdown": 36.4,
+        "expectancy": 0.19,
+        "avg_duration": 8.3
+      },
+      "future": {
+        "total_trades": 17,
+        "wins": 6,
+        "losses": 10,
+        "breakevens": 1,
+        "win_rate": 35.29,
+        "win_rate_no_be": 37.5,
+        "profit_factor": 1.1,
+        "net_return": 3.57,
+        "max_drawdown": 23.74,
+        "expectancy": 0.21,
+        "avg_duration": 9.5
+      }
+    },
+    "REGULAR_DIV": {
+      "past": {
+        "total_trades": 65,
+        "wins": 18,
+        "losses": 21,
+        "breakevens": 26,
+        "win_rate": 27.69,
+        "win_rate_no_be": 46.15,
+        "profit_factor": 1.33,
+        "net_return": 31.02,
+        "max_drawdown": 28.75,
+        "expectancy": 0.48,
+        "avg_duration": 13.3
+      },
+      "future": {
+        "total_trades": 28,
+        "wins": 9,
+        "losses": 11,
+        "breakevens": 8,
+        "win_rate": 32.14,
+        "win_rate_no_be": 45.0,
+        "profit_factor": 0.98,
+        "net_return": -1.08,
+        "max_drawdown": 26.99,
+        "expectancy": -0.04,
+        "avg_duration": 10.9
+      }
+    },
+    "HIDDEN_DIV": {
+      "past": {
+        "total_trades": 27,
+        "wins": 11,
+        "losses": 13,
+        "breakevens": 3,
+        "win_rate": 40.74,
+        "win_rate_no_be": 45.83,
+        "profit_factor": 2.7,
+        "net_return": 118.21,
+        "max_drawdown": 30.18,
+        "expectancy": 4.38,
+        "avg_duration": 12.3
+      },
+      "future": {
+        "total_trades": 12,
+        "wins": 2,
+        "losses": 8,
+        "breakevens": 2,
+        "win_rate": 16.67,
+        "win_rate_no_be": 20.0,
+        "profit_factor": 0.13,
+        "net_return": -35.47,
+        "max_drawdown": 35.47,
+        "expectancy": -2.96,
+        "avg_duration": 8.6
+      }
+    },
+    "MISSILE_DIV": {
+      "past": {
+        "total_trades": 8,
+        "wins": 3,
+        "losses": 4,
+        "breakevens": 1,
+        "win_rate": 37.5,
+        "win_rate_no_be": 42.86,
+        "profit_factor": 1.42,
+        "net_return": 6.45,
+        "max_drawdown": 10.23,
+        "expectancy": 0.81,
+        "avg_duration": 7.2
+      },
+      "future": {
+        "total_trades": 4,
+        "wins": 0,
+        "losses": 3,
+        "breakevens": 1,
+        "win_rate": 0.0,
+        "win_rate_no_be": 0.0,
+        "profit_factor": 0.0,
+        "net_return": -14.73,
+        "max_drawdown": 14.73,
+        "expectancy": -3.68,
+        "avg_duration": 8.8
+      }
+    },
+    "SCALP_DIV": {
+      "past": {
+        "total_trades": 6,
+        "wins": 3,
+        "losses": 1,
+        "breakevens": 2,
+        "win_rate": 50.0,
+        "win_rate_no_be": 75.0,
+        "profit_factor": 4.12,
+        "net_return": 17.78,
+        "max_drawdown": 5.7,
+        "expectancy": 2.96,
+        "avg_duration": 6.3
+      },
+      "future": {
+        "total_trades": 3,
+        "wins": 1,
+        "losses": 1,
+        "breakevens": 1,
+        "win_rate": 33.33,
+        "win_rate_no_be": 50.0,
+        "profit_factor": 0.84,
+        "net_return": -0.84,
+        "max_drawdown": 5.29,
+        "expectancy": -0.28,
+        "avg_duration": 7.0
+      }
+    },
+    "LIGHTNING_TRIPLE": {
+      "past": {
+        "total_trades": 25,
+        "wins": 6,
+        "losses": 12,
+        "breakevens": 7,
+        "win_rate": 24.0,
+        "win_rate_no_be": 33.33,
+        "profit_factor": 1.48,
+        "net_return": 29.81,
+        "max_drawdown": 49.42,
+        "expectancy": 1.19,
+        "avg_duration": 10.2
+      },
+      "future": {
+        "total_trades": 12,
+        "wins": 3,
+        "losses": 6,
+        "breakevens": 3,
+        "win_rate": 25.0,
+        "win_rate_no_be": 33.33,
+        "profit_factor": 0.39,
+        "net_return": -20.84,
+        "max_drawdown": 20.84,
+        "expectancy": -1.74,
+        "avg_duration": 7.8
+      }
+    }
+  },
+  "markets": {
+    "Indian Equities": {
+      "total_trades": 578,
+      "wins": 142,
+      "losses": 337,
+      "breakevens": 99,
+      "win_rate": 24.57,
+      "win_rate_no_be": 29.65,
+      "profit_factor": 0.78,
+      "net_return": -175.17,
+      "max_drawdown": 208.1,
+      "expectancy": -0.3,
+      "avg_duration": 7.5
+    },
+    "Commodities": {
+      "total_trades": 499,
+      "wins": 135,
+      "losses": 228,
+      "breakevens": 136,
+      "win_rate": 27.05,
+      "win_rate_no_be": 37.19,
+      "profit_factor": 1.19,
+      "net_return": 208.61,
+      "max_drawdown": 204.12,
+      "expectancy": 0.42,
+      "avg_duration": 9.1
+    },
+    "Global / FX / Crypto": {
+      "total_trades": 597,
+      "wins": 139,
+      "losses": 334,
+      "breakevens": 124,
+      "win_rate": 23.28,
+      "win_rate_no_be": 29.39,
+      "profit_factor": 0.97,
+      "net_return": -34.55,
+      "max_drawdown": 283.61,
+      "expectancy": -0.06,
+      "avg_duration": 8.8
+    }
+  },
+  "directional": {
+    "MISSILE_JUST": {
+      "long": {
+        "total_trades": 202,
+        "wins": 49,
+        "losses": 105,
+        "breakevens": 48,
+        "win_rate": 24.26,
+        "win_rate_no_be": 31.82,
+        "profit_factor": 1.08,
+        "net_return": 24.7,
+        "max_drawdown": 79.34,
+        "expectancy": 0.12,
+        "avg_duration": 8.5
+      },
+      "short": {
+        "total_trades": 222,
+        "wins": 50,
+        "losses": 139,
+        "breakevens": 33,
+        "win_rate": 22.52,
+        "win_rate_no_be": 26.46,
+        "profit_factor": 0.94,
+        "net_return": -27.34,
+        "max_drawdown": 113.38,
+        "expectancy": -0.12,
+        "avg_duration": 6.8
+      }
+    },
+    "SCALP_JUST": {
+      "long": {
+        "total_trades": 142,
+        "wins": 42,
+        "losses": 67,
+        "breakevens": 33,
+        "win_rate": 29.58,
+        "win_rate_no_be": 38.53,
+        "profit_factor": 1.38,
+        "net_return": 60.83,
+        "max_drawdown": 37.92,
+        "expectancy": 0.43,
+        "avg_duration": 8.8
+      },
+      "short": {
+        "total_trades": 120,
+        "wins": 22,
+        "losses": 78,
+        "breakevens": 20,
+        "win_rate": 18.33,
+        "win_rate_no_be": 22.0,
+        "profit_factor": 0.45,
+        "net_return": -140.98,
+        "max_drawdown": 150.25,
+        "expectancy": -1.17,
+        "avg_duration": 5.7
+      }
+    },
+    "LIGHTNING": {
+      "long": {
+        "total_trades": 402,
+        "wins": 110,
+        "losses": 203,
+        "breakevens": 89,
+        "win_rate": 27.36,
+        "win_rate_no_be": 35.14,
+        "profit_factor": 1.22,
+        "net_return": 159.74,
+        "max_drawdown": 155.88,
+        "expectancy": 0.4,
+        "avg_duration": 9.1
+      },
+      "short": {
+        "total_trades": 398,
+        "wins": 86,
+        "losses": 220,
+        "breakevens": 92,
+        "win_rate": 21.61,
+        "win_rate_no_be": 28.1,
+        "profit_factor": 0.77,
+        "net_return": -201.56,
+        "max_drawdown": 281.3,
+        "expectancy": -0.51,
+        "avg_duration": 8.0
+      }
+    },
+    "EXTREME_REVERSAL": {
+      "long": {
+        "total_trades": 30,
+        "wins": 10,
+        "losses": 17,
+        "breakevens": 3,
+        "win_rate": 33.33,
+        "win_rate_no_be": 37.04,
+        "profit_factor": 1.5,
+        "net_return": 24.56,
+        "max_drawdown": 18.36,
+        "expectancy": 0.82,
+        "avg_duration": 8.8
+      },
+      "short": {
+        "total_trades": 26,
+        "wins": 7,
+        "losses": 17,
+        "breakevens": 2,
+        "win_rate": 26.92,
+        "win_rate_no_be": 29.17,
+        "profit_factor": 0.83,
+        "net_return": -13.72,
+        "max_drawdown": 53.21,
+        "expectancy": -0.53,
+        "avg_duration": 8.5
+      }
+    },
+    "REGULAR_DIV": {
+      "long": {
+        "total_trades": 32,
+        "wins": 12,
+        "losses": 10,
+        "breakevens": 10,
+        "win_rate": 37.5,
+        "win_rate_no_be": 54.55,
+        "profit_factor": 1.54,
+        "net_return": 27.72,
+        "max_drawdown": 15.57,
+        "expectancy": 0.87,
+        "avg_duration": 16.6
+      },
+      "short": {
+        "total_trades": 61,
+        "wins": 15,
+        "losses": 22,
+        "breakevens": 24,
+        "win_rate": 24.59,
+        "win_rate_no_be": 40.54,
+        "profit_factor": 1.02,
+        "net_return": 2.21,
+        "max_drawdown": 50.74,
+        "expectancy": 0.04,
+        "avg_duration": 10.5
+      }
+    },
+    "HIDDEN_DIV": {
+      "long": {
+        "total_trades": 29,
+        "wins": 9,
+        "losses": 15,
+        "breakevens": 5,
+        "win_rate": 31.03,
+        "win_rate_no_be": 37.5,
+        "profit_factor": 1.73,
+        "net_return": 59.77,
+        "max_drawdown": 42.9,
+        "expectancy": 2.06,
+        "avg_duration": 10.7
+      },
+      "short": {
+        "total_trades": 10,
+        "wins": 4,
+        "losses": 6,
+        "breakevens": 0,
+        "win_rate": 40.0,
+        "win_rate_no_be": 40.0,
+        "profit_factor": 1.82,
+        "net_return": 22.96,
+        "max_drawdown": 17.73,
+        "expectancy": 2.3,
+        "avg_duration": 12.3
+      }
+    }
+  }
+}
