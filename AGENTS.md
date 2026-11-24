@@ -9,7 +9,20 @@
     - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
     - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
     - Gating must NEVER rely on `close` for limit entry qualification.
-  - For Daily Timeframe (1D Swing) BlackBox signals:
+## Version 5.0: Universal TradingView Webhook Daily Timeframe (1D DTF) Swing Signal Ingestion & Display Mandate (Effective November 24, 2026)
+- **UNIVERSAL TRADINGVIEW WEBHOOK 1D SWING SIGNAL INGESTION & DISPLAY**:
+  - Across the entire webhook processing pipeline (`TLCS_Website_Deploy/netlify/functions/process-webhook-background.js`, `Tv-Alert-Mobile/src/app/api/webhook/route.ts`):
+    1. **Autonomous Daily Timeframe (1D / DTF) Detection & Normalization**:
+       - Any TradingView alert carrying `body.timeframe`, `body.interval`, `body.tf` matching `'1D'`, `'D'`, `'DAILY'`, `'1440'`, or ticker/action triggers containing `'DTF'` or `'SWING'`, is autonomously tagged with `metadata.timeframe = '1D'`, `metadata.interval = '1D'`, `metadata.is_swing = true`, and assigned default strategy `metadata.strategy = 'SWING'` (or `'MISSILE'`).
+    2. **After-Hours Swing Trade Exemption From Market Cutoff Guards**:
+       - In `Tv-Alert-Mobile/src/app/api/webhook/route.ts`, swing trades with `isSwing1DTrade === true` are strictly exempt from intraday MCX (23:30 IST) and NSE (15:30 IST) session boundaries, guaranteeing midnight bar close swing signals (00:00–00:05 IST) are never rejected or dropped ab-initio.
+    3. **Frontend INSIGHTS Tab 1D Swing Trading Opportunities Ingestion**:
+       - Across `Tv-Alert-Mobile/src/app/page.tsx`, `RemoteURL/page.tsx`, and `page.tsx`:
+         - Under `SWING TRADING OPPORTUNITIES` (`activeTab === 'INSIGHTS'`), `extractDhanScreenerAssets()` and `renderDhanLiveSignalsSection()` ingest authentic webhook 1D swing signals alongside BlackBox limits.
+         - Swing signals seamlessly map into canonical execution strategies (`🚀 SWING` / `🚀 MISSILE` / `⚡ CONFLUENCE`), preserving active status across calendar dates until filled or closed.
+    4. **Historical Database Parity**:
+       - Existing Supabase `signals` records for `CRUDEOIL1!` (`30a954c8-614f-4ada-a298-e98da3842369`) and `NATURALGAS1!` (`68e9fe8f-8e81-4872-8e51-dc8216089ecd`) are backfilled with canonical `timeframe: '1D'`, `is_swing: true`, and `strategy: 'MISSILE'`.
+
 ## Version 5.0: Automated Real-Time 1D Timeframe Swing Signal Trigger at Market Close Mandate (Effective November 23, 2026)
 - **AUTONOMOUS 1D SWING SIGNAL TRIGGER AT MARKET CLOSE**:
   - Across the quantitative BlackBox signal engines (`algo_engine/nse100_scanner.py`, `algo_engine/run_daily_scanner.py`, `algo_engine/engine_daemon.py`):
