@@ -667,17 +667,29 @@ f_dispatch_alert(string sigName, string sigDir, float entryP, float slP, float t
     alert(alertPayload, alert.freq_once_per_bar_close)
 
 if enable_alert
-    // Regular Divergence
+    // Regular Divergence (Midpoint Entry & D/H Candle Extreme SL per v5.0 Mandate)
     if DivergenceBuy
-        f_dispatch_alert('REGULAR DIVERGENCE', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'REGULAR_DIV')
+        float divEntry = math.round_to_mintick((high + low) / 2.0)
+        float divSl    = not na(lastRegBullDivLow) ? math.round_to_mintick(lastRegBullDivLow - syminfo.mintick) : math.round_to_mintick(divEntry - slAtrMultInput * atrValue)
+        float divTp1   = math.round_to_mintick(divEntry + tp1AtrMultInput * atrValue)
+        f_dispatch_alert('REGULAR DIVERGENCE', 'LONG', divEntry, divSl, divTp1, 'REGULAR_DIV')
     if DivergenceSell
-        f_dispatch_alert('REGULAR DIVERGENCE', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'REGULAR_DIV')
+        float divEntry = math.round_to_mintick((high + low) / 2.0)
+        float divSl    = not na(lastRegBearDivHigh) ? math.round_to_mintick(lastRegBearDivHigh + syminfo.mintick) : math.round_to_mintick(divEntry + slAtrMultInput * atrValue)
+        float divTp1   = math.round_to_mintick(divEntry - tp1AtrMultInput * atrValue)
+        f_dispatch_alert('REGULAR DIVERGENCE', 'SHORT', divEntry, divSl, divTp1, 'REGULAR_DIV')
 
-    // Hidden Divergence
+    // Hidden Divergence (Midpoint Entry & D/H Candle Extreme SL per v5.0 Mandate)
     if HiddenDivBuy
-        f_dispatch_alert('HIDDEN DIVERGENCE', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'HIDDEN_DIV')
+        float divEntry = math.round_to_mintick((high + low) / 2.0)
+        float divSl    = not na(lastHiddenBullDivLow) ? math.round_to_mintick(lastHiddenBullDivLow - syminfo.mintick) : math.round_to_mintick(divEntry - slAtrMultInput * atrValue)
+        float divTp1   = math.round_to_mintick(divEntry + tp1AtrMultInput * atrValue)
+        f_dispatch_alert('HIDDEN DIVERGENCE', 'LONG', divEntry, divSl, divTp1, 'HIDDEN_DIV')
     if HiddenDivSell
-        f_dispatch_alert('HIDDEN DIVERGENCE', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'HIDDEN_DIV')
+        float divEntry = math.round_to_mintick((high + low) / 2.0)
+        float divSl    = not na(lastHiddenBearDivHigh) ? math.round_to_mintick(lastHiddenBearDivHigh + syminfo.mintick) : math.round_to_mintick(divEntry + slAtrMultInput * atrValue)
+        float divTp1   = math.round_to_mintick(divEntry - tp1AtrMultInput * atrValue)
+        f_dispatch_alert('HIDDEN DIVERGENCE', 'SHORT', divEntry, divSl, divTp1, 'HIDDEN_DIV')
 
     // Lightning
     if LightningBuy

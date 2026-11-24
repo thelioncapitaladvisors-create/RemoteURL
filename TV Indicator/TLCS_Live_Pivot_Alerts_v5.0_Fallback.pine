@@ -3483,6 +3483,24 @@ finalizeTrade(Settings settings, TradeLogic trade, string z1_zone, string dX, st
 
 
 
+// ── CONFIRMED DIVERGENCE ENGINE TRACKING VARIABLES ──
+var int lastRegBullDivBar        = na
+var int lastRegBearDivBar        = na
+var int lastHiddenBullDivBar     = na
+var int lastHiddenBearDivBar     = na
+var float lastRegBullDivLow      = na
+var float lastRegBullDivHigh     = na
+var float lastRegBearDivHigh     = na
+var float lastRegBearDivLow      = na
+var float lastHiddenBullDivLow   = na
+var float lastHiddenBullDivHigh  = na
+var float lastHiddenBearDivHigh  = na
+var float lastHiddenBearDivLow   = na
+var int lastFiredRegBullBar      = na
+var int lastFiredRegBearBar      = na
+var int lastFiredHiddenBullBar   = na
+var int lastFiredHiddenBearBar   = na
+
 // =========================================================================
 // 1. THE COMPLETE INITIALIZE TRADE SESSION FUNCTION
 // =========================================================================
@@ -3496,16 +3514,24 @@ initializeTradeSession(Settings settings, string tradeDirection) =>
     settings.totalExchangeFees += entryFeesRatio * settings.initialCapital / 100
     trade.tradeDirection    := tradeDirection
     bool isDivTrade         = str.contains(tradeDirection, 'DIVERGENCE')
-    trade.entryLevel        := isDivTrade ? close : trendLine
+    float confirmCandleMid  = math.round_to_mintick((high + low) / 2.0)
+    trade.entryLevel        := isDivTrade ? confirmCandleMid : trendLine
 
     // For divergence trades, entry is immediate on confirmation candle close!
     trade.hasHitEntry       := isDivTrade ? true : false
     bool isLong = str.contains(str.upper(tradeDirection), 'LONG')
 
-    // 🔥 Dynamic ATR TP/SL Levels (1.00x ATR for Divergence Signals)
-    float currentSlMult = isDivTrade ? divSlAtrMultInput : slAtrMultInput
-    trade.slLevel  := isLong ? math.round_to_mintick(trade.entryLevel - currentSlMult * atrValue)
-                             : math.round_to_mintick(trade.entryLevel + currentSlMult * atrValue)
+    // Initial Stop Loss (SL) & Dynamic ATR TP/SL Levels
+    if isDivTrade
+        if isLong
+            float divLow = str.contains(tradeDirection, 'HIDDEN') ? lastHiddenBullDivLow : lastRegBullDivLow
+            trade.slLevel := not na(divLow) ? math.round_to_mintick(divLow - syminfo.mintick) : math.round_to_mintick(trade.entryLevel - slAtrMultInput * atrValue)
+        else
+            float divHigh = str.contains(tradeDirection, 'HIDDEN') ? lastHiddenBearDivHigh : lastRegBearDivHigh
+            trade.slLevel := not na(divHigh) ? math.round_to_mintick(divHigh + syminfo.mintick) : math.round_to_mintick(trade.entryLevel + slAtrMultInput * atrValue)
+    else
+        trade.slLevel  := isLong ? math.round_to_mintick(trade.entryLevel - slAtrMultInput * atrValue)
+                                 : math.round_to_mintick(trade.entryLevel + slAtrMultInput * atrValue)
 
     trade.tp1Level := isLong ? math.round_to_mintick(trade.entryLevel + tp1AtrMultInput * atrValue)
                              : math.round_to_mintick(trade.entryLevel - tp1AtrMultInput * atrValue)
@@ -3737,27 +3763,7 @@ string z1 = (BULLISH or MODERATELYBULLISH or REJECTEDBEARISH) and close > h3 or 
 // ====================================================================
 
 // ── CONFIRMED DIVERGENCE ENGINE (Confirmation Candle Close Gating) ──
-// Track detection bars for each divergence type
-var int lastRegBullDivBar    = na
-var int lastRegBearDivBar    = na
-var int lastHiddenBullDivBar = na
-var int lastHiddenBearDivBar = na
-
-// Track divergence bar extremes for structural invalidation
-var float lastRegBullDivLow     = na
-var float lastRegBullDivHigh    = na
-var float lastRegBearDivHigh    = na
-var float lastRegBearDivLow     = na
-var float lastHiddenBullDivLow  = na
-var float lastHiddenBullDivHigh = na
-var float lastHiddenBearDivHigh = na
-var float lastHiddenBearDivLow  = na
-
-// Track last fired bar index to guarantee single-fire per divergence
-var int lastFiredRegBullBar    = na
-var int lastFiredRegBearBar    = na
-var int lastFiredHiddenBullBar = na
-var int lastFiredHiddenBearBar = na
+// Tracking variables declared above initializeTradeSession to provide structural extreme SL access
 
 // Record fresh divergence occurrences (Bar 0 - Unconfirmed; cannot fire trade on Bar 0)
 if ext_bullishDiv == 1.0
@@ -4036,13 +4042,16 @@ string valStr       = str.tostring(VAL, format.mintick)
 string vaWidthStr   = str.tostring(vaWidth, format.mintick)
 
 if Fire_Alert and enable_alerts
-    float fireSlMult = str.contains(fireActiveSignal, 'DIVERGENCE') ? divSlAtrMultInput : slAtrMultInput
+    bool isFireDiv   = str.contains(fireActiveSignal, 'DIVERGENCE')
+    float fireEntry  = isFireDiv ? math.round_to_mintick((high + low) / 2.0) : trendLine
+    float fireSl     = isFireDiv ? (isFireLong ? (str.contains(fireActiveSignal, 'HIDDEN') ? (not na(lastHiddenBullDivLow) ? math.round_to_mintick(lastHiddenBullDivLow - syminfo.mintick) : math.round_to_mintick(fireEntry - slAtrMultInput * atrValue)) : (not na(lastRegBullDivLow) ? math.round_to_mintick(lastRegBullDivLow - syminfo.mintick) : math.round_to_mintick(fireEntry - slAtrMultInput * atrValue))) : (str.contains(fireActiveSignal, 'HIDDEN') ? (not na(lastHiddenBearDivHigh) ? math.round_to_mintick(lastHiddenBearDivHigh + syminfo.mintick) : math.round_to_mintick(fireEntry + slAtrMultInput * atrValue)) : (not na(lastRegBearDivHigh) ? math.round_to_mintick(lastRegBearDivHigh + syminfo.mintick) : math.round_to_mintick(fireEntry + slAtrMultInput * atrValue)))) : (isFireLong ? math.round_to_mintick(trendLine - slAtrMultInput * atrValue) : math.round_to_mintick(trendLine + slAtrMultInput * atrValue))
+    float fireTp     = isFireLong ? math.round_to_mintick(fireEntry + tp1AtrMultInput * atrValue) : math.round_to_mintick(fireEntry - tp1AtrMultInput * atrValue)
     string _firePay = '{' + str.format(
          '"trigger":"FireAlert","secret":"{0}","symbol":"{1}","type":"{2}","status":"OPEN","entryPrice":"{3}","slLevel":"{4}","tpLevel":"{5}","zone":"{6}","opening_bias":"{7}","day_type":"{8}","dayType":"{7}","marketType":"{8}","tradeMessage":"{9}","entryTime":"{10}","fire_zone":"{11}","is_ncpr":{12},"is_inside_cpr":{13},"dtc":"{14}","dbc":"{15}","prev_range":"{16}","cpr_width":"{17}","is_nva":{18},"is_rejection":{19},"is_continuation":{20},"c1":"{21}","vah":"{22}","val":"{23}","va_width":"{24}"',
          webhook_secret, syminfo.ticker, fireActiveSignal, 
-         str.tostring(trendLine, format.mintick), 
-         str.tostring(isFireLong ? trendLine - fireSlMult * atrValue : trendLine + fireSlMult * atrValue, format.mintick), 
-         str.tostring(isFireLong ? trendLine + tp1AtrMultInput * atrValue : trendLine - tp1AtrMultInput * atrValue, format.mintick), 
+         str.tostring(fireEntry, format.mintick), 
+         str.tostring(fireSl, format.mintick), 
+         str.tostring(fireTp, format.mintick), 
          fireZone, dX, mX, 'Confluence_Alert: ' + fireActiveSignal + ' in ' + fireZone, 
          str.tostring(time), fireZone,
          isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
