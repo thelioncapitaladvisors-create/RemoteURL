@@ -9,6 +9,17 @@
     - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
     - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
     - Gating must NEVER rely on `close` for limit entry qualification.
+## Version 5.0: Permanent Removal of Confluence Filter from Swing Trading (Effective November 24, 2026)
+- **5 CORE SWING TRADING EXECUTION STRATEGIES & CONFLUENCE EXCLUSION**:
+  - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) under `🎯 SWING TRADING OPPORTUNITIES` / `⚡ DAILY TF SIGNALS ( '1D' TIME FRAME)`:
+    - Confluence (`FIRE` / `⚡ CONFLUENCE`) is permanently removed as a filter category and table row from Swing Trading, keeping strictly the 5 core execution strategies:
+      1. Missile (`MISSILE`)
+      2. Scalp (`SCALP`)
+      3. Lightning (`LIGHTNING`)
+      4. Extreme Reversal (`EXT_REV`)
+      5. Divergence (`DIV`)
+    - Standalone Camarilla/CPR touch signals without a core swing strategy (such as NATURALGAS) are strictly excluded from the swing execution matrix.
+    - Confluence signals are retained strictly on the HUB tab for 15-minute intraday execution.
 ## Version 5.0: Zero-Laptop-Dependency Cloud-Native Architecture & 1D Swing Multi-Day Persistence Mandate (Effective November 24, 2026)
 - **100% ZERO-LAPTOP-DEPENDENCY CLOUD-NATIVE ARCHITECTURE**:
   - The entire BlackBox quantitative scanning and signal generation engine is strictly decoupled from the local laptop. Zero background jobs, daemons, or launchd plists (`com.tlcs.nse100scanner.plist`) may run on the user's laptop.
