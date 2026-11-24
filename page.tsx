@@ -3517,6 +3517,66 @@ const MarketDropdownFilter = ({
   );
 };
 
+function LiveHeaderDate() {
+  const [dayShort, setDayShort] = useState('');
+  const [dayFull, setDayFull] = useState('');
+  const [dateShort, setDateShort] = useState('');
+  const [year, setYear] = useState('');
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setDayShort(now.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase());
+      setDayFull(now.toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase());
+      setDateShort(now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase());
+      setYear(String(now.getFullYear()));
+    };
+    update();
+    const timer = setInterval(update, 10000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl sm:rounded-2xl bg-secondary border border-primary/20 dark:border-white/15 shadow-sm font-mono select-none">
+      <Calendar size={13} className="text-accent shrink-0 sm:w-[15px] sm:h-[15px]" />
+      <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs tracking-wider whitespace-nowrap">
+        <span className="font-black text-accent">
+          <span className="sm:hidden">{dayShort || '---'}</span>
+          <span className="hidden sm:inline">{dayFull || '---'}</span>
+        </span>
+        <span className="opacity-40 text-dim">•</span>
+        <span className="font-extrabold text-primary">
+          <span>{dateShort || '-- ---'}</span>
+          <span className="hidden min-[480px]:inline"> {year}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function LiveScreensaverClock() {
+  const [time, setTime] = useState('');
+  const [date, setDate] = useState('');
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
+      setDate(now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }));
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <>
+      <div className="text-8xl font-bold italic tracking-tighter mb-4 text-primary leading-none drop-shadow-2xl">{time}</div>
+      <div className="text-sm font-mono uppercase tracking-[0.4em] mb-16 font-black text-secondary">{date}</div>
+    </>
+  );
+}
+
 function MobileScreensaver() {
   const { session, profile } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -3525,12 +3585,6 @@ function MobileScreensaver() {
   const latestSignalRef = useRef<Signal | null>(null);
   const [isSnoozed, setIsSnoozed] = useState(false);
   const [awakeUntil, setAwakeUntil] = useState(0);
-  const [currentTime, setCurrentTime] = useState('');
-  const [currentDate, setCurrentDate] = useState('');
-  const [headerDayShort, setHeaderDayShort] = useState('');
-  const [headerDayFull, setHeaderDayFull] = useState('');
-  const [headerDateShort, setHeaderDateShort] = useState('');
-  const [headerYear, setHeaderYear] = useState('');
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'ALERTS' | 'ANALYSIS' | 'INSIGHTS' | 'ANALYTICS' | 'SCREENER'>('DASHBOARD');
   const [tearsheetKey, setTearsheetKey] = useState(Date.now());
   const [statsHeight, setStatsHeight] = useState(625);
@@ -10255,7 +10309,7 @@ function MobileScreensaver() {
             .from('signals')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(2000);
+            .limit(500);
           if (!sigsErr && directSigs && Array.isArray(directSigs)) {
             liveSignals = directSigs as Signal[];
           } else {
@@ -10286,7 +10340,7 @@ function MobileScreensaver() {
             .from('shadow_signals')
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(2000);
+            .limit(500);
           if (!shadowErr && shadowData && Array.isArray(shadowData)) {
             blackboxSignals = shadowData as Signal[];
             setShadowSignals(blackboxSignals);
@@ -10456,7 +10510,7 @@ function MobileScreensaver() {
       } catch (e) { /* ignore */ }
     };
     fetchStateRef.current = fetchState;
-    const interval = setInterval(fetchState, 5000);
+    const interval = setInterval(fetchState, 30000);
     fetchState();
 
     // ── SUPABASE REALTIME FEED: ZERO-LATENCY INSTANT UPDATES ───────────
@@ -10534,18 +10588,6 @@ function MobileScreensaver() {
   }, []);
 
   useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
-      setCurrentDate(now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }));
-      setHeaderDayShort(now.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase());
-      setHeaderDayFull(now.toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase());
-      setHeaderDateShort(now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase());
-      setHeaderYear(String(now.getFullYear()));
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-
     const nuggetTimer = setInterval(() => {
       if (nuggets.length > 1) {
         setNuggetIndex(prev => (prev + 1) % nuggets.length);
@@ -10585,7 +10627,6 @@ function MobileScreensaver() {
     
     console.log(`[SIEM][APP_INIT] Terminal V1.0 initialized for profile: ${profile?.id || 'anonymous'}`);
     return () => { 
-      clearInterval(timer); 
       clearInterval(nuggetTimer); 
       supabase.removeChannel(nuggetChannel);
     };
@@ -12037,8 +12078,7 @@ function MobileScreensaver() {
         {!isAwake ? (
           <motion.div key="screensaver" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-[200] flex flex-col items-center justify-center p-8 bg-primary overflow-y-auto">
             <div className="text-sm font-mono italic tracking-[0.2em] mb-12 uppercase font-black text-center text-accent">Terminal Secure • Build your future</div>
-            <div className="text-8xl font-bold italic tracking-tighter mb-4 text-primary leading-none drop-shadow-2xl">{currentTime}</div>
-            <div className="text-sm font-mono uppercase tracking-[0.4em] mb-16 font-black text-secondary">{currentDate}</div>
+            <LiveScreensaverClock />
             
             <button 
               className="px-20 py-6 rounded-2xl text-[14px] font-mono tracking-[0.2em] transition-all border border-accent font-black bg-accent text-[var(--text-on-accent)] shadow-[0_10px_40px_var(--accent-dim)] active:scale-95 hover:scale-105" 
@@ -12086,20 +12126,7 @@ function MobileScreensaver() {
               </div>
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {/* Day & Date Header Display towards left of APP button */}
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl sm:rounded-2xl bg-secondary border border-primary/20 dark:border-white/15 shadow-sm font-mono select-none">
-                  <Calendar size={13} className="text-accent shrink-0 sm:w-[15px] sm:h-[15px]" />
-                  <div className="flex items-center gap-1 sm:gap-1.5 text-[10px] sm:text-xs tracking-wider whitespace-nowrap">
-                    <span className="font-black text-accent">
-                      <span className="sm:hidden">{headerDayShort || '---'}</span>
-                      <span className="hidden sm:inline">{headerDayFull || '---'}</span>
-                    </span>
-                    <span className="opacity-40 text-dim">•</span>
-                    <span className="font-extrabold text-primary">
-                      <span>{headerDateShort || '-- ---'}</span>
-                      <span className="hidden min-[480px]:inline"> {headerYear}</span>
-                    </span>
-                  </div>
-                </div>
+                <LiveHeaderDate />
 
                 {!isStandalonePwa && (
                   <button 
