@@ -1,0 +1,86 @@
+name: DhanHQ Autonomous Cloud Scanner & 1D Swing Engine (v5.0)
+
+on:
+  schedule:
+    # Runs every 15 minutes between 03:00 UTC and 18:00 UTC, Monday through Friday
+    # Covers 08:30 AM to 11:30 PM IST (NSE Equities Cash + MCX Commodities + Market Close Triggers)
+    - cron: "*/15 3-18 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "Market to scan (all, nse, mcx)"
+        required: false
+        default: "all"
+      run_daily_swing:
+        description: "Force run 1D Daily Swing scan (true/false)"
+        required: false
+        default: "false"
+
+jobs:
+  run-cloud-scanner:
+    name: Execute Autonomous Cloud Scan & Limit Engine
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      SUPABASE_URL: "https://dwepduvhzuhzeehbeaaz.supabase.co"
+      SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3ZXBkdXZoenVoemVlaGJlYWF6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzMwMDY3NSwiZXhwIjoyMDkyODc2Njc1fQ.4gnT-NbFvQp_8PwkCHqzMvt1KGXwyZXH6kpSqwC70qg"
+      SHADOW_TARGET_TABLE: "shadow_signals"
+      SHADOW_DUAL_WRITE: "false"
+      DHAN_CLIENT_ID: "1100428069"
+      DHAN_PIN: "871346"
+      DHAN_TOTP_SECRET: "N5ZUIALJCBGJ63YS2DUB3BLW7EEPBJU2"
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests supabase python-dotenv pandas numpy
+
+      - name: Run 15-Minute Autonomous Intraday Scanner & Limit Tracking
+        run: |
+          echo "======================================================="
+          echo "🚀 Running 15-Minute BlackBox Scanner in Cloud..."
+          echo "======================================================="
+          python algo_engine/run_nse100_scanner.py --once --market "${{ github.event.inputs.market || 'all' }}"
+
+      - name: Check Market Close & Execute Autonomous 1D Daily Swing Scanner
+        run: |
+          echo "======================================================="
+          echo "🎯 Checking Market Close 1D Swing Conditions..."
+          echo "======================================================="
+          IST_MINS=$(python -c 'from datetime import datetime, timezone, timedelta; now_ist = datetime.now(timezone.utc) + timedelta(hours=5, minutes=30); print(now_ist.hour * 60 + now_ist.minute)')
+          echo "Current IST Minutes from midnight: ${IST_MINS}"
+
+          FORCE_DAILY="${{ github.event.inputs.run_daily_swing || 'false' }}"
+
+          # 15:30 IST is 930 mins. Run NSE 1D Swing scan between 15:30 and 16:30 IST (930-990 mins)
+          if [ "$FORCE_DAILY" = "true" ] || [ "$IST_MINS" -ge 930 -a "$IST_MINS" -le 990 ]; then
+            echo "📊 Executing NSE Top 100 1D Swing Scan at Market Close..."
+            python algo_engine/run_daily_scanner.py --market nse
+          fi
+
+          # 23:30 IST is 1410 mins. Run MCX 1D Swing scan between 23:30 and 23:55 IST (1410-1435 mins)
+          if [ "$FORCE_DAILY" = "true" ] || [ "$IST_MINS" -ge 1410 -a "$IST_MINS" -le 1435 ]; then
+            echo "🛢️ Executing MCX Commodities 1D Swing Scan at Market Close..."
+            python algo_engine/run_daily_scanner.py --market mcx
+          fi
+
+      - name: Dispatch Netlify Serverless Background Redundancy Ping
+        run: |
+          echo "======================================================="
+          echo "🌐 Pinging Netlify Serverless Background Worker..."
+          echo "======================================================="
+          curl -s -m 10 -X POST "https://thelioncapitalsolutions.com/.netlify/functions/dhan-scanner-background" \
+            -H "Content-Type: application/json" \
+            -d '{"triggered_by":"github_actions_cloud_cron"}' || true

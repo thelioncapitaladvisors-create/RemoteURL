@@ -9,6 +9,19 @@
     - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
     - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
     - Gating must NEVER rely on `close` for limit entry qualification.
+## Version 5.0: Zero-Laptop-Dependency Cloud-Native Architecture & 1D Swing Multi-Day Persistence Mandate (Effective November 24, 2026)
+- **100% ZERO-LAPTOP-DEPENDENCY CLOUD-NATIVE ARCHITECTURE**:
+  - The entire BlackBox quantitative scanning and signal generation engine is strictly decoupled from the local laptop. Zero background jobs, daemons, or launchd plists (`com.tlcs.nse100scanner.plist`) may run on the user's laptop.
+  - The scanning and execution engine runs 100% cloud-natively across:
+    1. **Netlify Background & Scheduled Functions** (`TLCS_Website_Deploy/netlify/functions/cron-dhan-scanner.js` & `dhan-scanner-background.js`) running 15-minute intraday scans and position lifecycle management.
+    2. **GitHub Actions Cloud Sentinel** (`.github/workflows/dhan_scanner_cloud.yml`) running every 15 minutes during market hours (08:30–23:30 IST) to execute `run_nse100_scanner.py` and trigger `run_daily_scanner.py` at market close (15:30 IST for NSE Equities, 23:30 IST for MCX Commodities).
+- **1D TIMEFRAME SIGNALS MULTI-DAY / NEXT-WEEK PERSISTENCE & SWEEPER EXCLUSION**:
+  - Across all sweeper pipelines (`TLCS_Website_Deploy/netlify/functions/cron-eod-close.js`, `dhan-scanner-background.js`, `algo_engine/nse100_scanner.py`, `Tv-Alert-Mobile/src/app/api/cron/eod-close/route.ts`):
+    - All 1D swing trades and pending limits (`timeframe in ('1D', 'DAILY', 'D')`, `is_swing === true`, or `trigger: 'DTF'`) are strictly exempt from EOD cancellation, deletion, or premature closure.
+    - 1D swing signals persist across calendar days and weekends until next week or until authentically invalidated (hitting Stop Loss or Target).
+  - On the frontend (`Tv-Alert-Mobile/src/app/page.tsx`, `RemoteURL/page.tsx`, `page.tsx`):
+    - 1D swing signals are exempt from intraday session cutoff guards (`sessionFilter === 'TODAY'`), remaining visible under `SWING TRADING OPPORTUNITIES` until invalidated.
+
 ## Version 5.0: Universal TradingView Webhook Daily Timeframe (1D DTF) Swing Signal Ingestion & Display Mandate (Effective November 24, 2026)
 - **UNIVERSAL TRADINGVIEW WEBHOOK 1D SWING SIGNAL INGESTION & DISPLAY**:
   - Across the entire webhook processing pipeline (`TLCS_Website_Deploy/netlify/functions/process-webhook-background.js`, `Tv-Alert-Mobile/src/app/api/webhook/route.ts`):
