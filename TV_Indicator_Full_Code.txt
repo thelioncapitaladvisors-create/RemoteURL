@@ -3109,10 +3109,12 @@ sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string
     string valStr       = str.tostring(VAL, format.mintick)
     string vaWidthStr   = str.tostring(vaWidth, format.mintick)
 
+    string tradeStatusStr = not trade.hasHitEntry ? "ACTIVE LIMIT" : "OPEN"
+
     // AST OPTIMIZATION: Concatenate outer braces to avoid Pine Script str.format escape bugs!
     string _ePay = '{' + str.format(
          '"trigger":"TradeOpen","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}","is_confluence":{14},"confluence_type":"{15}","fire_zone":"{16}","is_ncpr":{17},"is_inside_cpr":{18},"dtc":"{19}","dbc":"{20}","prev_range":"{21}","cpr_width":"{22}","is_nva":{23},"is_rejection":{24},"is_continuation":{25},"c1":"{26}","vah":"{27}","val":"{28}","va_width":"{29}"',
-         webhook_secret, syminfo.ticker, trade.tradeDirection, 'OPEN', 
+         webhook_secret, syminfo.ticker, trade.tradeDirection, tradeStatusStr, 
          str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
          z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr, isConfStr, conf_type, sigFireZone,
          isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
@@ -3517,18 +3519,22 @@ initializeTradeSession(Settings settings, string tradeDirection) =>
     float confirmCandleMid  = math.round_to_mintick((high + low) / 2.0)
     trade.entryLevel        := isDivTrade ? confirmCandleMid : trendLine
 
-    // For divergence trades, entry is immediate on confirmation candle close!
-    trade.hasHitEntry       := isDivTrade ? true : false
+    // User Mandate Nov 24, 2026: Trade is NEVER entered on confirmation candle itself. Entry strictly on future candles touching entryLevel!
+    trade.hasHitEntry       := false
     bool isLong = str.contains(str.upper(tradeDirection), 'LONG')
+
+    // 🎯 User Mandate Nov 24, 2026: Option 1 Initial SL anchored to D/H candle extreme minus/plus 2 * avg of last 10 candles
+    float avgCandleSize10 = ta.sma(high - low, 10)
+    float divSlDist       = 2.0 * avgCandleSize10
 
     // Initial Stop Loss (SL) & Dynamic ATR TP/SL Levels
     if isDivTrade
         if isLong
             float divLow = str.contains(tradeDirection, 'HIDDEN') ? lastHiddenBullDivLow : lastRegBullDivLow
-            trade.slLevel := not na(divLow) ? math.round_to_mintick(divLow - syminfo.mintick) : math.round_to_mintick(trade.entryLevel - slAtrMultInput * atrValue)
+            trade.slLevel := not na(divLow) ? math.round_to_mintick(divLow - divSlDist) : math.round_to_mintick(trade.entryLevel - divSlDist)
         else
             float divHigh = str.contains(tradeDirection, 'HIDDEN') ? lastHiddenBearDivHigh : lastRegBearDivHigh
-            trade.slLevel := not na(divHigh) ? math.round_to_mintick(divHigh + syminfo.mintick) : math.round_to_mintick(trade.entryLevel + slAtrMultInput * atrValue)
+            trade.slLevel := not na(divHigh) ? math.round_to_mintick(divHigh + divSlDist) : math.round_to_mintick(trade.entryLevel + divSlDist)
     else
         trade.slLevel  := isLong ? math.round_to_mintick(trade.entryLevel - slAtrMultInput * atrValue)
                                  : math.round_to_mintick(trade.entryLevel + slAtrMultInput * atrValue)
@@ -4043,11 +4049,14 @@ string vaWidthStr   = str.tostring(vaWidth, format.mintick)
 
 if Fire_Alert and enable_alerts
     bool isFireDiv   = str.contains(fireActiveSignal, 'DIVERGENCE')
+    float fireAvg10  = ta.sma(high - low, 10)
+    float fireSlDist = 2.0 * fireAvg10
     float fireEntry  = isFireDiv ? math.round_to_mintick((high + low) / 2.0) : trendLine
-    float fireSl     = isFireDiv ? (isFireLong ? (str.contains(fireActiveSignal, 'HIDDEN') ? (not na(lastHiddenBullDivLow) ? math.round_to_mintick(lastHiddenBullDivLow - syminfo.mintick) : math.round_to_mintick(fireEntry - slAtrMultInput * atrValue)) : (not na(lastRegBullDivLow) ? math.round_to_mintick(lastRegBullDivLow - syminfo.mintick) : math.round_to_mintick(fireEntry - slAtrMultInput * atrValue))) : (str.contains(fireActiveSignal, 'HIDDEN') ? (not na(lastHiddenBearDivHigh) ? math.round_to_mintick(lastHiddenBearDivHigh + syminfo.mintick) : math.round_to_mintick(fireEntry + slAtrMultInput * atrValue)) : (not na(lastRegBearDivHigh) ? math.round_to_mintick(lastRegBearDivHigh + syminfo.mintick) : math.round_to_mintick(fireEntry + slAtrMultInput * atrValue)))) : (isFireLong ? math.round_to_mintick(trendLine - slAtrMultInput * atrValue) : math.round_to_mintick(trendLine + slAtrMultInput * atrValue))
+    float fireSl     = isFireDiv ? (isFireLong ? (str.contains(fireActiveSignal, 'HIDDEN') ? (not na(lastHiddenBullDivLow) ? math.round_to_mintick(lastHiddenBullDivLow - fireSlDist) : math.round_to_mintick(fireEntry - fireSlDist)) : (not na(lastRegBullDivLow) ? math.round_to_mintick(lastRegBullDivLow - fireSlDist) : math.round_to_mintick(fireEntry - fireSlDist))) : (str.contains(fireActiveSignal, 'HIDDEN') ? (not na(lastHiddenBearDivHigh) ? math.round_to_mintick(lastHiddenBearDivHigh + fireSlDist) : math.round_to_mintick(fireEntry + fireSlDist)) : (not na(lastRegBearDivHigh) ? math.round_to_mintick(lastRegBearDivHigh + fireSlDist) : math.round_to_mintick(fireEntry + fireSlDist)))) : (isFireLong ? math.round_to_mintick(trendLine - slAtrMultInput * atrValue) : math.round_to_mintick(trendLine + slAtrMultInput * atrValue))
     float fireTp     = isFireLong ? math.round_to_mintick(fireEntry + tp1AtrMultInput * atrValue) : math.round_to_mintick(fireEntry - tp1AtrMultInput * atrValue)
+    string fireStatus = isFireDiv ? "ACTIVE LIMIT" : "OPEN"
     string _firePay = '{' + str.format(
-         '"trigger":"FireAlert","secret":"{0}","symbol":"{1}","type":"{2}","status":"OPEN","entryPrice":"{3}","slLevel":"{4}","tpLevel":"{5}","zone":"{6}","opening_bias":"{7}","day_type":"{8}","dayType":"{7}","marketType":"{8}","tradeMessage":"{9}","entryTime":"{10}","fire_zone":"{11}","is_ncpr":{12},"is_inside_cpr":{13},"dtc":"{14}","dbc":"{15}","prev_range":"{16}","cpr_width":"{17}","is_nva":{18},"is_rejection":{19},"is_continuation":{20},"c1":"{21}","vah":"{22}","val":"{23}","va_width":"{24}"',
+         '"trigger":"FireAlert","secret":"{0}","symbol":"{1}","type":"{2}","status":"' + fireStatus + '","entryPrice":"{3}","slLevel":"{4}","tpLevel":"{5}","zone":"{6}","opening_bias":"{7}","day_type":"{8}","dayType":"{7}","marketType":"{8}","tradeMessage":"{9}","entryTime":"{10}","fire_zone":"{11}","is_ncpr":{12},"is_inside_cpr":{13},"dtc":"{14}","dbc":"{15}","prev_range":"{16}","cpr_width":"{17}","is_nva":{18},"is_rejection":{19},"is_continuation":{20},"c1":"{21}","vah":"{22}","val":"{23}","va_width":"{24}"',
          webhook_secret, syminfo.ticker, fireActiveSignal, 
          str.tostring(fireEntry, format.mintick), 
          str.tostring(fireSl, format.mintick), 

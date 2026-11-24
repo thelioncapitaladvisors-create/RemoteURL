@@ -192,6 +192,9 @@ class MarketContext:
     # Virgin CPR Zones (active untouched zones over past 1 month)
     virgin_cpr_zones: List[VirginCPRZone] = field(default_factory=list)
 
+    # Average candle size over last 10 bars (for Option 1 Divergence SL)
+    avg_candle_size_10: Optional[float] = None
+
     # Timeframe (default '15m'; on '1D'/'Daily', H4/L4 limit touch-point qualification is omitted)
     timeframe: str = "15m"
 
@@ -245,6 +248,9 @@ class StrategyEngine:
         # Track which bars have already generated signals (tick-spam protection)
         self._last_signal_bar: Dict[str, int] = {}
 
+        # Rolling candle range buffer for 10-candle average calculation
+        self._recent_candle_ranges: List[float] = []
+
     def evaluate(self, ctx: MarketContext) -> List[StrategySignal]:
         """
         Evaluate all 12 strategy triggers for the current bar.
@@ -258,6 +264,18 @@ class StrategyEngine:
         signals: List[StrategySignal] = []
         bar = ctx.bar
         cfg = self.config
+
+        # Rolling candle range buffer for 10-candle average calculation (Option 1 Divergence SL)
+        bar_range = bar.high - bar.low
+        self._recent_candle_ranges.append(bar_range)
+        if len(self._recent_candle_ranges) > 100:
+            self._recent_candle_ranges.pop(0)
+
+        if ctx.avg_candle_size_10 is not None:
+            avg_candle_10 = ctx.avg_candle_size_10
+        else:
+            last_10 = self._recent_candle_ranges[-10:]
+            avg_candle_10 = sum(last_10) / len(last_10) if last_10 else bar_range
 
         # ═══════════════════════════════════════════════════════
         # H4/L4 TOUCH-POINT GATING (CRITICAL — lines 3071-3072)
@@ -827,6 +845,7 @@ class StrategyEngine:
                 confluence_tag=confluence_tag,
                 fire_alert=sig_fire_alert,
                 fire_zone=sig_fire_zone,
+                avg_candle_size_10=avg_candle_10,
             )
             signals.append(signal)
 
@@ -838,7 +857,8 @@ class StrategyEngine:
                       is_confluence: bool = False,
                       confluence_tag: str = "",
                       fire_alert: bool = False,
-                      fire_zone: str = "") -> StrategySignal:
+                      fire_zone: str = "",
+                      avg_candle_size_10: float = 0.0) -> StrategySignal:
         """
         Build a StrategySignal with computed SL/TP levels.
         
@@ -853,17 +873,18 @@ class StrategyEngine:
         direction = "LONG" if is_long else "SHORT"
 
         if "DIVERGENCE" in name:
-            # User Mandate Nov 24, 2026: Divergence Initial SL strictly placed above/below candle printing D or H
+            # User Mandate Nov 24, 2026: Option 1 Initial SL anchored to D or H candle extreme minus/plus 2 * avg of last 10 candles
+            sl_dist = 2.0 * avg_candle_size_10 if avg_candle_size_10 > 0 else 2.0 * atr_val
             if is_long:
                 div_low = self._last_hidden_bull_div_low if "HIDDEN" in name else self._last_reg_bull_div_low
-                sl = round(div_low - 0.05, 2) if div_low is not None else round(entry_price - cfg.sl_atr_mult * atr_val, 2)
+                sl = round(div_low - sl_dist, 2) if div_low is not None else round(entry_price - sl_dist, 2)
                 tp1 = round(entry_price + cfg.tp1_atr_mult * atr_val, 2)
                 tp2 = round(entry_price + cfg.tp2_atr_mult * atr_val, 2)
                 tp3 = round(entry_price + cfg.tp3_atr_mult * atr_val, 2)
                 tp4 = round(entry_price + cfg.tp4_atr_mult * atr_val, 2)
             else:
                 div_high = self._last_hidden_bear_div_high if "HIDDEN" in name else self._last_reg_bear_div_high
-                sl = round(div_high + 0.05, 2) if div_high is not None else round(entry_price + cfg.sl_atr_mult * atr_val, 2)
+                sl = round(div_high + sl_dist, 2) if div_high is not None else round(entry_price + sl_dist, 2)
                 tp1 = round(entry_price - cfg.tp1_atr_mult * atr_val, 2)
                 tp2 = round(entry_price - cfg.tp2_atr_mult * atr_val, 2)
                 tp3 = round(entry_price - cfg.tp3_atr_mult * atr_val, 2)

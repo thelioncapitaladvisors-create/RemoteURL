@@ -139,6 +139,9 @@ class ShadowPipeline:
         now_iso = datetime.now(timezone.utc).isoformat()
         trade_id = f"{clean_sym}_{int(time.time() * 1000)}_{signal.name}"
 
+        is_limit_order = "DIVERGENCE" in signal.name or signal.name in ("LONG VIRGIN CPR", "SHORT VIRGIN CPR")
+        initial_status = "ACTIVE LIMIT" if is_limit_order else "OPEN"
+
         payload = {
             "symbol": clean_sym,
             "type": signal.name,
@@ -148,7 +151,7 @@ class ShadowPipeline:
             "tp2": round(signal.tp2, 4),
             "tp3": round(signal.tp3, 4),
             "tp4": round(signal.tp4, 4),
-            "status": "OPEN",
+            "status": initial_status,
             "outcome": "OPEN",
             "trigger": "TradeOpen",
             "pricing_type": "SHADOW",

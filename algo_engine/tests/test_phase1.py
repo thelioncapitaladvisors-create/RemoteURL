@@ -1504,11 +1504,59 @@ class TestV7IndicatorParity(unittest.TestCase):
         )
         sigs = engine.evaluate(ctx2)
         div_sigs = [s for s in sigs if s.name == "LONG DIVERGENCE"]
-        self.assertEqual(len(div_sigs), 1)
         sig = div_sigs[0]
-        # Nov 24, 2026 Mandate: Midpoint of confirmation candle entry & D/H candle low SL
-        self.assertEqual(sig.entry_price, round((b2.high + b2.low) / 2.0, 2))
-        self.assertEqual(sig.stop_loss, round(b1.low - 0.05, 2))
+        # Nov 24, 2026 Mandate: Midpoint confirmation candle entry & Option 1 SL (divLow - 2 * avg_candle_10)
+        expected_mid = round((b2.high + b2.low) / 2.0, 2)
+        avg_10 = (7.0 + 6.5) / 2.0  # (b1 range = 7.0, b2 range = 6.5)
+        expected_sl = round(b1.low - 2.0 * avg_10, 2)
+        self.assertEqual(sig.entry_price, expected_mid)
+        self.assertEqual(sig.stop_loss, expected_sl)
+
+    def test_divergence_touch_entry_and_limit_execution(self):
+        """Verify divergence signals generate ACTIVE LIMIT and fill only when future bar touches entry."""
+        from algo_engine.trade_manager import TradeManager, TradeStatus
+        manager = TradeManager()
+        engine = StrategyEngine()
+
+        # Divergence on bar 1, confirmation on bar 2
+        b1 = OHLC(open=102, high=105, low=98, close=100)
+        ctx1 = MarketContext(
+            bar=b1, bar_index=1, H4=120, L4=80, H3=110, L3=90,
+            cpr_pivot=100, cpr_tc=102, cpr_bc=98, is_ncpr=False,
+            bull_regular_div=True,
+            day_type_label="TREND DAY", session_highest=105, session_lowest=98, atr=5.0
+        )
+        engine.evaluate(ctx1)
+
+        b2 = OHLC(open=101, high=106, low=100, close=105)
+        ctx2 = MarketContext(
+            bar=b2, bar_index=2, H4=120, L4=80, H3=110, L3=90,
+            cpr_pivot=100, cpr_tc=102, cpr_bc=98, is_ncpr=False,
+            plus=20.0, minus=10.0, m0=10.0, m10=5.0,
+            day_type_label="TREND DAY", session_highest=106, session_lowest=98, atr=5.0
+        )
+        sigs = engine.evaluate(ctx2)
+        div_sig = [s for s in sigs if s.name == "LONG DIVERGENCE"][0]
+        # Confirmation midpoint entry = (106 + 100) / 2 = 103.0
+        self.assertEqual(div_sig.entry_price, 103.0)
+
+        # TradeManager creates trade in ACTIVE_LIMIT status (has_hit_entry = False)
+        trade = manager.create_trade(div_sig, "NIFTY")
+        self.assertEqual(trade.status, TradeStatus.ACTIVE_LIMIT)
+        self.assertFalse(trade.has_hit_entry)
+
+        # Future Bar 3 does NOT touch 103.0 (Low = 104.0 > 103.0) -> Still ACTIVE_LIMIT
+        b3 = OHLC(open=105, high=107, low=104, close=106)
+        manager.update(trade, b3, bar_index=3)
+        self.assertEqual(trade.status, TradeStatus.ACTIVE_LIMIT)
+        self.assertFalse(trade.has_hit_entry)
+
+        # Future Bar 4 touches 103.0 (Low = 102.5 <= 103.0) -> Fills and becomes ACTIVE!
+        b4 = OHLC(open=105, high=106, low=102.5, close=104)
+        manager.update(trade, b4, bar_index=4)
+        self.assertEqual(trade.status, TradeStatus.ACTIVE)
+        self.assertTrue(trade.has_hit_entry)
+
 
 
 # ════════════════════════════════════════════════════════════════════

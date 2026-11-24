@@ -9,18 +9,23 @@
     - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
     - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
 ## Version 5.0: Divergence Confirmation Candle Midpoint Entry & D/H Candle Extreme SL Mandate (Effective November 24, 2026)
-- **CONFIRMATION CANDLE MIDPOINT ENTRY LEVEL**:
+- **CONFIRMATION CANDLE MIDPOINT TOUCH ENTRY LEVEL (ACTIVE LIMIT)**:
   - For all Divergence signals (Regular Bullish/Bearish Divergence and Hidden Bullish/Bearish Divergence) across both TradingView Pine Script indicators and Python BlackBox algorithms:
     - The entry level (`entryLevel` / `sig_entry` / `entryPrice`) is strictly established as the **midpoint of the confirmation candle**:
       $$\text{entryLevel} = \frac{\text{high} + \text{low}}{2.0}$$
-    - Entry is immediate upon confirmation candle close at this midpoint level.
-- **INITIAL STOP LOSS (SL) ANCHORED TO D/H CANDLE EXTREMES**:
+    - **No Immediate Confirmation Bar Execution**: No trade will EVER be initiated on the confirmation candle itself.
+    - **Future Candle Touch Execution**: Trade initiates strictly on subsequent future candles when price touches `entryLevel` (`low <= entryLevel` for Long; `high >= entryLevel` for Short).
+    - Until touched, the trade is strictly maintained as a pending limit order (`status: 'ACTIVE LIMIT'`, `hasHitEntry = false`) on charts, alerts, and application UI.
+- **INITIAL STOP LOSS (SL) ANCHORED TO D/H CANDLE EXTREMES (OPTION 1)**:
   - The initial Stop Loss level (`slLevel` / `stop_loss`) must never be placed tightly near the entry price (which previously caused premature false stop-outs).
-  - The initial Stop Loss is strictly anchored above or below the swing extreme of the candle that printed the Divergence (`D` or `H`):
+  - The initial Stop Loss is strictly anchored above or below the swing extreme of the candle that printed the Divergence (`D` or `H`) with an offset of twice the average range of the last 10 candles:
+    - Average size of last 10 candles:
+      $$\text{AvgCandleSize}_{10} = \frac{1}{10} \sum_{k=0}^{9} (\text{High}_{i-k} - \text{Low}_{i-k}) \quad (\text{Pine: } \text{ta.sma}(\text{high} - \text{low}, 10))$$
+    - Offset: $\Delta_{\text{SL}} = 2.0 \times \text{AvgCandleSize}_{10}$
     - **Long Divergence**: Set strictly below the low of the candle printing the D or H:
-      $$\text{slLevel} = \text{divLow} - \text{mintick} \quad (\text{Python BlackBox: } \text{div\_low} - 0.05)$$
+      $$\text{slLevel} = \text{divLow} - 2.0 \times \text{AvgCandleSize}_{10}$$
     - **Short Divergence**: Set strictly above the high of the candle printing the D or H:
-      $$\text{slLevel} = \text{divHigh} + \text{mintick} \quad (\text{Python BlackBox: } \text{div\_high} + 0.05)$$
+      $$\text{slLevel} = \text{divHigh} + 2.0 \times \text{AvgCandleSize}_{10}$$
     - Fallback: In the edge case where divergence extreme is not defined, fall back to entry $\pm 1.00 \times \text{ATR}$.
 - **PROFIT TARGETS & TRAILING SL EXTENSION FROM MIDPOINT ENTRY**:
   - All profit targets (TP1, TP2, TP3, TP4) and Breakeven / Trailing Stop mechanisms are mathematically extended from the new confirmation candle midpoint `entryLevel`:
@@ -28,7 +33,7 @@
     - Breakeven moves SL to `entryLevel` when price reaches the 50% midpoint between TP1 and TP2.
 - **PARITY ACROSS ALL INDICATORS & ENGINES**:
   - Pine Script: `TLCS_Live_Pivot_Alerts.pine`, `TV Indicator/TLCS_Live_Pivot_Alerts.pine`, `TV Indicator/TLCS_Daily_TF_Indicator.pine`, `TV_Indicator_Full_Code.txt`, `user_code.pine`.
-  - Python BlackBox: `algo_engine/strategies.py`, `algo_engine/run_daily_scanner.py`, `algo_engine/nse100_scanner.py`.
+  - Python BlackBox: `algo_engine/strategies.py`, `algo_engine/shadow_pipeline.py`, `algo_engine/trade_manager.py`, `algo_engine/run_daily_scanner.py`, `algo_engine/nse100_scanner.py`.
 
 ## Version 5.0: Purity of Signal Logics & Complete Noise / News Exclusion Mandate (Effective November 24, 2026)
 - **TRADINGVIEW NEWS/EVENT ICONS ARE NOISE, NOT SIGNALS**:
