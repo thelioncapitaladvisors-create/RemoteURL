@@ -8,6 +8,24 @@
   - For 15m Intraday trades:
     - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
     - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
+## Version 1.0: Canonical Production Release & Comprehensive Platform Rebranding Mandate (Effective November 24, 2026)
+- **CANONICAL PRODUCTION RELEASE REBRANDING (VERSION 1.0 / v1.0.0)**:
+  - The application version across all repositories (`RemoteURL`, `Tv-Alert-Mobile`, `TLCS_Website_Deploy`), packages (`package.json`), and user interface components (`page.tsx`) is officially rebranded from developmental iteration v5.0 to **Version 1.0 (`v1.0.0` / `1.0.0`)**.
+  - All visual terminal headers (`TLCS PRO v1.0`), daemon status monitors (`Active Daemon v1.0`), and store legal badges (`Store Ready v1.0`) reflect canonical Version 1.0 production status.
+- **APPLICATION LOADING SCREEN INSPIRATIONAL MAXIM & AUTHOR CREDENTIALS**:
+  - Across `AuthGuard.tsx` on the application initialization and authentication screen:
+    - **Trading Maxim**: The flashy animated maxim **`TRADE WHAT YOU SEE AND NOT WHAT YOU FEEL`** is permanently rendered beneath the secure link decryption status, styled with a multi-stop amber-to-gold gradient (`from-amber-500 via-orange-500 to-yellow-400`), dynamic breathing motion pulse, glowing drop-shadow aura, and radiant underline.
+    - **Author Attribution Footer**: The official professional credential footer is anchored to the bottom of the loading viewport:
+      $$\text{Built by: Vishant Vyankat Meshram, CFTE, CMT L3 Passed in December, 2024.}$$
+- **CONSOLIDATED VERSION 1.0 ARCHITECTURAL CORE FREEZE**:
+  - All quantitative trading intelligence engines, execution rules, and data structures are frozen under Version 1.0:
+    1. **Divergence Execution**: Midpoint touch limit entry on confirmation candle ($(\text{high} + \text{low}) / 2.0$) with initial SL anchored to D/H candle extreme $\pm 0.5 \times \text{AvgCandleSize}_{10}$.
+    2. **Core Trend Strategy Execution**: Option B initial SL anchored to signal bar extreme $\pm 0.50 \times \text{ATR}$.
+    3. **Daily Timeframe (1D) Swing Framework**: Anchored strictly to Weekly CPR, Weekly Camarilla ($H_4/L_4$), and Weekly Value Areas. Multi-day swing limits persist indefinitely across calendar days and are 100% exempt from intraday EOD sweeps.
+    4. **Frontend Response Timing**: Decoupled leaf clock components (`<LiveHeaderDate />` and `<LiveScreensaverClock />`), eliminating the 1-second global re-render loop across 19,000+ lines.
+    5. **Network Telemetry**: 30s background safety poll paired with instant Supabase Realtime WebSocket push.
+    6. **Deterministic VectorBT Confluence Benchmarks**: 72,008 empirical hourly bars delivering Profit Factors from 1.22 to 1.44 and up to -86% drawdown reduction.
+
 ## Version 5.0: System Access Response Timing Acceleration, Database Decluttering & Data Sanity Pipeline Mandate (Effective November 24, 2026)
 - **ROOT COMPONENT 1-SECOND RE-RENDER STORM ELIMINATION**:
   - Across `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:

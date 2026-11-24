@@ -12102,7 +12102,7 @@ function MobileScreensaver() {
                     <span className="bg-accent text-[var(--text-on-accent)] text-[10px] sm:text-xs px-1.5 py-0.5 sm:py-1 rounded ml-1.5 not-italic font-black">PRO</span>
                   </h1>
                   <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-mono font-black uppercase tracking-wider bg-accent/15 text-accent border border-accent/35 shadow-2xs">
-                    v5.0
+                    v1.0
                   </span>
                 </div>
                 <div className="text-[10px] sm:text-xs font-mono text-dim uppercase font-bold tracking-wider mt-0.5">
@@ -12278,7 +12278,7 @@ function MobileScreensaver() {
                         <span className="text-xs sm:text-sm font-mono font-black uppercase text-primary">Autonomous Engine Verification Protocol</span>
                       </div>
                       <span className="text-[9px] font-mono font-black text-emerald-800 dark:text-emerald-200 bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                        Active Daemon v5.0
+                        Active Daemon v1.0
                       </span>
                     </div>
 
@@ -21750,7 +21750,7 @@ function MobileScreensaver() {
                   <section className="bg-secondary/40 border border-primary/20 p-5 rounded-3xl space-y-3">
                     <div className="text-xs font-mono text-accent uppercase tracking-widest font-black flex items-center justify-between">
                       <span>Legal & Compliance</span>
-                      <span className="text-[9px] font-mono font-bold text-dim">Store Ready v5.0</span>
+                      <span className="text-[9px] font-mono font-bold text-dim">Store Ready v1.0</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
                       <a
