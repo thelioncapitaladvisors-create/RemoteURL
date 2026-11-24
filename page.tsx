@@ -4490,7 +4490,18 @@ function MobileScreensaver() {
       const outcome = resolveOutcome(s);
       const isClosed = s.exit_price != null || (outcome !== 'OPEN');
       const entry = Number(s.entry) || 0;
-      const exit = Number(s.exit_price) || (s.target ? Number(s.target) : entry);
+      const stopPrice = Number(s.stop ?? s.trail_sl ?? s.stop_loss) || 0;
+      const targetPrice = Number(s.target) || 0;
+      let exit = Number(s.exit_price) || 0;
+      if (!exit) {
+        if (outcome === 'LOSS' && stopPrice > 0) {
+          exit = stopPrice;
+        } else if (outcome === 'WIN' && targetPrice > 0) {
+          exit = targetPrice;
+        } else {
+          exit = entry;
+        }
+      }
       const isShort = (s.type || '').toUpperCase().includes('SHORT') || (s.type || '').toUpperCase().includes('SELL');
       
       let ptsDiff = 0;
@@ -4503,7 +4514,7 @@ function MobileScreensaver() {
         ptsDiff = Number(meta.exact_pts);
       } else if (meta.exact_pct != null && entry > 0 && !isNaN(Number(meta.exact_pct))) {
         ptsDiff = (Number(meta.exact_pct) / 100) * entry;
-      } else if (s.exit_price != null && entry > 0) {
+      } else if (exit > 0 && entry > 0 && (s.exit_price != null || (outcome === 'LOSS' && stopPrice > 0) || (outcome === 'WIN' && targetPrice > 0))) {
         ptsDiff = isShort ? (entry - exit) : (exit - entry);
       }
 
@@ -4908,6 +4919,12 @@ function MobileScreensaver() {
       eqMax
     };
   }, [paperSimulatedTrades, paperCapital, paperMarket]);
+
+  const nonZeroPaperTrades = useMemo(() => {
+    return (paperSimulatedTrades || []).filter(
+      t => Math.abs(t.tradePnL || 0) > 0 || Math.abs(t.ptsDiff || 0) > 0.0001
+    );
+  }, [paperSimulatedTrades]);
 
   // Signal Performance — computed from REAL database data only
   // Active = no outcome set yet, or explicitly Open/Active status
@@ -7560,7 +7577,18 @@ function MobileScreensaver() {
       const outcome = resolveOutcome(s);
       const isClosed = s.exit_price != null || (outcome !== 'OPEN');
       const entry = Number(s.entry || s.entry_price) || 0;
-      const exit = Number(s.exit_price) || (s.target ? Number(s.target) : entry);
+      const stopPrice = Number(s.stop ?? s.trail_sl ?? s.stop_loss) || 0;
+      const targetPrice = Number(s.target) || 0;
+      let exit = Number(s.exit_price) || 0;
+      if (!exit) {
+        if (outcome === 'LOSS' && stopPrice > 0) {
+          exit = stopPrice;
+        } else if (outcome === 'WIN' && targetPrice > 0) {
+          exit = targetPrice;
+        } else {
+          exit = entry;
+        }
+      }
       const isShort = (s.type || '').toUpperCase().includes('SHORT') || (s.type || '').toUpperCase().includes('SELL');
       
       let ptsDiff = 0;
@@ -7573,7 +7601,7 @@ function MobileScreensaver() {
         ptsDiff = Number(meta.exact_pts);
       } else if (meta.exact_pct != null && entry > 0 && !isNaN(Number(meta.exact_pct))) {
         ptsDiff = (Number(meta.exact_pct) / 100) * entry;
-      } else if (s.exit_price != null && entry > 0) {
+      } else if (exit > 0 && entry > 0 && (s.exit_price != null || (outcome === 'LOSS' && stopPrice > 0) || (outcome === 'WIN' && targetPrice > 0))) {
         ptsDiff = isShort ? (entry - exit) : (exit - entry);
       }
 
@@ -7899,6 +7927,12 @@ function MobileScreensaver() {
       curr: '₹'
     };
   }, [dhanPaperSimulatedTrades, dhanPaperCapital]);
+
+  const nonZeroDhanPaperTrades = useMemo(() => {
+    return (dhanPaperSimulatedTrades || []).filter(
+      t => Math.abs(t.tradePnL || 0) > 0 || Math.abs(t.ptsDiff || 0) > 0.0001
+    );
+  }, [dhanPaperSimulatedTrades]);
 
   const baseDhanLogs = useMemo(() => {
     return dhanBlackboxSignals.filter(s => {
@@ -20515,19 +20549,19 @@ function MobileScreensaver() {
                           {/* Collapsible Paper Trade Log Feed */}
                           <div className="space-y-1.5 mt-1">
                             <div className="flex items-center justify-between text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-dim gap-2 flex-wrap pb-0.5">
-                              <span className="truncate">Recent Simulated Paper Signals ({(paperSimulatedTrades || []).length}):</span>
+                              <span className="truncate">Recent Simulated Paper Signals ({(nonZeroPaperTrades || []).length}):</span>
                               <span className="text-accent shrink-0 text-[9.5px] sm:text-[11px] font-extrabold px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20">
                                 1 Lot Position Sizing
                               </span>
                             </div>
 
-                            {(!paperSimulatedTrades || paperSimulatedTrades.length === 0) ? (
+                            {(!nonZeroPaperTrades || nonZeroPaperTrades.length === 0) ? (
                               <div className="p-3 rounded-xl bg-secondary/20 border border-primary/10 text-center text-xs sm:text-sm font-mono text-dim italic">
                                 No signals found for {paperMarket.toUpperCase()} ({paperTimeframe}).
                               </div>
                             ) : (
                               <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 hide-scrollbar">
-                                {paperSimulatedTrades.slice(0, 15).map(t => {
+                                {nonZeroPaperTrades.slice(0, 15).map(t => {
                                   const isWin = t.outcome === 'WIN';
                                   const isLoss = t.outcome === 'LOSS';
                                   const isOpen = t.outcome === 'OPEN';
@@ -21194,19 +21228,19 @@ function MobileScreensaver() {
                             {/* Collapsible DhanHQ Paper Trade Log Feed */}
                             <div className="space-y-1.5 mt-1">
                               <div className="flex items-center justify-between text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-dim gap-2 flex-wrap pb-0.5">
-                                <span className="truncate">Recent Simulated DhanHQ Paper Signals ({(dhanPaperSimulatedTrades || []).length}):</span>
+                                <span className="truncate">Recent Simulated DhanHQ Paper Signals ({(nonZeroDhanPaperTrades || []).length}):</span>
                                 <span className="text-purple-500 shrink-0 text-[9.5px] sm:text-[11px] font-extrabold px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20">
                                   1 Lot Position Sizing
                                 </span>
                               </div>
 
-                              {(!dhanPaperSimulatedTrades || dhanPaperSimulatedTrades.length === 0) ? (
+                              {(!nonZeroDhanPaperTrades || nonZeroDhanPaperTrades.length === 0) ? (
                                 <div className="p-3 rounded-xl bg-secondary/20 border border-primary/10 text-center text-xs sm:text-sm font-mono text-dim italic">
                                   No DhanHQ signals found for {dhanPaperMarket.toUpperCase()} ({dhanPaperTimeframe}).
                                 </div>
                               ) : (
                                 <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 hide-scrollbar">
-                                  {dhanPaperSimulatedTrades.slice(0, 15).map(t => {
+                                  {nonZeroDhanPaperTrades.slice(0, 15).map(t => {
                                     const isWin = t.outcome === 'WIN';
                                     const isLoss = t.outcome === 'LOSS';
                                     const isOpen = t.outcome === 'OPEN';
