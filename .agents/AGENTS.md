@@ -16,7 +16,7 @@
   - Across `AuthGuard.tsx` on the application initialization and authentication screen:
     - **Trading Maxim**: The flashy animated maxim **`TRADE WHAT YOU SEE AND NOT WHAT YOU FEEL`** is permanently rendered beneath the secure link decryption status, styled with a multi-stop amber-to-gold gradient (`from-amber-500 via-orange-500 to-yellow-400`), dynamic breathing motion pulse, glowing drop-shadow aura, and radiant underline.
     - **Author Attribution Footer**: The official professional credential footer is anchored to the bottom of the loading viewport:
-      $$\text{Built by: Vishant Vyankat Meshram, CFTE, CMT (L3 Pass - December 2024)}$$
+      $$\text{Built by: Vishant Vyankat Meshram, CFTe, CMT (L3 Pass - December 2024)}$$
 - **CONSOLIDATED VERSION 1.0 ARCHITECTURAL CORE FREEZE**:
   - All quantitative trading intelligence engines, execution rules, and data structures are frozen under Version 1.0:
     1. **Divergence Execution**: Midpoint touch limit entry on confirmation candle ($(\text{high} + \text{low}) / 2.0$) with initial SL anchored to D/H candle extreme $\pm 0.5 \times \text{AvgCandleSize}_{10}$.
