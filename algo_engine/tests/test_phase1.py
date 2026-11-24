@@ -1505,10 +1505,10 @@ class TestV7IndicatorParity(unittest.TestCase):
         sigs = engine.evaluate(ctx2)
         div_sigs = [s for s in sigs if s.name == "LONG DIVERGENCE"]
         sig = div_sigs[0]
-        # Parity Mandate Nov 24, 2026: Midpoint confirmation candle entry & Option 1 SL (divLow - 2.0 * avg_candle_10)
+        # Mandate Nov 24, 2026: Midpoint confirmation candle entry & DIV_SL_0.5_AVG10 SL (divLow - 0.5 * avg_candle_10)
         expected_mid = round((b2.high + b2.low) / 2.0, 2)
         avg_10 = (7.0 + 6.5) / 2.0  # (b1 range = 7.0, b2 range = 6.5)
-        expected_sl = round(b1.low - 2.0 * avg_10, 2)
+        expected_sl = round(b1.low - 0.5 * avg_10, 2)
         self.assertEqual(sig.entry_price, expected_mid)
         self.assertEqual(sig.stop_loss, expected_sl)
 

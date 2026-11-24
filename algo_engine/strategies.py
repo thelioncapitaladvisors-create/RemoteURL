@@ -867,7 +867,7 @@ class StrategyEngine:
         Build a StrategySignal with computed SL/TP levels.
         
         Mandate Parity (Nov 24, 2026):
-            - Divergence: Midpoint confirmation entry, Initial SL Option 1 (Extreme ± 2.0 * AvgCandleSize10).
+            - Divergence: Midpoint confirmation entry, Initial SL DIV_SL_0.5_AVG10 (Extreme ± 0.5 * AvgCandleSize10).
             - Core Trend Signals (Missile, Scalp, Lightning, Ext Rev): Option B (Structural Candle Extreme):
                 Long:  Low_signal - 0.50 * ATR
                 Short: High_signal + 0.50 * ATR
@@ -880,8 +880,8 @@ class StrategyEngine:
         direction = "LONG" if is_long else "SHORT"
 
         if "DIVERGENCE" in name:
-            # Option 1: Anchored to D or H candle extreme minus/plus 2.0 * avg of last 10 candles
-            sl_dist = 2.0 * avg_candle_size_10 if avg_candle_size_10 > 0 else 2.0 * atr_val
+            # DIV_SL_0.5_AVG10: Anchored to D or H candle extreme minus/plus 0.5 * avg of last 10 candles
+            sl_dist = 0.5 * avg_candle_size_10 if avg_candle_size_10 > 0 else 0.5 * atr_val
             if is_long:
                 div_low = self._last_hidden_bull_div_low if "HIDDEN" in name else self._last_reg_bull_div_low
                 sl = round(div_low - sl_dist, 2) if div_low is not None else round(entry_price - sl_dist, 2)
