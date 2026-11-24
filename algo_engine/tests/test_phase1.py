@@ -1506,7 +1506,9 @@ class TestV7IndicatorParity(unittest.TestCase):
         div_sigs = [s for s in sigs if s.name == "LONG DIVERGENCE"]
         self.assertEqual(len(div_sigs), 1)
         sig = div_sigs[0]
-        self.assertEqual(sig.stop_loss, sig.entry_price - 1.00 * 5.0)
+        # Nov 24, 2026 Mandate: Midpoint of confirmation candle entry & D/H candle low SL
+        self.assertEqual(sig.entry_price, round((b2.high + b2.low) / 2.0, 2))
+        self.assertEqual(sig.stop_loss, round(b1.low - 0.05, 2))
 
 
 # ════════════════════════════════════════════════════════════════════
@@ -2295,10 +2297,10 @@ class TestVersion30BlackBoxParity(unittest.TestCase):
     def test_version_30_dhan_approved_markets_autonomous_routing(self):
         """Verifies approved Indian markets (NIFTY & MCX) are routed autonomously without webhooks."""
         from algo_engine.feeds import get_market_category
-        # Approved Indian Equities
-        self.assertEqual(get_market_category("RELIANCE"), "NIFTY")
-        self.assertEqual(get_market_category("HDFCBANK"), "NIFTY")
-        self.assertEqual(get_market_category("TCS"), "NIFTY")
+        # Approved Indian Equities (STOCKS)
+        self.assertEqual(get_market_category("RELIANCE"), "STOCKS")
+        self.assertEqual(get_market_category("HDFCBANK"), "STOCKS")
+        self.assertEqual(get_market_category("TCS"), "STOCKS")
         # Approved MCX Commodities
         self.assertEqual(get_market_category("CRUDEOIL"), "MCX")
         self.assertEqual(get_market_category("NATURALGAS"), "MCX")

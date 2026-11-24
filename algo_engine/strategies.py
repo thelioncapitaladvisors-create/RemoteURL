@@ -776,6 +776,9 @@ class StrategyEngine:
                 sig_entry = matching_buy_z.top
             elif name == "SHORT VIRGIN CPR" and matching_sell_z:
                 sig_entry = matching_sell_z.bottom
+            elif "DIVERGENCE" in name:
+                # User Mandate Nov 24, 2026: Divergence signal entry level is mid of confirmation candle
+                sig_entry = round((bar.high + bar.low) / 2.0, 2)
 
             # Confluence Qualification (Orthogonal Trend + Structural Divergence Confluence)
             is_confluence = False
@@ -848,16 +851,31 @@ class StrategyEngine:
         """
         cfg = self.config
         direction = "LONG" if is_long else "SHORT"
-        sl_mult = cfg.div_sl_atr_mult if "DIVERGENCE" in name else cfg.sl_atr_mult
 
-        if is_long:
-            sl  = entry_price - sl_mult * atr_val
+        if "DIVERGENCE" in name:
+            # User Mandate Nov 24, 2026: Divergence Initial SL strictly placed above/below candle printing D or H
+            if is_long:
+                div_low = self._last_hidden_bull_div_low if "HIDDEN" in name else self._last_reg_bull_div_low
+                sl = round(div_low - 0.05, 2) if div_low is not None else round(entry_price - cfg.sl_atr_mult * atr_val, 2)
+                tp1 = round(entry_price + cfg.tp1_atr_mult * atr_val, 2)
+                tp2 = round(entry_price + cfg.tp2_atr_mult * atr_val, 2)
+                tp3 = round(entry_price + cfg.tp3_atr_mult * atr_val, 2)
+                tp4 = round(entry_price + cfg.tp4_atr_mult * atr_val, 2)
+            else:
+                div_high = self._last_hidden_bear_div_high if "HIDDEN" in name else self._last_reg_bear_div_high
+                sl = round(div_high + 0.05, 2) if div_high is not None else round(entry_price + cfg.sl_atr_mult * atr_val, 2)
+                tp1 = round(entry_price - cfg.tp1_atr_mult * atr_val, 2)
+                tp2 = round(entry_price - cfg.tp2_atr_mult * atr_val, 2)
+                tp3 = round(entry_price - cfg.tp3_atr_mult * atr_val, 2)
+                tp4 = round(entry_price - cfg.tp4_atr_mult * atr_val, 2)
+        elif is_long:
+            sl  = entry_price - cfg.sl_atr_mult * atr_val
             tp1 = entry_price + cfg.tp1_atr_mult * atr_val
             tp2 = entry_price + cfg.tp2_atr_mult * atr_val
             tp3 = entry_price + cfg.tp3_atr_mult * atr_val
             tp4 = entry_price + cfg.tp4_atr_mult * atr_val
         else:
-            sl  = entry_price + sl_mult * atr_val
+            sl  = entry_price + cfg.sl_atr_mult * atr_val
             tp1 = entry_price - cfg.tp1_atr_mult * atr_val
             tp2 = entry_price - cfg.tp2_atr_mult * atr_val
             tp3 = entry_price - cfg.tp3_atr_mult * atr_val
