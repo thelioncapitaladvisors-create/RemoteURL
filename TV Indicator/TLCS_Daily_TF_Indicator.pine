@@ -667,54 +667,54 @@ f_dispatch_alert(string sigName, string sigDir, float entryP, float slP, float t
     alert(alertPayload, alert.freq_once_per_bar_close)
 
 if enable_alert
-    // Average candle size of last 10 candles for DIV_SL_0.5_AVG10 mandate
+    // Average candle size of last 10 candles for Option 1 SL mandate
     float avgCandleSize10 = ta.sma(high - low, 10)
-    float divSlDist = 0.5 * avgCandleSize10
+    float divSlDist = 2.0 * avgCandleSize10
 
-    // Regular Divergence (Confirmation Midpoint Entry & DIV_SL_0.5_AVG10 SL per v5.0 Mandate)
+    // Regular Divergence (Confirmation Midpoint Entry & Option 1 SL per v5.0 Mandate)
     if DivergenceBuy
         float divEntry = math.round_to_mintick((high + low) / 2.0)
-        float divSl    = not na(lastRegBullDivLow) ? math.round_to_mintick(lastRegBullDivLow - divSlDist) : math.round_to_mintick(divEntry - slAtrMultInput * atrValue)
+        float divSl    = not na(lastRegBullDivLow) ? math.round_to_mintick(lastRegBullDivLow - divSlDist) : math.round_to_mintick(divEntry - 2.0 * atrValue)
         float divTp1   = math.round_to_mintick(divEntry + tp1AtrMultInput * atrValue)
         f_dispatch_alert('REGULAR DIVERGENCE', 'LONG', divEntry, divSl, divTp1, 'REGULAR_DIV', 'ACTIVE LIMIT')
     if DivergenceSell
         float divEntry = math.round_to_mintick((high + low) / 2.0)
-        float divSl    = not na(lastRegBearDivHigh) ? math.round_to_mintick(lastRegBearDivHigh + divSlDist) : math.round_to_mintick(divEntry + slAtrMultInput * atrValue)
+        float divSl    = not na(lastRegBearDivHigh) ? math.round_to_mintick(lastRegBearDivHigh + divSlDist) : math.round_to_mintick(divEntry + 2.0 * atrValue)
         float divTp1   = math.round_to_mintick(divEntry - tp1AtrMultInput * atrValue)
         f_dispatch_alert('REGULAR DIVERGENCE', 'SHORT', divEntry, divSl, divTp1, 'REGULAR_DIV', 'ACTIVE LIMIT')
 
     // Hidden Divergence (Confirmation Midpoint Entry & Option 1 SL per v5.0 Mandate)
     if HiddenDivBuy
         float divEntry = math.round_to_mintick((high + low) / 2.0)
-        float divSl    = not na(lastHiddenBullDivLow) ? math.round_to_mintick(lastHiddenBullDivLow - divSlDist) : math.round_to_mintick(divEntry - slAtrMultInput * atrValue)
+        float divSl    = not na(lastHiddenBullDivLow) ? math.round_to_mintick(lastHiddenBullDivLow - divSlDist) : math.round_to_mintick(divEntry - 2.0 * atrValue)
         float divTp1   = math.round_to_mintick(divEntry + tp1AtrMultInput * atrValue)
         f_dispatch_alert('HIDDEN DIVERGENCE', 'LONG', divEntry, divSl, divTp1, 'HIDDEN_DIV', 'ACTIVE LIMIT')
     if HiddenDivSell
         float divEntry = math.round_to_mintick((high + low) / 2.0)
-        float divSl    = not na(lastHiddenBearDivHigh) ? math.round_to_mintick(lastHiddenBearDivHigh + divSlDist) : math.round_to_mintick(divEntry + slAtrMultInput * atrValue)
+        float divSl    = not na(lastHiddenBearDivHigh) ? math.round_to_mintick(lastHiddenBearDivHigh + divSlDist) : math.round_to_mintick(divEntry + 2.0 * atrValue)
         float divTp1   = math.round_to_mintick(divEntry - tp1AtrMultInput * atrValue)
         f_dispatch_alert('HIDDEN DIVERGENCE', 'SHORT', divEntry, divSl, divTp1, 'HIDDEN_DIV', 'ACTIVE LIMIT')
 
-    // Lightning
+    // Lightning (Option B: Structural Candle Extreme SL)
     if LightningBuy
-        f_dispatch_alert('LIGHTNING', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'LIGHTNING')
+        f_dispatch_alert('LIGHTNING', 'LONG', close, low - 0.50 * atrValue, close + tp1AtrMultInput * atrValue, 'LIGHTNING')
     if LightningSell
-        f_dispatch_alert('LIGHTNING', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'LIGHTNING')
+        f_dispatch_alert('LIGHTNING', 'SHORT', close, high + 0.50 * atrValue, close - tp1AtrMultInput * atrValue, 'LIGHTNING')
 
-    // Extreme Reversal
+    // Extreme Reversal (Option B: Structural Candle Extreme SL)
     if ExtremeReversalBuy
-        f_dispatch_alert('EXTREME REVERSAL', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'EXTREME_REVERSAL')
+        f_dispatch_alert('EXTREME REVERSAL', 'LONG', close, low - 0.50 * atrValue, close + tp1AtrMultInput * atrValue, 'EXTREME_REVERSAL')
     if ExtremeReversalSell
-        f_dispatch_alert('EXTREME REVERSAL', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'EXTREME_REVERSAL')
+        f_dispatch_alert('EXTREME REVERSAL', 'SHORT', close, high + 0.50 * atrValue, close - tp1AtrMultInput * atrValue, 'EXTREME_REVERSAL')
 
-    // Missile
+    // Missile (Option B: Structural Candle Extreme SL)
     if JustMissileBuy
-        f_dispatch_alert('MISSILE', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'MISSILE')
+        f_dispatch_alert('MISSILE', 'LONG', close, low - 0.50 * atrValue, close + tp1AtrMultInput * atrValue, 'MISSILE')
     if JustMissileSell
-        f_dispatch_alert('MISSILE', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'MISSILE')
+        f_dispatch_alert('MISSILE', 'SHORT', close, high + 0.50 * atrValue, close - tp1AtrMultInput * atrValue, 'MISSILE')
 
-    // Scalp
+    // Scalp (Option B: Structural Candle Extreme SL)
     if JustScalpBuy
-        f_dispatch_alert('SCALP', 'LONG', close, close - slAtrMultInput * atrValue, close + tp1AtrMultInput * atrValue, 'SCALP')
+        f_dispatch_alert('SCALP', 'LONG', close, low - 0.50 * atrValue, close + tp1AtrMultInput * atrValue, 'SCALP')
     if JustScalpSell
-        f_dispatch_alert('SCALP', 'SHORT', close, close + slAtrMultInput * atrValue, close - tp1AtrMultInput * atrValue, 'SCALP')
+        f_dispatch_alert('SCALP', 'SHORT', close, high + 0.50 * atrValue, close - tp1AtrMultInput * atrValue, 'SCALP')

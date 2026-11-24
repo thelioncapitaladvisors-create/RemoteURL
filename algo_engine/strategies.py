@@ -846,6 +846,8 @@ class StrategyEngine:
                 fire_alert=sig_fire_alert,
                 fire_zone=sig_fire_zone,
                 avg_candle_size_10=avg_candle_10,
+                bar_high=bar.high,
+                bar_low=bar.low,
             )
             signals.append(signal)
 
@@ -858,23 +860,28 @@ class StrategyEngine:
                       confluence_tag: str = "",
                       fire_alert: bool = False,
                       fire_zone: str = "",
-                      avg_candle_size_10: float = 0.0) -> StrategySignal:
+                      avg_candle_size_10: float = 0.0,
+                      bar_high: float = 0.0,
+                      bar_low: float = 0.0) -> StrategySignal:
         """
         Build a StrategySignal with computed SL/TP levels.
         
-        Pine Script Source (lines 2880-2893):
-            SL  = entry ± slAtrMultInput * atrValue     (0.75)
-            TP1 = entry ± tp1AtrMultInput * atrValue    (2.5)
-            TP2 = entry ± tp2AtrMultInput * atrValue    (4.0)
-            TP3 = entry ± tp3AtrMultInput * atrValue    (6.5)
-            TP4 = entry ± tp4AtrMultInput * atrValue    (8.0)
+        Mandate Parity (Nov 24, 2026):
+            - Divergence: Midpoint confirmation entry, Initial SL Option 1 (Extreme ± 2.0 * AvgCandleSize10).
+            - Core Trend Signals (Missile, Scalp, Lightning, Ext Rev): Option B (Structural Candle Extreme):
+                Long:  Low_signal - 0.50 * ATR
+                Short: High_signal + 0.50 * ATR
+            - TP1 = entry ± tp1AtrMultInput * atrValue    (2.5)
+            - TP2 = entry ± tp2AtrMultInput * atrValue    (4.0)
+            - TP3 = entry ± tp3AtrMultInput * atrValue    (6.5)
+            - TP4 = entry ± tp4AtrMultInput * atrValue    (8.0)
         """
         cfg = self.config
         direction = "LONG" if is_long else "SHORT"
 
         if "DIVERGENCE" in name:
-            # User Mandate Nov 24, 2026: DIV_SL_0.5_AVG10 regime anchored to D or H candle extreme minus/plus 0.5 * avg of last 10 candles
-            sl_dist = 0.5 * avg_candle_size_10 if avg_candle_size_10 > 0 else 0.5 * atr_val
+            # Option 1: Anchored to D or H candle extreme minus/plus 2.0 * avg of last 10 candles
+            sl_dist = 2.0 * avg_candle_size_10 if avg_candle_size_10 > 0 else 2.0 * atr_val
             if is_long:
                 div_low = self._last_hidden_bull_div_low if "HIDDEN" in name else self._last_reg_bull_div_low
                 sl = round(div_low - sl_dist, 2) if div_low is not None else round(entry_price - sl_dist, 2)
@@ -890,17 +897,21 @@ class StrategyEngine:
                 tp3 = round(entry_price - cfg.tp3_atr_mult * atr_val, 2)
                 tp4 = round(entry_price - cfg.tp4_atr_mult * atr_val, 2)
         elif is_long:
-            sl  = entry_price - cfg.sl_atr_mult * atr_val
-            tp1 = entry_price + cfg.tp1_atr_mult * atr_val
-            tp2 = entry_price + cfg.tp2_atr_mult * atr_val
-            tp3 = entry_price + cfg.tp3_atr_mult * atr_val
-            tp4 = entry_price + cfg.tp4_atr_mult * atr_val
+            # Option B: Structural Candle Extreme (Signal Bar Low - 0.50 * ATR)
+            ref_low = bar_low if bar_low > 0 else entry_price
+            sl  = round(ref_low - 0.50 * atr_val, 2)
+            tp1 = round(entry_price + cfg.tp1_atr_mult * atr_val, 2)
+            tp2 = round(entry_price + cfg.tp2_atr_mult * atr_val, 2)
+            tp3 = round(entry_price + cfg.tp3_atr_mult * atr_val, 2)
+            tp4 = round(entry_price + cfg.tp4_atr_mult * atr_val, 2)
         else:
-            sl  = entry_price + cfg.sl_atr_mult * atr_val
-            tp1 = entry_price - cfg.tp1_atr_mult * atr_val
-            tp2 = entry_price - cfg.tp2_atr_mult * atr_val
-            tp3 = entry_price - cfg.tp3_atr_mult * atr_val
-            tp4 = entry_price - cfg.tp4_atr_mult * atr_val
+            # Option B: Structural Candle Extreme (Signal Bar High + 0.50 * ATR)
+            ref_high = bar_high if bar_high > 0 else entry_price
+            sl  = round(ref_high + 0.50 * atr_val, 2)
+            tp1 = round(entry_price - cfg.tp1_atr_mult * atr_val, 2)
+            tp2 = round(entry_price - cfg.tp2_atr_mult * atr_val, 2)
+            tp3 = round(entry_price - cfg.tp3_atr_mult * atr_val, 2)
+            tp4 = round(entry_price - cfg.tp4_atr_mult * atr_val, 2)
 
         return StrategySignal(
             name=name,

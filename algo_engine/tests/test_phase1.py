@@ -1505,12 +1505,50 @@ class TestV7IndicatorParity(unittest.TestCase):
         sigs = engine.evaluate(ctx2)
         div_sigs = [s for s in sigs if s.name == "LONG DIVERGENCE"]
         sig = div_sigs[0]
-        # Nov 24, 2026 Mandate: Midpoint confirmation candle entry & DIV_SL_0.5_AVG10 SL (divLow - 0.5 * avg_candle_10)
+        # Parity Mandate Nov 24, 2026: Midpoint confirmation candle entry & Option 1 SL (divLow - 2.0 * avg_candle_10)
         expected_mid = round((b2.high + b2.low) / 2.0, 2)
         avg_10 = (7.0 + 6.5) / 2.0  # (b1 range = 7.0, b2 range = 6.5)
-        expected_sl = round(b1.low - 0.5 * avg_10, 2)
+        expected_sl = round(b1.low - 2.0 * avg_10, 2)
         self.assertEqual(sig.entry_price, expected_mid)
         self.assertEqual(sig.stop_loss, expected_sl)
+
+    def test_core_trend_signals_initial_sl_bar_extreme(self):
+        """Verify Option B (Structural Candle Extreme SL): Low_signal - 0.50 * ATR (Long) / High_signal + 0.50 * ATR (Short)."""
+        engine = StrategyEngine()
+        b_long = OHLC(open=99.0, high=105.0, low=96.0, close=104.0)
+        ctx_long = MarketContext(
+            bar=b_long, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            extreme_long_signal=True,
+            short_ema=101.0, med_ema=101.0,
+            plus=25.0, minus=25.0,
+            m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=105.0, session_lowest=96.0, atr=3.0
+        )
+        sigs_long = engine.evaluate(ctx_long)
+        long_ext_rev = [s for s in sigs_long if s.name == "LONG EXTREME REVERSAL"][0]
+        # Option B: low (96.0) - 0.50 * atr (3.0) = 96.0 - 1.50 = 94.50
+        self.assertEqual(long_ext_rev.stop_loss, 94.50)
+
+        engine_short = StrategyEngine()
+        b_short = OHLC(open=104.0, high=107.0, low=98.0, close=99.0)
+        ctx_short = MarketContext(
+            bar=b_short, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            extreme_short_signal=True,
+            short_ema=101.0, med_ema=101.0,
+            plus=25.0, minus=25.0,
+            m0=10.0, m10=5.0,
+            day_type_label="TREND DAY, DOUBLE DISTRIBUTION TREND",
+            session_highest=107.0, session_lowest=98.0, atr=4.0
+        )
+        sigs_short = engine_short.evaluate(ctx_short)
+        short_ext_rev = [s for s in sigs_short if s.name == "SHORT EXTREME REVERSAL"][0]
+        # Option B: high (107.0) + 0.50 * atr (4.0) = 107.0 + 2.0 = 109.00
+        self.assertEqual(short_ext_rev.stop_loss, 109.00)
 
     def test_divergence_touch_entry_and_limit_execution(self):
         """Verify divergence signals generate ACTIVE LIMIT and fill only when future bar touches entry."""
