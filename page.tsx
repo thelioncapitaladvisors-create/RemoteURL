@@ -7166,6 +7166,17 @@ function MobileScreensaver() {
   }, [extractDhanScreenerAssets, dhanFireMarketFilter, dhanFireDirectionFilter, dhanFireSessionFilter, dhanFireSearch, dhanFireSubFilter, isDhanLiveActionOnly, isDhanWatchlistOnly]);
 
   // ── SEPARATED LIVE SIGNALS ASSETS (ACTIVE LIMITS & LIVE TRADES) ──
+  const matchLiveAssetToCategory = useCallback((catId: string, a: any) => {
+    if (!a) return false;
+    if (catId === 'FIRE') return a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE' || Boolean(a.isConfluence);
+    if (catId === 'LIGHTNING') return a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING';
+    if (catId === 'EXT_REV') return a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV';
+    if (catId === 'MISSILE') return a.relationshipBadge?.includes('MISSILE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'MISSILE';
+    if (catId === 'SCALP') return a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP';
+    if (catId === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
+    return false;
+  }, []);
+
   const { liveSignalsAssets, liveSignalsStats } = useMemo(() => {
     const { assets } = extractDhanScreenerAssets(
       'ALL_LIVE',
@@ -7220,12 +7231,12 @@ function MobileScreensaver() {
 
     const activeLimitsCount = combined.filter(a => a.tradeLifecycle === 'ACTIVE LIMIT').length;
     const liveCount = combined.filter(a => a.tradeLifecycle === 'LIVE').length;
-    const fireCount = combined.filter(a => a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE').length;
-    const lightningCount = combined.filter(a => a.relationshipBadge?.includes('LIGHTNING')).length;
-    const extRevCount = combined.filter(a => a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME')).length;
-    const missileCount = combined.filter(a => a.relationshipBadge?.includes('MISSILE') || a.relationshipBadge?.includes('SWING')).length;
-    const scalpCount = combined.filter(a => a.relationshipBadge?.includes('SCALP')).length;
-    const divCount = combined.filter(a => a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV').length;
+    const fireCount = combined.filter(a => matchLiveAssetToCategory('FIRE', a)).length;
+    const lightningCount = combined.filter(a => matchLiveAssetToCategory('LIGHTNING', a)).length;
+    const extRevCount = combined.filter(a => matchLiveAssetToCategory('EXT_REV', a)).length;
+    const missileCount = combined.filter(a => matchLiveAssetToCategory('MISSILE', a)).length;
+    const scalpCount = combined.filter(a => matchLiveAssetToCategory('SCALP', a)).length;
+    const divCount = combined.filter(a => matchLiveAssetToCategory('DIV', a)).length;
     const rejCount = combined.filter(a => a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ').length;
     const contCount = combined.filter(a => a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT').length;
     const vcprTouchCount = combined.filter(a => a.isVcprTouch || a.relationshipBadge?.includes('VCPR')).length;
@@ -7247,24 +7258,24 @@ function MobileScreensaver() {
         vcprTouchCount,
       }
     };
-  }, [extractDhanScreenerAssets, liveSignalsMarketFilter, liveSignalsDirectionFilter, liveSignalsSessionFilter, activeTab]);
+  }, [extractDhanScreenerAssets, liveSignalsMarketFilter, liveSignalsDirectionFilter, liveSignalsSessionFilter, activeTab, matchLiveAssetToCategory]);
 
   const filteredLiveSignals = useMemo(() => {
     return liveSignalsAssets.filter(a => {
       if (liveSignalsActiveFilter === 'ACTIVE_LIMITS') return a.tradeLifecycle === 'ACTIVE LIMIT';
       if (liveSignalsActiveFilter === 'LIVE') return a.tradeLifecycle === 'LIVE';
-      if (liveSignalsActiveFilter === 'FIRE') return a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE';
-      if (liveSignalsActiveFilter === 'LIGHTNING') return a.relationshipBadge?.includes('LIGHTNING');
-      if (liveSignalsActiveFilter === 'EXT_REV') return a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME');
-      if (liveSignalsActiveFilter === 'MISSILE') return a.relationshipBadge?.includes('MISSILE') || a.relationshipBadge?.includes('SWING');
-      if (liveSignalsActiveFilter === 'SCALP') return a.relationshipBadge?.includes('SCALP');
-      if (liveSignalsActiveFilter === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
+      if (liveSignalsActiveFilter === 'FIRE') return matchLiveAssetToCategory('FIRE', a);
+      if (liveSignalsActiveFilter === 'LIGHTNING') return matchLiveAssetToCategory('LIGHTNING', a);
+      if (liveSignalsActiveFilter === 'EXT_REV') return matchLiveAssetToCategory('EXT_REV', a);
+      if (liveSignalsActiveFilter === 'MISSILE') return matchLiveAssetToCategory('MISSILE', a);
+      if (liveSignalsActiveFilter === 'SCALP') return matchLiveAssetToCategory('SCALP', a);
+      if (liveSignalsActiveFilter === 'DIV') return matchLiveAssetToCategory('DIV', a);
       if (liveSignalsActiveFilter === 'REJ') return a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ';
       if (liveSignalsActiveFilter === 'CONT') return a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT';
       if (liveSignalsActiveFilter === 'VCPR_TOUCH') return a.isVcprTouch || a.relationshipBadge?.includes('VCPR');
       return true;
     });
-  }, [liveSignalsAssets, liveSignalsActiveFilter]);
+  }, [liveSignalsAssets, liveSignalsActiveFilter, matchLiveAssetToCategory]);
 
   // ── SEPARATED WATCHLIST ASSETS (DAY-TYPE CANDIDATES & PIVOT REGIMES) ──
   const { watchlistAssets, watchlistStats } = useMemo(() => {
@@ -11114,16 +11125,6 @@ function MobileScreensaver() {
       { id: 'DIV', label: 'Divergence', badge: 'LIVE DIVERGENCE', icon: '🎯', badgeStyle: 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/35' },
     ];
 
-    const matchLiveAssetToCategory = (catId: string, a: any) => {
-      if (catId === 'FIRE') return a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE';
-      if (catId === 'LIGHTNING') return a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING';
-      if (catId === 'EXT_REV') return a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV';
-      if (catId === 'MISSILE') return a.relationshipBadge?.includes('MISSILE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'MISSILE';
-      if (catId === 'SCALP') return a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP';
-      if (catId === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
-      return false;
-    };
-
     return (
       <div className={`shiny-card rounded-3xl p-4 sm:p-5 relative overflow-hidden ${theme === 'lion' ? 'lion-card-gold' : (theme === 'goldengate' || theme === 'goldengate-light') ? 'gg-card-sunset' : ''}`}>
         {/* Section Header */}
@@ -11389,6 +11390,10 @@ function MobileScreensaver() {
                   <tbody className="divide-y divide-black/5 dark:divide-white/5">
                     {(() => {
                       const renderedRows = liveMatrixCategories.map(cat => {
+                        // When a specific strategy filter is selected in Tier 1, isolate matrix rows strictly to that selected strategy
+                        if (liveSignalsActiveFilter !== 'ALL' && liveSignalsActiveFilter !== 'LIVE' && liveSignalsActiveFilter !== 'ACTIVE_LIMITS') {
+                          if (liveSignalsActiveFilter !== cat.id) return null;
+                        }
                         const matching = filteredLiveSignals.filter(a => matchLiveAssetToCategory(cat.id, a));
                         const bulls = matching.filter(a => a.direction === 'BULLISH');
                         const bears = matching.filter(a => a.direction === 'BEARISH');
