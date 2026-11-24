@@ -6491,7 +6491,11 @@ function MobileScreensaver() {
       const sDate = (s.signal_ts || s.created_at || '').split('T')[0];
       const ts = new Date(s.signal_ts || s.created_at || '').getTime();
       const isToday = !isNaN(ts) && ts >= startOfToday;
-      const sigTimeframe = String(meta.timeframe || meta.interval || (s as any).timeframe || (s as any).interval || '15m').toUpperCase();
+      const rawTfStr = String(meta.timeframe || meta.interval || (s as any).timeframe || (s as any).interval || '').toUpperCase().trim();
+      const isSwingSignal = rawTfStr === '1D' || rawTfStr === 'D' || rawTfStr === 'DAILY' || rawTfStr === '1440' ||
+                            meta.is_swing === true || (s.type || '').toUpperCase().includes('SWING') ||
+                            (s.trigger || '').toUpperCase().includes('DTF') || (meta.trade_id || '').toUpperCase().includes('DTF');
+      const sigTimeframe = isSwingSignal ? '1D' : (rawTfStr || '15m').toUpperCase();
 
       // Extract accurate trade signal timestamps for precise chart candle location
       const rawSigTs = s.signal_ts || s.created_at || meta.entry_time || meta.entryDate || '';
@@ -6616,8 +6620,12 @@ function MobileScreensaver() {
       //       Fall back to the latest active market session date across the system.
       if (sessionFilter === 'ALL') {
         // Allow all recent historical signals
+      } else if (isSwingSignal || sigTimeframe === '1D') {
+        // Multi-Day / Next-Week Swing Retention Mandate:
+        // 1D Timeframe Swing signals remain strictly visible until next week or until invalidated.
+        // Never drop swing signals due to intraday session date transitions.
       } else if (liveActionOnly && (tradeLifecycle === 'ACTIVE LIMIT' || tradeLifecycle === 'LIVE')) {
-        // Retain currently active 1D swing limits and live execution trades across session boundaries
+        // Retain currently active intraday limits and live execution trades across session boundaries
       } else {
         if (hasAnySignalToday) {
           if (!isToday) return;
@@ -6807,6 +6815,11 @@ function MobileScreensaver() {
           relType = 'VCPR';
           relBadge = '⚡ VCPR TOUCH';
           relBias = 'VIRGIN CPR TOUCH TEST';
+        } else if (isSwingSignal || sigTimeframe === '1D') {
+          // Dedicated Provision for 1D Daily Webhook Swing Execution Signals
+          relType = 'FIRE';
+          relBadge = '🚀 SWING';
+          relBias = 'DAILY SWING EXECUTION (1D TIMEFRAME)';
         } else {
           relType = 'ALL_LIVE';
           relBadge = (s.type || 'LIVE SIGNAL').toUpperCase();
@@ -7186,10 +7199,10 @@ function MobileScreensaver() {
 
           // Exclusively retain approved execution strategies (Confluence, Lightning, Ext Rev, Missile, Scalp, Divergence)
           const matchesApproved = 
-            Boolean(a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE') ||
+            Boolean(a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE') ||
             Boolean(a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING') ||
             Boolean(a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV') ||
-            Boolean(a.relationshipBadge?.includes('MISSILE') || a.relationshipType === 'MISSILE') ||
+            Boolean(a.relationshipBadge?.includes('MISSILE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'MISSILE') ||
             Boolean(a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP') ||
             Boolean(a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV');
           return matchesApproved;
@@ -7207,10 +7220,10 @@ function MobileScreensaver() {
 
     const activeLimitsCount = combined.filter(a => a.tradeLifecycle === 'ACTIVE LIMIT').length;
     const liveCount = combined.filter(a => a.tradeLifecycle === 'LIVE').length;
-    const fireCount = combined.filter(a => a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE').length;
+    const fireCount = combined.filter(a => a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE').length;
     const lightningCount = combined.filter(a => a.relationshipBadge?.includes('LIGHTNING')).length;
     const extRevCount = combined.filter(a => a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME')).length;
-    const missileCount = combined.filter(a => a.relationshipBadge?.includes('MISSILE')).length;
+    const missileCount = combined.filter(a => a.relationshipBadge?.includes('MISSILE') || a.relationshipBadge?.includes('SWING')).length;
     const scalpCount = combined.filter(a => a.relationshipBadge?.includes('SCALP')).length;
     const divCount = combined.filter(a => a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV').length;
     const rejCount = combined.filter(a => a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ').length;
@@ -7240,10 +7253,10 @@ function MobileScreensaver() {
     return liveSignalsAssets.filter(a => {
       if (liveSignalsActiveFilter === 'ACTIVE_LIMITS') return a.tradeLifecycle === 'ACTIVE LIMIT';
       if (liveSignalsActiveFilter === 'LIVE') return a.tradeLifecycle === 'LIVE';
-      if (liveSignalsActiveFilter === 'FIRE') return a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE';
+      if (liveSignalsActiveFilter === 'FIRE') return a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE';
       if (liveSignalsActiveFilter === 'LIGHTNING') return a.relationshipBadge?.includes('LIGHTNING');
       if (liveSignalsActiveFilter === 'EXT_REV') return a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME');
-      if (liveSignalsActiveFilter === 'MISSILE') return a.relationshipBadge?.includes('MISSILE');
+      if (liveSignalsActiveFilter === 'MISSILE') return a.relationshipBadge?.includes('MISSILE') || a.relationshipBadge?.includes('SWING');
       if (liveSignalsActiveFilter === 'SCALP') return a.relationshipBadge?.includes('SCALP');
       if (liveSignalsActiveFilter === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
       if (liveSignalsActiveFilter === 'REJ') return a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ';
@@ -11102,10 +11115,10 @@ function MobileScreensaver() {
     ];
 
     const matchLiveAssetToCategory = (catId: string, a: any) => {
-      if (catId === 'FIRE') return a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE';
+      if (catId === 'FIRE') return a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE';
       if (catId === 'LIGHTNING') return a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING';
       if (catId === 'EXT_REV') return a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV';
-      if (catId === 'MISSILE') return a.relationshipBadge?.includes('MISSILE') || a.relationshipType === 'MISSILE';
+      if (catId === 'MISSILE') return a.relationshipBadge?.includes('MISSILE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'MISSILE';
       if (catId === 'SCALP') return a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP';
       if (catId === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
       return false;
