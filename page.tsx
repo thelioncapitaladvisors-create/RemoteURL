@@ -6817,9 +6817,20 @@ function MobileScreensaver() {
           relBias = 'VIRGIN CPR TOUCH TEST';
         } else if (isSwingSignal || sigTimeframe === '1D') {
           // Dedicated Provision for 1D Daily Webhook Swing Execution Signals
-          relType = 'FIRE';
-          relBadge = '🚀 SWING';
-          relBias = 'DAILY SWING EXECUTION (1D TIMEFRAME)';
+          const swingStrat = (meta.strategy || '').toUpperCase();
+          if (swingStrat === 'CONFLUENCE') {
+            relType = 'FIRE';
+            relBadge = '⚡ CONFLUENCE';
+            relBias = 'DAILY CONFLUENCE EXECUTION (1D TIMEFRAME)';
+          } else if (swingStrat === 'MISSILE') {
+            relType = 'FIRE';
+            relBadge = '🚀 MISSILE';
+            relBias = 'DAILY MISSILE EXECUTION (1D TIMEFRAME)';
+          } else {
+            relType = 'FIRE';
+            relBadge = '🚀 SWING';
+            relBias = 'DAILY SWING EXECUTION (1D TIMEFRAME)';
+          }
         } else {
           relType = 'ALL_LIVE';
           relBadge = (s.type || 'LIVE SIGNAL').toUpperCase();
@@ -7168,10 +7179,20 @@ function MobileScreensaver() {
   // ── SEPARATED LIVE SIGNALS ASSETS (ACTIVE LIMITS & LIVE TRADES) ──
   const matchLiveAssetToCategory = useCallback((catId: string, a: any) => {
     if (!a) return false;
-    if (catId === 'FIRE') return a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE' || Boolean(a.isConfluence);
+    const isConf = Boolean(a.isConfluence) || a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE' || a.signals?.some((s: any) => {
+      const m = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+      return m.is_confluence === true || m.fire_alert === true || (m.strategy || '').toUpperCase() === 'CONFLUENCE';
+    });
+    const isMissile = a.relationshipBadge?.includes('MISSILE') || a.signals?.some((s: any) => {
+      const m = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
+      const st = ((s.type || '') + ' ' + (m.strategy || '')).toUpperCase();
+      return st.includes('MISSILE');
+    });
+
+    if (catId === 'FIRE') return isConf;
     if (catId === 'LIGHTNING') return a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING';
     if (catId === 'EXT_REV') return a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV';
-    if (catId === 'MISSILE') return a.relationshipBadge?.includes('MISSILE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'MISSILE';
+    if (catId === 'MISSILE') return isMissile;
     if (catId === 'SCALP') return a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP';
     if (catId === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
     return false;
