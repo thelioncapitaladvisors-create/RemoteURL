@@ -22,15 +22,16 @@ Confluence is preserved strictly on the HUB tab for 15-minute intraday signals.
 
 ## 2. Quantitative Root Cause & Asset Analysis
 
-### 2.1 CRUDEOIL vs NATURALGAS Daily Bar Evaluation
+### 2.1 CRUDEOIL vs NATURALGAS Daily Bar Evaluation & Noise Identification
 - **CRUDEOIL (`CRUDEOIL1!`)**:
   - Triggers the **`SHORT MISSILE`** strategy (verified on TradingView Daily chart with red downward trend arrow and targets `7921`, `7648`, `6736`).
   - Correctly qualifies for **`🚀 MISSILE`** on the INSIGHTS tab.
-- **NATURALGAS (`NATURALGAS1!`)**:
-  - On the TradingView Daily chart, only triggered a standalone Camarilla touch icon without any Missile, Scalp, Lightning, Extreme Reversal, or Divergence trigger.
+- **NATURALGAS (`NATURALGAS1!`) & Noise Identification**:
+  - **Visual Noise Identified**: The purple circled lightning bolt `⚡` icon on the bottom timeline axis of the TradingView chart was identified as TradingView's native **Dow Jones Newswires "Latest updates" news event** (*"U.S. Natural Gas Futures Sink on Milder Weather Outlook — Market Talk"*), completely separate from indicator signals.
+  - On the indicator level, Natural Gas only had a Camarilla touch point without any Missile, Scalp, Lightning, Extreme Reversal, or Divergence trigger.
   - When tested against the BlackBox daily scanner (`DailyBlackboxScanner(market='mcx').scan_symbol('NATURALGAS')`), it returned `[]` (0 qualifying swing strategies).
-  - Was previously bleeding into the swing matrix solely due to generic Confluence ingestion.
-  - With Confluence removed from the Daily TF section, NATURALGAS is properly omitted from the swing matrix.
+  - **Database Purge**: The spurious historical webhook record (`68e9fe8f-8e81-4872-8e51-dc8216089ecd`) that had been created from external noise was permanently deleted from the Supabase `signals` table.
+  - **Purity Mandate**: Enshrined strict rule that alert generation must derive purely from authentic mathematical signal logic (`CanBuy`, `CanSell`, `ScalpBuy`, `ScalpSell`, `Elongsignal`, `Eshortsignal`, Divergence math) with zero third-party chart event noise incorporated.
 
 ---
 

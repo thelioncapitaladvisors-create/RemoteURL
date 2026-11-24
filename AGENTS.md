@@ -8,7 +8,22 @@
   - For 15m Intraday trades:
     - Long trades (`longAllowed` and `_buy` inside `initializeAndPushTrade`) MUST be linked to **`low < H4`** (verifying that the candle's touch-point/wick reaches below H4).
     - Short trades (`shortAllowed` and `_sell` inside `initializeAndPushTrade`) MUST be linked to **`high > L4`** (verifying that the candle's touch-point/wick reaches above L4).
-    - Gating must NEVER rely on `close` for limit entry qualification.
+## Version 5.0: Purity of Signal Logics & Complete Noise / News Exclusion Mandate (Effective November 24, 2026)
+- **TRADINGVIEW NEWS/EVENT ICONS ARE NOISE, NOT SIGNALS**:
+  - TradingView bottom-axis timeline markers (such as the purple circled `⚡` for Dow Jones Newswires news updates, or blue circled `->` for session splits and corporate events) are third-party platform news/event feeds, completely separate from indicator signal logic.
+  - They MUST NEVER be treated as signals, triggers, confluence setups, or indicators under any circumstances.
+- **STRICT MATHEMATICAL SIGNAL LOGIC ONLY**:
+  - Alert generation across all pipelines (TradingView Pine Script, Python BlackBox algorithms, DhanHQ scanners, and Next.js webhook ingestion) must derive strictly and purely from verifiable quantitative mathematical triggers:
+    1. Missile (`CanBuy` / `CanSell`)
+    2. Scalp (`ScalpBuy` / `ScalpSell`)
+    3. Lightning (`CanBuy and ScalpBuy` / `CanSell and ScalpSell`)
+    4. Extreme Reversal (`Elongsignal` / `Eshortsignal`)
+    5. Divergence (Regular and Hidden RSI/Price Divergence math)
+    6. PivotBoss Camarilla touch-point bounds ($H_4/L_4$, CPR)
+  - Zero external noise, subjective interpretations, or third-party event icons may ever be incorporated into the signal generation and execution engine.
+- **HISTORICAL CORRUPTED NOISE PURGE**:
+  - Spurious historical records triggered by noise (such as `NATURALGAS1!` `68e9fe8f-8e81-4872-8e51-dc8216089ecd` created from a Dow Jones Newswires news icon) are permanently purged from Supabase `signals` and all database stores.
+
 ## Version 5.0: Permanent Removal of Confluence Filter from Swing Trading (Effective November 24, 2026)
 - **5 CORE SWING TRADING EXECUTION STRATEGIES & CONFLUENCE EXCLUSION**:
   - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) under `🎯 SWING TRADING OPPORTUNITIES` / `⚡ DAILY TF SIGNALS ( '1D' TIME FRAME)`:
