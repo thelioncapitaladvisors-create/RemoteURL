@@ -64,8 +64,29 @@ Under `🎯 SWING TRADING OPPORTUNITIES` / `⚡ DAILY TF SIGNALS ( '1D' TIME FRA
 
 ---
 
-## 5. System-Wide Governance & Repository Sync
+## 5. Mathematical Invalidation of Intraday Day Types for Daily (1D) Timeframe Signals
+
+### 5.1 Temporal Scope Mismatch: Single Day Session vs Multi-Day Swings
+- **Intraday Day Types**: Classifications such as `TYPICAL DAY, TRADING RANGE, SIDEWAYS`, `BIG MOVE`, `OUT OF RANGE OUT OF VALUE`, `IN RANGE IN VALUE`, `REJECTION BLUEPRINT`, and `STOP RUN` are strictly intraday structural diagnostics. They measure how 15-minute bars open, expand, and close relative to CPR and Value Area boundaries across a single calendar session.
+- **Daily Timeframe Candlesticks**: On the Daily (`1D`) timeframe, each individual bar is an entire trading day. Attaching an intraday session classification to a daily bar does not formulate an actionable swing setup.
+- **Rule of Invalidation**: Day types become mathematically and methodologically **invalid** as trade qualification signals on the Daily timeframe. They are confined exclusively to the Intraday Day Type Watchlist on the HUB tab (`activeTab === 'DASHBOARD'`).
+
+### 5.2 Standalone Camarilla/CPR Touch-Points (▲ / ▼) vs Swing Execution
+- On the NATURALGAS daily chart, price touched a Camarilla boundary, generating a green triangle (`▲`).
+- A standalone boundary touch is merely an observation of range support/resistance interaction, **not** an execution strategy.
+- Swing execution on the Daily timeframe strictly requires one of the 5 canonical strategies:
+  1. **Missile** (`CanBuy` / `CanSell`)
+  2. **Scalp** (`ScalpBuy` / `ScalpSell`)
+  3. **Lightning** (`CanBuy and ScalpBuy` / `CanSell and ScalpSell`)
+  4. **Extreme Reversal** (`Elongsignal` / `Eshortsignal`)
+  5. **Divergence** (RSI / Price mathematical swing divergence)
+- Because Natural Gas possessed only a standalone touch-point under a sideways day type with zero core strategy triggers, it correctly evaluates to `[]` (0 signals) and is completely excluded from the Daily Swing Trading Opportunities matrix.
+
+---
+
+## 6. System-Wide Governance & Repository Sync
 
 - **Rules Enshrined**: Mandate committed to [`AGENTS.md`](file:///Users/vishant/Documents/Project/AGENTS.md) and [`.agents/AGENTS.md`](file:///Users/vishant/Documents/Project/.agents/AGENTS.md).
 - **Code Mirrors**: Synchronized across `Tv-Alert-Mobile/src/app/page.tsx`, `RemoteURL/page.tsx`, `page.tsx`, and `Project Backup/`.
 - **Release Version**: Standardized at Version 5.0 (`v5.0` / `5.0.0`) across all repositories.
+

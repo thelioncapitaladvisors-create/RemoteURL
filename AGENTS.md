@@ -24,6 +24,21 @@
 - **HISTORICAL CORRUPTED NOISE PURGE**:
   - Spurious historical records triggered by noise (such as `NATURALGAS1!` `68e9fe8f-8e81-4872-8e51-dc8216089ecd` created from a Dow Jones Newswires news icon) are permanently purged from Supabase `signals` and all database stores.
 
+## Version 5.0: Invalidation of Intraday Day Types & Standalone Touch-Points for Daily Timeframe (1D) Swing Signals Mandate (Effective November 24, 2026)
+- **INTRADAY DAY TYPES ARE INVALID FOR DAILY TIMEFRAME SWING SIGNALS**:
+  - Intraday Day Type classifications (`TYPICAL DAY, TRADING RANGE, SIDEWAYS`, `BIG MOVE`, `OUT OF RANGE OUT OF VALUE`, `IN RANGE IN VALUE`, `REJECTION BLUEPRINT`, `FAILED NEW LOW/HIGH`, `STOP RUN`) are designed to profile intraday 15-minute bar development within a single calendar session.
+  - On the Daily Timeframe (`1D`), each bar is already an entire 24-hour day session. Therefore, intraday Day Types are **fundamentally invalid** as signal qualification criteria for Daily Timeframe swing trading.
+  - Day Types belong strictly to the **Intraday Day Type Watchlist** on the HUB tab (`activeTab === 'DASHBOARD'`) and must NEVER be used to qualify or trigger Daily Timeframe swing trades.
+- **STANDALONE TOUCH-POINTS (▲ / ▼) ARE NOT SWING EXECUTION SIGNALS**:
+  - Standalone Camarilla or CPR boundary touch-point markers (such as the green triangle `▲` on the NATURALGAS daily chart) are touch interactions, NOT strategy execution triggers.
+  - Daily Timeframe swing trade qualification strictly requires one of the **5 Core Swing Strategies**:
+    1. Missile (`CanBuy` / `CanSell`)
+    2. Scalp (`ScalpBuy` / `ScalpSell`)
+    3. Lightning (`CanBuy and ScalpBuy` / `CanSell and ScalpSell`)
+    4. Extreme Reversal (`Elongsignal` / `Eshortsignal`)
+    5. Divergence (Regular & Hidden RSI/Price Divergence math)
+  - Any asset featuring only an intraday day type or standalone touch-point (such as NATURALGAS) evaluates to `[]` (0 signals) and is completely excluded from Swing Trading Opportunities on the INSIGHTS tab.
+
 ## Version 5.0: Permanent Removal of Confluence Filter from Swing Trading (Effective November 24, 2026)
 - **5 CORE SWING TRADING EXECUTION STRATEGIES & CONFLUENCE EXCLUSION**:
   - Across the INSIGHTS tab (`activeTab === 'INSIGHTS'`) under `🎯 SWING TRADING OPPORTUNITIES` / `⚡ DAILY TF SIGNALS ( '1D' TIME FRAME)`:
