@@ -67,7 +67,7 @@ from algo_engine.pivots import (
     compute_divergences, compute_institutional_bias_c1, compute_day_type_mx,
     detect_virgin_cpr_zones, detect_virgin_cpr_touches
 )
-from algo_engine.strategies import StrategyEngine, MarketContext, StrategySignal
+from algo_engine.strategies import StrategyEngine, MarketContext, StrategySignal, detect_extreme_reversal
 from algo_engine.telegram_dispatcher import TelegramDispatcher
 
 
@@ -149,6 +149,7 @@ class DailyBlackboxScanner:
         m0_series, m10_series = compute_m0_m10(bars)
         rsi_series = compute_rsi(bars, period=14)
         reg_bull, reg_bear, hidden_bull, hidden_bear = compute_divergences(bars, rsi_series=rsi_series, lookback=10)
+        e_long_series, e_short_series = detect_extreme_reversal(bars, config=self.strategy_engine.config, pivot_trend_slow=trend_emas[1])
 
         # Detect Virgin CPR zones on historical daily bars
         history_bars = [
@@ -225,6 +226,8 @@ class DailyBlackboxScanner:
             bear_regular_div=reg_bear[i - 1] if i > 0 else False,
             bull_hidden_div=hidden_bull[i - 1] if i > 0 else False,
             bear_hidden_div=hidden_bear[i - 1] if i > 0 else False,
+            extreme_long_signal=e_long_series[i] if i < len(e_long_series) else False,
+            extreme_short_signal=e_short_series[i] if i < len(e_short_series) else False,
             plus=plus_di[i] if i < len(plus_di) else 0.0,
             minus=minus_di[i] if i < len(minus_di) else 0.0,
             m0=m0_series[i] if i < len(m0_series) else 0.0,

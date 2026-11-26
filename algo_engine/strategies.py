@@ -628,22 +628,41 @@ class StrategyEngine:
             self._last_hidden_bear_div_high = None
             self._last_hidden_bear_div_low = None
 
+        # Fast-track Power Candle definitions (Immediate Bar 1 confirmation)
+        c_range = max(bar.high - bar.low, 0.0001)
+        c_body = abs(bar.close - bar.open)
+        is_bull_power_candle = bar.is_green and (c_body >= 0.60 * c_range) and (
+            green1 or (ctx.prev_bar is not None and bar.close > ctx.prev_bar.high) or (bar.close >= bar.high - 0.20 * c_range)
+        )
+        is_bear_power_candle = bar.is_red and (c_body >= 0.60 * c_range) and (
+            red1 or (ctx.prev_bar is not None and bar.close < ctx.prev_bar.low) or (bar.close <= bar.low + 0.20 * c_range)
+        )
+
+        is_bull_power_confirm = bar.is_green and (is_bull_power_candle or green1)
+        is_bear_power_confirm = bar.is_red and (is_bear_power_candle or red1)
+
         # Window checks: confirmation candle must occur between 1 and 5 bars AFTER divergence (Bars 1 to 5)
-        in_win_reg_bull = self._last_reg_bull_div_bar is not None and 1 <= (bar_idx - self._last_reg_bull_div_bar) <= 5
-        in_win_reg_bear = self._last_reg_bear_div_bar is not None and 1 <= (bar_idx - self._last_reg_bear_div_bar) <= 5
-        in_win_hidden_bull = self._last_hidden_bull_div_bar is not None and 1 <= (bar_idx - self._last_hidden_bull_div_bar) <= 5
-        in_win_hidden_bear = self._last_hidden_bear_div_bar is not None and 1 <= (bar_idx - self._last_hidden_bear_div_bar) <= 5
+        bars_since_reg_bull = (bar_idx - self._last_reg_bull_div_bar) if self._last_reg_bull_div_bar is not None else 999
+        bars_since_reg_bear = (bar_idx - self._last_reg_bear_div_bar) if self._last_reg_bear_div_bar is not None else 999
+        bars_since_hidden_bull = (bar_idx - self._last_hidden_bull_div_bar) if self._last_hidden_bull_div_bar is not None else 999
+        bars_since_hidden_bear = (bar_idx - self._last_hidden_bear_div_bar) if self._last_hidden_bear_div_bar is not None else 999
 
-        # Confirmed triggers on CLOSE of confirmation candle:
-        # Regular Divergence strictly requires subsequent directional confirmation candle close (zero unconfirmed entries)
-        # Version 3.0: Symmetrical DMI Directional Filter (Avoid Long D when minus > plus, avoid Short D when plus > minus)
-        confirmed_reg_bull = in_win_reg_bull and is_bull_confirm and not (ctx.minus > ctx.plus) and (self._last_fired_reg_bull_bar is None or self._last_fired_reg_bull_bar < self._last_reg_bull_div_bar)
-        confirmed_reg_bear = in_win_reg_bear and is_bear_confirm and not (ctx.plus > ctx.minus) and (self._last_fired_reg_bear_bar is None or self._last_fired_reg_bear_bar < self._last_reg_bear_div_bar)
+        in_win_reg_bull = 1 <= bars_since_reg_bull <= 5
+        in_win_reg_bear = 1 <= bars_since_reg_bear <= 5
+        in_win_hidden_bull = 1 <= bars_since_hidden_bull <= 5
+        in_win_hidden_bear = 1 <= bars_since_hidden_bear <= 5
 
-        # Hidden Divergence strictly requires subsequent directional confirmation candle close (zero unconfirmed entries)
-        # Version 3.0: Symmetrical DMI Directional Filter (Avoid Long H when minus > plus, avoid Short H when plus > minus)
-        confirmed_hidden_bull = in_win_hidden_bull and is_bull_confirm and not (ctx.minus > ctx.plus) and (self._last_fired_hidden_bull_bar is None or self._last_fired_hidden_bull_bar < self._last_hidden_bull_div_bar)
-        confirmed_hidden_bear = in_win_hidden_bear and is_bear_confirm and not (ctx.plus > ctx.minus) and (self._last_fired_hidden_bear_bar is None or self._last_fired_hidden_bear_bar < self._last_hidden_bear_div_bar)
+        # 1. FAST-TRACK: When the NEXT CANDLE (Bar 1) immediately after divergence is a Power Candle, confirm immediately (exempt from DMI lag)
+        # 2. STANDARD: For ordinary candles or subsequent bars in window, confirmation requires directional close + DMI filter
+        is_reg_bull_confirm_bar = (bars_since_reg_bull == 1 and is_bull_power_confirm) or (is_bull_confirm and not (ctx.minus > ctx.plus))
+        is_reg_bear_confirm_bar = (bars_since_reg_bear == 1 and is_bear_power_confirm) or (is_bear_confirm and not (ctx.plus > ctx.minus))
+        is_hidden_bull_confirm_bar = (bars_since_hidden_bull == 1 and is_bull_power_confirm) or (is_bull_confirm and not (ctx.minus > ctx.plus))
+        is_hidden_bear_confirm_bar = (bars_since_hidden_bear == 1 and is_bear_power_confirm) or (is_bear_confirm and not (ctx.plus > ctx.minus))
+
+        confirmed_reg_bull = in_win_reg_bull and is_reg_bull_confirm_bar and (self._last_fired_reg_bull_bar is None or self._last_fired_reg_bull_bar < self._last_reg_bull_div_bar)
+        confirmed_reg_bear = in_win_reg_bear and is_reg_bear_confirm_bar and (self._last_fired_reg_bear_bar is None or self._last_fired_reg_bear_bar < self._last_reg_bear_div_bar)
+        confirmed_hidden_bull = in_win_hidden_bull and is_hidden_bull_confirm_bar and (self._last_fired_hidden_bull_bar is None or self._last_fired_hidden_bull_bar < self._last_hidden_bull_div_bar)
+        confirmed_hidden_bear = in_win_hidden_bear and is_hidden_bear_confirm_bar and (self._last_fired_hidden_bear_bar is None or self._last_fired_hidden_bear_bar < self._last_hidden_bear_div_bar)
 
         # Single-fire updates
         if confirmed_reg_bull:
@@ -686,14 +705,12 @@ class StrategyEngine:
         lightning_sell = standard_lightning_sell
 
         # 2. Hidden Divergence (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR, and H4/L4 gating)
-        # Version 4.0: Symmetrical DMI Directional Filter
-        hidden_div_buy = confirmed_hidden_bull and not (ctx.minus > ctx.plus)
-        hidden_div_sell = confirmed_hidden_bear and not (ctx.plus > ctx.minus)
+        hidden_div_buy = confirmed_hidden_bull
+        hidden_div_sell = confirmed_hidden_bear
 
         # 3. Regular Divergence (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR, and H4/L4 gating)
-        # Version 3.0: Symmetrical DMI Directional Filter
-        divergence_buy = confirmed_reg_bull and not (ctx.minus > ctx.plus)
-        divergence_sell = confirmed_reg_bear and not (ctx.plus > ctx.minus)
+        divergence_buy = confirmed_reg_bull
+        divergence_sell = confirmed_reg_bear
 
         # 4. Extreme Reversal (Independent signal, ungated per v4.0 mandate)
         extreme_rev_buy = ctx.extreme_long_signal
@@ -866,8 +883,8 @@ class StrategyEngine:
         """
         Build a StrategySignal with computed SL/TP levels.
         
-        Mandate Parity (Nov 24, 2026):
-            - Divergence: Midpoint confirmation entry, Initial SL DIV_SL_0.5_AVG10 (Extreme ± 0.5 * AvgCandleSize10).
+        Mandate Parity (Nov 26, 2026):
+            - Divergence: Midpoint confirmation entry, Initial SL anchored to Confirmation Candle Extreme ± 0.5 * AvgCandleSize10.
             - Core Trend Signals (Missile, Scalp, Lightning, Ext Rev): Option B (Structural Candle Extreme):
                 Long:  Low_signal - 0.50 * ATR
                 Short: High_signal + 0.50 * ATR
@@ -880,18 +897,18 @@ class StrategyEngine:
         direction = "LONG" if is_long else "SHORT"
 
         if "DIVERGENCE" in name:
-            # DIV_SL_0.5_AVG10: Anchored to D or H candle extreme minus/plus 0.5 * avg of last 10 candles
+            # Mandate Nov 26, 2026: Anchored to Confirmation candle extreme minus/plus 0.5 * avg of last 10 candles
             sl_dist = 0.5 * avg_candle_size_10 if avg_candle_size_10 > 0 else 0.5 * atr_val
             if is_long:
-                div_low = self._last_hidden_bull_div_low if "HIDDEN" in name else self._last_reg_bull_div_low
-                sl = round(div_low - sl_dist, 2) if div_low is not None else round(entry_price - sl_dist, 2)
+                ref_low = bar_low if bar_low > 0 else entry_price
+                sl = round(ref_low - sl_dist, 2)
                 tp1 = round(entry_price + cfg.tp1_atr_mult * atr_val, 2)
                 tp2 = round(entry_price + cfg.tp2_atr_mult * atr_val, 2)
                 tp3 = round(entry_price + cfg.tp3_atr_mult * atr_val, 2)
                 tp4 = round(entry_price + cfg.tp4_atr_mult * atr_val, 2)
             else:
-                div_high = self._last_hidden_bear_div_high if "HIDDEN" in name else self._last_reg_bear_div_high
-                sl = round(div_high + sl_dist, 2) if div_high is not None else round(entry_price + sl_dist, 2)
+                ref_high = bar_high if bar_high > 0 else entry_price
+                sl = round(ref_high + sl_dist, 2)
                 tp1 = round(entry_price - cfg.tp1_atr_mult * atr_val, 2)
                 tp2 = round(entry_price - cfg.tp2_atr_mult * atr_val, 2)
                 tp3 = round(entry_price - cfg.tp3_atr_mult * atr_val, 2)

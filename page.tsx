@@ -548,13 +548,27 @@ function resolveOutcome(s?: Signal | null): 'WIN' | 'LOSS' | 'BREAKEVEN' | 'OPEN
     if (o.includes('CANCEL') || st.includes('CANCEL') || st.includes('INVALID') || o.includes('INVALID') || st.includes('UNKNOWN') || o.includes('UNKNOWN')) return 'CANCELLED';
     if ((st.includes('EXPIRED') || st.includes('COMPLETED')) && !s.exit_price) return 'CANCELLED';
 
+    // Step 1.2: Check explicit target hits / trailing profit locks — once TP is hit, the trade is a locked WIN
+    if (o === 'WIN' || st.includes('WIN')) return 'WIN';
+    if (st.includes('TP1') || st.includes('TP2') || st.includes('TP3') || st.includes('TP4') || st.includes('HIT TP') || st.includes('TARGET')) return 'WIN';
+
+    // Step 1.4: Check explicit losses
+    if (o === 'LOSS' || st.includes('LOSS') || st.includes('HIT INITIAL SL') || st.includes('DIVERGENCE EXIT')) return 'LOSS';
+    if ((st.includes('STOP') || st.includes('SL')) && !st.includes('TRAIL')) return 'LOSS';
+
     // Step 1.5: Active/Open trade guard — if trade has no exit price/timestamp and has not exited, it is OPEN
-    const isExplicitOpen = (st.includes('ACTIVE') || o === 'OPEN' || st === 'OPEN') && s.exit_price == null && !s.exit_at && !st.includes('EXIT') && !st.includes('HIT');
+    const isExplicitOpen = (st.includes('ACTIVE') || o === 'OPEN' || st === 'OPEN') && s.exit_price == null && !s.exit_at && !st.includes('EXIT') && !st.includes('HIT') && !st.includes('TRAIL');
     if (isExplicitOpen) return 'OPEN';
 
     // Step 2: exact_pct is the SINGLE SOURCE OF TRUTH — check it for closed trades
     let meta = s.metadata || {};
     if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) { meta = {}; } }
+    
+    // Check message in metadata for TP hits if status was just 'Trailing Stop'
+    const msg = ((meta && (meta.tradeMessage || meta.message || meta.trade_message)) || s.message || '').toUpperCase();
+    if (msg.includes('TP1') || msg.includes('TP2') || msg.includes('TP3') || msg.includes('HIT TP') || msg.includes('TARGET')) return 'WIN';
+    if (st.includes('TRAIL')) return 'WIN'; // Trailing Stop implies TP1 was hit and stop is trailing in profit
+
     if (meta && meta.exact_pct != null && (s.exit_price != null || s.exit_at != null || st.includes('EXIT') || st.includes('HIT') || st.includes('CLOSED') || o !== 'OPEN')) {
         const pct = parseFloat(meta.exact_pct);
         if (!isNaN(pct)) {
@@ -566,9 +580,6 @@ function resolveOutcome(s?: Signal | null): 'WIN' | 'LOSS' | 'BREAKEVEN' | 'OPEN
 
     // Step 3: Keyword fallback — only reached when exact_pct is genuinely absent
     if ((st.includes('ACTIVE') || o === 'OPEN' || st === 'OPEN') && !s.exit_at && s.exit_price == null && !st.includes('EXIT') && !st.includes('HIT') && !st.includes('CLOSED')) return 'OPEN';
-    if (o === 'WIN'  || st.includes('WIN'))  return 'WIN';
-    if (o === 'LOSS' || st.includes('LOSS')) return 'LOSS';
-    if ((st.includes('STOP') || st.includes('SL')) && !st.includes('TRAIL')) return 'LOSS';
     if (st.includes('EXIT') || st.includes('CLOSED') || s.exit_at != null || s.exit_price != null) {
         const entryP = Number(s.entry || 0);
         const exitP = Number(s.exit_price || 0);
@@ -645,11 +656,22 @@ function getTradeRupeePnL(s: Signal, usdInrRate: number = 87.5): number {
   if (pct != null && !isNaN(pct)) {
     return (pct / 100) * 100000;
   }
+  const outcome = resolveOutcome(s);
   const entry = Number(s.entry) || 0;
-  const exit = Number(s.exit_price) || (s.target ? Number(s.target) : entry);
+  let exit = Number(s.exit_price) || 0;
+  if (!exit) {
+    if (outcome === 'LOSS') {
+      exit = Number(s.stop) || 0;
+    } else if (outcome === 'WIN') {
+      exit = Number(s.target) || 0;
+    }
+  }
+  if (!exit) exit = entry;
   const isShort = (s.type || '').toUpperCase().includes('SHORT') || (s.type || '').toUpperCase().includes('SELL');
   if (entry > 0 && exit > 0) {
-    const rawPct = isShort ? ((entry - exit) / entry) * 100 : ((exit - entry) / entry) * 100;
+    let rawPct = isShort ? ((entry - exit) / entry) * 100 : ((exit - entry) / entry) * 100;
+    if (outcome === 'LOSS' && rawPct > 0) rawPct = -Math.abs(rawPct);
+    if (outcome === 'WIN' && rawPct < 0) rawPct = Math.abs(rawPct);
     return (rawPct / 100) * 100000;
   }
   return 0;
@@ -4921,9 +4943,14 @@ function MobileScreensaver() {
   }, [paperSimulatedTrades, paperCapital, paperMarket]);
 
   const nonZeroPaperTrades = useMemo(() => {
-    return (paperSimulatedTrades || []).filter(
-      t => Math.abs(t.tradePnL || 0) > 0 || Math.abs(t.ptsDiff || 0) > 0.0001
-    );
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    return (paperSimulatedTrades || []).filter(t => {
+      const isNonZero = Math.abs(t.tradePnL || 0) > 0 || Math.abs(t.ptsDiff || 0) > 0.0001;
+      if (!isNonZero) return false;
+      const tTime = new Date(t.exit_at || t.updated_at || t.signal_ts || t.created_at || 0).getTime();
+      return !isNaN(tTime) && tTime >= startOfToday;
+    });
   }, [paperSimulatedTrades]);
 
   // Signal Performance — computed from REAL database data only
@@ -8529,8 +8556,8 @@ function MobileScreensaver() {
 
   // ── PERFORMANCE BREAKDOWN BY CANONICAL SIGNAL FAMILY (FROM TODAY ONWARDS) ──
   const canonicalFamilyStats = useMemo(() => {
-    // Canonical baseline: October 20, 2026 00:00:00 IST (1792434600000 ms)
-    const BASELINE_START_MS = 1792434600000;
+    // Canonical baseline: November 24, 2026 00:00:00 IST (1795458600000 ms)
+    const BASELINE_START_MS = 1795458600000;
 
     // 7 Canonical Signal Families in exact standard order
     const FAMILIES = [
@@ -8555,7 +8582,7 @@ function MobileScreensaver() {
       return null;
     };
 
-    // Filter closed signals strictly from today (Oct 20, 2026) onwards based on active engine
+    // Filter closed signals strictly from baseline (Nov 24, 2026) onwards based on active engine
     const src = engineSource === 'SHADOW'
       ? dhanBlackboxSignals.filter(s => {
           const out = resolveOutcome(s);
@@ -8717,7 +8744,7 @@ function MobileScreensaver() {
 
   // ── QUANTITATIVE CONFLUENCE BENCHMARK (VECTORBT VERIFIED) ──
   const confluenceBenchmarkStats = useMemo(() => {
-    const BASELINE_START_MS = 1792434600000;
+    const BASELINE_START_MS = 1795458600000;
     const src = engineSource === 'SHADOW'
       ? dhanBlackboxSignals.filter(s => {
           const out = resolveOutcome(s);
@@ -8980,8 +9007,8 @@ function MobileScreensaver() {
   }, [engineSource, dhanBlackboxSignals, closedSignals]);
 
   const dayTypeStats = useMemo(() => {
-    // Canonical baseline: October 20, 2026 00:00:00 IST (1792434600000 ms)
-    const BASELINE_START_MS = 1792434600000;
+    // Canonical baseline: November 24, 2026 00:00:00 IST (1795458600000 ms)
+    const BASELINE_START_MS = 1795458600000;
 
     // Canonical Day Types & Market Regimes in institutional hierarchy
     const REGIMES: { key: string; label: string; icon: string; match: (s: string) => boolean }[] = [
@@ -9020,7 +9047,7 @@ function MobileScreensaver() {
       return 'TYPICAL_RANGE';
     };
 
-    // Filter closed signals strictly from today (Oct 20, 2026) onwards based on active engine
+    // Filter closed signals strictly from baseline (Nov 24, 2026) onwards based on active engine
     const src = engineSource === 'SHADOW'
       ? dhanBlackboxSignals.filter(s => {
           const out = resolveOutcome(s);
@@ -9188,7 +9215,7 @@ function MobileScreensaver() {
 
   // ── DHANHQ BLACKBOX SCREENER PERFORMANCE SCORECARD STATS ──
   const dhanScreenerSetupStats = useMemo(() => {
-    const BASELINE_START_MS = 1792434600000; // Oct 20, 2026 00:00:00 IST
+    const BASELINE_START_MS = 1795458600000; // Nov 24, 2026 00:00:00 IST
 
     interface ScreenerSetupDef {
       key: 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR';
@@ -9323,7 +9350,7 @@ function MobileScreensaver() {
       }
     ];
 
-    // Filter closed signals strictly from baseline (Oct 20, 2026) onwards from DhanHQ BlackBox
+    // Filter closed signals strictly from baseline (Nov 24, 2026) onwards from DhanHQ BlackBox
     const closedBlackboxTrades = dhanBlackboxSignals.filter(s => {
       const out = resolveOutcome(s);
       if (out !== 'WIN' && out !== 'LOSS' && out !== 'BREAKEVEN') return false;
@@ -15016,34 +15043,34 @@ function MobileScreensaver() {
                                   </div>
                                 </div>
                               ) : (
-                                <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center justify-between w-full overflow-hidden">
                                   <div className="flex items-center gap-1.5 hidden md:flex text-slate-400">
                                     <span className="text-amber-400 text-xs">⚡</span>
                                     <span className="font-medium text-[10px] sm:text-[11px] text-slate-300">Tap or hover on any bar to inspect trade metrics</span>
                                   </div>
-                                  <div className="flex items-center justify-between md:justify-end w-full md:w-auto gap-2 sm:gap-3.5 px-0.5">
-                                    {grossLoss > 0 && (
-                                      <div className="text-[11px] sm:text-xs md:text-[13px] font-black font-mono text-rose-400 bg-rose-500/15 border border-rose-500/30 px-2 sm:px-2.5 py-0.5 rounded-lg flex items-center gap-1 shrink-0 shadow-sm">
-                                        <span className="text-[10px] sm:text-[11px] opacity-90 font-bold">↓ gross loss</span>
-                                        <span className="font-black text-rose-300">{formatDistVal(-grossLoss, distUnit)}</span>
+                                  <div className="grid grid-cols-3 sm:flex sm:items-center sm:justify-end w-full sm:w-auto gap-1 sm:gap-2.5 overflow-hidden">
+                                    {grossLoss > 0 ? (
+                                      <div className="text-[10px] sm:text-xs md:text-[13px] font-black font-mono text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1.5 sm:px-2.5 py-0.5 rounded-lg flex items-center justify-center gap-0.5 sm:gap-1 min-w-0 shadow-sm">
+                                        <span className="text-[9px] sm:text-[11px] opacity-90 font-bold whitespace-nowrap"><span className="hidden sm:inline">↓ gross </span><span className="sm:hidden">↓ </span>loss</span>
+                                        <span className="font-black text-rose-300 truncate">{formatDistVal(-grossLoss, distUnit)}</span>
                                       </div>
-                                    )}
-                                    <div className={`text-[11px] sm:text-xs md:text-[13px] font-black font-mono flex items-center gap-1 shrink-0 px-2.5 sm:px-3 py-0.5 rounded-lg shadow-sm ${
+                                    ) : <div className="sm:hidden" />}
+                                    <div className={`text-[10px] sm:text-xs md:text-[13px] font-black font-mono flex items-center justify-center gap-0.5 sm:gap-1 min-w-0 px-1.5 sm:px-3 py-0.5 rounded-lg shadow-sm ${
                                       netVal > 0 
                                         ? 'bg-emerald-500/20 border border-emerald-400/50 text-emerald-300' 
                                         : netVal < 0 
                                         ? 'bg-rose-500/20 border border-rose-400/50 text-rose-300' 
                                         : 'bg-slate-800 border border-slate-600 text-slate-300'
                                     }`}>
-                                      <span className="text-[10px] sm:text-[11px] font-bold opacity-80">NET:</span>
-                                      <span className="font-black">{formatDistVal(netVal, distUnit)}</span>
+                                      <span className="text-[9px] sm:text-[11px] font-bold opacity-80 whitespace-nowrap">NET:</span>
+                                      <span className="font-black truncate">{formatDistVal(netVal, distUnit)}</span>
                                     </div>
-                                    {grossWin > 0 && (
-                                      <div className="text-[11px] sm:text-xs md:text-[13px] font-black font-mono text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-2 sm:px-2.5 py-0.5 rounded-lg flex items-center gap-1 shrink-0 shadow-sm">
-                                        <span className="text-[10px] sm:text-[11px] opacity-90 font-bold">↑ gross win</span>
-                                        <span className="font-black text-emerald-300">{formatDistVal(grossWin, distUnit)}</span>
+                                    {grossWin > 0 ? (
+                                      <div className="text-[10px] sm:text-xs md:text-[13px] font-black font-mono text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-1.5 sm:px-2.5 py-0.5 rounded-lg flex items-center justify-center gap-0.5 sm:gap-1 min-w-0 shadow-sm">
+                                        <span className="text-[9px] sm:text-[11px] opacity-90 font-bold whitespace-nowrap"><span className="hidden sm:inline">↑ gross </span><span className="sm:hidden">↑ </span>win</span>
+                                        <span className="font-black text-emerald-300 truncate">{formatDistVal(grossWin, distUnit)}</span>
                                       </div>
-                                    )}
+                                    ) : <div className="sm:hidden" />}
                                   </div>
                                 </div>
                               )}
@@ -17442,7 +17469,7 @@ function MobileScreensaver() {
                           </div>
                           <div className="flex flex-col items-start gap-1.5 shrink-0">
                             <span className="text-[9.5px] min-[360px]:text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 theme-gray:text-emerald-900 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap">
-                              ● OCT 20, 2026+ BASELINE
+                              ● NOV 24, 2026+ BASELINE
                             </span>
                           </div>
                         </div>
@@ -17884,7 +17911,7 @@ function MobileScreensaver() {
                               </span>
                             </h3>
                             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 theme-gray:text-slate-600 font-medium leading-snug mt-1">
-                              Institutional win rate, loss distribution, and expectancy analyzed across canonical day types and structural regimes (from Oct 20, 2026 onwards).
+                              Institutional win rate, loss distribution, and expectancy analyzed across canonical day types and structural regimes (from Nov 24, 2026 onwards).
                             </p>
                           </div>
                           <div className="flex flex-col items-start gap-1.5 shrink-0 pt-0.5">
@@ -17898,7 +17925,7 @@ function MobileScreensaver() {
                               </span>
                             )}
                             <span className="text-[9.5px] min-[360px]:text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 theme-gray:text-emerald-900 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap">
-                              ● OCT 20, 2026+ BASELINE
+                              ● NOV 24, 2026+ BASELINE
                             </span>
                           </div>
                         </div>
@@ -20549,7 +20576,7 @@ function MobileScreensaver() {
                           {/* Collapsible Paper Trade Log Feed */}
                           <div className="space-y-1.5 mt-1">
                             <div className="flex items-center justify-between text-[10px] sm:text-xs font-mono font-black uppercase tracking-wider text-dim gap-2 flex-wrap pb-0.5">
-                              <span className="truncate">Recent Simulated Paper Signals ({(nonZeroPaperTrades || []).length}):</span>
+                              <span className="truncate">Today's Simulated Paper Signals ({(nonZeroPaperTrades || []).length}):</span>
                               <span className="text-accent shrink-0 text-[9.5px] sm:text-[11px] font-extrabold px-1.5 py-0.5 rounded bg-accent/10 border border-accent/20">
                                 1 Lot Position Sizing
                               </span>
@@ -20557,7 +20584,7 @@ function MobileScreensaver() {
 
                             {(!nonZeroPaperTrades || nonZeroPaperTrades.length === 0) ? (
                               <div className="p-3 rounded-xl bg-secondary/20 border border-primary/10 text-center text-xs sm:text-sm font-mono text-dim italic">
-                                No signals found for {paperMarket.toUpperCase()} ({paperTimeframe}).
+                                No non-zero paper trades recorded today for {paperMarket.toUpperCase()} ({paperTimeframe}).
                               </div>
                             ) : (
                               <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 hide-scrollbar">
@@ -20565,11 +20592,24 @@ function MobileScreensaver() {
                                   const isWin = t.outcome === 'WIN';
                                   const isLoss = t.outcome === 'LOSS';
                                   const isOpen = t.outcome === 'OPEN';
+                                  const tradeDate = new Date(t.exit_at || t.updated_at || t.signal_ts || t.created_at || Date.now());
+                                  const formattedTime = !isNaN(tradeDate.getTime()) 
+                                    ? tradeDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' ' + 
+                                      tradeDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+                                    : '';
                                   
                                   return (
                                     <div
                                       key={t.id}
-                                      className="flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-xl bg-primary/5 dark:bg-black/30 border border-primary/10 hover:border-accent/30 transition-all font-mono gap-1.5 sm:gap-2"
+                                      className={`flex flex-col sm:flex-row sm:items-center justify-between p-2 rounded-xl transition-all font-mono gap-1.5 sm:gap-2 border ${
+                                        isWin
+                                          ? 'bg-emerald-500/[0.06] dark:bg-emerald-500/[0.08] border-emerald-500/25 hover:border-emerald-500/40 shadow-sm'
+                                          : isLoss
+                                          ? 'bg-rose-500/[0.06] dark:bg-rose-500/[0.08] border-rose-500/25 hover:border-rose-500/40 shadow-sm'
+                                          : isOpen
+                                          ? 'bg-blue-500/[0.06] dark:bg-blue-500/[0.08] border-blue-500/25 hover:border-blue-500/40 shadow-sm'
+                                          : 'bg-slate-500/[0.04] dark:bg-slate-500/[0.06] border-slate-500/20 hover:border-slate-500/35 shadow-sm'
+                                      }`}
                                     >
                                       <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                                         <span className={`px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-black uppercase tracking-wider shrink-0 ${
@@ -20581,6 +20621,11 @@ function MobileScreensaver() {
                                           {t.outcome}
                                         </span>
                                         <span className="font-black text-xs sm:text-sm text-primary shrink-0">{t.symbol}</span>
+                                        {formattedTime && (
+                                          <span className="text-[9px] sm:text-[10px] text-dim/90 font-mono px-1.5 py-0.5 rounded bg-primary/5 border border-primary/10 shrink-0">
+                                            ⏱ {formattedTime}
+                                          </span>
+                                        )}
                                         {t.isConfluence && (
                                           <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 dark:text-amber-400 border border-amber-500/40 text-[8.5px] sm:text-[9.5px] font-mono font-black shadow-[0_0_8px_rgba(245,158,11,0.3)] shrink-0">
                                             🔥 {t.confluenceLabel || 'CONFL'}

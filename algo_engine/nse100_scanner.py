@@ -24,7 +24,7 @@ from .pivots import (
     compute_rsi, compute_divergences
 )
 from .day_types import DayTypeClassifier
-from .strategies import StrategyEngine, StrategySignal, MarketContext
+from .strategies import StrategyEngine, StrategySignal, MarketContext, detect_extreme_reversal
 from .shadow_pipeline import ShadowPipeline
 from .feeds import get_market_category, is_approved_asset
 
@@ -257,6 +257,7 @@ class NSE100Scanner:
         m0_series, m10_series = compute_m0_m10(bars)
         rsi_series = compute_rsi(bars, period=14)
         reg_bull, reg_bear, hidden_bull, hidden_bear = compute_divergences(bars, rsi_series=rsi_series, lookback=10)
+        e_long_series, e_short_series = detect_extreme_reversal(bars, config=self.strategy_engine.config, pivot_trend_slow=trend_emas[1])
 
         # 4. Classify Day Type using daily aggregated bar
         daily_bar = OHLC(
@@ -364,6 +365,8 @@ class NSE100Scanner:
                 bear_regular_div=s_reg_div,
                 bull_hidden_div=b_hid_div,
                 bear_hidden_div=s_hid_div,
+                extreme_long_signal=e_long_series[i] if i < len(e_long_series) else False,
+                extreme_short_signal=e_short_series[i] if i < len(e_short_series) else False,
                 plus=plus_di[i] if i < len(plus_di) else 0.0,
                 minus=minus_di[i] if i < len(minus_di) else 0.0,
                 m0=m0_series[i] if i < len(m0_series) else 0.0,
@@ -411,11 +414,15 @@ class NSE100Scanner:
             # Only collect active signals from recent completed bars that meet entry cutoff hours
             if i < len(bars) - eval_window:
                 continue
-            if not self.mock_mode and not is_trade_entry_allowed_for_bar(clean, cur_bar.timestamp):
-                continue
+
+            entry_time_ok = self.mock_mode or is_trade_entry_allowed_for_bar(clean, cur_bar.timestamp)
 
             for sig in strat_sigs:
                 if sig.name not in CANONICAL_EXECUTION_TRIGGERS:
+                    continue
+                # Divergence signals are exempt from late-session cutoffs (full-session reversal capture)
+                is_div_sig = 'DIVERGENCE' in sig.name
+                if not entry_time_ok and not is_div_sig:
                     continue
                 signals.append({
                     'symbol': clean,

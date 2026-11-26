@@ -1505,10 +1505,10 @@ class TestV7IndicatorParity(unittest.TestCase):
         sigs = engine.evaluate(ctx2)
         div_sigs = [s for s in sigs if s.name == "LONG DIVERGENCE"]
         sig = div_sigs[0]
-        # Mandate Nov 24, 2026: Midpoint confirmation candle entry & DIV_SL_0.5_AVG10 SL (divLow - 0.5 * avg_candle_10)
+        # Mandate Nov 26, 2026: Midpoint confirmation candle entry & Confirmation Candle Extreme SL (confirmLow - 0.5 * avg_candle_10)
         expected_mid = round((b2.high + b2.low) / 2.0, 2)
         avg_10 = (7.0 + 6.5) / 2.0  # (b1 range = 7.0, b2 range = 6.5)
-        expected_sl = round(b1.low - 0.5 * avg_10, 2)
+        expected_sl = round(b2.low - 0.5 * avg_10, 2)
         self.assertEqual(sig.entry_price, expected_mid)
         self.assertEqual(sig.stop_loss, expected_sl)
 
@@ -2121,7 +2121,7 @@ class TestVirginCPR(unittest.TestCase):
         engine_short.evaluate(ctx_div)
 
         # Bar 2: Bearish confirmation candle close, BUT plus > minus (bullish momentum!)
-        b_confirm = OHLC(open=102.0, high=102.5, low=100.0, close=100.5)
+        b_confirm = OHLC(open=101.2, high=102.5, low=100.0, close=100.5)
         ctx_blocked_short = MarketContext(
             bar=b_confirm, bar_index=2,
             prev_bar=b_div, prev_close=102.0,
@@ -2252,7 +2252,7 @@ class TestVirginCPR(unittest.TestCase):
         engine_long.evaluate(ctx_long_div)
 
         # Bar 2: Bullish confirmation candle close, BUT minus > plus (bearish momentum!)
-        b_long_confirm = OHLC(open=99.0, high=101.0, low=98.5, close=100.5)
+        b_long_confirm = OHLC(open=99.5, high=101.0, low=98.5, close=100.2)
         ctx_blocked_long = MarketContext(
             bar=b_long_confirm, bar_index=2,
             prev_bar=b_long_div, prev_close=99.0,
@@ -2392,6 +2392,33 @@ class TestVersion30BlackBoxParity(unittest.TestCase):
         self.assertEqual(get_market_category("NATURALGAS"), "MCX")
         self.assertEqual(get_market_category("GOLD"), "MCX")
         self.assertEqual(get_market_category("SILVER"), "MCX")
+
+    def test_immediate_power_candle_divergence_confirmation(self):
+        """
+        Verifies that when a divergence occurs, an immediate Power Candle on Bar 1
+        confirms immediately on Bar 1 close even when DMI is lagging (minus > plus for Long,
+        or plus > minus for Short).
+        """
+        engine = StrategyEngine()
+        # Bar 1: Immediate Green Power Candle (Bar 1 after divergence on bar[1])
+        # Expansion body >= 60% of candle range, closing strong
+        b1 = OHLC(open=96.0, high=102.0, low=95.5, close=101.5)
+        ctx1 = MarketContext(
+            bar=b1, bar_index=1,
+            H4=110.0, L4=90.0, H3=105.0, L3=95.0,
+            cpr_pivot=100.0, cpr_tc=102.0, cpr_bc=98.0, is_ncpr=False,
+            short_ema=98.0, med_ema=100.0,
+            pivot_trend_fast=97.0, pivot_trend_slow=101.0,
+            bull_regular_div=True,
+            plus=10.0, minus=25.0,  # Deep negative DMI (minus > plus)
+            prev_close=96.0,
+            day_type_label="TYPICAL DAY",
+            session_highest=102.0, session_lowest=95.5, atr=2.0
+        )
+        sigs1 = engine.evaluate(ctx1)
+        div_longs = [s for s in sigs1 if s.name == 'LONG DIVERGENCE']
+        self.assertEqual(len(div_longs), 1, "Immediate Bar 1 Power Candle MUST confirm LONG DIVERGENCE despite DMI lag")
+        self.assertEqual(div_longs[0].entry_price, round((102.0 + 95.5) / 2.0, 2), "Entry must be midpoint of confirmation candle")
 
 
 if __name__ == '__main__':

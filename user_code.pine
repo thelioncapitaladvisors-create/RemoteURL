@@ -3523,18 +3523,13 @@ initializeTradeSession(Settings settings, string tradeDirection) =>
     trade.hasHitEntry       := false
     bool isLong = str.contains(str.upper(tradeDirection), 'LONG')
 
-    // 🎯 Mandate Nov 24, 2026: Divergence DIV_SL_0.5_AVG10 SL (Extreme ± 0.5 * avgCandleSize10)
+    // 🎯 Mandate Nov 26, 2026: Divergence Confirmation Candle Extreme SL (low - divSlDist for Long / high + divSlDist for Short)
     float avgCandleSize10 = ta.sma(high - low, 10)
     float divSlDist       = 0.5 * avgCandleSize10
 
     // Initial Stop Loss (SL) & Dynamic ATR TP/SL Levels
     if isDivTrade
-        if isLong
-            float divLow = str.contains(tradeDirection, 'HIDDEN') ? lastHiddenBullDivLow : lastRegBullDivLow
-            trade.slLevel := not na(divLow) ? math.round_to_mintick(divLow - divSlDist) : math.round_to_mintick(trade.entryLevel - divSlDist)
-        else
-            float divHigh = str.contains(tradeDirection, 'HIDDEN') ? lastHiddenBearDivHigh : lastRegBearDivHigh
-            trade.slLevel := not na(divHigh) ? math.round_to_mintick(divHigh + divSlDist) : math.round_to_mintick(trade.entryLevel + divSlDist)
+        trade.slLevel := isLong ? math.round_to_mintick(low - divSlDist) : math.round_to_mintick(high + divSlDist)
     else
         // Option B (Structural Candle Extreme): Anchor initial SL to Signal Bar Extreme
         trade.slLevel  := isLong ? math.round_to_mintick(low - 0.50 * atrValue)
@@ -4053,7 +4048,7 @@ if Fire_Alert and enable_alerts
     float fireAvg10  = ta.sma(high - low, 10)
     float fireSlDist = 0.5 * fireAvg10
     float fireEntry  = isFireDiv ? math.round_to_mintick((high + low) / 2.0) : trendLine
-    float fireSl     = isFireDiv ? (isFireLong ? (str.contains(fireActiveSignal, 'HIDDEN') ? (not na(lastHiddenBullDivLow) ? math.round_to_mintick(lastHiddenBullDivLow - fireSlDist) : math.round_to_mintick(fireEntry - fireSlDist)) : (not na(lastRegBullDivLow) ? math.round_to_mintick(lastRegBullDivLow - fireSlDist) : math.round_to_mintick(fireEntry - fireSlDist))) : (str.contains(fireActiveSignal, 'HIDDEN') ? (not na(lastHiddenBearDivHigh) ? math.round_to_mintick(lastHiddenBearDivHigh + fireSlDist) : math.round_to_mintick(fireEntry + fireSlDist)) : (not na(lastRegBearDivHigh) ? math.round_to_mintick(lastRegBearDivHigh + fireSlDist) : math.round_to_mintick(fireEntry + fireSlDist)))) : (isFireLong ? math.round_to_mintick(low - 0.50 * atrValue) : math.round_to_mintick(high + 0.50 * atrValue))
+    float fireSl     = isFireDiv ? (isFireLong ? math.round_to_mintick(low - fireSlDist) : math.round_to_mintick(high + fireSlDist)) : (isFireLong ? math.round_to_mintick(low - 0.50 * atrValue) : math.round_to_mintick(high + 0.50 * atrValue))
     float fireTp     = isFireLong ? math.round_to_mintick(fireEntry + tp1AtrMultInput * atrValue) : math.round_to_mintick(fireEntry - tp1AtrMultInput * atrValue)
     string fireStatus = isFireDiv ? "ACTIVE LIMIT" : "OPEN"
     string _firePay = '{' + str.format(
