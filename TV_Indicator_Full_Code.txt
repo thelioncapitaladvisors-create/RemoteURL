@@ -2712,15 +2712,13 @@ zigzagLength = input.int(13, 'Length', group = 'Zigzag', tooltip = 'Zigzag Lengt
 repaint = input.bool(true, 'Repaint', 'If selected, divergence lines repaint as per the latest info.', group = 'Miscellaneous', display = display.none)
 
 bullishDivergenceAlert = input.bool(true, 'Bullish Divergence', 'Alert on bullish divergence', group = 'Alerts', display = display.none)
-bullishHiddenDivergenceAlert = input.bool(false, 'Bullish Hidden Divergence', 'Alert on bullish hidden divergence', group = 'Alerts', display = display.none)
+bullishHiddenDivergenceAlert = input.bool(true, 'Bullish Hidden Divergence', 'Alert on bullish hidden divergence', group = 'Alerts', display = display.none)
 bearishDivergenceAlert = input.bool(true, 'Bearish Divergence', 'Alert on bearish divergence', group = 'Alerts', display = display.none)
-bearishHiddenDivergenceAlert = input.bool(false, 'Bearish Hidden Divergence', 'Alert on bearish hidden divergence', group = 'Alerts', display = display.none)
+bearishHiddenDivergenceAlert = input.bool(true, 'Bearish Hidden Divergence', 'Alert on bearish hidden divergence', group = 'Alerts', display = display.none)
 
 trendMethodInt = trendMethod == 'Zigzag' ? 1 : trendMethod == 'External' ? 3 : 2
 var map<int, float> priceMap = map.new<int, float>()
-var map<int, float> oscillatorMap = map.new<int, float>()
 priceMap.put(bar_index, close)
-oscillatorMap.put(bar_index, oscillator)
 
 enum DivergenceType
     BullishDivergence = "Bullish Divergence"
@@ -2857,38 +2855,18 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                     divergenceType := getDivergenceType(dir, divergence)
 
                     validDivergence = true
-                    // Gating for Hidden Divergence: Must be formed with CPR or within VAH and VAL levels
-                    bool isHidden = (divergenceType == DivergenceType.BullishHiddenDivergence or divergenceType == DivergenceType.BearishHiddenDivergence)
-                    if isHidden
-                        float cprTop = math.max(DTc, DBc)
-                        float cprBot = math.min(DTc, DBc)
-                        float vahLvl = math.max(VAH, VAL)
-                        float valLvl = math.min(VAH, VAL)
-                        bool formedWithCPR = (pricePoint.price >= cprBot and pricePoint.price <= cprTop) or (lastPricePoint.price >= cprBot and lastPricePoint.price <= cprTop) or (high >= cprBot and low <= cprTop) or (close >= cprBot and close <= cprTop)
-                        bool formedWithinVAHVAL = (pricePoint.price >= valLvl and pricePoint.price <= vahLvl) or (lastPricePoint.price >= valLvl and lastPricePoint.price <= vahLvl) or (high >= valLvl and low <= vahLvl) or (close >= valLvl and close <= vahLvl)
-                        if not (formedWithCPR or formedWithinVAHVAL)
+                    for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
+                        priceAtBar = priceMap.get(bar)
+                        
+                        px1 = lastPricePoint.index
+                        py1 = lastPricePoint.price
+                        px2 = pricePoint.index
+                        py2 = pricePoint.price
+                        priceTheoPrice = py1 + ((py2 - py1) / (px2 - px1)) * (bar - px1)
+
+                        if priceAtBar * dir > priceTheoPrice * dir
                             validDivergence := false
-
-                    if validDivergence
-                        for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
-                            priceAtBar = priceMap.get(bar)
-                            oscillatorAtBar = oscillatorMap.get(bar)
-                            
-                            px1 = lastPricePoint.index
-                            py1 = lastPricePoint.price
-                            px2 = pricePoint.index
-                            py2 = pricePoint.price
-                            priceTheoPrice = py1 + ((py2 - py1) / (px2 - px1)) * (bar - px1)
-
-                            x1 = llastOscillatorPoint.index
-                            y1 = llastOscillatorPoint.price
-                            x2 = oscillatorPoint.index
-                            y2 = oscillatorPoint.price
-                            oscTheoPrice = y1 + ((y2 - y1) / (x2 - x1)) * (bar - x1)
-
-                            if priceAtBar * dir > priceTheoPrice * dir or oscillatorAtBar * dir > oscTheoPrice * dir
-                                validDivergence := false
-                                break
+                            break
 
                     if validDivergence
                         priceLabelText = divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BearishDivergence ? 'D' : 'H'
@@ -2917,7 +2895,7 @@ ma = maType.ma(maLength)
 indicators = matrix.new<float>()
 indicatorNames = array.from('Price', str.tostring(maType) +'-' +str.tostring(maLength), 'External Trend')
 
-indicators.add_row(0, array.from(close, close, close))
+indicators.add_row(0, array.from(high, close, low))
 indicators.add_row(1, array.from(ma, ma, ma))
 indicators.add_row(2, array.from(externalTrendSignal, externalTrendSignal, externalTrendSignal))
 
@@ -3524,17 +3502,13 @@ initializeTradeSession(Settings settings, string tradeDirection) =>
     bool isLong = str.contains(str.upper(tradeDirection), 'LONG')
 
     // 🎯 Mandate Nov 24, 2026: Divergence DIV_SL_0.5_AVG10 SL (Extreme ± 0.5 * avgCandleSize10)
+    // 🎯 Mandate Nov 26, 2026: Divergence Confirmation Candle Extreme SL (low - divSlDist for Long / high + divSlDist for Short)
     float avgCandleSize10 = ta.sma(high - low, 10)
     float divSlDist       = 0.5 * avgCandleSize10
 
     // Initial Stop Loss (SL) & Dynamic ATR TP/SL Levels
     if isDivTrade
-        if isLong
-            float divLow = str.contains(tradeDirection, 'HIDDEN') ? lastHiddenBullDivLow : lastRegBullDivLow
-            trade.slLevel := not na(divLow) ? math.round_to_mintick(divLow - divSlDist) : math.round_to_mintick(trade.entryLevel - divSlDist)
-        else
-            float divHigh = str.contains(tradeDirection, 'HIDDEN') ? lastHiddenBearDivHigh : lastRegBearDivHigh
-            trade.slLevel := not na(divHigh) ? math.round_to_mintick(divHigh + divSlDist) : math.round_to_mintick(trade.entryLevel + divSlDist)
+        trade.slLevel := isLong ? math.round_to_mintick(low - divSlDist) : math.round_to_mintick(high + divSlDist)
     else
         // Option B (Structural Candle Extreme): Anchor initial SL to Signal Bar Extreme
         trade.slLevel  := isLong ? math.round_to_mintick(low - 0.50 * atrValue)
@@ -3796,6 +3770,17 @@ if ext_bearishHiddenDiv == 1.0
 bool isBullishConfirmCandle = (close > open) and (close > close[1])
 bool isBearishConfirmCandle = (close < open) and (close < close[1])
 
+// Platform v5.0: Power Candle Fast-Track Confirmation for Divergence (Mandate Nov 2026)
+// When Bar 1 immediately following D or H forms a Power Candle (body >= 60% range and strong close),
+// confirm immediately on Bar 1 close and bypass lagging DMI filter. Standard candles retain DMI filter.
+float candleRange = math.max(high - low, syminfo.mintick)
+float candleBody  = math.abs(close - open)
+bool isBullPowerCandle = (close > open) and (candleBody >= 0.60 * candleRange) and (GREEN1 or close > high[1] or close >= high - 0.20 * candleRange)
+bool isBearPowerCandle = (close < open) and (candleBody >= 0.60 * candleRange) and (RED1 or close < low[1] or close <= low + 0.20 * candleRange)
+
+bool isBullPowerConfirm = (close > open) and (isBullPowerCandle or GREEN1)
+bool isBearPowerConfirm = (close < open) and (isBearPowerCandle or RED1)
+
 // Invalidation checks: if price breaks beyond the divergence bar's extreme during subsequent bars, invalidate setup
 if not na(lastRegBullDivBar) and (low < lastRegBullDivLow or close < lastRegBullDivLow)
     lastRegBullDivBar  := na
@@ -3844,15 +3829,16 @@ bool inWindowHiddenBull = not na(barsSinceHiddenBull) and barsSinceHiddenBull >=
 bool inWindowHiddenBear = not na(barsSinceHiddenBear) and barsSinceHiddenBear >= 1 and barsSinceHiddenBear <= 5
 
 // Confirmation triggers on the CLOSE of the confirmation candle:
-// Regular Divergence strictly requires subsequent directional confirmation candle close (zero unconfirmed entries)
-// Version 3.0: Symmetrical DMI Directional Filter (Avoid Long D when minus > plus, avoid Short D when plus > minus)
-bool confirmedRegBull = inWindowRegBull and isBullishConfirmCandle and not (minus > plus) and (na(lastFiredRegBullBar) or lastFiredRegBullBar < lastRegBullDivBar)
-bool confirmedRegBear = inWindowRegBear and isBearishConfirmCandle and not (plus > minus) and (na(lastFiredRegBearBar) or lastFiredRegBearBar < lastRegBearDivBar)
+// Power Candle on Bar 1 confirms immediately. Standard candles require directional close and symmetrical DMI.
+bool isRegBullConfirmBar    = (barsSinceRegBull == 1 and isBullPowerConfirm)    or (isBullishConfirmCandle and not (minus > plus))
+bool isRegBearConfirmBar    = (barsSinceRegBear == 1 and isBearPowerConfirm)    or (isBearishConfirmCandle and not (plus > minus))
+bool isHiddenBullConfirmBar = (barsSinceHiddenBull == 1 and isBullPowerConfirm) or (isBullishConfirmCandle and not (minus > plus))
+bool isHiddenBearConfirmBar = (barsSinceHiddenBear == 1 and isBearPowerConfirm) or (isBearishConfirmCandle and not (plus > minus))
 
-// Hidden Divergence strictly requires subsequent directional confirmation candle close (zero unconfirmed entries)
-// Version 3.0: Symmetrical DMI Directional Filter (Avoid Long H when minus > plus, avoid Short H when plus > minus)
-bool confirmedHiddenBull = inWindowHiddenBull and isBullishConfirmCandle and not (minus > plus) and (na(lastFiredHiddenBullBar) or lastFiredHiddenBullBar < lastHiddenBullDivBar)
-bool confirmedHiddenBear = inWindowHiddenBear and isBearishConfirmCandle and not (plus > minus) and (na(lastFiredHiddenBearBar) or lastFiredHiddenBearBar < lastHiddenBearDivBar)
+bool confirmedRegBull    = inWindowRegBull    and isRegBullConfirmBar    and (na(lastFiredRegBullBar) or lastFiredRegBullBar < lastRegBullDivBar)
+bool confirmedRegBear    = inWindowRegBear    and isRegBearConfirmBar    and (na(lastFiredRegBearBar) or lastFiredRegBearBar < lastRegBearDivBar)
+bool confirmedHiddenBull = inWindowHiddenBull and isHiddenBullConfirmBar and (na(lastFiredHiddenBullBar) or lastFiredHiddenBullBar < lastHiddenBullDivBar)
+bool confirmedHiddenBear = inWindowHiddenBear and isHiddenBearConfirmBar and (na(lastFiredHiddenBearBar) or lastFiredHiddenBearBar < lastHiddenBearDivBar)
 
 // Record fired bar to prevent duplicate entries for the same divergence
 if confirmedRegBull
@@ -3869,14 +3855,12 @@ bool standardLightningBuy  = (CanBuy and ScalpBuy)
 bool standardLightningSell = (CanSell and ScalpSell)
 
 // 2. Regular Divergence Signals (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR and H4/L4 gating)
-// Version 3.0: Symmetrical DMI Directional Filter
-bool DivergenceBuy  = confirmedRegBull and not (minus > plus)
-bool DivergenceSell = confirmedRegBear and not (plus > minus)
+bool DivergenceBuy  = confirmedRegBull
+bool DivergenceSell = confirmedRegBear
 
 // 3. Hidden Divergence Signals (Standalone Strategy - Confirmed on candle close, exempt from day types, NCPR and H4/L4 gating)
-// Version 4.0: Symmetrical DMI Directional Filter
-bool HiddenDivBuy   = confirmedHiddenBull and not (minus > plus)
-bool HiddenDivSell  = confirmedHiddenBear and not (plus > minus)
+bool HiddenDivBuy   = confirmedHiddenBull
+bool HiddenDivSell  = confirmedHiddenBear
 
 // Combined Lightning Buy / Sell
 bool LightningBuy   = standardLightningBuy
@@ -4053,7 +4037,7 @@ if Fire_Alert and enable_alerts
     float fireAvg10  = ta.sma(high - low, 10)
     float fireSlDist = 0.5 * fireAvg10
     float fireEntry  = isFireDiv ? math.round_to_mintick((high + low) / 2.0) : trendLine
-    float fireSl     = isFireDiv ? (isFireLong ? (str.contains(fireActiveSignal, 'HIDDEN') ? (not na(lastHiddenBullDivLow) ? math.round_to_mintick(lastHiddenBullDivLow - fireSlDist) : math.round_to_mintick(fireEntry - fireSlDist)) : (not na(lastRegBullDivLow) ? math.round_to_mintick(lastRegBullDivLow - fireSlDist) : math.round_to_mintick(fireEntry - fireSlDist))) : (str.contains(fireActiveSignal, 'HIDDEN') ? (not na(lastHiddenBearDivHigh) ? math.round_to_mintick(lastHiddenBearDivHigh + fireSlDist) : math.round_to_mintick(fireEntry + fireSlDist)) : (not na(lastRegBearDivHigh) ? math.round_to_mintick(lastRegBearDivHigh + fireSlDist) : math.round_to_mintick(fireEntry + fireSlDist)))) : (isFireLong ? math.round_to_mintick(low - 0.50 * atrValue) : math.round_to_mintick(high + 0.50 * atrValue))
+    float fireSl     = isFireDiv ? (isFireLong ? math.round_to_mintick(low - fireSlDist) : math.round_to_mintick(high + fireSlDist)) : (isFireLong ? math.round_to_mintick(low - 0.50 * atrValue) : math.round_to_mintick(high + 0.50 * atrValue))
     float fireTp     = isFireLong ? math.round_to_mintick(fireEntry + tp1AtrMultInput * atrValue) : math.round_to_mintick(fireEntry - tp1AtrMultInput * atrValue)
     string fireStatus = isFireDiv ? "ACTIVE LIMIT" : "OPEN"
     string _firePay = '{' + str.format(

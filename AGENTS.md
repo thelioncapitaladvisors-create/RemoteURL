@@ -26,6 +26,33 @@
     5. **Network Telemetry**: 30s background safety poll paired with instant Supabase Realtime WebSocket push.
     6. **Deterministic VectorBT Confluence Benchmarks**: 72,008 empirical hourly bars delivering Profit Factors from 1.22 to 1.44 and up to -86% drawdown reduction.
 
+## Version 1.0: Immediate Power Candle Divergence Confirmation & Late-Session Exemption Mandate (Effective November 26, 2026)
+- **IMMEDIATE POWER CANDLE FAST-TRACK CONFIRMATION ON BAR 1**:
+  - For all Divergence signals (Regular Bullish/Bearish Divergence and Hidden Bullish/Bearish Divergence) across TradingView Pine Script indicators and Python BlackBox algorithms:
+    - **Power Candle Definition**: A candle with real body $\ge 0.60 \times (\text{High} - \text{Low})$ and directional close ($\text{Close} > \text{Open}$ for Long; $\text{Close} < \text{Open}$ for Short).
+    - **Immediate Fast-Track on Bar 1**: When the candle immediately following divergence (`barsSince == 1`) is a Power Candle, the trade confirms **immediately upon Bar 1 close**.
+    - **DMI Momentum Lag Exemption**: Bar 1 Power Candle confirmation is strictly exempt from the lagging DMI momentum check (`not (minus > plus)` / `not (plus > minus)`).
+    - **Standard Confirmation Retained for Ordinary Candles**: If Bar 1 is an ordinary candle or confirmation occurs on Bars 2 to 5, the standard directional close and symmetrical DMI filters strictly apply.
+- **DIVERGENCE EXEMPTION FROM BLACKBOX LATE-SESSION CUTOFF**:
+  - In `algo_engine/nse100_scanner.py`, divergence signals are strictly exempt from the 14:00 IST (NSE) and 22:00 IST (MCX) entry cutoffs, allowing structural reversals to be captured through market close.
+- **ZERO TIME-OF-DAY RESTRICTION IN PINE SCRIPT PLOTTING**:
+  - Pine Script plots for `D` and `H` (`label.new` and `plotshape`) operate with 100% time-neutral math across all session hours with zero cutoff filters.
+
+## Version 1.0: Alert Dashboard Narrow CPR (NCPR) & Oscillator Divergence Parity Mandate (Effective November 26, 2026)
+- **NARROW CPR (NCPR) CALCULATION & MATRIX DISPLAY**:
+  - Across `TLCS_Main_Dashboard_7Day_Matrix.pine`:
+    - Evaluates Daily Central Pivot Range ($\text{TC}, \text{BC}, \text{Pivot}$) from the completed daily candle across all 9 target instruments (`NSE:NIFTY`, `NSE:BANKNIFTY`, `NSE:FINNIFTY`, `NSE:MIDCPNIFTY`, `MCX:CRUDEOIL1!`, `MCX:NATURALGAS1!`, `MCX:GOLD1!`, `MCX:SILVER1!`, `MCX:COPPER1!`).
+    - Calculates $\text{CPR Width} = |\text{TC} - \text{BC}|$ and dynamic 14-day baseline: $\text{AvgWidth}_{14} = \text{SMA}(\text{CPR Width}, 14)$.
+    - Flags Narrow CPR when $\text{CPR Width} < 0.50 \times \text{AvgWidth}_{14}$.
+    - Renders a dedicated 28th row in the 7-Day Performance & Blueprint Matrix table labeled `"📏 Narrow CPR (NCPR)"`.
+- **DETERMINISTIC SESSIONOPENMATRIX CPR JSON PAYLOAD**:
+  - The `SessionOpenMatrix` alert broadcast payload is augmented with a structured `"cpr"` dictionary containing exact levels for each instrument `u1` to `u9`:
+    `{"sym": ticker, "ncpr": bool, "dtc": float, "dbc": float, "dp": float, "cpr_width": float}`.
+  - Ensures autonomous downstream ingestion by mobile/cloud screeners without requiring secondary lookups.
+- **PINE SCRIPT OSCILLATOR GEOMETRY PARITY**:
+  - Price pivots across all indicators evaluate extreme highs and lows (`array.from(high, close, low)`), guaranteeing exact mathematical parity with `TLCS_Native_Oscillator.pine`.
+  - Divergence sentiment evaluation is unconstrained: `divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0`.
+
 ## Version 5.0: System Access Response Timing Acceleration, Database Decluttering & Data Sanity Pipeline Mandate (Effective November 24, 2026)
 - **ROOT COMPONENT 1-SECOND RE-RENDER STORM ELIMINATION**:
   - Across `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
@@ -52,16 +79,16 @@
     - **No Immediate Confirmation Bar Execution**: No trade will EVER be initiated on the confirmation candle itself.
     - **Future Candle Touch Execution**: Trade initiates strictly on subsequent future candles when price touches `entryLevel` (`low <= entryLevel` for Long; `high >= entryLevel` for Short).
     - Until touched, the trade is strictly maintained as a pending limit order (`status: 'ACTIVE LIMIT'`, `hasHitEntry = false`) on charts, alerts, and application UI.
-- **INITIAL STOP LOSS (SL) ANCHORED TO D/H CANDLE EXTREMES (DIV_SL_0.5_AVG10 REGIME)**:
-  - The initial Stop Loss level (`slLevel` / `stop_loss`) for Divergence signals is strictly anchored above or below the swing extreme of the candle that printed the Divergence (`D` or `H`) with an offset of 0.5 times the average range of the last 10 candles (verified via VectorBT optimization across 72,008 bars delivering maximum Profit Factor of 1.36 and Net Return of +194.39%):
+- **INITIAL STOP LOSS (SL) ANCHORED TO CONFIRMATION CANDLE EXTREMES (DIV_SL_0.5_AVG10 CONFIRMATION REGIME)**:
+  - The initial Stop Loss level (`slLevel` / `stop_loss`) for Divergence signals is strictly anchored above or below the swing extreme of the **confirmation candle** with an offset of 0.5 times the average range of the last 10 candles:
     - Average size of last 10 candles:
       $$\text{AvgCandleSize}_{10} = \frac{1}{10} \sum_{k=0}^{9} (\text{High}_{i-k} - \text{Low}_{i-k}) \quad (\text{Pine: } \text{ta.sma}(\text{high} - \text{low}, 10))$$
     - Offset: $\Delta_{\text{SL}} = 0.5 \times \text{AvgCandleSize}_{10}$
-    - **Long Divergence**: Set strictly below the low of the candle printing the D or H:
-      $$\text{slLevel} = \text{divLow} - 0.5 \times \text{AvgCandleSize}_{10}$$
-    - **Short Divergence**: Set strictly above the high of the candle printing the D or H:
-      $$\text{slLevel} = \text{divHigh} + 0.5 \times \text{AvgCandleSize}_{10}$$
-    - Fallback: In the edge case where divergence extreme is not defined, fall back to entry $\pm 0.5 \times \text{ATR}$.
+    - **Long Divergence**: Set strictly below the low of the confirmation candle:
+      $$\text{slLevel} = \text{Low}_{\text{confirm}} - 0.5 \times \text{AvgCandleSize}_{10}$$
+    - **Short Divergence**: Set strictly above the high of the confirmation candle:
+      $$\text{slLevel} = \text{High}_{\text{confirm}} + 0.5 \times \text{AvgCandleSize}_{10}$$
+    - Fallback: In the edge case where confirmation candle extreme is not defined, fall back to entry $\pm 0.5 \times \text{ATR}$.
 - **CORE STRATEGY INITIAL STOP LOSS ANCHORED TO SIGNAL BAR EXTREME (OPTION B REGIME)**:
   - For all Core Trend signals (Missile, Scalp, Lightning, Extreme Reversal) across both TradingView Pine Script indicators and Python BlackBox algorithms:
     - Initial Stop Loss is anchored strictly to the Signal Bar Extreme with a 0.50x ATR buffer (verified via VectorBT optimization across 72,008 bars delivering maximum Net Return of +276.70% and strongest future forward-walk gain of +49.26%):
@@ -585,7 +612,7 @@
   - **Simulated Equity Curve Header 2-Row Layout**: Header condenses from a 4-pill multiline wrapped layout to a sleek 2-row structure: Row 1 displays Title with compact `ROI %` and `CAGR %` badges; Row 2 houses a dedicated secondary risk metrics sub-bar (`Sharpe`, `Sortino`, and `Max DD`).
 - **Version 1.0 Canonical Signal Family Forward-Performance Scorecard & 1-Year Quantitative Backtest Mandate (Effective October 20, 2026)**:
   - **Canonical Signal Family Forward-Performance Scorecard**: The mobile application (`INSIGHTS` tab in `Tv-Alert-Mobile/src/app/page.tsx`) incorporates a dedicated forward-performance breakdown table tracking all 6 canonical signal families (`DIVERGENCE`, `SCALP`, `MISSILE`, `EXTREME REVERSAL`, `HIDDEN DIVERGENCE`, `LIGHTNING`).
-  - **Strict Forward-Only Baseline Anchor**: Trades evaluated in the Canonical Signal Family table strictly filter for closed trades with `effectiveTimestamp >= 1792434600000` (October 20, 2026 00:00:00 IST), ensuring zero distortion from legacy signals before this date.
+  - **Strict Forward-Only Baseline Anchor**: Trades evaluated in the Canonical Signal Family table strictly filter for closed trades with `effectiveTimestamp >= 1795458600000` (November 24, 2026 00:00:00 IST), ensuring zero distortion from legacy signals before this date.
   - **Canonical Institutional Metrics Standard**: The scorecard reports `Total Trades`, `Wins / Losses / BE` counts, `Win Rate` (`wins / totalClosed * 100` with breakevens retained in denominator), `Profit Factor` (gross gains / gross losses), `Net Return %`, `Expectancy %`, `Avg Win % / Avg Loss %`, and a `COMPOSITE TOTAL` summary row.
   - **1-Year Multi-Asset Quantitative Backtest Dataset**: Full 1-year historical backtest across Nifty 50, Bank Nifty, and MCX commodities (8,866 total trades, 69.31% aggregate win rate, 1.95 profit factor) verified and preserved in `algo_engine/tlcs_1yr_backtest_all_signals_results.json` and `Obsidian/51_Platform_v1_0_Canonical_Signal_Family_Forward_Performance_Scorecard_and_1Yr_Quantitative_Backtest.md`.
 - **Version 1.0 Mobile Responsive Zero-Truncation & Pill Alignment Mandate (Effective October 20, 2026)**:

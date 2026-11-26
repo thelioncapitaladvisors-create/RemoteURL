@@ -735,6 +735,25 @@ export async function POST(req: Request) {
         parsedScanData = payload.scan_data;
       }
 
+      // Format 4: Ingest CPR / NCPR metrics from payload.cpr
+      if (payload.cpr && typeof payload.cpr === 'object') {
+        Object.values(payload.cpr).forEach((cprItem: any) => {
+          if (!cprItem || !cprItem.sym) return;
+          const cleanS = (cprItem.sym || '').trim().replace(/^(NSE_DLY|NSE|MCX|NYMEX|COMEX|BINANCE|TVC):/i, '').replace(/1!$/, '').replace(/!$/, '').trim();
+          if (!cleanS) return;
+          let row = parsedScanData.find((r: any) => r.sym === cleanS && r.dayOffset === 0);
+          if (!row) {
+            row = { sym: cleanS, dayOffset: 0 };
+            parsedScanData.push(row);
+          }
+          row.is_ncpr = cprItem.ncpr === true || cprItem.ncpr === 'true';
+          if (cprItem.dtc != null) row.dtc = Number(cprItem.dtc);
+          if (cprItem.dbc != null) row.dbc = Number(cprItem.dbc);
+          if (cprItem.dp != null) row.dp = Number(cprItem.dp);
+          if (cprItem.cpr_width != null) row.cpr_width = Number(cprItem.cpr_width);
+        });
+      }
+
       if (parsedScanData.length > 0) {
         // Fetch existing scan data to merge if updating partial days
         const { data: existingPb } = await supabaseAdmin

@@ -700,7 +700,12 @@ DS = 2 * DP - dDH_
 DR = 2 * DP - dDL_
 
 CPR = DP
-NCPR = 0.2 > math.abs(DPi - DBcf + DPi - DBcf) / DPi * 100
+daily_cpr_avg14 = request.security(syminfo.tickerid, 'D', ta.sma(math.abs((2.0 * close[1] - high[1] - low[1]) / 3.0), 14), lookahead = barmerge.lookahead_on)
+float prevDayRange = math.max(DH - DL, syminfo.mintick)
+float cprWidth     = math.abs(DTcf - DBcf)
+bool  NCPR         = (daily_cpr_avg14 > 0) ? (cprWidth <= (0.50 * daily_cpr_avg14)) : (5.0 > (cprWidth / prevDayRange) * 100)
+float vaWidth      = math.abs(VAH - VAL)
+bool  NVA          = 38.0 > (vaWidth / prevDayRange) * 100
 
 //plot(TCC, title='PEMA', style=plot.style_line, color=color.new(#d35811, 0), linewidth=3)
 //plot(BCC, title='PEMA', style=plot.style_line, color=color.new(#2e02f3, 0), linewidth=3)
@@ -2491,12 +2496,29 @@ sendAlert(Settings settings, TradeLogic trade, string z1_zone, string dX, string
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
     string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
     
+    string isNcprStr    = NCPR ? "true" : "false"
+    string isInsideStr  = INSIDE ? "true" : "false"
+    string isNvaStr     = NVA ? "true" : "false"
+    string isRejStr     = (REJECTEDBULLISH or REJECTEDBEARISH) ? "true" : "false"
+    string isContStr    = str.contains(c1, "CONTINUATION") ? "true" : "false"
+    string dtcStr       = str.tostring(DTcf, format.mintick)
+    string dbcStr       = str.tostring(DBcf, format.mintick)
+    string prevRangeStr = str.tostring(prevDayRange, format.mintick)
+    string cprWidthStr  = str.tostring(cprWidth, format.mintick)
+    string vahStr       = str.tostring(VAH, format.mintick)
+    string valStr       = str.tostring(VAL, format.mintick)
+    string vaWidthStr   = str.tostring(vaWidth, format.mintick)
+
+    string tradeStatusStr = not trade.hasHitEntry ? "ACTIVE LIMIT" : "OPEN"
+
     // AST OPTIMIZATION: Concatenate outer braces to avoid Pine Script str.format escape bugs!
     string _ePay = '{' + str.format(
-         '"trigger":"TradeOpen","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
-         webhook_secret, syminfo.ticker, trade.tradeDirection, 'OPEN', 
+         '"trigger":"TradeOpen","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}","is_confluence":{14},"confluence_type":"{15}","fire_zone":"{16}","is_ncpr":{17},"is_inside_cpr":{18},"dtc":"{19}","dbc":"{20}","prev_range":"{21}","cpr_width":"{22}","is_nva":{23},"is_rejection":{24},"is_continuation":{25},"c1":"{26}","vah":"{27}","val":"{28}","va_width":"{29}"',
+         webhook_secret, syminfo.ticker, trade.tradeDirection, tradeStatusStr, 
          str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
-         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
+         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr, "false", "NONE", "NONE",
+         isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
+         isNvaStr, isRejStr, isContStr, c1, vahStr, valStr, vaWidthStr
          ) + '}'
     alert(_ePay, alert.freq_once_per_bar_close)
 
@@ -2504,11 +2526,26 @@ sendTrailingSLAlert(Settings settings, TradeLogic trade, string z1_zone, string 
     string entryDateStr = str.format_time(trade.entryTime, "yyyy-MM-dd HH:mm:ss", "UTC")
     string tradeIdStr   = syminfo.ticker + "_" + str.tostring(trade.originalEntryTime) + "_" + trade.tradeDirection
     
+    string isNcprStr    = NCPR ? "true" : "false"
+    string isInsideStr  = INSIDE ? "true" : "false"
+    string isNvaStr     = NVA ? "true" : "false"
+    string isRejStr     = (REJECTEDBULLISH or REJECTEDBEARISH) ? "true" : "false"
+    string isContStr    = str.contains(c1, "CONTINUATION") ? "true" : "false"
+    string dtcStr       = str.tostring(DTcf, format.mintick)
+    string dbcStr       = str.tostring(DBcf, format.mintick)
+    string prevRangeStr = str.tostring(prevDayRange, format.mintick)
+    string cprWidthStr  = str.tostring(cprWidth, format.mintick)
+    string vahStr       = str.tostring(VAH, format.mintick)
+    string valStr       = str.tostring(VAL, format.mintick)
+    string vaWidthStr   = str.tostring(vaWidth, format.mintick)
+
     string _tPay = '{' + str.format(
-         '"trigger":"TrailingSLUpdate","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}"',
+         '"trigger":"TrailingSLUpdate","secret":"{0}","symbol":"{1}","type":"{2}","status":"{3}","entryPrice":"{4}","slLevel":"{5}","tpLevel":"{6}","zone":"{7}","opening_bias":"{8}","day_type":"{9}","dayType":"{8}","marketType":"{9}","tradeMessage":"{10}","entryTime":"{11}","entryDate":"{12}","trade_id":"{13}","is_ncpr":{14},"is_inside_cpr":{15},"dtc":"{16}","dbc":"{17}","prev_range":"{18}","cpr_width":"{19}","is_nva":{20},"is_rejection":{21},"is_continuation":{22},"c1":"{23}","vah":"{24}","val":"{25}","va_width":"{26}"',
          webhook_secret, syminfo.ticker, trade.tradeDirection, 'Trailing Stop', 
          str.tostring(trade.entryLevel, format.mintick), str.tostring(trade.slLevel, format.mintick), str.tostring(trade.tp1Level, format.mintick), 
-         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr
+         z1_zone, dX, mX, d1_message, str.tostring(trade.entryTime), entryDateStr, tradeIdStr,
+         isNcprStr, isInsideStr, dtcStr, dbcStr, prevRangeStr, cprWidthStr,
+         isNvaStr, isRejStr, isContStr, c1, vahStr, valStr, vaWidthStr
          ) + '}'
     alert(_tPay, alert.freq_once_per_bar_close)
 

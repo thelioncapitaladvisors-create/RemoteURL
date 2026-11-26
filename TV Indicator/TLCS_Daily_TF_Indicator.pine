@@ -447,19 +447,6 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
                     divergenceType := getDivergenceType(dir, divergence)
                     validDivergence = true
 
-                    // ── HIDDEN DIVERGENCE SPATIAL GATING (PivotBoss Standard) ──
-                    // Hidden divergence must form touching CPR or within Value Area (VAH/VAL)
-                    bool isHidden = (divergenceType == DivergenceType.BullishHiddenDivergence or divergenceType == DivergenceType.BearishHiddenDivergence)
-                    if isHidden
-                        float cprTop = math.max(topCPR, botCPR)
-                        float cprBot = math.min(topCPR, botCPR)
-                        float vahLvl = math.max(vah, val)
-                        float valLvl = math.min(vah, val)
-                        bool formedWithCPR = (pricePoint.price >= cprBot and pricePoint.price <= cprTop) or (lastPricePoint.price >= cprBot and lastPricePoint.price <= cprTop) or (high >= cprBot and low <= cprTop) or (close >= cprBot and close <= cprTop)
-                        bool formedWithinVAHVAL = (pricePoint.price >= valLvl and pricePoint.price <= vahLvl) or (lastPricePoint.price >= valLvl and lastPricePoint.price <= vahLvl) or (high >= valLvl and low <= vahLvl) or (close >= valLvl and close <= vahLvl)
-                        if not (formedWithCPR or formedWithinVAHVAL)
-                            validDivergence := false
-
                     // ── INTERMEDIATE SLOPE BARRIER VALIDATION ──
                     // Invalidates setup if price or oscillator penetrates the trendline
                     if validDivergence
@@ -492,7 +479,7 @@ method divergence(Zigzag this, array<DivergenceObject> divergenceObjects, Zigzag
 indicatorsMatrix = matrix.new<float>()
 indicatorNamesArr = array.from('Price', 'MA', 'Trend')
 ma200 = ta.sma(close, 200)
-indicatorsMatrix.add_row(0, array.from(close, close, close))
+indicatorsMatrix.add_row(0, array.from(high, close, low))
 indicatorsMatrix.add_row(1, array.from(ma200, ma200, ma200))
 indicatorsMatrix.add_row(2, array.from(close, close, close))
 
@@ -543,6 +530,17 @@ if rawBearishHiddenDiv
 bool isBullishConfirmCandle = (close > open) and (close > close[1])
 bool isBearishConfirmCandle = (close < open) and (close < close[1])
 
+// Platform v5.0: Power Candle Fast-Track Confirmation for Divergence (Mandate Nov 2026)
+// When Bar 1 immediately following D or H forms a Power Candle (body >= 60% range and strong close),
+// confirm immediately on Bar 1 close and bypass lagging DMI filter. Standard candles retain DMI filter.
+float candleRange = math.max(high - low, syminfo.mintick)
+float candleBody  = math.abs(close - open)
+bool isBullPowerCandle = (close > open) and (candleBody >= 0.60 * candleRange) and (close > high[1] or close >= high - 0.20 * candleRange)
+bool isBearPowerCandle = (close < open) and (candleBody >= 0.60 * candleRange) and (close < low[1] or close <= low + 0.20 * candleRange)
+
+bool isBullPowerConfirm = (close > open) and isBullPowerCandle
+bool isBearPowerConfirm = (close < open) and isBearPowerCandle
+
 // Structural Extreme Invalidation: if price breaches divergence extreme, invalidate!
 if not na(lastRegBullDivBar) and (low < lastRegBullDivLow or close < lastRegBullDivLow)
     lastRegBullDivBar := na
@@ -573,12 +571,17 @@ bool inWindowRegBear    = not na(barsSinceRegBear)    and barsSinceRegBear >= 1 
 bool inWindowHiddenBull = not na(barsSinceHiddenBull) and barsSinceHiddenBull >= 1 and barsSinceHiddenBull <= 5
 bool inWindowHiddenBear = not na(barsSinceHiddenBear) and barsSinceHiddenBear >= 1 and barsSinceHiddenBear <= 5
 
-// Symmetrical DMI Directional Momentum Gating
-bool DivergenceBuy  = inWindowRegBull and isBullishConfirmCandle and not (minus > plus) and (na(lastFiredRegBullBar) or lastFiredRegBullBar < lastRegBullDivBar)
-bool DivergenceSell = inWindowRegBear and isBearishConfirmCandle and not (plus > minus) and (na(lastFiredRegBearBar) or lastFiredRegBearBar < lastRegBearDivBar)
+// Confirmation triggers on the CLOSE of the confirmation candle:
+// Power Candle on Bar 1 confirms immediately. Standard candles require directional close and symmetrical DMI.
+bool isRegBullConfirmBar    = (barsSinceRegBull == 1 and isBullPowerConfirm)    or (isBullishConfirmCandle and not (minus > plus))
+bool isRegBearConfirmBar    = (barsSinceRegBear == 1 and isBearPowerConfirm)    or (isBearishConfirmCandle and not (plus > minus))
+bool isHiddenBullConfirmBar = (barsSinceHiddenBull == 1 and isBullPowerConfirm) or (isBullishConfirmCandle and not (minus > plus))
+bool isHiddenBearConfirmBar = (barsSinceHiddenBear == 1 and isBearPowerConfirm) or (isBearishConfirmCandle and not (plus > minus))
 
-bool HiddenDivBuy   = inWindowHiddenBull and isBullishConfirmCandle and not (minus > plus) and (na(lastFiredHiddenBullBar) or lastFiredHiddenBullBar < lastHiddenBullDivBar)
-bool HiddenDivSell  = inWindowHiddenBear and isBearishConfirmCandle and not (plus > minus) and (na(lastFiredHiddenBearBar) or lastFiredHiddenBearBar < lastHiddenBearDivBar)
+bool DivergenceBuy  = inWindowRegBull    and isRegBullConfirmBar    and (na(lastFiredRegBullBar) or lastFiredRegBullBar < lastRegBullDivBar)
+bool DivergenceSell = inWindowRegBear    and isRegBearConfirmBar    and (na(lastFiredRegBearBar) or lastFiredRegBearBar < lastRegBearDivBar)
+bool HiddenDivBuy   = inWindowHiddenBull and isHiddenBullConfirmBar and (na(lastFiredHiddenBullBar) or lastFiredHiddenBullBar < lastHiddenBullDivBar)
+bool HiddenDivSell  = inWindowHiddenBear and isHiddenBearConfirmBar and (na(lastFiredHiddenBearBar) or lastFiredHiddenBearBar < lastHiddenBearDivBar)
 
 if DivergenceBuy
     lastFiredRegBullBar := lastRegBullDivBar
@@ -614,13 +617,13 @@ bool JustScalpBuy    = ScalpBuy and not LightningBuy and not DivergenceBuy and n
 bool JustScalpSell   = ScalpSell and not LightningSell and not DivergenceSell and not HiddenDivSell and not ExtremeReversalSell
 
 // ──── 9. ON-CHART VISUAL PLOTTINGS (Zero Squashing Mandate) ──────────
-// Regular Divergence (D)
-plotshape(show_div and DivergenceBuy,  title = 'Bullish Regular Divergence (D)', style = shape.labelup,   location = location.belowbar, color = color.lime,   text = 'D', textcolor = color.black, size = size.small)
-plotshape(show_div and DivergenceSell, title = 'Bearish Regular Divergence (D)', style = shape.labeldown, location = location.abovebar, color = color.maroon, text = 'D', textcolor = color.white, size = size.small)
+// Regular Divergence (D) - Plots in 100% agreement with Oscillator
+plotshape(show_div and (rawBullishDiv or DivergenceBuy),   title = 'Bullish Regular Divergence (D)', style = shape.labelup,   location = location.belowbar, color = color.lime,   text = 'D', textcolor = color.black, size = size.small)
+plotshape(show_div and (rawBearishDiv or DivergenceSell),  title = 'Bearish Regular Divergence (D)', style = shape.labeldown, location = location.abovebar, color = color.maroon, text = 'D', textcolor = color.white, size = size.small)
 
-// Hidden Divergence (H)
-plotshape(show_div and HiddenDivBuy,   title = 'Bullish Hidden Divergence (H)',  style = shape.labelup,   location = location.belowbar, color = color.teal,   text = 'H', textcolor = color.white, size = size.small)
-plotshape(show_div and HiddenDivSell,  title = 'Bearish Hidden Divergence (H)',  style = shape.labeldown, location = location.abovebar, color = color.orange, text = 'H', textcolor = color.black, size = size.small)
+// Hidden Divergence (H) - Plots in 100% agreement with Oscillator
+plotshape(show_div and (rawBullishHiddenDiv or HiddenDivBuy),  title = 'Bullish Hidden Divergence (H)',  style = shape.labelup,   location = location.belowbar, color = color.teal,   text = 'H', textcolor = color.white, size = size.small)
+plotshape(show_div and (rawBearishHiddenDiv or HiddenDivSell), title = 'Bearish Hidden Divergence (H)',  style = shape.labeldown, location = location.abovebar, color = color.orange, text = 'H', textcolor = color.black, size = size.small)
 
 // Lightning (★ ⚡)
 plotchar(show_lightning and LightningBuy,  title = 'Lightning Buy (★)',  char = '★', location = location.belowbar, color = color.teal,   size = size.normal)
