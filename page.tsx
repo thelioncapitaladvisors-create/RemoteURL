@@ -552,14 +552,6 @@ function resolveOutcome(s?: Signal | null): 'WIN' | 'LOSS' | 'BREAKEVEN' | 'OPEN
     if (o === 'WIN' || st.includes('WIN')) return 'WIN';
     if (st.includes('TP1') || st.includes('TP2') || st.includes('TP3') || st.includes('TP4') || st.includes('HIT TP') || st.includes('TARGET')) return 'WIN';
 
-    // Step 1.4: Check explicit losses
-    if (o === 'LOSS' || st.includes('LOSS') || st.includes('HIT INITIAL SL') || st.includes('DIVERGENCE EXIT')) return 'LOSS';
-    if ((st.includes('STOP') || st.includes('SL')) && !st.includes('TRAIL')) return 'LOSS';
-
-    // Step 1.5: Active/Open trade guard — if trade has no exit price/timestamp and has not exited, it is OPEN
-    const isExplicitOpen = (st.includes('ACTIVE') || o === 'OPEN' || st === 'OPEN') && s.exit_price == null && !s.exit_at && !st.includes('EXIT') && !st.includes('HIT') && !st.includes('TRAIL');
-    if (isExplicitOpen) return 'OPEN';
-
     // Step 2: exact_pct is the SINGLE SOURCE OF TRUTH — check it for closed trades
     let meta = s.metadata || {};
     if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch(e) { meta = {}; } }
@@ -577,6 +569,26 @@ function resolveOutcome(s?: Signal | null): 'WIN' | 'LOSS' | 'BREAKEVEN' | 'OPEN
             return 'BREAKEVEN';
         }
     }
+
+    // Step 1.4: Check explicit losses
+    if (o === 'LOSS' || st.includes('LOSS') || st.includes('HIT INITIAL SL')) return 'LOSS';
+    if (st.includes('DIVERGENCE EXIT')) {
+        const entryP = Number(s.entry || 0);
+        const exitP = Number(s.exit_price || 0);
+        if (entryP > 0 && exitP > 0) {
+            const isLong = (s.type || '').toUpperCase().includes('LONG') || (s.type || '').toUpperCase().includes('BUY');
+            const diff = isLong ? (exitP - entryP) : (entryP - exitP);
+            if (diff > 0.00001) return 'WIN';
+            if (diff < -0.00001) return 'LOSS';
+            return 'BREAKEVEN';
+        }
+        return 'LOSS';
+    }
+    if ((st.includes('STOP') || st.includes('SL')) && !st.includes('TRAIL')) return 'LOSS';
+
+    // Step 1.5: Active/Open trade guard — if trade has no exit price/timestamp and has not exited, it is OPEN
+    const isExplicitOpen = (st.includes('ACTIVE') || o === 'OPEN' || st === 'OPEN') && s.exit_price == null && !s.exit_at && !st.includes('EXIT') && !st.includes('HIT') && !st.includes('TRAIL');
+    if (isExplicitOpen) return 'OPEN';
 
     // Step 3: Keyword fallback — only reached when exact_pct is genuinely absent
     if ((st.includes('ACTIVE') || o === 'OPEN' || st === 'OPEN') && !s.exit_at && s.exit_price == null && !st.includes('EXIT') && !st.includes('HIT') && !st.includes('CLOSED')) return 'OPEN';
@@ -6141,13 +6153,41 @@ function MobileScreensaver() {
       return o !== 'OPEN' && o !== 'CANCELLED';
   });
   const weeklyRealSignals = weeklySignals.filter(s => resolveOutcome(s) !== 'CANCELLED');
-  const weeklyWinCount = weeklyClosedSignals.filter(s => resolveOutcome(s) === 'WIN').length;
-  const weeklyLossCount = weeklyClosedSignals.filter(s => resolveOutcome(s) === 'LOSS').length;
+  const weeklyWinCount = weeklyClosedSignals.filter(s => {
+      const o = resolveOutcome(s);
+      if (o === 'WIN') return true;
+      const pct = getExactPct(s);
+      if (pct != null && pct > 0) return true;
+      const rupee = getTradeRupeePnL(s, usdInrRate);
+      return rupee > 0;
+  }).length;
+  const weeklyLossCount = weeklyClosedSignals.filter(s => {
+      const o = resolveOutcome(s);
+      if (o === 'LOSS') return true;
+      const pct = getExactPct(s);
+      if (pct != null && pct < 0) return true;
+      const rupee = getTradeRupeePnL(s, usdInrRate);
+      return rupee < 0;
+  }).length;
   const weeklySuccessRate = weeklyClosedSignals.length > 0 ? ((weeklyWinCount / weeklyClosedSignals.length) * 100).toFixed(1) : '0.0';
 
   // todaySignals moved to top
-  const todayWinCount = todayClosedSignals.filter(s => resolveOutcome(s) === 'WIN').length;
-  const todayLossCount = todayClosedSignals.filter(s => resolveOutcome(s) === 'LOSS').length;
+  const todayWinCount = todayClosedSignals.filter(s => {
+      const o = resolveOutcome(s);
+      if (o === 'WIN') return true;
+      const pct = getExactPct(s);
+      if (pct != null && pct > 0) return true;
+      const rupee = getTradeRupeePnL(s, usdInrRate);
+      return rupee > 0;
+  }).length;
+  const todayLossCount = todayClosedSignals.filter(s => {
+      const o = resolveOutcome(s);
+      if (o === 'LOSS') return true;
+      const pct = getExactPct(s);
+      if (pct != null && pct < 0) return true;
+      const rupee = getTradeRupeePnL(s, usdInrRate);
+      return rupee < 0;
+  }).length;
   const todaySuccessRate = todayClosedSignals.length > 0 ? ((todayWinCount / todayClosedSignals.length) * 100).toFixed(1) : '0.0';
 
   // ── HUB TAB: STANDALONE DHANHQ TOP 100 MINI-PROJECT ISOLATED METRICS ─────

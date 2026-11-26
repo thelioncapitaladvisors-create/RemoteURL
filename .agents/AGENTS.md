@@ -53,6 +53,16 @@
   - Price pivots across all indicators evaluate extreme highs and lows (`array.from(high, close, low)`), guaranteeing exact mathematical parity with `TLCS_Native_Oscillator.pine`.
   - Divergence sentiment evaluation is unconstrained: `divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0`.
 
+## Version 1.0: Realized P&L Parity & Performance Header Win Rate Synchronization Mandate (Effective November 26, 2026)
+- **CANONICAL WIN EVALUATION & REALIZED P&L SINGLE SOURCE OF TRUTH**:
+  - Across `page.tsx`, `RemoteURL/page.tsx`, and `Tv-Alert-Mobile/src/app/page.tsx`:
+    - In `resolveOutcome(s)`: The `exact_pct` and realized P&L evaluation is strictly prioritized ahead of default loss classifications.
+    - Any closed trade with positive realized percentage (`exact_pct > 0`) or positive rupee P&L is deterministically evaluated as `WIN`.
+    - Trades closed via `DIVERGENCE EXIT` or tactical profit locks evaluate the actual price delta ($\text{Exit} - \text{Entry}$ for Long; $\text{Entry} - \text{Exit}$ for Short); if positive, they are strictly classified as `WIN`.
+- **100% MATHEMATICAL PARITY ACROSS HEADER CARDS & TRADE DISTRIBUTION**:
+  - `todayWinCount`, `todayLossCount`, `weeklyWinCount`, and `weeklyLossCount` strictly inspect both canonical `resolveOutcome(s) === 'WIN'` and positive realized gain (`exact_pct > 0` or rupee P&L $> 0$).
+  - Eliminates the discrepancy between the top Performance KPI header cards (`TODAY'S SUCCESS`, `WEEKLY SUCCESS`) and the granular Trade Distribution chart, guaranteeing identical win counts and success rates across all viewports.
+
 ## Version 5.0: System Access Response Timing Acceleration, Database Decluttering & Data Sanity Pipeline Mandate (Effective November 24, 2026)
 - **ROOT COMPONENT 1-SECOND RE-RENDER STORM ELIMINATION**:
   - Across `Tv-Alert-Mobile/src/app/page.tsx`, `page.tsx`, and `RemoteURL/page.tsx`:
