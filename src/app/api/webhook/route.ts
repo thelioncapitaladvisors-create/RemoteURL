@@ -635,6 +635,8 @@ export async function POST(req: Request) {
                           payload.trigger === 'PivotBossScan' ||
                           payload.trigger === 'SessionOpenMatrix' ||
                           payload.type === 'SessionOpenMatrix' ||
+                          payload.trigger === 'DailySignalsMatrix' ||
+                          payload.type === 'DailySignalsMatrix' ||
                           payload.type === 'SevenDayMatrixScan';
 
     if (isScanPayload) {
@@ -785,11 +787,70 @@ export async function POST(req: Request) {
         console.log(`[ScanPayload] Successfully updated pivotboss_scans with ${mergedData.length} records.`);
       }
 
+      // ── Process Daily Timeframe Swing Trades from DailySignalsMatrix Payload ──
+      let dailyTradesInserted = 0;
+      if ((payload.trigger === 'DailySignalsMatrix' || payload.type === 'DailySignalsMatrix') && Array.isArray(payload.trades) && payload.trades.length > 0) {
+        for (const t of payload.trades) {
+          try {
+            const rawSym = t.symbol || t.cleanSym || 'UNKNOWN';
+            const { symbol: resolvedSym, exchange } = resolveSymbolAndExchange(rawSym);
+            const cleanSym = t.cleanSym || resolvedSym;
+            const strat = t.strategy || 'SWING';
+            const tradeId = `${cleanSym}_${Date.now()}_${(t.type || 'TRADE').toString().toUpperCase().replace(/\s+/g, '_')}_1D`;
+
+            // Deduplication: check if active trade already exists for this symbol and type on 1D
+            const { data: existing } = await supabaseAdmin
+              .from('signals')
+              .select('id, status')
+              .eq('symbol', resolvedSym)
+              .in('status', ['ACTIVE LIMIT', 'OPEN', 'Active', 'Open'])
+              .eq('metadata->>timeframe', '1D')
+              .limit(1)
+              .maybeSingle();
+
+            if (!existing) {
+              const tradePayload: any = {
+                symbol: resolvedSym,
+                type: t.type,
+                trigger: 'TradeOpen',
+                entry: Number(t.entry) || 0,
+                stop: Number(t.stop) || 0,
+                target: Number(t.target) || 0,
+                tp2: Number(t.tp2) || null,
+                tp3: Number(t.tp3) || null,
+                tp4: Number(t.tp4) || null,
+                status: t.status || 'ACTIVE LIMIT',
+                outcome: 'OPEN',
+                source: 'tradingview_daily',
+                exchange: exchange || (isMCXSymbol(resolvedSym, null) ? 'MCX' : 'NSE'),
+                signal_ts: new Date().toISOString(),
+                metadata: {
+                  trade_id: tradeId,
+                  timeframe: '1D',
+                  interval: '1D',
+                  is_swing: true,
+                  strategy: strat,
+                  market_category: getMarketForSymbol(resolvedSym) || 'OTHER',
+                  entryDate: new Date().toISOString().replace('T', ' ').substring(0, 19)
+                }
+              };
+              await supabaseAdmin.from('signals').insert(tradePayload);
+              dailyTradesInserted++;
+              console.log(`[DailySignalsMatrix] Inserted authentic 1D trade: ${resolvedSym} -> ${t.type} @ ${t.entry}`);
+            }
+          } catch (tErr) {
+            console.error('[DailySignalsMatrix] Trade insertion error:', tErr);
+          }
+        }
+        console.log(`[DailySignalsMatrix] Processed ${payload.trades.length} trades, inserted ${dailyTradesInserted} new records.`);
+      }
+
       return NextResponse.json({
         success: true,
         mode: 'PivotBossScan',
         trigger: payload.trigger || payload.type,
         count: parsedScanData.length,
+        dailyTradesInserted,
         feed: 'TradingView_Screener'
       }, { headers: CORS });
     }
@@ -1272,12 +1333,21 @@ export async function POST(req: Request) {
       }
     }
 
-    // Explicitly guarantee timeframe presence (defaults to 15m if not provided)
-    if (safePayload.timeframe || safePayload.interval) {
-      finalMetadata.timeframe = safePayload.timeframe || safePayload.interval;
-    }
-    if (safePayload.interval) {
-      finalMetadata.interval = safePayload.interval;
+    // Explicitly guarantee timeframe presence & 1D Daily Swing Normalization
+    const rawTf = String(safePayload.timeframe || safePayload.interval || safePayload.tf || safePayload.time_frame || '').toUpperCase().trim();
+    const alertName = String(safePayload.alert_name || safePayload.name || safePayload.title || safePayload.tradeMessage || '').toUpperCase().trim();
+    const isDailySwingTf = rawTf === '1D' || rawTf === 'D' || rawTf === 'DAILY' || rawTf === '1440' || alertName.includes('DTF') || alertName.includes(' 1D') || alertName.includes('DAILY') || (safePayload.marketType === 'SWING_1D');
+
+    if (isDailySwingTf) {
+      finalMetadata.timeframe = '1D';
+      finalMetadata.interval = '1D';
+      finalMetadata.is_swing = true;
+      if (!finalMetadata.strategy && !safePayload.strategy) {
+        finalMetadata.strategy = 'SWING';
+      }
+    } else if (rawTf) {
+      finalMetadata.timeframe = rawTf;
+      finalMetadata.interval = rawTf;
     }
 
     if (safePayload.is_confluence !== undefined) {
@@ -1506,7 +1576,11 @@ export async function POST(req: Request) {
     // Resolve signal_ts to milliseconds for IST market hours check
     const sigType = newSignal.type || '';
     const isNewTrade = ['LONG','SHORT','BUY','SELL'].some(t => sigType.includes(t));
-    if (isNewTrade && !is24x7Symbol(newSignal.symbol, newSignal.exchange)) {
+    const isSwing1DTrade = 
+      finalMetadata.timeframe === '1D' || finalMetadata.timeframe === 'D' || finalMetadata.interval === '1D' ||
+      finalMetadata.is_swing === true || (newSignal.type || '').includes('SWING');
+
+    if (isNewTrade && !is24x7Symbol(newSignal.symbol, newSignal.exchange) && !isSwing1DTrade) {
       const signalTsMs = newSignal.signal_ts ? new Date(newSignal.signal_ts).getTime() : Date.now();
       const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
       const istTime = new Date(signalTsMs + IST_OFFSET_MS).toISOString().replace('T',' ').substring(0,16) + ' IST';

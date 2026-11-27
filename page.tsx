@@ -4044,7 +4044,7 @@ function MobileScreensaver() {
 
   // ── SEPARATED LIVE SIGNALS SECTION STATE (LOGS-TAB DESIGN LANGUAGE) ──
   const [isLiveSignalsMasterExpanded, setIsLiveSignalsMasterExpanded] = useState<boolean>(true);
-  const [liveSignalsActiveFilter, setLiveSignalsActiveFilter] = useState<'ALL' | 'ACTIVE_LIMITS' | 'LIVE' | 'FIRE' | 'LIGHTNING' | 'EXT_REV' | 'MISSILE' | 'SCALP' | 'DIV' | 'REJ' | 'CONT' | 'VCPR_TOUCH'>('ALL');
+  const [liveSignalsActiveFilter, setLiveSignalsActiveFilter] = useState<'ALL' | 'ACTIVE_LIMITS' | 'LIVE' | 'FIRE' | 'LIGHTNING' | 'EXT_REV' | 'OUTSIDE_REV' | 'MISSILE' | 'SCALP' | 'DIV' | 'WICK_REV' | 'DOJI_REV' | 'REJ' | 'CONT' | 'VCPR_TOUCH'>('ALL');
   const [liveSignalsMarketFilter, setLiveSignalsMarketFilter] = useState<ScreenerMarketCategory>('ALL');
   const [liveSignalsDirectionFilter, setLiveSignalsDirectionFilter] = useState<'ALL' | 'BULLISH' | 'BEARISH'>('ALL');
   const [liveSignalsSessionFilter, setLiveSignalsSessionFilter] = useState<'TODAY' | 'ALL'>('TODAY');
@@ -6428,7 +6428,7 @@ function MobileScreensaver() {
     // 1. Strictly filter signals by institutional setup type
     const eligibleSignals = rawSignalsPool.filter(s => {
       // Confluence Gating Filter (VectorBT Validated Confluence Engine)
-      if (confluenceMode === 'CONFLUENCE_ONLY' && setupType !== 'VCPR' && setupType !== 'DIV' && setupType !== 'REJ' && setupType !== 'CONT' && setupType !== 'FIRE') {
+      if (confluenceMode === 'CONFLUENCE_ONLY' && setupType !== 'ALL_LIVE' && setupType !== 'VCPR' && setupType !== 'DIV' && setupType !== 'REJ' && setupType !== 'CONT' && setupType !== 'FIRE') {
         const conf = isConfluenceSignal(s, rawSignalsPool);
         if (!conf.isConfluence) return false;
       }
@@ -6632,16 +6632,21 @@ function MobileScreensaver() {
       const isToday = !isNaN(ts) && ts >= startOfToday;
       const rawTfStr = String(meta.timeframe || meta.interval || (s as any).timeframe || (s as any).interval || '').toUpperCase().trim();
       const isSwingSignal = rawTfStr === '1D' || rawTfStr === 'D' || rawTfStr === 'DAILY' || rawTfStr === '1440' ||
-                            meta.is_swing === true || (s.type || '').toUpperCase().includes('SWING') ||
-                            (s.trigger || '').toUpperCase().includes('DTF') || (meta.trade_id || '').toUpperCase().includes('DTF');
+                            meta.is_swing === true || (s as any).is_swing === true || (s.type || '').toUpperCase().includes('SWING') ||
+                            (s.type || '').toUpperCase().includes('DAILY') || (meta.strategy || '').toUpperCase().includes('DAILY') ||
+                            (s.trigger || '').toUpperCase().includes('DTF') || (meta.trade_id || '').toUpperCase().includes('DTF') ||
+                            (s.trigger || '').toUpperCase().includes('DAILYSIGNALSMATRIX') ||
+                            (s.source || '').toUpperCase().includes('DAILY');
       const sigTimeframe = isSwingSignal ? '1D' : (rawTfStr || '15m').toUpperCase();
 
-      // Extract accurate trade signal timestamps for precise chart candle location
+      // Extract accurate trade signal timestamps, age, and formatted calendar date
       const rawSigTs = s.signal_ts || s.created_at || meta.entry_time || meta.entryDate || '';
       let timeIST = '';
       let dateIST = '';
       let fullTimeIST = '';
       let timeUTC = '';
+      let ageStr = '';
+      let dateStr = '';
 
       if (rawSigTs) {
         let dObj: Date | null = null;
@@ -6652,10 +6657,25 @@ function MobileScreensaver() {
           dObj = new Date(rawSigTs);
         }
         if (dObj && !isNaN(dObj.getTime())) {
+          const sigMs = dObj.getTime();
           timeIST = dObj.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: false });
           dateIST = dObj.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
           fullTimeIST = `${dateIST}, ${timeIST} IST`;
           timeUTC = dObj.toLocaleTimeString('en-GB', { timeZone: 'UTC', hour: '2-digit', minute: '2-digit', hour12: false }) + ' UTC';
+          dateStr = dateIST;
+
+          const nowMs = Date.now();
+          const diffMs = Math.max(0, nowMs - sigMs);
+          const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+          const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+
+          if (diffDays === 0) {
+            ageStr = 'Today';
+          } else if (diffDays === 1) {
+            ageStr = '1d ago';
+          } else {
+            ageStr = `${diffDays}d ago`;
+          }
         }
       }
 
@@ -6925,6 +6945,18 @@ function MobileScreensaver() {
           relType = 'REJ';
           relBadge = '🔥 EXT REV';
           relBias = 'EXTREME REVERSAL (MEAN REVERSION)';
+        } else if (sigTypeUpper.includes('OUTSIDE REVERSAL') || sigTypeUpper.includes('OUTSIDE')) {
+          relType = 'REJ';
+          relBadge = '🔄 OUTSIDE REV';
+          relBias = 'OUTSIDE REVERSAL (STRUCTURAL BREAK)';
+        } else if (sigTypeUpper.includes('WICK REVERSAL') || sigTypeUpper.includes('WICK')) {
+          relType = 'REJ';
+          relBadge = '🕯️ WICK REV';
+          relBias = 'WICK REVERSAL (STRUCTURAL REJECTION)';
+        } else if (sigTypeUpper.includes('DOJI REVERSAL') || sigTypeUpper.includes('DOJI')) {
+          relType = 'REJ';
+          relBadge = '⚖️ DOJI REV';
+          relBias = 'DOJI REVERSAL (BALANCE BREAK)';
         } else if (sigTypeUpper.includes('MISSILE')) {
           relType = 'FIRE';
           relBadge = '🚀 MISSILE';
@@ -7091,6 +7123,8 @@ function MobileScreensaver() {
           holdMins,
           tradeLifecycle,
           timeframe: sigTimeframe,
+          ageStr,
+          dateStr,
         });
       } else {
         const existing = assetMap.get(key)!;
@@ -7115,6 +7149,8 @@ function MobileScreensaver() {
             existing.timeUTC = timeUTC;
             existing.rawSignalTs = rawSigTs;
           }
+          if (ageStr) existing.ageStr = ageStr;
+          if (dateStr) existing.dateStr = dateStr;
           existing.exitTimeIST = exitTimeIST;
           existing.exitDateIST = exitDateIST;
           existing.fullExitTimeIST = fullExitTimeIST;
@@ -7318,9 +7354,10 @@ function MobileScreensaver() {
   // ── SEPARATED LIVE SIGNALS ASSETS (ACTIVE LIMITS & LIVE TRADES) ──
   const matchLiveAssetToCategory = useCallback((catId: string, a: any) => {
     if (!a) return false;
-    const isConf = Boolean(a.isConfluence) || a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipType === 'FIRE' || a.signals?.some((s: any) => {
+    const isConf = Boolean(a.isConfluence) || a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('SWING') || a.relationshipType === 'FIRE' || a.relationshipType === 'SWING' || a.signals?.some((s: any) => {
       const m = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-      return m.is_confluence === true || m.fire_alert === true || (m.strategy || '').toUpperCase() === 'CONFLUENCE';
+      const strat = (m.strategy || s.type || '').toUpperCase();
+      return m.is_confluence === true || m.fire_alert === true || strat === 'CONFLUENCE' || strat === 'SWING';
     });
     const isMissile = a.relationshipBadge?.includes('MISSILE') || a.signals?.some((s: any) => {
       const m = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
@@ -7331,9 +7368,12 @@ function MobileScreensaver() {
     if (catId === 'FIRE') return isConf;
     if (catId === 'LIGHTNING') return a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING';
     if (catId === 'EXT_REV') return a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV';
+    if (catId === 'OUTSIDE_REV') return a.relationshipBadge?.includes('OUTSIDE') || a.relationshipType === 'OUTSIDE_REV';
     if (catId === 'MISSILE') return isMissile;
     if (catId === 'SCALP') return a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP';
     if (catId === 'DIV') return a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV';
+    if (catId === 'WICK_REV') return a.relationshipBadge?.includes('WICK') || a.relationshipType === 'WICK_REV';
+    if (catId === 'DOJI_REV') return a.relationshipBadge?.includes('DOJI') || a.relationshipType === 'DOJI_REV';
     return false;
   }, []);
 
@@ -7342,7 +7382,7 @@ function MobileScreensaver() {
       'ALL_LIVE',
       liveSignalsMarketFilter,
       liveSignalsDirectionFilter,
-      liveSignalsSessionFilter,
+      activeTab === 'INSIGHTS' ? 'ALL' : liveSignalsSessionFilter,
       '',
       undefined,
       undefined,
@@ -7354,13 +7394,14 @@ function MobileScreensaver() {
     );
 
     // Timeframe separation: On INSIGHTS tab, exclusively retain Daily (1D Swing) execution signals.
-    // Strictly exclude VCPR signals and retain only approved execution filters (Confluence, Lightning, Ext Rev, Missile, Scalp, Divergence, Rejections, Continuations).
+    // Strictly exclude VCPR signals and retain all approved execution signals until invalidated.
     // On HUB and other tabs, retain intraday & real-time signals.
     const filteredByTabTf = activeTab === 'INSIGHTS'
       ? assets.filter(a => {
           const is1D = a.timeframe === '1D' || a.timeframe === 'D' || a.timeframe === 'DAILY' || a.signals?.some((s: any) => {
             const m = typeof s.metadata === 'string' ? JSON.parse(s.metadata || '{}') : (s.metadata || {});
-            return m.timeframe === '1D' || m.timeframe === 'D' || m.interval === '1D' || s.timeframe === '1D' || s.timeframe === 'D';
+            const rawTf = String(m.timeframe || m.interval || (s as any).timeframe || (s as any).interval || '').toUpperCase().trim();
+            return rawTf === '1D' || rawTf === 'D' || rawTf === 'DAILY' || rawTf === '1440' || m.is_swing === true || s.is_swing === true || (s.source || '').toUpperCase().includes('DAILY');
           });
           if (!is1D) return false;
 
@@ -7368,13 +7409,19 @@ function MobileScreensaver() {
           const isVcpr = a.isVcprTouch || a.relationshipType === 'VCPR' || a.relationshipBadge?.includes('VCPR') || a.signals?.some((s: any) => (s.type || '').toUpperCase().includes('VIRGIN'));
           if (isVcpr) return false;
 
-          // Exclusively retain the 5 approved Daily Swing execution strategies (Lightning, Ext Rev, Missile, Scalp, Divergence)
+          // Exclusively retain approved Daily Swing execution strategies
           const matchesApproved = 
             Boolean(a.relationshipBadge?.includes('LIGHTNING') || a.relationshipType === 'LIGHTNING') ||
+            Boolean(a.relationshipBadge?.includes('CONFLUENCE') || a.relationshipBadge?.includes('FIRE') || a.relationshipType === 'FIRE') ||
             Boolean(a.relationshipBadge?.includes('EXT REV') || a.relationshipBadge?.includes('EXTREME') || a.relationshipType === 'EXT_REV') ||
+            Boolean(a.relationshipBadge?.includes('OUTSIDE') || a.relationshipType === 'OUTSIDE_REV') ||
             Boolean(a.relationshipBadge?.includes('MISSILE') || a.relationshipType === 'MISSILE' || a.signals?.some((s: any) => ((s.metadata?.strategy || s.type || '').toUpperCase().includes('MISSILE')))) ||
             Boolean(a.relationshipBadge?.includes('SCALP') || a.relationshipType === 'SCALP') ||
-            Boolean(a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV');
+            Boolean(a.relationshipBadge?.includes('DIV') || a.relationshipType === 'DIV') ||
+            Boolean(a.relationshipBadge?.includes('WICK') || a.relationshipType === 'WICK_REV') ||
+            Boolean(a.relationshipBadge?.includes('DOJI') || a.relationshipType === 'DOJI_REV') ||
+            Boolean(a.relationshipBadge?.includes('SWING') || a.relationshipType === 'SWING') ||
+            Boolean(is1D);
           return matchesApproved;
         })
       : assets;
@@ -7393,9 +7440,12 @@ function MobileScreensaver() {
     const fireCount = combined.filter(a => matchLiveAssetToCategory('FIRE', a)).length;
     const lightningCount = combined.filter(a => matchLiveAssetToCategory('LIGHTNING', a)).length;
     const extRevCount = combined.filter(a => matchLiveAssetToCategory('EXT_REV', a)).length;
+    const outsideCount = combined.filter(a => matchLiveAssetToCategory('OUTSIDE_REV', a)).length;
     const missileCount = combined.filter(a => matchLiveAssetToCategory('MISSILE', a)).length;
     const scalpCount = combined.filter(a => matchLiveAssetToCategory('SCALP', a)).length;
     const divCount = combined.filter(a => matchLiveAssetToCategory('DIV', a)).length;
+    const wickCount = combined.filter(a => matchLiveAssetToCategory('WICK_REV', a)).length;
+    const dojiCount = combined.filter(a => matchLiveAssetToCategory('DOJI_REV', a)).length;
     const rejCount = combined.filter(a => a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ').length;
     const contCount = combined.filter(a => a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT').length;
     const vcprTouchCount = combined.filter(a => a.isVcprTouch || a.relationshipBadge?.includes('VCPR')).length;
@@ -7409,9 +7459,12 @@ function MobileScreensaver() {
         fireCount,
         lightningCount,
         extRevCount,
+        outsideCount,
         missileCount,
         scalpCount,
         divCount,
+        wickCount,
+        dojiCount,
         rejCount,
         contCount,
         vcprTouchCount,
@@ -7426,9 +7479,12 @@ function MobileScreensaver() {
       if (liveSignalsActiveFilter === 'FIRE') return matchLiveAssetToCategory('FIRE', a);
       if (liveSignalsActiveFilter === 'LIGHTNING') return matchLiveAssetToCategory('LIGHTNING', a);
       if (liveSignalsActiveFilter === 'EXT_REV') return matchLiveAssetToCategory('EXT_REV', a);
+      if (liveSignalsActiveFilter === 'OUTSIDE_REV') return matchLiveAssetToCategory('OUTSIDE_REV', a);
       if (liveSignalsActiveFilter === 'MISSILE') return matchLiveAssetToCategory('MISSILE', a);
       if (liveSignalsActiveFilter === 'SCALP') return matchLiveAssetToCategory('SCALP', a);
       if (liveSignalsActiveFilter === 'DIV') return matchLiveAssetToCategory('DIV', a);
+      if (liveSignalsActiveFilter === 'WICK_REV') return matchLiveAssetToCategory('WICK_REV', a);
+      if (liveSignalsActiveFilter === 'DOJI_REV') return matchLiveAssetToCategory('DOJI_REV', a);
       if (liveSignalsActiveFilter === 'REJ') return a.relationshipBadge?.includes('REJ') || a.relationshipType === 'REJ';
       if (liveSignalsActiveFilter === 'CONT') return a.relationshipBadge?.includes('CONT') || a.relationshipType === 'CONT';
       if (liveSignalsActiveFilter === 'VCPR_TOUCH') return a.isVcprTouch || a.relationshipBadge?.includes('VCPR');
@@ -11333,18 +11389,21 @@ function MobileScreensaver() {
   const renderDhanLiveSignalsSection = () => {
     // Hide completely when no live signals or active limits exist (collapsed and hidden for nil signals)
     const hasLiveSignals = (liveSignalsStats?.total || 0) > 0;
-    if (!hasLiveSignals) return null;
+    if (!hasLiveSignals && activeTab !== 'INSIGHTS') return null;
 
     const liveFilterOptions = [
       { value: 'ALL', label: 'ALL', count: liveSignalsStats.total },
       ...(liveSignalsStats.activeLimitsCount > 0 ? [{ value: 'ACTIVE_LIMITS', label: '⏳ ACTIVE LIMITS', count: liveSignalsStats.activeLimitsCount }] : []),
       ...(liveSignalsStats.liveCount > 0 ? [{ value: 'LIVE', label: '⚡ LIVE TRADES', count: liveSignalsStats.liveCount }] : []),
-      ...(activeTab !== 'INSIGHTS' && liveSignalsStats.fireCount > 0 ? [{ value: 'FIRE', label: '⚡ CONFLUENCE', count: liveSignalsStats.fireCount }] : []),
+      ...(liveSignalsStats.fireCount > 0 ? [{ value: 'FIRE', label: '⚡ CONFLUENCE', count: liveSignalsStats.fireCount }] : []),
       ...(liveSignalsStats.lightningCount > 0 ? [{ value: 'LIGHTNING', label: '⚡ LIGHTNING', count: liveSignalsStats.lightningCount }] : []),
       ...(liveSignalsStats.extRevCount > 0 ? [{ value: 'EXT_REV', label: '🔥 EXT REV', count: liveSignalsStats.extRevCount }] : []),
+      ...(liveSignalsStats.outsideCount > 0 ? [{ value: 'OUTSIDE_REV', label: '🔄 OUTSIDE', count: liveSignalsStats.outsideCount }] : []),
       ...(liveSignalsStats.missileCount > 0 ? [{ value: 'MISSILE', label: '🚀 MISSILE', count: liveSignalsStats.missileCount }] : []),
       ...(liveSignalsStats.scalpCount > 0 ? [{ value: 'SCALP', label: '💎 SCALP', count: liveSignalsStats.scalpCount }] : []),
       ...(liveSignalsStats.divCount > 0 ? [{ value: 'DIV', label: '🎯 DIVERGENCE', count: liveSignalsStats.divCount }] : []),
+      ...(liveSignalsStats.wickCount > 0 ? [{ value: 'WICK_REV', label: '🕯️ WICK REV', count: liveSignalsStats.wickCount }] : []),
+      ...(liveSignalsStats.dojiCount > 0 ? [{ value: 'DOJI_REV', label: '⚖️ DOJI REV', count: liveSignalsStats.dojiCount }] : []),
     ];
 
     const marketChips: { id: ScreenerMarketCategory; label: string }[] = [
@@ -11365,12 +11424,15 @@ function MobileScreensaver() {
       : 0;
 
     const liveMatrixCategories: { id: string; label: string; badge: string; icon: string; badgeStyle: string }[] = [
-      ...(activeTab === 'INSIGHTS' ? [] : [{ id: 'FIRE', label: 'Confluence', badge: 'CONFLUENCE', icon: '⚡', badgeStyle: 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/35' }]),
+      { id: 'FIRE', label: 'Confluence', badge: 'CONFLUENCE', icon: '⚡', badgeStyle: 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/35' },
       { id: 'LIGHTNING', label: 'Lightning', badge: 'LIGHTNING', icon: '⚡', badgeStyle: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/35' },
       { id: 'EXT_REV', label: 'Extreme Reversal', badge: 'EXT REV', icon: '🔥', badgeStyle: 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/35' },
+      { id: 'OUTSIDE_REV', label: 'Outside Reversal', badge: 'OUTSIDE REV', icon: '🔄', badgeStyle: 'bg-teal-500/20 text-teal-600 dark:text-teal-400 border-teal-500/35' },
       { id: 'MISSILE', label: 'Missile', badge: 'MISSILE', icon: '🚀', badgeStyle: 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/35' },
       { id: 'SCALP', label: 'Scalp', badge: 'SCALP', icon: '💎', badgeStyle: 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/35' },
       { id: 'DIV', label: 'Divergence', badge: 'LIVE DIVERGENCE', icon: '🎯', badgeStyle: 'bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/35' },
+      { id: 'WICK_REV', label: 'Wick Reversal', badge: 'WICK REV', icon: '🕯️', badgeStyle: 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/35' },
+      { id: 'DOJI_REV', label: 'Doji Reversal', badge: 'DOJI REV', icon: '⚖️', badgeStyle: 'bg-slate-500/20 text-slate-600 dark:text-slate-400 border-slate-500/35' },
     ];
 
     return (
@@ -11698,6 +11760,11 @@ function MobileScreensaver() {
                                               ⏳ LIMIT
                                             </span>
                                           )}
+                                          {asset.ageStr && (
+                                            <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-bold bg-black/10 dark:bg-white/10 text-slate-700 dark:text-slate-300 ml-0.5 whitespace-nowrap">
+                                              📅 {asset.ageStr}
+                                            </span>
+                                          )}
                                         </span>
                                       );
                                     })}
@@ -11737,6 +11804,11 @@ function MobileScreensaver() {
                                           {isLimit && (
                                             <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-black bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 ml-0.5">
                                               ⏳ LIMIT
+                                            </span>
+                                          )}
+                                          {asset.ageStr && (
+                                            <span className="text-[7.5px] px-1 py-0.2 rounded font-mono font-bold bg-black/10 dark:bg-white/10 text-slate-700 dark:text-slate-300 ml-0.5 whitespace-nowrap">
+                                              📅 {asset.ageStr}
                                             </span>
                                           )}
                                         </span>
@@ -11812,7 +11884,12 @@ function MobileScreensaver() {
                                 {asset.cleanSym}
                               </span>
                             </div>
-                            <div className="mt-0.5 text-[9.5px] sm:text-[10px] font-mono text-dim font-bold whitespace-nowrap">
+                            <div className="mt-0.5 flex items-center gap-1.5 text-[9.5px] sm:text-[10px] font-mono text-dim font-bold whitespace-nowrap">
+                              {asset.dateStr && (
+                                <span className="px-1 py-0.2 rounded bg-black/5 dark:bg-white/5 text-slate-700 dark:text-slate-300 font-extrabold border border-black/10 dark:border-white/10 text-[8.5px]">
+                                  {asset.dateStr}
+                                </span>
+                              )}
                               {asset.timeIST ? (
                                 asset.exitTimeIST ? (
                                   <span>{asset.timeIST} → {asset.exitTimeIST}</span>
@@ -11855,7 +11932,12 @@ function MobileScreensaver() {
                                   <span>🔒 CLOSED</span>
                                 </span>
                               )}
-                              {!asset.isTodaySession && (
+                              {asset.ageStr && (
+                                <span className="px-1.5 py-[1px] rounded text-[8px] sm:text-[8.5px] font-mono font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+                                  📅 {asset.ageStr}
+                                </span>
+                              )}
+                              {!asset.isTodaySession && !asset.ageStr && (
                                 <span className="text-[8.5px] font-mono font-medium text-dim">
                                   {asset.dateIST || (asset.sessionDate ? asset.sessionDate.slice(5) : '')}
                                 </span>
@@ -22428,6 +22510,11 @@ function MobileScreensaver() {
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap text-[10px] font-mono text-dim mt-0.5">
                     <span>Session: {selectedDhanOorAsset.sessionDate}</span>
+                    {selectedDhanOorAsset.dateStr && (
+                      <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/30">
+                        📅 {selectedDhanOorAsset.dateStr} {selectedDhanOorAsset.ageStr ? `(${selectedDhanOorAsset.ageStr})` : ''}
+                      </span>
+                    )}
                     {selectedDhanOorAsset.timeIST && (
                       <span className="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-500/30">
                         ⏰ {selectedDhanOorAsset.timeIST} IST
@@ -22462,6 +22549,14 @@ function MobileScreensaver() {
                   </div>
                 </div>
                 <div className="text-right flex flex-col items-end gap-0.5">
+                  {(selectedDhanOorAsset.dateStr || selectedDhanOorAsset.ageStr) && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9.5px] font-mono text-dim">PLACED:</span>
+                      <span className="text-[11px] font-mono font-black text-amber-600 dark:text-amber-400">
+                        {selectedDhanOorAsset.dateStr || selectedDhanOorAsset.sessionDate} {selectedDhanOorAsset.ageStr ? `(${selectedDhanOorAsset.ageStr})` : ''}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-1.5">
                     <span className="text-[9.5px] font-mono text-dim">CANDLE:</span>
                     <span className="text-[11px] font-mono font-black text-indigo-600 dark:text-indigo-400">

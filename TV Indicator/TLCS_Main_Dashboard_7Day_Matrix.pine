@@ -1,17 +1,6 @@
 //@version=6
 indicator("TLCS ALERTS DASHBOARD", overlay=true, max_labels_count=500)
 
-//The Institutional 3-Step Playbook
-//To take maximum advantage of this dashboard:
-//	1. Step 1 — Identify the Multi-Day Trend (Tier 3):
-//	• Look at Column 1 & 2 in TRADE SEQUENCES. If CL has ▲ CL across Rejection Day Sequence, CL has swing momentum.
-//	2. Step 2 — Identify the Catalyst (Tier 2):
-//	• Look back 1 to 3 days in DAY TYPE BLUEPRINTS. Did CL print a Rejection Day or Stop Run Day? This defines your invalidation level (the extreme of that blueprint bar).
-//	3. Step 3 — Time Your Entry (Tier 1):
-//	• When Tier 3 is Bullish and Tier 2 has confirmed the structural low, wait for a Tier 1 trigger (like Wick Reversal ▲ or Divergence ▲) to execute with minimal risk.
-
-
-
 // ---- MEMORY OPTIMIZATION: BITMASK PACKING (PINE SAFE) -----------------------
 packSignals18(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18) =>
     r = (b1 ? 1 : 0) + (b2 ? 2 : 0) + (b3 ? 4 : 0) + (b4 ? 8 : 0)
@@ -21,56 +10,39 @@ packSignals18(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, 
     r += (b17 ? 65536 : 0) + (b18 ? 131072 : 0)
     r
 
-packSignals20(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20) =>
-    r = (b1 ? 1 : 0) + (b2 ? 2 : 0) + (b3 ? 4 : 0) + (b4 ? 8 : 0)
-    r += (b5 ? 16 : 0) + (b6 ? 32 : 0) + (b7 ? 64 : 0) + (b8 ? 128 : 0)
-    r += (b9 ? 256 : 0) + (b10 ? 512 : 0) + (b11 ? 1024 : 0) + (b12 ? 2048 : 0)
-    r += (b13 ? 4096 : 0) + (b14 ? 8192 : 0) + (b15 ? 16384 : 0) + (b16 ? 32768 : 0)
-    r += (b17 ? 65536 : 0) + (b18 ? 131072 : 0) + (b19 ? 262144 : 0) + (b20 ? 524288 : 0)
-    r
-
-// Extended to 28 bits: adds the 8 persistent "sequence active" states (bits
-// 21-28) needed for the 4 Trade Sequence rows, on top of the original 20
-// single-day Blueprint bits.
-packSignals28(b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28) =>
-    r = (b1 ? 1 : 0) + (b2 ? 2 : 0) + (b3 ? 4 : 0) + (b4 ? 8 : 0)
-    r += (b5 ? 16 : 0) + (b6 ? 32 : 0) + (b7 ? 64 : 0) + (b8 ? 128 : 0)
-    r += (b9 ? 256 : 0) + (b10 ? 512 : 0) + (b11 ? 1024 : 0) + (b12 ? 2048 : 0)
-    r += (b13 ? 4096 : 0) + (b14 ? 8192 : 0) + (b15 ? 16384 : 0) + (b16 ? 32768 : 0)
-    r += (b17 ? 65536 : 0) + (b18 ? 131072 : 0) + (b19 ? 262144 : 0) + (b20 ? 524288 : 0)
-    r += (b21 ? 1048576 : 0) + (b22 ? 2097152 : 0) + (b23 ? 4194304 : 0) + (b24 ? 8388608 : 0)
-    r += (b25 ? 16777216 : 0) + (b26 ? 33554432 : 0) + (b27 ? 67108864 : 0) + (b28 ? 134217728 : 0)
-    r
-
 // Pine-compatible bit extraction using modulo arithmetic
 unpackBit(pack, bit) => (math.floor(pack / bit) % 2) != 0
 
 // ---- INPUTS --------------------------------------------------------
-webhook_secret = input.string('675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb', 'Webhook Secret')
-enable_alerts = input.bool(true, 'Enable Automated Webhook Alerts')
+webhook_secret = input.string("675d6a25933d3fc1b78b45ba2d6b400c0d1598e6780e9b8ae4ea1b1f824d89eb", "Webhook Secret")
+enable_alerts  = input.bool(true, "Enable Automated Webhook Alerts")
+
+gTf            = "Signals Resolution"
+sigTf          = input.timeframe("D", "Signal Timeframe", group=gTf)
+
 // ---- SUPPORT & RESISTANCE INPUTS -------------------------------------------
-srMaxBreaks  = input.int(3, 'S&R Max Breaks', minval = 2, group = 'Support & Resistance')
-srMaxDistPct = input.float(2.0, 'S&R Max Distance %', minval = 0.1, group = 'Support & Resistance')
-srLookback   = input.int(100, 'Reversal-Candle Lookback (bars)', minval = 20, group = 'Support & Resistance')
+srMaxBreaks  = input.int(3, "S&R Max Breaks", minval = 2, group = "Support & Resistance")
+srMaxDistPct = input.float(2.0, "S&R Max Distance %", minval = 0.1, group = "Support & Resistance")
+srLookback   = input.int(100, "Reversal-Candle Lookback (bars)", minval = 20, group = "Support & Resistance")
 
 // ---- REVERSAL SYSTEM INPUTS (AUTHENTIC MASTER RULES) -----------------------
-pivotlbar       = input.int(10, 'Length to Highest/Lowest (Reversals)', group='Reversal Systems')
-wick_multiplier = input.float(3.25, 'Wick Multiplier', step=0.5, maxval=20, group='Reversal Systems')
-body_percentage = input.float(0.35, 'Body Percentage', step=0.1, maxval=1, group='Reversal Systems')
-WBarMultiplier  = input.float(1.1, 'Body & Candle Range Multiplier', step=0.1, maxval=5, group='Reversal Systems')
-Wbarsback       = input.int(50, 'Average Candle and Body Lookback', group='Reversal Systems')
-ext_bodysize    = input.float(0.75, 'Extreme Reversal Body Size Ratio', step=0.05, maxval=1, group='Reversal Systems')
-ext_bodymult    = input.float(2.0, 'Extreme Reversal Candle Multiplier', step=0.25, maxval=5, group='Reversal Systems')
-out_barmult     = input.float(1.25, 'Outside Reversal Multiplier', step=0.05, maxval=3.5, group='Reversal Systems')
-doji_barmult    = input.float(0.65, 'Doji Reversal Multiplier', step=0.05, maxval=3.5, group='Reversal Systems')
-doji_pct        = input.float(0.10, 'Doji Body Percentage', step=0.05, minval=0.05, group='Reversal Systems')
+pivotlbar       = input.int(10, "Length to Highest/Lowest (Reversals)", group="Reversal Systems")
+wick_multiplier = input.float(3.25, "Wick Multiplier", step=0.5, maxval=20, group="Reversal Systems")
+body_percentage = input.float(0.35, "Body Percentage", step=0.1, maxval=1, group="Reversal Systems")
+WBarMultiplier  = input.float(1.1, "Body & Candle Range Multiplier", step=0.1, maxval=5, group="Reversal Systems")
+Wbarsback       = input.int(50, "Average Candle and Body Lookback", group="Reversal Systems")
+ext_bodysize    = input.float(0.75, "Extreme Reversal Body Size Ratio", step=0.05, maxval=1, group="Reversal Systems")
+ext_bodymult    = input.float(2.0, "Extreme Reversal Candle Multiplier", step=0.25, maxval=5, group="Reversal Systems")
+out_barmult     = input.float(1.25, "Outside Reversal Multiplier", step=0.05, maxval=3.5, group="Reversal Systems")
+doji_barmult    = input.float(0.65, "Doji Reversal Multiplier", step=0.05, maxval=3.5, group="Reversal Systems")
+doji_pct        = input.float(0.10, "Doji Body Percentage", step=0.05, minval=0.05, group="Reversal Systems")
 
 // ---- DIVERGENCE SETTINGS (AUTHENTIC ZIGZAG ENGINE) ------------------------
 gDiv           = "Divergence Settings"
-divOscType     = input.string('rsi', 'Divergence Oscillator', ['rsi', 'cci', 'cmo', 'cog', 'mfi', 'roc', 'stoch', 'wpr'], group=gDiv)
-divLength      = input.int(14, 'Oscillator Length', minval=1, group=gDiv)
-divZigzagLen   = input.int(13, 'Zigzag Length', minval=2, group=gDiv)
-divRepaint     = input.bool(true, 'Repaint (Fast Pivot Anchor)', group=gDiv)
+divOscType     = input.string("rsi", "Divergence Oscillator", ["rsi", "cci", "cmo", "cog", "mfi", "roc", "stoch", "wpr"], group=gDiv)
+divLength      = input.int(14, "Oscillator Length", minval=1, group=gDiv)
+divZigzagLen   = input.int(13, "Zigzag Length", minval=2, group=gDiv)
+divRepaint     = input.bool(true, "Repaint (Fast Pivot Anchor)", group=gDiv)
 
 // =========================================================================
 // AUTHENTIC ZIGZAG DIVERGENCE ENGINE (PARITY WITH MASTER INDICATOR)
@@ -158,6 +130,7 @@ type Zigzag
     array<Pivot> zigzagPivots
     ZigzagFlags flags
 
+
 method init(array<Indicator> indicators, matrix<float> indicatorValues) =>
     for i = 0 to na(indicatorValues) or indicatorValues.rows() == 0 ? na : indicatorValues.rows() - 1 by 1
         iRow = indicatorValues.row(i)
@@ -218,7 +191,7 @@ method addnewpivot(Zigzag this, Pivot pivot, array<Pivot> components = na) =>
             pivot.microComponents := microComponents
 
         if math.sign(lastPivot.dir) == math.sign(dir)
-            runtime.error('Direction mismatch')
+            runtime.error("Direction mismatch")
         if this.zigzagPivots.size() >= 2
             llastPivot = this.zigzagPivots.get(1)
             value = pivot.point.price
@@ -323,16 +296,16 @@ method calculate(Zigzag this, array<float> ohlc, matrix<float> indicators, array
         this.flags.newPivot := true
     this
 
-oscillator(simple string type = 'rsi', simple int length = 14, float source = close, float highSource = high, float lowSource = low) =>
+oscillator(simple string type = "rsi", simple int length = 14, float source = close, float highSource = high, float lowSource = low) =>
     osc = switch type
-        'cci'   => ta.cci(source, length)
-        'cmo'   => ta.cmo(source, length)
-        'cog'   => ta.cog(source, length)
-        'mfi'   => ta.mfi(source, length)
-        'roc'   => ta.roc(source, length)
-        'rsi'   => ta.rsi(source, length)
-        'stoch' => ta.stoch(source, highSource, lowSource, length)
-        'wpr'   => ta.wpr(length)
+        "cci"   => ta.cci(source, length)
+        "cmo"   => ta.cmo(source, length)
+        "cog"   => ta.cog(source, length)
+        "mfi"   => ta.mfi(source, length)
+        "roc"   => ta.roc(source, length)
+        "rsi"   => ta.rsi(source, length)
+        "stoch" => ta.stoch(source, highSource, lowSource, length)
+        "wpr"   => ta.wpr(length)
         => ta.rsi(source, length)
     osc
 
@@ -366,7 +339,7 @@ type DivergenceSignalObject
     int endIndex
     DivergenceType divergenceType
 
-method divergenceSignal(Zigzag this, array<DivergenceSignalObject> signalObjects, ZigzagProperties properties) =>
+method divergenceSignal(Zigzag this, array<DivergenceSignalObject> signalObjects, ZigzagProperties properties, float oscVal) =>
     startIndex = properties.repaint ? 0 : 1
     DivergenceType divergenceType = DivergenceType.None
     if this.zigzagPivots.size() > 2 + startIndex
@@ -411,6 +384,8 @@ method divergenceSignal(Zigzag this, array<DivergenceSignalObject> signalObjects
                 endBar   = lastPivot.point.index
                 startPrice = llastPrice
                 endPrice   = lastPrice
+                startOsc   = llastPivot.point.price
+                endOsc     = lastPivot.point.price
 
                 if divergence != 0 and endBar > startBar
                     candidateType = getDivergenceType(dir, divergence)
@@ -420,9 +395,11 @@ method divergenceSignal(Zigzag this, array<DivergenceSignalObject> signalObjects
                         offsetBar = bar_index - bar
                         if offsetBar >= 0
                             priceAtBar = close[offsetBar]
-                            priceTheo = startPrice + ((endPrice - startPrice) / (endBar - startBar)) * (bar - startBar)
+                            priceTheo  = startPrice + ((endPrice - startPrice) / (endBar - startBar)) * (bar - startBar)
+                            oscAtBar   = oscVal[offsetBar]
+                            oscTheo    = startOsc + ((endOsc - startOsc) / (endBar - startBar)) * (bar - startBar)
 
-                            if priceAtBar * dir > priceTheo * dir
+                            if (priceAtBar * dir > priceTheo * dir) or (oscAtBar * dir > oscTheo * dir)
                                 validDivergence := false
                                 break
 
@@ -560,11 +537,11 @@ f_calc_sigs_impl(Zigzag zz, ZigzagProperties zzProps, array<DivergenceSignalObje
     _dls = GREENZONE and not na(lowleftempty) and Dlong and (high - low >= WAverageCandle * doji_barmult)
     _dss = REDZONE and not na(highleftempty) and Dshort and (high - low >= WAverageCandle * doji_barmult)
 
-    // 5. Divergences (Authentic Zigzag Divergence Engine)
+    // 5. Divergences (Authentic Zigzag Divergence Engine with Strict Confirmation Parity)
     oscVal = oscillator(divOscType, divLength)
     maVal  = ta.sma(close, 200)
     divIndicators = matrix.new<float>()
-    divIndicatorNames = array.from('Price', 'SMA-200', 'External Trend')
+    divIndicatorNames = array.from("Price", "SMA-200", "External Trend")
     divIndicators.add_row(0, array.from(high, close, low))
     divIndicators.add_row(1, array.from(maVal, maVal, maVal))
     divIndicators.add_row(2, array.from(close, close, close))
@@ -572,7 +549,7 @@ f_calc_sigs_impl(Zigzag zz, ZigzagProperties zzProps, array<DivergenceSignalObje
     zzProps.repaint := divRepaint
     zz.length := divZigzagLen
     zz.calculate(array.from(oscVal), divIndicators, divIndicatorNames)
-    currentDiv = zz.divergenceSignal(divSigObjects, zzProps)
+    currentDiv = zz.divergenceSignal(divSigObjects, zzProps, oscVal)
 
     _bDiv   = currentDiv == DivergenceType.BullishDivergence
     _brDiv  = currentDiv == DivergenceType.BearishDivergence
@@ -635,271 +612,6 @@ f_calc_sigs_9() =>
     var divSigObjects = array.new<DivergenceSignalObject>()
     f_calc_sigs_impl(zz, zzProps, divSigObjects)
 
-// ---- DAY TYPE BLUEPRINTS & SEQUENCES ENGINE --------------------------------
-adrLen = input.int(10, "ATR Lookback (bars)", minval=2, group="Blueprints Settings")
-accLen = input.int(20, "Accumulation Lookback", minval=5, group="Blueprints Settings")
-accMaxRangeMult = input.float(3.0, "Max Range vs ATR (x)", step=0.1, group="Blueprints Settings")
-adrMultMin = input.float(1.25, "Min Range vs ATR (x)", step=0.05, group="Blueprints Settings")
-tailBodyMult = input.float(2.5, "Min Tail / Body Ratio", step=0.1, group="Blueprints Settings")
-closeZonePct = input.float(35, "Close within top/bottom X% of range", minval=1, maxval=50, group="Blueprints Settings") / 100
-useStructure = input.bool(true, "Require near prior swing extreme", group="Blueprints Settings")
-structLen    = input.int(20, "Lookback for prior swing high/low", minval=2, group="Blueprints Settings")
-structTolPct = input.float(1.0, "Tolerance around prior extreme (%)", step=0.1, group="Blueprints Settings") / 100
-odAdrMultMin = input.float(1.05, "Min Range vs ATR (x)", step=0.05, group="Blueprints Settings")
-adrMinPct = input.float(75, "Min Range vs ATR (%)", step=5, group="Blueprints Settings") / 100
-fnlMaxPct = input.float(100, "Max Range vs ATR (%) (FNL/FNH upper bound)", step=5, group="Blueprints Settings") / 100
-sweepLookback = input.int(1, "Sweep Lookback (bars)", minval=1, maxval=20, group="Blueprints Settings")
-requireAboveYMid = input.bool(true, "Require close above yMID (FNL) / below yMID (FNH)", group="Blueprints Settings")
-absAdrMaxMult = input.float(0.75, "Max Range vs ATR (x)", step=0.05, group="Blueprints Settings")
-absMidTolPct = input.float(1.0, "Tolerance: Low/High near yMID (%)", step=0.1, group="Blueprints Settings") / 100
-requireBodyConfirm = input.bool(true, "Require body confirmation (Close vs Open)", group="Blueprints Settings")
-srdAdrMultMin = input.float(2.0, "Min Range vs ATR (x)", step=0.1, group="Blueprints Settings")
-srdCloseZonePct = input.float(15, "Close within top/bottom X% of range", minval=1, maxval=50, group="Blueprints Settings") / 100
-srdStructLen = input.int(5, "Lookback for prior swing high/low for MID check (bars)", minval=1, group="Blueprints Settings")
-maxActiveDays = input.int(20, "Max Days a Rejection/Stop Run/Failed Absorption Sequence Stays Active", minval=1, group="Blueprints Settings")
-accMaxActiveDays = input.int(60, "Max Days an Accumulation Sequence Stays Active", minval=1, group="Blueprints Settings")
-
-type SeqState
-    int   accActiveStartBar = na
-    float accActiveMid      = na
-    bool  bullAccActive     = false
-    bool  bearAccActive     = false
-    int   rejActiveStartBar = na
-    float rejActiveMid      = na
-    float rejActiveHigh     = na
-    float rejActiveLow      = na
-    bool  bullRejActive     = false
-    bool  bearRejActive     = false
-    int   bullFailedAbsStartBar = na
-    int   bearFailedAbsStartBar = na
-    bool  bullFailedAbsActive   = false
-    bool  bearFailedAbsActive   = false
-    int   srdActiveStartBar = na
-    float srdActiveMid      = na
-    float srdActiveExt      = na
-    bool  bullSrdActive     = false
-    bool  bearSrdActive     = false
-    bool  prevActiveDayBull = false
-    bool  prevActiveDayBear = false
-
-f_calc(SeqState st) =>
-    rng    = high - low
-    body   = math.abs(close - open)
-    upWick = high - math.max(open, close)
-    dnWick = math.min(open, close) - low
-    mid    = (high + low) / 2
-    avgRange = ta.sma(ta.tr(true), adrLen)[1]
-    closePos = rng != 0 ? (close - low) / rng : 0.5
-    accHigh = ta.highest(high, accLen)
-    accLow  = ta.lowest(low, accLen)
-    accRange = accHigh - accLow
-    isCompressing = avgRange > 0 and accRange <= accMaxRangeMult * avgRange
-    bullAcc = isCompressing and close >= (accHigh + accLow) / 2
-    bearDist = isCompressing and close < (accHigh + accLow) / 2
-
-    if bullAcc
-        st.accActiveMid      := (accHigh + accLow) / 2
-        st.accActiveStartBar := bar_index
-        st.bullAccActive     := true
-        st.bearAccActive     := false
-    else if bearDist
-        st.accActiveMid      := (accHigh + accLow) / 2
-        st.accActiveStartBar := bar_index
-        st.bearAccActive     := true
-        st.bullAccActive     := false
-
-    rejRangeOK  = avgRange > 0 and rng > adrMultMin * avgRange
-    bullTailOK  = body > 0 ? dnWick > tailBodyMult * body : dnWick > 0
-    bearTailOK  = body > 0 ? upWick > tailBodyMult * body : upWick > 0
-    bullCloseOK = closePos >= (1 - closeZonePct)
-    bearCloseOK = closePos <= closeZonePct
-    priorLowStruct  = ta.lowest(low, structLen)[1]
-    priorHighStruct = ta.highest(high, structLen)[1]
-    nearPriorLow  = low  <= priorLowStruct  * (1 + structTolPct)
-    nearPriorHigh = high >= priorHighStruct * (1 - structTolPct)
-    structBullOK = not useStructure or nearPriorLow
-    structBearOK = not useStructure or nearPriorHigh
-    bullRej = rejRangeOK and bullTailOK and bullCloseOK and structBullOK
-    bearRej = rejRangeOK and bearTailOK and bearCloseOK and structBearOK
-    srdRangeOK = avgRange > 0 and rng > srdAdrMultMin * avgRange
-    bullSrdClosePosOK = closePos >= (1 - srdCloseZonePct)
-    bullSrdCloseExt   = close > high[1]
-    bullSrdMidExt     = mid >= ta.highest(high, srdStructLen)[1]
-    bullSrdSignal     = srdRangeOK and bullSrdClosePosOK and bullSrdCloseExt and bullSrdMidExt
-    bearSrdClosePosOK = closePos <= srdCloseZonePct
-    bearSrdCloseExt   = close < low[1]
-    bearSrdMidExt     = mid <= ta.lowest(low, srdStructLen)[1]
-    bearSrdSignal     = srdRangeOK and bearSrdClosePosOK and bearSrdCloseExt and bearSrdMidExt
-
-    if st.bullAccActive and bullSrdSignal
-        st.accActiveMid := mid
-    if st.bearAccActive and bearSrdSignal
-        st.accActiveMid := mid
-    if st.bullAccActive and close < st.accActiveMid
-        st.bullAccActive := false
-    if st.bearAccActive and close > st.accActiveMid
-        st.bearAccActive := false
-    if st.bullAccActive and not na(st.accActiveStartBar) and (bar_index - st.accActiveStartBar) > accMaxActiveDays
-        st.bullAccActive := false
-    if st.bearAccActive and not na(st.accActiveStartBar) and (bar_index - st.accActiveStartBar) > accMaxActiveDays
-        st.bearAccActive := false
-
-    int barsSinceRej = ta.barssince(bullRej or bearRej)
-    if bullRej
-        st.rejActiveMid  := mid
-        st.rejActiveHigh := high
-        st.rejActiveLow  := low
-        st.rejActiveStartBar := bar_index
-        st.bullRejActive := true
-        st.bearRejActive := false
-        st.bullFailedAbsActive := false
-        st.bearFailedAbsActive := false
-    else if bearRej
-        st.rejActiveMid  := mid
-        st.rejActiveHigh := high
-        st.rejActiveLow  := low
-        st.rejActiveStartBar := bar_index
-        st.bearRejActive := true
-        st.bullRejActive := false
-        st.bullFailedAbsActive := false
-        st.bearFailedAbsActive := false
-    if st.bullRejActive and close < st.rejActiveMid
-        st.bullRejActive := false
-        st.bearFailedAbsActive := true
-        st.bearFailedAbsStartBar := bar_index
-    if st.bearRejActive and close > st.rejActiveMid
-        st.bearRejActive := false
-        st.bullFailedAbsActive := true
-        st.bullFailedAbsStartBar := bar_index
-    if st.bearFailedAbsActive and close > st.rejActiveHigh
-        st.bearFailedAbsActive := false
-    if st.bullFailedAbsActive and close < st.rejActiveLow
-        st.bullFailedAbsActive := false
-    if st.bullRejActive and not na(st.rejActiveStartBar) and (bar_index - st.rejActiveStartBar) > maxActiveDays
-        st.bullRejActive := false
-    if st.bearRejActive and not na(st.rejActiveStartBar) and (bar_index - st.rejActiveStartBar) > maxActiveDays
-        st.bearRejActive := false
-    if st.bullFailedAbsActive and not na(st.bullFailedAbsStartBar) and (bar_index - st.bullFailedAbsStartBar) > maxActiveDays
-        st.bullFailedAbsActive := false
-    if st.bearFailedAbsActive and not na(st.bearFailedAbsStartBar) and (bar_index - st.bearFailedAbsStartBar) > maxActiveDays
-        st.bearFailedAbsActive := false
-
-    int barsSinceSrd = ta.barssince(bullSrdSignal or bearSrdSignal)
-    if bullSrdSignal
-        st.srdActiveMid  := mid
-        st.srdActiveExt  := high
-        st.srdActiveStartBar := bar_index
-        st.bullSrdActive := true
-        st.bearSrdActive := false
-    else if bearSrdSignal
-        st.srdActiveMid  := mid
-        st.srdActiveExt  := low
-        st.srdActiveStartBar := bar_index
-        st.bearSrdActive := true
-        st.bullSrdActive := false
-    if st.bullSrdActive and close < st.srdActiveMid
-        st.bullSrdActive := false
-    if st.bearSrdActive and close > st.srdActiveMid
-        st.bearSrdActive := false
-    if st.bullSrdActive and not na(st.srdActiveStartBar) and (bar_index - st.srdActiveStartBar) > maxActiveDays
-        st.bullSrdActive := false
-    if st.bearSrdActive and not na(st.srdActiveStartBar) and (bar_index - st.srdActiveStartBar) > maxActiveDays
-        st.bearSrdActive := false
-
-    bullFade = st.bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and high >= st.srdActiveExt * 0.995 and close < open
-    bearFade = st.bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and low <= st.srdActiveExt * 1.005 and close > open
-    absRangeOK = avgRange > 0 and rng < absAdrMaxMult * avgRange
-    bullAbs_Rej = st.bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close > st.rejActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - st.rejActiveMid) <= st.rejActiveMid * absMidTolPct
-    bearAbs_Rej = st.bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and absRangeOK and close < st.rejActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - st.rejActiveMid) <= st.rejActiveMid * absMidTolPct
-    bullAbs_Srd = st.bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close > st.srdActiveMid and (not requireBodyConfirm or close > open) and math.abs(low - st.srdActiveMid) <= st.srdActiveMid * absMidTolPct
-    bearAbs_Srd = st.bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and absRangeOK and close < st.srdActiveMid and (not requireBodyConfirm or close < open) and math.abs(high - st.srdActiveMid) <= st.srdActiveMid * absMidTolPct
-    odRangeOK = avgRange > 0 and rng > odAdrMultMin * avgRange
-    odBull = odRangeOK and low < low[1] and close > high[1]
-    odBear = odRangeOK and high > high[1] and close < low[1]
-    fnlRangeOK = avgRange > 0 and rng >= adrMinPct * avgRange and rng <= fnlMaxPct * avgRange
-    priorLowSweep  = ta.lowest(low, sweepLookback)[1]
-    priorHighSweep = ta.highest(high, sweepLookback)[1]
-    yMidFnl = (high[1] + low[1]) / 2.0
-    fnlSweep  = low < priorLowSweep
-    fnlClose  = close > priorLowSweep and (requireAboveYMid ? close > yMidFnl : true)
-    fnlSignal = fnlRangeOK and fnlSweep and fnlClose
-    fnhSweep  = high > priorHighSweep
-    fnhClose  = close < priorHighSweep and (requireAboveYMid ? close < yMidFnl : true)
-    fnhSignal = fnlRangeOK and fnhSweep and fnhClose
-    bullFnl_Rej = st.bullRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnlSignal
-    bearFnh_Rej = st.bearRejActive and not na(barsSinceRej) and barsSinceRej > 0 and fnhSignal
-    bullFnl_Srd = st.bullSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnlSignal
-    bearFnh_Srd = st.bearSrdActive and not na(barsSinceSrd) and barsSinceSrd > 0 and fnhSignal
-    int barsSinceFa = ta.barssince(st.bullFailedAbsActive or st.bearFailedAbsActive)
-    bullFailedBreakout = st.bullFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and low <= low[1] and close > open
-    bearFailedBreakout = st.bearFailedAbsActive and not na(barsSinceFa) and barsSinceFa > 0 and high >= high[1] and close < open
-    bullRetestAfterSrd = st.bullFailedAbsActive and (bullFade or bullAbs_Srd)
-    bearRetestAfterSrd = st.bearFailedAbsActive and (bearFade or bearAbs_Srd)
-    bullFade_final = bullFade and not bullRetestAfterSrd
-    bearFade_final = bearFade and not bearRetestAfterSrd
-    unifiedBullAbs = bullAbs_Rej or (bullAbs_Srd and not bullRetestAfterSrd)
-    unifiedBearAbs = bearAbs_Rej or (bearAbs_Srd and not bearRetestAfterSrd)
-    bullCont = st.prevActiveDayBull and close > close[1]
-    bearCont = st.prevActiveDayBear and close < close[1]
-    st.prevActiveDayBull := bullRej or bullSrdSignal or unifiedBullAbs or fnlSignal or bullFailedBreakout or bullRetestAfterSrd
-    st.prevActiveDayBear := bearRej or bearSrdSignal or unifiedBearAbs or fnhSignal or bearFailedBreakout or bearRetestAfterSrd
-
-    // Trade Sequence Multi-Day Stage Hits (PivotBoss Swing Trade Pro 2.0)
-    bullRejSeqHit = bullRej or bullAbs_Rej or bullFnl_Rej or bullRetestAfterSrd or bullCont
-    bearRejSeqHit = bearRej or bearAbs_Rej or bearFnh_Rej or bearRetestAfterSrd or bearCont
-    bullSrdSeqHit = bullSrdSignal or bullFade_final or bullAbs_Srd or bullFnl_Srd or bullCont
-    bearSrdSeqHit = bearSrdSignal or bearFade_final or bearAbs_Srd or bearFnh_Srd or bearCont
-    bullFailAbsSeqHit = bullFailedBreakout or bullRetestAfterSrd
-    bearFailAbsSeqHit = bearFailedBreakout or bearRetestAfterSrd
-    bullAccSeqHit = st.bullAccActive and (bullAcc or bullRej or bullSrdSignal or unifiedBullAbs or bullRetestAfterSrd or bullCont)
-    bearAccSeqHit = st.bearAccActive and (bearDist or bearRej or bearSrdSignal or unifiedBearAbs or bearRetestAfterSrd or bearCont)
-
-    [bullAcc, bearDist, bullRej, bearRej, bullSrdSignal, bearSrdSignal, odBull, odBear, bullFade_final, bearFade_final, unifiedBullAbs, unifiedBearAbs, fnlSignal, fnhSignal, bullFailedBreakout, bearFailedBreakout, bullRetestAfterSrd, bearRetestAfterSrd, bullCont, bearCont, bullRejSeqHit, bearRejSeqHit, bullSrdSeqHit, bearSrdSeqHit, bullFailAbsSeqHit, bearFailAbsSeqHit, bullAccSeqHit, bearAccSeqHit]
-
-f_calc_dt_1() =>
-    var SeqState st = SeqState.new()
-    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
-    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
-
-f_calc_dt_2() =>
-    var SeqState st = SeqState.new()
-    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
-    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
-
-f_calc_dt_3() =>
-    var SeqState st = SeqState.new()
-    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
-    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
-
-f_calc_dt_4() =>
-    var SeqState st = SeqState.new()
-    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
-    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
-
-f_calc_dt_5() =>
-    var SeqState st = SeqState.new()
-    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
-    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
-
-f_calc_dt_6() =>
-    var SeqState st = SeqState.new()
-    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
-    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
-
-f_calc_dt_7() =>
-    var SeqState st = SeqState.new()
-    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
-    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
-
-f_calc_dt_8() =>
-    var SeqState st = SeqState.new()
-    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
-    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
-
-f_calc_dt_9() =>
-    var SeqState st = SeqState.new()
-    [acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS] = f_calc(st)
-    packSignals28(acB, acS, rB, rS, sB, sS, odB, odS, fdB, fdS, aB, aS, fB, fS, fbB, fbS, rtB, rtS, cContB, cContS, rejActB, rejActS, srdActB, srdActS, faActB, faActS, accActB, accActS)
 
 // ---- SYMBOL INPUT CONFIGURATION -----------------------------------------
 gDomestic = "Domestic Markets (NSE / MCX)"
@@ -925,118 +637,58 @@ lookback_days = input.int(7, "Lookback Period (Days)", minval=1, maxval=7, group
 
 f_get_7d_sigs_1() =>
     s = f_calc_sigs_1()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+    a = ta.atr(14)
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6], open[0], high[0], low[0], close[0], a[0]]
 
 f_get_7d_sigs_2() =>
     s = f_calc_sigs_2()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+    a = ta.atr(14)
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6], open[0], high[0], low[0], close[0], a[0]]
 
 f_get_7d_sigs_3() =>
     s = f_calc_sigs_3()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+    a = ta.atr(14)
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6], open[0], high[0], low[0], close[0], a[0]]
 
 f_get_7d_sigs_4() =>
     s = f_calc_sigs_4()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+    a = ta.atr(14)
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6], open[0], high[0], low[0], close[0], a[0]]
 
 f_get_7d_sigs_5() =>
     s = f_calc_sigs_5()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+    a = ta.atr(14)
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6], open[0], high[0], low[0], close[0], a[0]]
 
 f_get_7d_sigs_6() =>
     s = f_calc_sigs_6()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+    a = ta.atr(14)
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6], open[0], high[0], low[0], close[0], a[0]]
 
 f_get_7d_sigs_7() =>
     s = f_calc_sigs_7()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+    a = ta.atr(14)
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6], open[0], high[0], low[0], close[0], a[0]]
 
 f_get_7d_sigs_8() =>
     s = f_calc_sigs_8()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+    a = ta.atr(14)
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6], open[0], high[0], low[0], close[0], a[0]]
 
 f_get_7d_sigs_9() =>
     s = f_calc_sigs_9()
-    [s[0], s[1], s[2], s[3], s[4], s[5], s[6]]
+    a = ta.atr(14)
+    [s[0], s[1], s[2], s[3], s[4], s[5], s[6], open[0], high[0], low[0], close[0], a[0]]
 
-f_get_7d_dt_1() =>
-    d = f_calc_dt_1()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_2() =>
-    d = f_calc_dt_2()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_3() =>
-    d = f_calc_dt_3()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_4() =>
-    d = f_calc_dt_4()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_5() =>
-    d = f_calc_dt_5()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_6() =>
-    d = f_calc_dt_6()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_7() =>
-    d = f_calc_dt_7()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_8() =>
-    d = f_calc_dt_8()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-f_get_7d_dt_9() =>
-    d = f_calc_dt_9()
-    [d[0], d[1], d[2], d[3], d[4], d[5], d[6]]
-
-
-f_calc_cpr() =>
-    dp = (high[1] + low[1] + close[1]) / 3.0
-    bc = (high[1] + low[1]) / 2.0
-    tc = 2.0 * dp - bc
-    dtc = math.max(tc, bc)
-    dbc = math.min(tc, bc)
-    cpr_w = math.abs(dtc - dbc)
-    p_rng = math.max(high[1] - low[1], syminfo.mintick)
-    avg14 = ta.sma(math.abs((2.0 * close[1] - high[1] - low[1]) / 3.0), 14)
-    ncpr = (avg14 > 0) ? (cpr_w <= 0.50 * avg14) : (cpr_w / p_rng * 100 < 5.0)
-    [dp, dtc, dbc, ncpr ? 1.0 : 0.0, cpr_w, p_rng]
-
-[u1_dp, u1_dtc, u1_dbc, u1_ncpr, u1_cpr_w, u1_rng] = request.security(u1, "D", f_calc_cpr(), lookahead=barmerge.lookahead_on)
-[u2_dp, u2_dtc, u2_dbc, u2_ncpr, u2_cpr_w, u2_rng] = request.security(u2, "D", f_calc_cpr(), lookahead=barmerge.lookahead_on)
-[u3_dp, u3_dtc, u3_dbc, u3_ncpr, u3_cpr_w, u3_rng] = request.security(u3, "D", f_calc_cpr(), lookahead=barmerge.lookahead_on)
-[u4_dp, u4_dtc, u4_dbc, u4_ncpr, u4_cpr_w, u4_rng] = request.security(u4, "D", f_calc_cpr(), lookahead=barmerge.lookahead_on)
-[u5_dp, u5_dtc, u5_dbc, u5_ncpr, u5_cpr_w, u5_rng] = request.security(u5, "D", f_calc_cpr(), lookahead=barmerge.lookahead_on)
-[u6_dp, u6_dtc, u6_dbc, u6_ncpr, u6_cpr_w, u6_rng] = request.security(u6, "D", f_calc_cpr(), lookahead=barmerge.lookahead_on)
-[u7_dp, u7_dtc, u7_dbc, u7_ncpr, u7_cpr_w, u7_rng] = request.security(u7, "D", f_calc_cpr(), lookahead=barmerge.lookahead_on)
-[u8_dp, u8_dtc, u8_dbc, u8_ncpr, u8_cpr_w, u8_rng] = request.security(u8, "D", f_calc_cpr(), lookahead=barmerge.lookahead_on)
-[u9_dp, u9_dtc, u9_dbc, u9_ncpr, u9_cpr_w, u9_rng] = request.security(u9, "D", f_calc_cpr(), lookahead=barmerge.lookahead_on)
-
-[u1_s0, u1_s1, u1_s2, u1_s3, u1_s4, u1_s5, u1_s6] = request.security(u1, "D", f_get_7d_sigs_1(), lookahead=barmerge.lookahead_on)
-[u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6] = request.security(u2, "D", f_get_7d_sigs_2(), lookahead=barmerge.lookahead_on)
-[u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6] = request.security(u3, "D", f_get_7d_sigs_3(), lookahead=barmerge.lookahead_on)
-[u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6] = request.security(u4, "D", f_get_7d_sigs_4(), lookahead=barmerge.lookahead_on)
-[u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6] = request.security(u5, "D", f_get_7d_sigs_5(), lookahead=barmerge.lookahead_on)
-[u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6] = request.security(u6, "D", f_get_7d_sigs_6(), lookahead=barmerge.lookahead_on)
-[u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6] = request.security(u7, "D", f_get_7d_sigs_7(), lookahead=barmerge.lookahead_on)
-[u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6] = request.security(u8, "D", f_get_7d_sigs_8(), lookahead=barmerge.lookahead_on)
-[u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6] = request.security(u9, "D", f_get_7d_sigs_9(), lookahead=barmerge.lookahead_on)
-
-[u1_d0, u1_d1, u1_d2, u1_d3, u1_d4, u1_d5, u1_d6] = request.security(u1, "D", f_get_7d_dt_1(), lookahead=barmerge.lookahead_on)
-[u2_d0, u2_d1, u2_d2, u2_d3, u2_d4, u2_d5, u2_d6] = request.security(u2, "D", f_get_7d_dt_2(), lookahead=barmerge.lookahead_on)
-[u3_d0, u3_d1, u3_d2, u3_d3, u3_d4, u3_d5, u3_d6] = request.security(u3, "D", f_get_7d_dt_3(), lookahead=barmerge.lookahead_on)
-[u4_d0, u4_d1, u4_d2, u4_d3, u4_d4, u4_d5, u4_d6] = request.security(u4, "D", f_get_7d_dt_4(), lookahead=barmerge.lookahead_on)
-[u5_d0, u5_d1, u5_d2, u5_d3, u5_d4, u5_d5, u5_d6] = request.security(u5, "D", f_get_7d_dt_5(), lookahead=barmerge.lookahead_on)
-[u6_d0, u6_d1, u6_d2, u6_d3, u6_d4, u6_d5, u6_d6] = request.security(u6, "D", f_get_7d_dt_6(), lookahead=barmerge.lookahead_on)
-[u7_d0, u7_d1, u7_d2, u7_d3, u7_d4, u7_d5, u7_d6] = request.security(u7, "D", f_get_7d_dt_7(), lookahead=barmerge.lookahead_on)
-[u8_d0, u8_d1, u8_d2, u8_d3, u8_d4, u8_d5, u8_d6] = request.security(u8, "D", f_get_7d_dt_8(), lookahead=barmerge.lookahead_on)
-[u9_d0, u9_d1, u9_d2, u9_d3, u9_d4, u9_d5, u9_d6] = request.security(u9, "D", f_get_7d_dt_9(), lookahead=barmerge.lookahead_on)
+[u1_s0, u1_s1, u1_s2, u1_s3, u1_s4, u1_s5, u1_s6, u1_o, u1_h, u1_l, u1_c, u1_a] = request.security(u1, sigTf, f_get_7d_sigs_1(), lookahead=barmerge.lookahead_on)
+[u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6, u2_o, u2_h, u2_l, u2_c, u2_a] = request.security(u2, sigTf, f_get_7d_sigs_2(), lookahead=barmerge.lookahead_on)
+[u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6, u3_o, u3_h, u3_l, u3_c, u3_a] = request.security(u3, sigTf, f_get_7d_sigs_3(), lookahead=barmerge.lookahead_on)
+[u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6, u4_o, u4_h, u4_l, u4_c, u4_a] = request.security(u4, sigTf, f_get_7d_sigs_4(), lookahead=barmerge.lookahead_on)
+[u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6, u5_o, u5_h, u5_l, u5_c, u5_a] = request.security(u5, sigTf, f_get_7d_sigs_5(), lookahead=barmerge.lookahead_on)
+[u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6, u6_o, u6_h, u6_l, u6_c, u6_a] = request.security(u6, sigTf, f_get_7d_sigs_6(), lookahead=barmerge.lookahead_on)
+[u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6, u7_o, u7_h, u7_l, u7_c, u7_a] = request.security(u7, sigTf, f_get_7d_sigs_7(), lookahead=barmerge.lookahead_on)
+[u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6, u8_o, u8_h, u8_l, u8_c, u8_a] = request.security(u8, sigTf, f_get_7d_sigs_8(), lookahead=barmerge.lookahead_on)
+[u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6, u9_o, u9_h, u9_l, u9_c, u9_a] = request.security(u9, sigTf, f_get_7d_sigs_9(), lookahead=barmerge.lookahead_on)
 
 // 7-Day Matrix Arrays (Column 0 = Today, Column 1 = 1d, ... Column 6 = 6d)
 var bullMissile = matrix.new<string>(7, 0, "")
@@ -1058,36 +710,6 @@ var bearDiv     = matrix.new<string>(7, 0, "")
 var bullHDiv    = matrix.new<string>(7, 0, "")
 var bearHDiv    = matrix.new<string>(7, 0, "")
 
-var bullAcc     = matrix.new<string>(7, 0, "")
-var bearAcc     = matrix.new<string>(7, 0, "")
-var bullRej     = matrix.new<string>(7, 0, "")
-var bearRej     = matrix.new<string>(7, 0, "")
-var bullSrd     = matrix.new<string>(7, 0, "")
-var bearSrd     = matrix.new<string>(7, 0, "")
-var bullOd      = matrix.new<string>(7, 0, "")
-var bearOd      = matrix.new<string>(7, 0, "")
-var bullFade    = matrix.new<string>(7, 0, "")
-var bearFade    = matrix.new<string>(7, 0, "")
-var bullAbs     = matrix.new<string>(7, 0, "")
-var bearAbs     = matrix.new<string>(7, 0, "")
-var bullFnl     = matrix.new<string>(7, 0, "")
-var bearFnh     = matrix.new<string>(7, 0, "")
-var bullFb      = matrix.new<string>(7, 0, "")
-var bearFb      = matrix.new<string>(7, 0, "")
-var bullCont    = matrix.new<string>(7, 0, "")
-var bearCont    = matrix.new<string>(7, 0, "")
-
-// Trade Sequence active-state matrices (multi-day)
-var bullRejActiveM     = matrix.new<string>(7, 0, "")
-var bearRejActiveM     = matrix.new<string>(7, 0, "")
-var bullSrdActiveM     = matrix.new<string>(7, 0, "")
-var bearSrdActiveM     = matrix.new<string>(7, 0, "")
-var bullFailAbsActiveM = matrix.new<string>(7, 0, "")
-var bearFailAbsActiveM = matrix.new<string>(7, 0, "")
-var ncprMatrix         = matrix.new<string>(7, 0, "")
-var bullAccActiveM     = matrix.new<string>(7, 0, "")
-var bearAccActiveM     = matrix.new<string>(7, 0, "")
-
 f_get_pos(posStr) =>
     switch posStr
         "Bottom Right"  => position.bottom_right
@@ -1107,12 +729,14 @@ f_simplifySym(sym) =>
     base := str.replace(base, "1!", "")
     base
 
+f_clean_ticker(sym) => f_simplifySym(sym)
+
 f_mat_push(m, dayIdx, val) =>
     currentVal = matrix.get(m, dayIdx, 0)
     newVal = currentVal == "" ? val : currentVal + "\n" + val
     matrix.set(m, dayIdx, 0, newVal)
 
-f_add_day(sym, dayIdx, sigPack, dtPack) =>
+f_add_day(sym, dayIdx, sigPack) =>
     cleanSym = f_simplifySym(sym)
     if unpackBit(sigPack, 1)
         f_mat_push(bullMissile, dayIdx, cleanSym)
@@ -1151,65 +775,160 @@ f_add_day(sym, dayIdx, sigPack, dtPack) =>
     if unpackBit(sigPack, 131072)
         f_mat_push(bearHDiv, dayIdx, cleanSym)
 
-    if unpackBit(dtPack, 1)
-        f_mat_push(bullAcc, dayIdx, cleanSym)
-    if unpackBit(dtPack, 2)
-        f_mat_push(bearAcc, dayIdx, cleanSym)
-    if unpackBit(dtPack, 4)
-        f_mat_push(bullRej, dayIdx, cleanSym)
-    if unpackBit(dtPack, 8)
-        f_mat_push(bearRej, dayIdx, cleanSym)
-    if unpackBit(dtPack, 16)
-        f_mat_push(bullSrd, dayIdx, cleanSym)
-    if unpackBit(dtPack, 32)
-        f_mat_push(bearSrd, dayIdx, cleanSym)
-    if unpackBit(dtPack, 64)
-        f_mat_push(bullOd, dayIdx, cleanSym)
-    if unpackBit(dtPack, 128)
-        f_mat_push(bearOd, dayIdx, cleanSym)
-    if unpackBit(dtPack, 256)
-        f_mat_push(bullFade, dayIdx, cleanSym)
-    if unpackBit(dtPack, 512)
-        f_mat_push(bearFade, dayIdx, cleanSym)
-    if unpackBit(dtPack, 1024)
-        f_mat_push(bullAbs, dayIdx, cleanSym)
-    if unpackBit(dtPack, 2048)
-        f_mat_push(bearAbs, dayIdx, cleanSym)
-    if unpackBit(dtPack, 4096)
-        f_mat_push(bullFnl, dayIdx, cleanSym)
-    if unpackBit(dtPack, 8192)
-        f_mat_push(bearFnh, dayIdx, cleanSym)
-    if unpackBit(dtPack, 16384) or unpackBit(dtPack, 65536)
-        f_mat_push(bullFb, dayIdx, cleanSym)
-    if unpackBit(dtPack, 32768) or unpackBit(dtPack, 131072)
-        f_mat_push(bearFb, dayIdx, cleanSym)
-    if unpackBit(dtPack, 262144)
-        f_mat_push(bullCont, dayIdx, cleanSym)
-    if unpackBit(dtPack, 524288)
-        f_mat_push(bearCont, dayIdx, cleanSym)
-    if unpackBit(dtPack, 1048576)
-        f_mat_push(bullRejActiveM, dayIdx, cleanSym)
-    if unpackBit(dtPack, 2097152)
-        f_mat_push(bearRejActiveM, dayIdx, cleanSym)
-    if unpackBit(dtPack, 4194304)
-        f_mat_push(bullSrdActiveM, dayIdx, cleanSym)
-    if unpackBit(dtPack, 8388608)
-        f_mat_push(bearSrdActiveM, dayIdx, cleanSym)
-    if unpackBit(dtPack, 16777216)
-        f_mat_push(bullFailAbsActiveM, dayIdx, cleanSym)
-    if unpackBit(dtPack, 33554432)
-        f_mat_push(bearFailAbsActiveM, dayIdx, cleanSym)
-    if unpackBit(dtPack, 67108864)
-        f_mat_push(bullAccActiveM, dayIdx, cleanSym)
-    if unpackBit(dtPack, 134217728)
-        f_mat_push(bearAccActiveM, dayIdx, cleanSym)
-
-f_add_sym_all(sym, s0, s1, s2, s3, s4, s5, s6, d0, d1, d2, d3, d4, d5, d6) =>
+f_add_sym_all(sym, s0, s1, s2, s3, s4, s5, s6) =>
     if sym != ""
         for i = 0 to lookback_days - 1
             sigPack = i == 0 ? s0 : i == 1 ? s1 : i == 2 ? s2 : i == 3 ? s3 : i == 4 ? s4 : i == 5 ? s5 : s6
-            dtPack  = i == 0 ? d0 : i == 1 ? d1 : i == 2 ? d2 : i == 3 ? d3 : i == 4 ? d4 : i == 5 ? d5 : d6
-            f_add_day(sym, i, sigPack, dtPack)
+            f_add_day(sym, i, sigPack)
+
+
+// Helper function to build structured Daily TF trade JSON for Day 0 signals
+f_build_trade_json(sym, sigPack, o, h, l, c, atr) =>
+    clean = f_simplifySym(sym)
+    if sigPack > 0 and not na(c) and not na(atr) and atr > 0
+        string sigType = ""
+        string strat   = ""
+        float  entryP  = na
+        float  slP     = na
+        float  tp1P    = na
+        float  tp2P    = na
+        float  tp3P    = na
+        float  tp4P    = na
+
+        // Divergence signals: Midpoint limit touch entry, confirmation extreme SL
+        if unpackBit(sigPack, 16384)
+            sigType := "LONG REGULAR DIVERGENCE"
+            strat   := "DIV"
+            entryP  := (h + l) / 2.0
+            slP     := l - 0.5 * atr
+            tp1P    := entryP + 1.5 * atr
+            tp2P    := entryP + 2.5 * atr
+            tp3P    := entryP + 3.5 * atr
+            tp4P    := entryP + 4.5 * atr
+        else if unpackBit(sigPack, 32768)
+            sigType := "SHORT REGULAR DIVERGENCE"
+            strat   := "DIV"
+            entryP  := (h + l) / 2.0
+            slP     := h + 0.5 * atr
+            tp1P    := entryP - 1.5 * atr
+            tp2P    := entryP - 2.5 * atr
+            tp3P    := entryP - 3.5 * atr
+            tp4P    := entryP - 4.5 * atr
+        else if unpackBit(sigPack, 65536)
+            sigType := "LONG HIDDEN DIVERGENCE"
+            strat   := "DIV"
+            entryP  := (h + l) / 2.0
+            slP     := l - 0.5 * atr
+            tp1P    := entryP + 1.5 * atr
+            tp2P    := entryP + 2.5 * atr
+            tp3P    := entryP + 3.5 * atr
+            tp4P    := entryP + 4.5 * atr
+        else if unpackBit(sigPack, 131072)
+            sigType := "SHORT HIDDEN DIVERGENCE"
+            strat   := "DIV"
+            entryP  := (h + l) / 2.0
+            slP     := h + 0.5 * atr
+            tp1P    := entryP - 1.5 * atr
+            tp2P    := entryP - 2.5 * atr
+            tp3P    := entryP - 3.5 * atr
+            tp4P    := entryP - 4.5 * atr
+        else if unpackBit(sigPack, 16)
+            sigType := "LONG LIGHTNING"
+            strat   := "LIGHTNING"
+            entryP  := c
+            slP     := l - 0.50 * atr
+            tp1P    := entryP + 1.5 * atr
+            tp2P    := entryP + 2.5 * atr
+            tp3P    := entryP + 3.5 * atr
+            tp4P    := entryP + 4.5 * atr
+        else if unpackBit(sigPack, 32)
+            sigType := "SHORT LIGHTNING"
+            strat   := "LIGHTNING"
+            entryP  := c
+            slP     := h + 0.50 * atr
+            tp1P    := entryP - 1.5 * atr
+            tp2P    := entryP - 2.5 * atr
+            tp3P    := entryP - 3.5 * atr
+            tp4P    := entryP - 4.5 * atr
+        else if unpackBit(sigPack, 256)
+            sigType := "LONG EXTREME REVERSAL"
+            strat   := "EXT_REV"
+            entryP  := c
+            slP     := l - 0.50 * atr
+            tp1P    := entryP + 1.5 * atr
+            tp2P    := entryP + 2.5 * atr
+            tp3P    := entryP + 3.5 * atr
+            tp4P    := entryP + 4.5 * atr
+        else if unpackBit(sigPack, 512)
+            sigType := "SHORT EXTREME REVERSAL"
+            strat   := "EXT_REV"
+            entryP  := c
+            slP     := h + 0.50 * atr
+            tp1P    := entryP - 1.5 * atr
+            tp2P    := entryP - 2.5 * atr
+            tp3P    := entryP - 3.5 * atr
+            tp4P    := entryP - 4.5 * atr
+        else if unpackBit(sigPack, 1024)
+            sigType := "LONG OUTSIDE REVERSAL"
+            strat   := "OUTSIDE_REV"
+            entryP  := c
+            slP     := l - 0.50 * atr
+            tp1P    := entryP + 1.5 * atr
+            tp2P    := entryP + 2.5 * atr
+            tp3P    := entryP + 3.5 * atr
+            tp4P    := entryP + 4.5 * atr
+        else if unpackBit(sigPack, 2048)
+            sigType := "SHORT OUTSIDE REVERSAL"
+            strat   := "OUTSIDE_REV"
+            entryP  := c
+            slP     := h + 0.50 * atr
+            tp1P    := entryP - 1.5 * atr
+            tp2P    := entryP - 2.5 * atr
+            tp3P    := entryP - 3.5 * atr
+            tp4P    := entryP - 4.5 * atr
+        else if unpackBit(sigPack, 1)
+            sigType := "LONG MISSILE"
+            strat   := "MISSILE"
+            entryP  := c
+            slP     := l - 0.50 * atr
+            tp1P    := entryP + 1.5 * atr
+            tp2P    := entryP + 2.5 * atr
+            tp3P    := entryP + 3.5 * atr
+            tp4P    := entryP + 4.5 * atr
+        else if unpackBit(sigPack, 2)
+            sigType := "SHORT MISSILE"
+            strat   := "MISSILE"
+            entryP  := c
+            slP     := h + 0.50 * atr
+            tp1P    := entryP - 1.5 * atr
+            tp2P    := entryP - 2.5 * atr
+            tp3P    := entryP - 3.5 * atr
+            tp4P    := entryP - 4.5 * atr
+        else if unpackBit(sigPack, 4)
+            sigType := "LONG SCALP"
+            strat   := "SCALP"
+            entryP  := c
+            slP     := l - 0.50 * atr
+            tp1P    := entryP + 1.5 * atr
+            tp2P    := entryP + 2.5 * atr
+            tp3P    := entryP + 3.5 * atr
+            tp4P    := entryP + 4.5 * atr
+        else if unpackBit(sigPack, 8)
+            sigType := "SHORT SCALP"
+            strat   := "SCALP"
+            entryP  := c
+            slP     := h + 0.50 * atr
+            tp1P    := entryP - 1.5 * atr
+            tp2P    := entryP - 2.5 * atr
+            tp3P    := entryP - 3.5 * atr
+            tp4P    := entryP - 4.5 * atr
+
+        if sigType != ""
+            '{"symbol":"' + sym + '","cleanSym":"' + clean + '","type":"' + sigType + '","strategy":"' + strat + '","status":"ACTIVE LIMIT","entry":' + str.tostring(entryP, "#.##") + ',"stop":' + str.tostring(slP, "#.##") + ',"target":' + str.tostring(tp1P, "#.##") + ',"tp2":' + str.tostring(tp2P, "#.##") + ',"tp3":' + str.tostring(tp3P, "#.##") + ',"tp4":' + str.tostring(tp4P, "#.##") + ',"timeframe":"1D"}'
+        else
+            ""
+    else
+        ""
 
 // ---- THEME COLOR DEFINITIONS -------------------------------------------
 isOriginal = tableTheme == "Original TLCS"
@@ -1233,7 +952,6 @@ c_bull_fg   = isOriginal ? color.rgb(0, 130, 0) : isDark ? color.rgb(74, 222, 12
 c_bear_bg   = c_label_bg
 c_bear_fg   = isOriginal ? color.rgb(204, 0, 0) : isDark ? color.rgb(248, 113, 113) : color.rgb(153, 27, 27)
 
-c_mixed_bg  = c_label_bg
 c_mixed_fg  = isOriginal ? color.rgb(190, 85, 0) : isDark ? color.rgb(251, 191, 36) : color.rgb(180, 83, 9)
 
 c_empty_bg  = c_label_bg
@@ -1285,74 +1003,25 @@ if barstate.islast
     bullHDiv    := matrix.new<string>(7, 1, "")
     bearHDiv    := matrix.new<string>(7, 1, "")
 
-    bullAcc     := matrix.new<string>(7, 1, "")
-    bearAcc     := matrix.new<string>(7, 1, "")
-    bullRej     := matrix.new<string>(7, 1, "")
-    bearRej     := matrix.new<string>(7, 1, "")
-    bullSrd     := matrix.new<string>(7, 1, "")
-    bearSrd     := matrix.new<string>(7, 1, "")
-    bullOd      := matrix.new<string>(7, 1, "")
-    bearOd      := matrix.new<string>(7, 1, "")
-    bullFade    := matrix.new<string>(7, 1, "")
-    bearFade    := matrix.new<string>(7, 1, "")
-    bullAbs     := matrix.new<string>(7, 1, "")
-    bearAbs     := matrix.new<string>(7, 1, "")
-    bullFnl     := matrix.new<string>(7, 1, "")
-    bearFnh     := matrix.new<string>(7, 1, "")
-    bullFb      := matrix.new<string>(7, 1, "")
-    bearFb      := matrix.new<string>(7, 1, "")
-    bullCont    := matrix.new<string>(7, 1, "")
-    bearCont    := matrix.new<string>(7, 1, "")
-    bullRejActiveM     := matrix.new<string>(7, 1, "")
-    bearRejActiveM     := matrix.new<string>(7, 1, "")
-    bullSrdActiveM     := matrix.new<string>(7, 1, "")
-    bearSrdActiveM     := matrix.new<string>(7, 1, "")
-    bullFailAbsActiveM := matrix.new<string>(7, 1, "")
-    bearFailAbsActiveM := matrix.new<string>(7, 1, "")
-    ncprMatrix         := matrix.new<string>(7, 1, "")
-    bullAccActiveM     := matrix.new<string>(7, 1, "")
-    bearAccActiveM     := matrix.new<string>(7, 1, "")
-
-    f_add_sym_all(u1, u1_s0, u1_s1, u1_s2, u1_s3, u1_s4, u1_s5, u1_s6, u1_d0, u1_d1, u1_d2, u1_d3, u1_d4, u1_d5, u1_d6)
-    f_add_sym_all(u2, u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6, u2_d0, u2_d1, u2_d2, u2_d3, u2_d4, u2_d5, u2_d6)
-    f_add_sym_all(u3, u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6, u3_d0, u3_d1, u3_d2, u3_d3, u3_d4, u3_d5, u3_d6)
-    f_add_sym_all(u4, u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6, u4_d0, u4_d1, u4_d2, u4_d3, u4_d4, u4_d5, u4_d6)
-    f_add_sym_all(u5, u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6, u5_d0, u5_d1, u5_d2, u5_d3, u5_d4, u5_d5, u5_d6)
-    f_add_sym_all(u6, u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6, u6_d0, u6_d1, u6_d2, u6_d3, u6_d4, u6_d5, u6_d6)
-    f_add_sym_all(u7, u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6, u7_d0, u7_d1, u7_d2, u7_d3, u7_d4, u7_d5, u7_d6)
-    f_add_sym_all(u8, u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6, u8_d0, u8_d1, u8_d2, u8_d3, u8_d4, u8_d5, u8_d6)
-    f_add_sym_all(u9, u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6, u9_d0, u9_d1, u9_d2, u9_d3, u9_d4, u9_d5, u9_d6)
-
-    string ncprSyms = ""
-    if u1_ncpr > 0.5
-        ncprSyms += "NF "
-    if u2_ncpr > 0.5
-        ncprSyms += "NG "
-    if u3_ncpr > 0.5
-        ncprSyms += "CL "
-    if u4_ncpr > 0.5
-        ncprSyms += "GC "
-    if u5_ncpr > 0.5
-        ncprSyms += "SI "
-    if u6_ncpr > 0.5
-        ncprSyms += "CL1! "
-    if u7_ncpr > 0.5
-        ncprSyms += "NG1! "
-    if u8_ncpr > 0.5
-        ncprSyms += "GC1! "
-    if u9_ncpr > 0.5
-        ncprSyms += "SI1! "
-    matrix.set(ncprMatrix, 0, 0, ncprSyms)
+    f_add_sym_all(u1, u1_s0, u1_s1, u1_s2, u1_s3, u1_s4, u1_s5, u1_s6)
+    f_add_sym_all(u2, u2_s0, u2_s1, u2_s2, u2_s3, u2_s4, u2_s5, u2_s6)
+    f_add_sym_all(u3, u3_s0, u3_s1, u3_s2, u3_s3, u3_s4, u3_s5, u3_s6)
+    f_add_sym_all(u4, u4_s0, u4_s1, u4_s2, u4_s3, u4_s4, u4_s5, u4_s6)
+    f_add_sym_all(u5, u5_s0, u5_s1, u5_s2, u5_s3, u5_s4, u5_s5, u5_s6)
+    f_add_sym_all(u6, u6_s0, u6_s1, u6_s2, u6_s3, u6_s4, u6_s5, u6_s6)
+    f_add_sym_all(u7, u7_s0, u7_s1, u7_s2, u7_s3, u7_s4, u7_s5, u7_s6)
+    f_add_sym_all(u8, u8_s0, u8_s1, u8_s2, u8_s3, u8_s4, u8_s5, u8_s6)
+    f_add_sym_all(u9, u9_s0, u9_s1, u9_s2, u9_s3, u9_s4, u9_s5, u9_s6)
 
     txtSize = tableTextSz == "Tiny" ? size.tiny : tableTextSz == "Normal" ? size.normal : size.small
 
-    dash1 := table.new(tablePos, lookback_days + 1, 35, border_width=1, frame_width=1, frame_color=c_frame, border_color=c_border)
+    dash1 := table.new(tablePos, lookback_days + 1, 15, border_width=1, frame_width=1, frame_color=c_frame, border_color=c_border)
     
     int currentRow = 0
 
-    // Header 1: SIGNALS
+    // Header: TLCS SIGNALS (Daily)
     table.merge_cells(dash1, 0, currentRow, lookback_days, currentRow)
-    table.cell(dash1, 0, currentRow, "TLCS SIGNALS", bgcolor=c_header_bg, text_color=c_header_fg, text_size=txtSize, text_halign=text.align_center)
+    table.cell(dash1, 0, currentRow, "TLCS SIGNALS (" + sigTf + ")", bgcolor=c_header_bg, text_color=c_header_fg, text_size=txtSize, text_halign=text.align_center)
     currentRow += 1
 
     table.cell(dash1, 0, currentRow, "FILTER TYPE", bgcolor=c_colhdr_bg, text_color=c_colhdr_fg, text_size=txtSize, text_halign=text.align_right)
@@ -1381,40 +1050,6 @@ if barstate.islast
     if f_render_matrix_row(dash1, currentRow, "Hidden Divergences", bullHDiv, bearHDiv, txtSize)
         currentRow += 1
 
-    // Header 2: BLUEPRINTS
-    table.merge_cells(dash1, 0, currentRow, lookback_days, currentRow)
-    table.cell(dash1, 0, currentRow, "DAY TYPE BLUEPRINTS", bgcolor=c_header_bg, text_color=c_header_fg, text_size=txtSize, text_halign=text.align_center)
-    currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Narrow CPR (NCPR)", ncprMatrix, matrix.new<string>(7, 1, ""), txtSize)
-        currentRow += 1
-
-    if f_render_matrix_row(dash1, currentRow, "Rejection Day Blueprint", bullRej, bearRej, txtSize)
-        currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Absorption Day Blueprint", bullAbs, bearAbs, txtSize)
-        currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Failed New Low Blueprint", bullFnl, matrix.new<string>(7, 1, ""), txtSize)
-        currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Failed New High Blueprint", matrix.new<string>(7, 1, ""), bearFnh, txtSize)
-        currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Outside Day Blueprint", bullOd, bearOd, txtSize)
-        currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Stop Run Day Blueprint", bullSrd, bearSrd, txtSize)
-        currentRow += 1
-
-    // Header 3: SEQUENCES
-    table.merge_cells(dash1, 0, currentRow, lookback_days, currentRow)
-    table.cell(dash1, 0, currentRow, "TRADE SEQUENCES", bgcolor=c_header_bg, text_color=c_header_fg, text_size=txtSize, text_halign=text.align_center)
-    currentRow += 1
-
-    if f_render_matrix_row(dash1, currentRow, "Rejection Day Sequence", bullRejActiveM, bearRejActiveM, txtSize)
-        currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Stop Run Sequence", bullSrdActiveM, bearSrdActiveM, txtSize)
-        currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Failed Absorption Sequence", bullFailAbsActiveM, bearFailAbsActiveM, txtSize)
-        currentRow += 1
-    if f_render_matrix_row(dash1, currentRow, "Accumulation / Distribution Sequence", bullAccActiveM, bearAccActiveM, txtSize)
-        currentRow += 1
-
     // Universal 7-Day Session Matrix Alert Engine (Strict Daily Candle Close)
     bool isDailyClose = false
     if timeframe.isdaily
@@ -1433,38 +1068,63 @@ if barstate.islast
             sSc = str.replace_all(matrix.get(bearScalp, col, 0), "\n", ",")
             bL = str.replace_all(matrix.get(bullLight, col, 0), "\n", ",")
             sL = str.replace_all(matrix.get(bearLight, col, 0), "\n", ",")
+            bW = str.replace_all(matrix.get(bullWick, col, 0), "\n", ",")
+            sW = str.replace_all(matrix.get(bearWick, col, 0), "\n", ",")
+            bE = str.replace_all(matrix.get(bullExt, col, 0), "\n", ",")
+            sE = str.replace_all(matrix.get(bearExt, col, 0), "\n", ",")
+            bO = str.replace_all(matrix.get(bullOut, col, 0), "\n", ",")
+            sO = str.replace_all(matrix.get(bearOut, col, 0), "\n", ",")
+            bDj = str.replace_all(matrix.get(bullDoji, col, 0), "\n", ",")
+            sDj = str.replace_all(matrix.get(bearDoji, col, 0), "\n", ",")
             bD = str.replace_all(matrix.get(bullDiv, col, 0), "\n", ",")
             sD = str.replace_all(matrix.get(bearDiv, col, 0), "\n", ",")
-            bR = str.replace_all(matrix.get(bullRej, col, 0), "\n", ",")
-            sR = str.replace_all(matrix.get(bearRej, col, 0), "\n", ",")
-            bAb = str.replace_all(matrix.get(bullAbs, col, 0), "\n", ",")
-            sAb = str.replace_all(matrix.get(bearAbs, col, 0), "\n", ",")
-            bFn = str.replace_all(matrix.get(bullFnl, col, 0), "\n", ",")
-            sFn = str.replace_all(matrix.get(bearFnh, col, 0), "\n", ",")
-            bOd = str.replace_all(matrix.get(bullOd, col, 0), "\n", ",")
-            sOd = str.replace_all(matrix.get(bearOd, col, 0), "\n", ",")
-            bSr = str.replace_all(matrix.get(bullSrdActiveM, col, 0), "\n", ",")
-            sSr = str.replace_all(matrix.get(bearSrdActiveM, col, 0), "\n", ",")
-            bFb = str.replace_all(matrix.get(bullFailAbsActiveM, col, 0), "\n", ",")
-            sFb = str.replace_all(matrix.get(bearFailAbsActiveM, col, 0), "\n", ",")
-            bAc = str.replace_all(matrix.get(bullAccActiveM, col, 0), "\n", ",")
-            sAc = str.replace_all(matrix.get(bearAccActiveM, col, 0), "\n", ",")
+            bHD = str.replace_all(matrix.get(bullHDiv, col, 0), "\n", ",")
+            sHD = str.replace_all(matrix.get(bearHDiv, col, 0), "\n", ",")
 
-            daysJson += '{"col":' + str.tostring(col) + ',"bM":"' + bM + '","sM":"' + sM + '","bSc":"' + bSc + '","sSc":"' + sSc + '","bL":"' + bL + '","sL":"' + sL + '","bD":"' + bD + '","sD":"' + sD + '","bR":"' + bR + '","sR":"' + sR + '","bAb":"' + bAb + '","sAb":"' + sAb + '","bFn":"' + bFn + '","sFn":"' + sFn + '","bOd":"' + bOd + '","sOd":"' + sOd + '","bSr":"' + bSr + '","sSr":"' + sSr + '","bFb":"' + bFb + '","sFb":"' + sFb + '","bAc":"' + bAc + '","sAc":"' + sAc + '"}' + (col < 6 ? ',' : '')
+            daysJson += '{"col":' + str.tostring(col) + ',"bM":"' + bM + '","sM":"' + sM + '","bSc":"' + bSc + '","sSc":"' + sSc + '","bL":"' + bL + '","sL":"' + sL + '","bW":"' + bW + '","sW":"' + sW + '","bE":"' + bE + '","sE":"' + sE + '","bO":"' + bO + '","sO":"' + sO + '","bDj":"' + bDj + '","sDj":"' + sDj + '","bD":"' + bD + '","sD":"' + sD + '","bHD":"' + bHD + '","sHD":"' + sHD + '"}' + (col < 6 ? ',' : '')
         daysJson += "]"
 
-        
-        string cprJson = "{" +
-             '"u1":{"sym":"' + u1 + '","ncpr":' + (u1_ncpr > 0.5 ? "true" : "false") + ',"dtc":' + str.tostring(u1_dtc, format.mintick) + ',"dbc":' + str.tostring(u1_dbc, format.mintick) + ',"dp":' + str.tostring(u1_dp, format.mintick) + ',"cpr_width":' + str.tostring(u1_cpr_w, format.mintick) + '},' +
-             '"u2":{"sym":"' + u2 + '","ncpr":' + (u2_ncpr > 0.5 ? "true" : "false") + ',"dtc":' + str.tostring(u2_dtc, format.mintick) + ',"dbc":' + str.tostring(u2_dbc, format.mintick) + ',"dp":' + str.tostring(u2_dp, format.mintick) + ',"cpr_width":' + str.tostring(u2_cpr_w, format.mintick) + '},' +
-             '"u3":{"sym":"' + u3 + '","ncpr":' + (u3_ncpr > 0.5 ? "true" : "false") + ',"dtc":' + str.tostring(u3_dtc, format.mintick) + ',"dbc":' + str.tostring(u3_dbc, format.mintick) + ',"dp":' + str.tostring(u3_dp, format.mintick) + ',"cpr_width":' + str.tostring(u3_cpr_w, format.mintick) + '},' +
-             '"u4":{"sym":"' + u4 + '","ncpr":' + (u4_ncpr > 0.5 ? "true" : "false") + ',"dtc":' + str.tostring(u4_dtc, format.mintick) + ',"dbc":' + str.tostring(u4_dbc, format.mintick) + ',"dp":' + str.tostring(u4_dp, format.mintick) + ',"cpr_width":' + str.tostring(u4_cpr_w, format.mintick) + '},' +
-             '"u5":{"sym":"' + u5 + '","ncpr":' + (u5_ncpr > 0.5 ? "true" : "false") + ',"dtc":' + str.tostring(u5_dtc, format.mintick) + ',"dbc":' + str.tostring(u5_dbc, format.mintick) + ',"dp":' + str.tostring(u5_dp, format.mintick) + ',"cpr_width":' + str.tostring(u5_cpr_w, format.mintick) + '},' +
-             '"u6":{"sym":"' + u6 + '","ncpr":' + (u6_ncpr > 0.5 ? "true" : "false") + ',"dtc":' + str.tostring(u6_dtc, format.mintick) + ',"dbc":' + str.tostring(u6_dbc, format.mintick) + ',"dp":' + str.tostring(u6_dp, format.mintick) + ',"cpr_width":' + str.tostring(u6_cpr_w, format.mintick) + '},' +
-             '"u7":{"sym":"' + u7 + '","ncpr":' + (u7_ncpr > 0.5 ? "true" : "false") + ',"dtc":' + str.tostring(u7_dtc, format.mintick) + ',"dbc":' + str.tostring(u7_dbc, format.mintick) + ',"dp":' + str.tostring(u7_dp, format.mintick) + ',"cpr_width":' + str.tostring(u7_cpr_w, format.mintick) + '},' +
-             '"u8":{"sym":"' + u8 + '","ncpr":' + (u8_ncpr > 0.5 ? "true" : "false") + ',"dtc":' + str.tostring(u8_dtc, format.mintick) + ',"dbc":' + str.tostring(u8_dbc, format.mintick) + ',"dp":' + str.tostring(u8_dp, format.mintick) + ',"cpr_width":' + str.tostring(u8_cpr_w, format.mintick) + '},' +
-             '"u9":{"sym":"' + u9 + '","ncpr":' + (u9_ncpr > 0.5 ? "true" : "false") + ',"dtc":' + str.tostring(u9_dtc, format.mintick) + ',"dbc":' + str.tostring(u9_dbc, format.mintick) + ',"dp":' + str.tostring(u9_dp, format.mintick) + ',"cpr_width":' + str.tostring(u9_cpr_w, format.mintick) + '}' +
-             "}"
-        string alertPayload = '{"ticker":"' + syminfo.ticker + '","trigger":"SessionOpenMatrix","secret":"' + webhook_secret + '","matrix_days":' + daysJson + ',"cpr":' + cprJson + ',"signals":{"bullMissile":"' + matrix.get(bullMissile, 0, 0) + '","bearMissile":"' + matrix.get(bearMissile, 0, 0) + '","bullDiv":"' + matrix.get(bullDiv, 0, 0) + '","bearDiv":"' + matrix.get(bearDiv, 0, 0) + '","bullRej":"' + matrix.get(bullRejActiveM, 0, 0) + '","bearRej":"' + matrix.get(bearRejActiveM, 0, 0) + '","bullAbs":"' + matrix.get(bullAbs, 0, 0) + '","bearAbs":"' + matrix.get(bearAbs, 0, 0) + '","bullFnl":"' + matrix.get(bullFnl, 0, 0) + '","bearFnh":"' + matrix.get(bearFnh, 0, 0) + '","bullOd":"' + matrix.get(bullOd, 0, 0) + '","bearOd":"' + matrix.get(bearOd, 0, 0) + '","bullSrd":"' + matrix.get(bullSrdActiveM, 0, 0) + '","bearSrd":"' + matrix.get(bearSrdActiveM, 0, 0) + '","bullFb":"' + matrix.get(bullFailAbsActiveM, 0, 0) + '","bearFb":"' + matrix.get(bearFailAbsActiveM, 0, 0) + '","bullAcc":"' + matrix.get(bullAccActiveM, 0, 0) + '","bearAcc":"' + matrix.get(bearAccActiveM, 0, 0) + '"},"timestamp":"' + str.tostring(time) + '"}'
+        string t1Json = f_build_trade_json(u1, u1_s0, u1_o, u1_h, u1_l, u1_c, u1_a)
+        string t2Json = f_build_trade_json(u2, u2_s0, u2_o, u2_h, u2_l, u2_c, u2_a)
+        string t3Json = f_build_trade_json(u3, u3_s0, u3_o, u3_h, u3_l, u3_c, u3_a)
+        string t4Json = f_build_trade_json(u4, u4_s0, u4_o, u4_h, u4_l, u4_c, u4_a)
+        string t5Json = f_build_trade_json(u5, u5_s0, u5_o, u5_h, u5_l, u5_c, u5_a)
+        string t6Json = f_build_trade_json(u6, u6_s0, u6_o, u6_h, u6_l, u6_c, u6_a)
+        string t7Json = f_build_trade_json(u7, u7_s0, u7_o, u7_h, u7_l, u7_c, u7_a)
+        string t8Json = f_build_trade_json(u8, u8_s0, u8_o, u8_h, u8_l, u8_c, u8_a)
+        string t9Json = f_build_trade_json(u9, u9_s0, u9_o, u9_h, u9_l, u9_c, u9_a)
+
+        string tradesJson = "["
+        string activeSep = ""
+        if t1Json != ""
+            tradesJson += activeSep + t1Json
+            activeSep := ","
+        if t2Json != ""
+            tradesJson += activeSep + t2Json
+            activeSep := ","
+        if t3Json != ""
+            tradesJson += activeSep + t3Json
+            activeSep := ","
+        if t4Json != ""
+            tradesJson += activeSep + t4Json
+            activeSep := ","
+        if t5Json != ""
+            tradesJson += activeSep + t5Json
+            activeSep := ","
+        if t6Json != ""
+            tradesJson += activeSep + t6Json
+            activeSep := ","
+        if t7Json != ""
+            tradesJson += activeSep + t7Json
+            activeSep := ","
+        if t8Json != ""
+            tradesJson += activeSep + t8Json
+            activeSep := ","
+        if t9Json != ""
+            tradesJson += activeSep + t9Json
+            activeSep := ","
+        tradesJson += "]"
+
+        string alertPayload = '{"ticker":"' + syminfo.ticker + '","trigger":"DailySignalsMatrix","secret":"' + webhook_secret + '","timeframe":"' + sigTf + '","matrix_days":' + daysJson + ',"signals":{"bullMissile":"' + matrix.get(bullMissile, 0, 0) + '","bearMissile":"' + matrix.get(bearMissile, 0, 0) + '","bullScalp":"' + matrix.get(bullScalp, 0, 0) + '","bearScalp":"' + matrix.get(bearScalp, 0, 0) + '","bullLight":"' + matrix.get(bullLight, 0, 0) + '","bearLight":"' + matrix.get(bearLight, 0, 0) + '","bullDiv":"' + matrix.get(bullDiv, 0, 0) + '","bearDiv":"' + matrix.get(bearDiv, 0, 0) + '","bullHDiv":"' + matrix.get(bullHDiv, 0, 0) + '","bearHDiv":"' + matrix.get(bearHDiv, 0, 0) + '"},"trades":' + tradesJson + ',"timestamp":"' + str.tostring(time) + '"}'
 
         alert(alertPayload, alert.freq_once_per_bar_close)
