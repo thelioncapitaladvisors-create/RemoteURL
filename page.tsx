@@ -45,6 +45,7 @@ interface Signal {
   market?: string;
   pricing_type?: string;
   source?: string;
+  message?: string;
 }
 
 interface StrategyBadgeProps {
