@@ -53,6 +53,20 @@
   - Price pivots across all indicators evaluate extreme highs and lows (`array.from(high, close, low)`), guaranteeing exact mathematical parity with `TLCS_Native_Oscillator.pine`.
   - Divergence sentiment evaluation is unconstrained: `divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0`.
 
+## Version 1.0: Multi-Day 1D Swing Trade Persistent Retention & Age/Date Badges Mandate (Effective November 27, 2026)
+- **PERSISTENT MULTI-DAY SWING RETENTION UNTIL EXPLICIT INVALIDATION**:
+  - Across `page.tsx`, `RemoteURL/page.tsx`, and `Tv-Alert-Mobile/src/app/page.tsx`:
+    - On the `INSIGHTS` tab (`Swing Trading Opportunities` / `renderDhanLiveSignalsSection`), pending limit orders (`tradeLifecycle === 'ACTIVE LIMIT'`) and live execution positions (`tradeLifecycle === 'LIVE'`) for the Daily Timeframe (`1D` / `DAILY`) MUST persist and remain continuously visible across session calendar date boundaries.
+    - Swing trades must NEVER be hidden or dropped by intraday date cutoffs (`sessionFilter === 'TODAY'`). They remain strictly active until explicitly closed or invalidated (hit Initial SL, hit TP targets, cancelled, or closed by trader).
+    - `extractDhanScreenerAssets` on `activeTab === 'INSIGHTS'` bypasses the `'TODAY'` session cutoff (`activeTab === 'INSIGHTS' ? 'ALL' : liveSignalsSessionFilter`).
+    - `eligibleSignals` strictly exempts `setupType === 'ALL_LIVE'` and 1D Swing trades from intraday confluence filter gating.
+    - Daily execution strategy parity: `CONFLUENCE` (`FIRE`), `LIGHTNING`, `EXT_REV`, `OUTSIDE_REV`, `MISSILE`, `SCALP`, `DIV`, `WICK_REV`, `DOJI_REV`, and `SWING` are all fully approved and rendered across Tier 1 filter pills and the Matrix view.
+- **SIGNAL AGE & CALENDAR DATE VISIBILITY**:
+  - Every signal calculates elapsed age (`ageStr`: `Today`, `1d ago`, `${diffDays}d ago`) and IST calendar date (`dateStr`: e.g., `Nov 25`, `Nov 27`).
+  - **Matrix Chips**: Appends `📅 {asset.ageStr}` badge to Bullish and Bearish chips in the compact Matrix view.
+  - **List View**: Displays calendar date pill (`asset.dateStr`) in Col 1 alongside candle time IST, and elapsed age badge (`📅 {asset.ageStr}`) in Col 2 alongside lifecycle pills.
+  - **Asset Detail Modal**: Displays both formatted calendar date and elapsed age in the modal header and timeline banner (`PLACED: {dateStr} ({ageStr})`).
+
 ## Version 1.0: Screener Matrix Filter Label Double-Tap / Double-Click Activation Mandate (Effective November 27, 2026)
 - **ELIMINATION OF HOVER & ACCIDENTAL TOUCH POPOVERS**:
   - Across `Tv-Alert-Mobile/src/app/globals.css`, `:hover` and `:active` display triggers for `.table-row-label` on collapsed sticky 48px row headers are permanently eliminated.
