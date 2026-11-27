@@ -233,6 +233,7 @@ class DailyBlackboxScanner:
             m0=m0_series[i] if i < len(m0_series) else 0.0,
             m10=m10_series[i] if i < len(m10_series) else 0.0,
             virgin_cpr_zones=vcpr_zones,
+            avg_candle_size_10=sum(b.high - b.low for b in bars[max(0, i-9):i+1]) / max(1, min(10, i+1)),
             timeframe='1D'
         )
 
