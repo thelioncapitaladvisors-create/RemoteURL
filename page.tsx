@@ -8597,8 +8597,8 @@ function MobileScreensaver() {
 
   // ── PERFORMANCE BREAKDOWN BY CANONICAL SIGNAL FAMILY (FROM TODAY ONWARDS) ──
   const canonicalFamilyStats = useMemo(() => {
-    // Canonical baseline: November 24, 2026 00:00:00 IST (1795458600000 ms)
-    const BASELINE_START_MS = 1795458600000;
+    // Canonical baseline: November 27, 2026 00:00:00 IST (1795717800000 ms)
+    const BASELINE_START_MS = 1795717800000;
 
     // 7 Canonical Signal Families in exact standard order
     const FAMILIES = [
@@ -8623,7 +8623,7 @@ function MobileScreensaver() {
       return null;
     };
 
-    // Filter closed signals strictly from baseline (Nov 24, 2026) onwards based on active engine
+    // Filter closed signals strictly from baseline (Nov 27, 2026) onwards based on active engine
     const src = engineSource === 'SHADOW'
       ? dhanBlackboxSignals.filter(s => {
           const out = resolveOutcome(s);
@@ -8785,7 +8785,7 @@ function MobileScreensaver() {
 
   // ── QUANTITATIVE CONFLUENCE BENCHMARK (VECTORBT VERIFIED) ──
   const confluenceBenchmarkStats = useMemo(() => {
-    const BASELINE_START_MS = 1795458600000;
+    const BASELINE_START_MS = 1795717800000;
     const src = engineSource === 'SHADOW'
       ? dhanBlackboxSignals.filter(s => {
           const out = resolveOutcome(s);
@@ -9048,8 +9048,8 @@ function MobileScreensaver() {
   }, [engineSource, dhanBlackboxSignals, closedSignals]);
 
   const dayTypeStats = useMemo(() => {
-    // Canonical baseline: November 24, 2026 00:00:00 IST (1795458600000 ms)
-    const BASELINE_START_MS = 1795458600000;
+    // Canonical baseline: November 27, 2026 00:00:00 IST (1795717800000 ms)
+    const BASELINE_START_MS = 1795717800000;
 
     // Canonical Day Types & Market Regimes in institutional hierarchy
     const REGIMES: { key: string; label: string; icon: string; match: (s: string) => boolean }[] = [
@@ -9088,7 +9088,7 @@ function MobileScreensaver() {
       return 'TYPICAL_RANGE';
     };
 
-    // Filter closed signals strictly from baseline (Nov 24, 2026) onwards based on active engine
+    // Filter closed signals strictly from baseline (Nov 27, 2026) onwards based on active engine
     const src = engineSource === 'SHADOW'
       ? dhanBlackboxSignals.filter(s => {
           const out = resolveOutcome(s);
@@ -9256,7 +9256,7 @@ function MobileScreensaver() {
 
   // ── DHANHQ BLACKBOX SCREENER PERFORMANCE SCORECARD STATS ──
   const dhanScreenerSetupStats = useMemo(() => {
-    const BASELINE_START_MS = 1795458600000; // Nov 24, 2026 00:00:00 IST
+    const BASELINE_START_MS = 1795717800000; // Nov 27, 2026 00:00:00 IST
 
     interface ScreenerSetupDef {
       key: 'OOR' | 'INSIDE' | 'NCPR' | 'NVA' | 'VCPR';
@@ -17510,7 +17510,7 @@ function MobileScreensaver() {
                           </div>
                           <div className="flex flex-col items-start gap-1.5 shrink-0">
                             <span className="text-[9.5px] min-[360px]:text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 theme-gray:text-emerald-900 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap">
-                              ● NOV 24, 2026+ BASELINE
+                              ● NOV 27, 2026+ BASELINE
                             </span>
                           </div>
                         </div>
@@ -17966,7 +17966,7 @@ function MobileScreensaver() {
                               </span>
                             )}
                             <span className="text-[9.5px] min-[360px]:text-[10px] sm:text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 theme-gray:text-emerald-900 border border-emerald-300 dark:border-emerald-700 whitespace-nowrap">
-                              ● NOV 24, 2026+ BASELINE
+                              ● NOV 27, 2026+ BASELINE
                             </span>
                           </div>
                         </div>

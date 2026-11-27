@@ -53,6 +53,18 @@
   - Price pivots across all indicators evaluate extreme highs and lows (`array.from(high, close, low)`), guaranteeing exact mathematical parity with `TLCS_Native_Oscillator.pine`.
   - Divergence sentiment evaluation is unconstrained: `divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0`.
 
+## Version 1.0: Canonical Database Purge & Fresh Forward Baseline Mandate (Effective November 27, 2026)
+- **CANONICAL DATABASE PURGE & COMPLETE STATE RESET**:
+  - Across Supabase database tables (`signals`, `shadow_signals`, `weekly_performance_logs`):
+    - All historical signal alerts, shadow executions, and legacy weekly snapshots are permanently purged.
+    - Active limit caches, open positions, closed trade history, and legacy metrics across all application tabs (`DASHBOARD`, `MARKETS`, `INSIGHTS`, `LOGS`, `PERFORMANCE`, `TERMINAL`) are reset completely to a pristine zero state.
+- **NEW CANONICAL FORWARD BASELINE ANCHOR (NOVEMBER 27, 2026)**:
+  - Across `page.tsx`, `RemoteURL/page.tsx`, and `Tv-Alert-Mobile/src/app/page.tsx`:
+    - The system baseline anchor `BASELINE_START_MS` is advanced to **`1795717800000` (November 27, 2026 00:00:00 IST)**.
+    - All scorecard and performance statistics tables (`canonicalFamilyStats`, `confluenceBenchmarkStats`, `dayTypeStats`, `dhanScreenerSetupStats`) strictly anchor forward from `BASELINE_START_MS`.
+    - Visual badge tags on the performance matrices are updated to `● NOV 27, 2026+ BASELINE`.
+  - Signal registration, trade logging, and live performance tracking commence strictly afresh from the next incoming signal alert.
+
 ## Version 1.0: Realized P&L Parity & Performance Header Win Rate Synchronization Mandate (Effective November 26, 2026)
 - **CANONICAL WIN EVALUATION & REALIZED P&L SINGLE SOURCE OF TRUTH**:
   - Across `page.tsx`, `RemoteURL/page.tsx`, and `Tv-Alert-Mobile/src/app/page.tsx`:
@@ -622,7 +634,7 @@
   - **Simulated Equity Curve Header 2-Row Layout**: Header condenses from a 4-pill multiline wrapped layout to a sleek 2-row structure: Row 1 displays Title with compact `ROI %` and `CAGR %` badges; Row 2 houses a dedicated secondary risk metrics sub-bar (`Sharpe`, `Sortino`, and `Max DD`).
 - **Version 1.0 Canonical Signal Family Forward-Performance Scorecard & 1-Year Quantitative Backtest Mandate (Effective October 20, 2026)**:
   - **Canonical Signal Family Forward-Performance Scorecard**: The mobile application (`INSIGHTS` tab in `Tv-Alert-Mobile/src/app/page.tsx`) incorporates a dedicated forward-performance breakdown table tracking all 6 canonical signal families (`DIVERGENCE`, `SCALP`, `MISSILE`, `EXTREME REVERSAL`, `HIDDEN DIVERGENCE`, `LIGHTNING`).
-  - **Strict Forward-Only Baseline Anchor**: Trades evaluated in the Canonical Signal Family table strictly filter for closed trades with `effectiveTimestamp >= 1795458600000` (November 24, 2026 00:00:00 IST), ensuring zero distortion from legacy signals before this date.
+  - **Strict Forward-Only Baseline Anchor**: Trades evaluated in the Canonical Signal Family table strictly filter for closed trades with `effectiveTimestamp >= 1795717800000` (November 27, 2026 00:00:00 IST), ensuring zero distortion from legacy signals before this date.
   - **Canonical Institutional Metrics Standard**: The scorecard reports `Total Trades`, `Wins / Losses / BE` counts, `Win Rate` (`wins / totalClosed * 100` with breakevens retained in denominator), `Profit Factor` (gross gains / gross losses), `Net Return %`, `Expectancy %`, `Avg Win % / Avg Loss %`, and a `COMPOSITE TOTAL` summary row.
   - **1-Year Multi-Asset Quantitative Backtest Dataset**: Full 1-year historical backtest across Nifty 50, Bank Nifty, and MCX commodities (8,866 total trades, 69.31% aggregate win rate, 1.95 profit factor) verified and preserved in `algo_engine/tlcs_1yr_backtest_all_signals_results.json` and `Obsidian/51_Platform_v1_0_Canonical_Signal_Family_Forward_Performance_Scorecard_and_1Yr_Quantitative_Backtest.md`.
 - **Version 1.0 Mobile Responsive Zero-Truncation & Pill Alignment Mandate (Effective October 20, 2026)**:
