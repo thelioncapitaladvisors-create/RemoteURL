@@ -53,6 +53,16 @@
   - Price pivots across all indicators evaluate extreme highs and lows (`array.from(high, close, low)`), guaranteeing exact mathematical parity with `TLCS_Native_Oscillator.pine`.
   - Divergence sentiment evaluation is unconstrained: `divergence = sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0`.
 
+## Version 1.0: Screener Matrix Filter Label Double-Tap / Double-Click Activation Mandate (Effective November 27, 2026)
+- **ELIMINATION OF HOVER & ACCIDENTAL TOUCH POPOVERS**:
+  - Across `Tv-Alert-Mobile/src/app/globals.css`, `:hover` and `:active` display triggers for `.table-row-label` on collapsed sticky 48px row headers are permanently eliminated.
+  - Merely hovering with a mouse cursor, swiping horizontally through days, or tapping/touching cells on smartphone displays must NEVER trigger floating filter label bubbles (`Outside Day Blueprint`, `Scalp`, etc.).
+- **STRICT DOUBLE-CLICK / DOUBLE-TAP INTERACTION ACTIVATION**:
+  - Across `page.tsx`, `RemoteURL/page.tsx`, and `Tv-Alert-Mobile/src/app/page.tsx`:
+    - Row header filter labels (`.table-row-label`) are displayed strictly and exclusively when a user intentionally **clicks twice (desktop `dblclick`)** or **double-taps (mobile `touchend` with $\Delta t < 380\text{ ms}$ on the same cell)** the row symbol/header.
+    - Activation dynamically attaches `.table-row-label-active` to the cell, displaying the high-contrast floating popover bubble.
+    - The active label automatically dismisses after a 4-second timeout, on tapping outside, or upon double-clicking/double-tapping the cell a second time.
+
 ## Version 1.0: Canonical Database Purge & Fresh Forward Baseline Mandate (Effective November 27, 2026)
 - **CANONICAL DATABASE PURGE & COMPLETE STATE RESET**:
   - Across Supabase database tables (`signals`, `shadow_signals`, `weekly_performance_logs`):

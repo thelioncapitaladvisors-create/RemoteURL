@@ -9602,6 +9602,91 @@ function MobileScreensaver() {
     if (savedVibrate !== null) setIsVibrateEnabled(savedVibrate === 'true');
   }, []);
 
+  // ── FILTER ROW LABEL ACTIVATION: DOUBLE-CLICK / DOUBLE-TAP ONLY ──
+  useEffect(() => {
+    let lastTapTime = 0;
+    let lastTapTarget: HTMLElement | null = null;
+    let autoHideTimer: any = null;
+
+    const clearActiveLabels = () => {
+      document.querySelectorAll('.table-row-label-active').forEach(el => {
+        el.classList.remove('table-row-label-active');
+      });
+    };
+
+    const toggleCell = (cell: HTMLElement) => {
+      const isCurrentlyActive = cell.classList.contains('table-row-label-active');
+      clearActiveLabels();
+      if (autoHideTimer) {
+        clearTimeout(autoHideTimer);
+        autoHideTimer = null;
+      }
+      if (!isCurrentlyActive) {
+        cell.classList.add('table-row-label-active');
+        // Auto-dismiss floating filter label after 4 seconds
+        autoHideTimer = setTimeout(() => {
+          cell.classList.remove('table-row-label-active');
+        }, 4000);
+      }
+    };
+
+    const getFirstColCell = (target: EventTarget | null): HTMLElement | null => {
+      if (!target || !(target instanceof HTMLElement)) return null;
+      const cell = target.closest('th:first-child, td:first-child') as HTMLElement | null;
+      if (!cell) return null;
+      const container = cell.closest('.table-scroll-container');
+      if (!container) return null;
+      if (!cell.querySelector('.table-row-label')) return null;
+      return cell;
+    };
+
+    // 1. Desktop double-click
+    const handleDblClick = (e: MouseEvent) => {
+      const cell = getFirstColCell(e.target);
+      if (cell) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleCell(cell);
+      }
+    };
+
+    // 2. Mobile double-tap (< 380ms between successive taps on the same cell)
+    const handleTouchEnd = (e: TouchEvent) => {
+      const cell = getFirstColCell(e.target);
+      if (!cell) return;
+      const currentTime = Date.now();
+      const tapLength = currentTime - lastTapTime;
+      if (tapLength < 380 && tapLength > 40 && lastTapTarget === cell) {
+        e.preventDefault();
+        toggleCell(cell);
+        lastTapTime = 0;
+        lastTapTarget = null;
+      } else {
+        lastTapTime = currentTime;
+        lastTapTarget = cell;
+      }
+    };
+
+    // 3. Dismiss on outside click/tap
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const cell = getFirstColCell(e.target);
+      if (!cell) {
+        clearActiveLabels();
+      }
+    };
+
+    document.addEventListener('dblclick', handleDblClick, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd, { passive: false });
+    document.addEventListener('click', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('dblclick', handleDblClick);
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('click', handleClickOutside);
+      if (autoHideTimer) clearTimeout(autoHideTimer);
+    };
+  }, []);
+
   // 1b.%emoved PWA Install Prompt
 
 
