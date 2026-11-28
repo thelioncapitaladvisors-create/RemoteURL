@@ -67,13 +67,14 @@
   - **List View**: Displays calendar date pill (`asset.dateStr`) in Col 1 alongside candle time IST, and elapsed age badge (`📅 {asset.ageStr}`) in Col 2 alongside lifecycle pills.
   - **Asset Detail Modal**: Displays both formatted calendar date and elapsed age in the modal header and timeline banner (`PLACED: {dateStr} ({ageStr})`).
 
-## Version 1.0: Screener Matrix Filter Label Double-Tap / Double-Click Activation Mandate (Effective November 27, 2026)
-- **ELIMINATION OF HOVER & ACCIDENTAL TOUCH POPOVERS**:
-  - Across `Tv-Alert-Mobile/src/app/globals.css`, `:hover` and `:active` display triggers for `.table-row-label` on collapsed sticky 48px row headers are permanently eliminated.
-  - Merely hovering with a mouse cursor, swiping horizontally through days, or tapping/touching cells on smartphone displays must NEVER trigger floating filter label bubbles (`Outside Day Blueprint`, `Scalp`, etc.).
-- **STRICT DOUBLE-CLICK / DOUBLE-TAP INTERACTION ACTIVATION**:
+## Version 1.0: Universal All-Tables Filter Label Double-Tap / Double-Click Activation Mandate (Effective November 28, 2026)
+- **ELIMINATION OF HOVER & ACCIDENTAL TOUCH POPOVERS ACROSS ALL TABLES**:
+  - Across `Tv-Alert-Mobile/src/app/globals.css`, filter names and row header labels (`.table-row-label`) across ALL tables (Screener Matrix, Day Types, Sequences, Dhan Matrix, Insights Performance Breakdown by Signal Family, Confluence Models, Day Types, and Hub Market Segregation) are 100% hidden by default (`display: none !important;`).
+  - Merely hovering with a mouse cursor, swiping horizontally through days, dragging to scroll, or tapping/touching cells on smartphone displays must NEVER trigger floating filter label bubbles (`Outside Day Blueprint`, `Scalp`, `Price Divergences`, etc.).
+- **STRICT DOUBLE-CLICK / STATIONARY DOUBLE-TAP INTERACTION ACTIVATION**:
   - Across `page.tsx`, `RemoteURL/page.tsx`, and `Tv-Alert-Mobile/src/app/page.tsx`:
-    - Row header filter labels (`.table-row-label`) are displayed strictly and exclusively when a user intentionally **clicks twice (desktop `dblclick`)** or **double-taps (mobile `touchend` with $\Delta t < 380\text{ ms}$ on the same cell)** the row symbol/header.
+    - Touch displacement tracking (`touchstart` / `touchmove`) automatically detects scrolling/swiping ($> 8\text{ px}$ displacement) and cancels tap registration so dragging/swiping across days NEVER registers as a tap.
+    - Row header filter labels (`.table-row-label`) are displayed strictly and exclusively when a user intentionally **clicks twice (desktop `dblclick`)** or **double-taps (mobile `touchend` with stationary contact and $120\text{ ms} \le \Delta t \le 380\text{ ms}$ on the exact same cell)** the row symbol/header.
     - Activation dynamically attaches `.table-row-label-active` to the cell, displaying the high-contrast floating popover bubble.
     - The active label automatically dismisses after a 4-second timeout, on tapping outside, or upon double-clicking/double-tapping the cell a second time.
 

@@ -9663,6 +9663,9 @@ function MobileScreensaver() {
     let lastTapTime = 0;
     let lastTapTarget: HTMLElement | null = null;
     let autoHideTimer: any = null;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let isTouchDrag = false;
 
     const clearActiveLabels = () => {
       document.querySelectorAll('.table-row-label-active').forEach(el => {
@@ -9706,14 +9709,47 @@ function MobileScreensaver() {
       }
     };
 
-    // 2. Mobile double-tap (< 380ms between successive taps on the same cell)
+    // 2. Mobile touch tracking: distinguish deliberate tap from scroll/swipe drag
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches && e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        isTouchDrag = false;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches && e.touches.length === 1) {
+        const deltaX = Math.abs(e.touches[0].clientX - touchStartX);
+        const deltaY = Math.abs(e.touches[0].clientY - touchStartY);
+        if (deltaX > 8 || deltaY > 8) {
+          isTouchDrag = true;
+          lastTapTime = 0;
+          lastTapTarget = null;
+        }
+      }
+    };
+
+    // 3. Mobile double-tap (120ms <= tapLength <= 380ms between successive stationary taps on the same cell)
     const handleTouchEnd = (e: TouchEvent) => {
+      if (isTouchDrag) {
+        isTouchDrag = false;
+        lastTapTime = 0;
+        lastTapTarget = null;
+        return;
+      }
       const cell = getFirstColCell(e.target);
-      if (!cell) return;
+      if (!cell) {
+        clearActiveLabels();
+        lastTapTime = 0;
+        lastTapTarget = null;
+        return;
+      }
       const currentTime = Date.now();
       const tapLength = currentTime - lastTapTime;
-      if (tapLength < 380 && tapLength > 40 && lastTapTarget === cell) {
+      if (tapLength <= 380 && tapLength >= 120 && lastTapTarget === cell) {
         e.preventDefault();
+        e.stopPropagation();
         toggleCell(cell);
         lastTapTime = 0;
         lastTapTarget = null;
@@ -9723,8 +9759,8 @@ function MobileScreensaver() {
       }
     };
 
-    // 3. Dismiss on outside click/tap
-    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+    // 4. Dismiss on outside click/tap
+    const handleClick = (e: MouseEvent) => {
       const cell = getFirstColCell(e.target);
       if (!cell) {
         clearActiveLabels();
@@ -9732,13 +9768,17 @@ function MobileScreensaver() {
     };
 
     document.addEventListener('dblclick', handleDblClick, { passive: false });
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchmove', handleTouchMove, { passive: true });
     document.addEventListener('touchend', handleTouchEnd, { passive: false });
-    document.addEventListener('click', handleClickOutside);
+    document.addEventListener('click', handleClick);
 
     return () => {
       document.removeEventListener('dblclick', handleDblClick);
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('click', handleClick);
       if (autoHideTimer) clearTimeout(autoHideTimer);
     };
   }, []);
